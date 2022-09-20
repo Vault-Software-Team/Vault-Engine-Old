@@ -232,6 +232,7 @@ void LoadScene(const std::string &scenePath) {
 
             auto &renderer = obj->GetComponent<Experimental::MeshRenderer>();
             auto &transform = obj->GetComponent<Experimental::Transform>();
+            renderer.m_Mesh = Plane(Vector4(1,1,1,1)).m_Mesh;
 
             renderer.m_Mesh->name = name;
             renderer.m_Mesh->parentType = type;
@@ -249,6 +250,7 @@ void LoadScene(const std::string &scenePath) {
 
             auto &renderer = obj->GetComponent<Experimental::MeshRenderer>();
             auto &transform = obj->GetComponent<Experimental::Transform>();
+            renderer.m_Mesh = Cube(Vector4(1,1,1,1)).meshes[0];
 
             renderer.m_Mesh->name = name;
             renderer.m_Mesh->parentType = type;
@@ -266,6 +268,7 @@ void LoadScene(const std::string &scenePath) {
 
             auto &renderer = obj->GetComponent<Experimental::MeshRenderer>();
             auto &transform = obj->GetComponent<Experimental::Transform>();
+            renderer.m_Mesh = Sphere(Vector4(1,1,1,1)).meshes[0];
 
             renderer.m_Mesh->name = name;
             renderer.m_Mesh->parentType = type;
@@ -283,6 +286,7 @@ void LoadScene(const std::string &scenePath) {
 
             auto &renderer = obj->GetComponent<Experimental::MeshRenderer>();
             auto &transform = obj->GetComponent<Experimental::Transform>();
+            renderer.m_Mesh = Cylinder(Vector4(1,1,1,1)).meshes[0];
 
             renderer.m_Mesh->name = name;
             renderer.m_Mesh->parentType = type;
@@ -300,6 +304,7 @@ void LoadScene(const std::string &scenePath) {
 
             auto &renderer = obj->GetComponent<Experimental::MeshRenderer>();
             auto &transform = obj->GetComponent<Experimental::Transform>();
+            renderer.m_Mesh = Capsule(Vector4(1,1,1,1)).meshes[0];
 
             renderer.m_Mesh->name = name;
             renderer.m_Mesh->parentType = type;
@@ -317,6 +322,7 @@ void LoadScene(const std::string &scenePath) {
 
             auto &renderer = obj->GetComponent<Experimental::MeshRenderer>();
             auto &transform = obj->GetComponent<Experimental::Transform>();
+            renderer.m_Mesh = Cone(Vector4(1,1,1,1)).meshes[0];
 
             renderer.m_Mesh->name = name;
             renderer.m_Mesh->parentType = type;
@@ -363,7 +369,7 @@ void LoadScene(const std::string &scenePath) {
             obj->AddComponent<Experimental::c_DirectionalLight>();
 
             auto &transform = obj->GetComponent<Experimental::Transform>();
-            auto &light = obj->GetComponent<DirectionalLight>();
+            auto &light = obj->GetComponent<Experimental::c_DirectionalLight>();
             transform.position = pos;
             light.color = color;
 
@@ -392,7 +398,7 @@ void LoadScene(const std::string &scenePath) {
             obj->AddComponent<Experimental::c_PointLight>();
 
             auto &transform = obj->GetComponent<Experimental::Transform>();
-            auto &light = obj->GetComponent<PointLight>();
+            auto &light = obj->GetComponent<Experimental::c_PointLight>();
             transform.position = pos;
             light.color = color;
 
@@ -704,7 +710,6 @@ void SaveScene(const std::string &path) {
     file << JSON;
 }
 
-
 int main() {
     ScriptEngine::Init();
 
@@ -741,6 +746,7 @@ int main() {
     }
 
     Hyper::Application app(1280, 720, "Static Engine");
+    Input::window = app.renderer->window;
     // glfw enable sticky mouse buttons
     Shader shader("shaders/default.glsl");
     Shader spriteShader("shaders/sprite.glsl");
@@ -775,7 +781,6 @@ int main() {
     ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir, "", ImVec4(1,1,1, 1.0f), ICON_FA_FOLDER);
 
     // LoadScene(config.mainScene);
-
     std::function<void(unsigned int &PPT, unsigned int &PPFBO)> GUI_EXP = 
     [&](unsigned int &PPT, unsigned int &PPFBO) {
         ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
@@ -872,8 +877,16 @@ int main() {
                     Scene::m_Object->GetComponent<Experimental::Transform>().GUI();
                 }
 
+                if(Scene::m_Object->HasComponent<Experimental::CameraComponent>()) {
+                    Scene::m_Object->GetComponent<Experimental::CameraComponent>().GUI();
+                }
+
                 if(Scene::m_Object->HasComponent<Experimental::MeshRenderer>()) {
                     Scene::m_Object->GetComponent<Experimental::MeshRenderer>().GUI();
+                }
+
+                if(Scene::m_Object->HasComponent<Experimental::m_LuaScriptComponent>()) {
+                    Scene::m_Object->GetComponent<Experimental::m_LuaScriptComponent>().GUI();
                 }
 
                 if(Scene::m_Object->HasComponent<Experimental::c_PointLight>()) {
@@ -904,6 +917,16 @@ int main() {
 
                 if(ImGui::Button("Mesh Renderer", ImVec2(200, 0))) {
                     Scene::m_Object->AddComponent<Experimental::MeshRenderer>();
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if(ImGui::Button("Lua Scripts", ImVec2(200, 0))) {
+                    Scene::m_Object->AddComponent<Experimental::m_LuaScriptComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if(ImGui::Button("Camera", ImVec2(200, 0))) {
+                    Scene::m_Object->AddComponent<Experimental::CameraComponent>();
                     ImGui::CloseCurrentPopup();
                 }
 
@@ -1017,8 +1040,13 @@ int main() {
         
         for(auto &gameObject : Scene::m_GameObjects) {
             gameObject->Update();
+            if(gameObject->HasComponent<Experimental::m_LuaScriptComponent>()) {
+                auto &script = gameObject->GetComponent<Experimental::m_LuaScriptComponent>();
+                script.Update();
+            }
+            
             if(gameObject->HasComponent<Experimental::MeshRenderer>()) {
-                // if(gameObject->GetComponent<Experimental::MeshRenderer>().m_Model) continue;
+                // if(gameObject->GetComponcent<Experimental::MeshRenderer>().m_Model) continue;
 
                 auto meshRenderer = gameObject->GetComponent<Experimental::MeshRenderer>();
                 auto transform = gameObject->GetComponent<Experimental::Transform>();
@@ -1029,9 +1057,9 @@ int main() {
                 if(meshRenderer.m_Mesh != nullptr) {
                     if(transform.parentTransform != nullptr) {
                         transform.parentTransform->Update();
-                        meshRenderer.m_Mesh->Draw(shader, *camera, transform.transform * transform.parentTransform->transform * extra);
+                        meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera, transform.transform * transform.parentTransform->transform * extra);
                     } else {
-                        meshRenderer.m_Mesh->Draw(shader, *camera, transform.transform * extra);
+                        meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera, transform.transform * extra);
                     }
                 }
             }

@@ -29,6 +29,7 @@
 #include <any>
 #include "scene.hpp"
 #include "ScriptEngine.hpp"
+#include "InputEvents.hpp"
 #include <random>
 #include <map>
 #include <sstream>
@@ -418,11 +419,19 @@ namespace HyperAPI {
         void SetUniformMat4(const char *name, glm::mat4 value);
     };
 
+    struct CameraPosDec {
+        glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
+    };
+
     class Camera : public ComponentSystem {
     public:
         // glm::vec3 Position;
         // glm::vec3 Orientation = glm::vec3(0.0f, 0.0f, -1.0f);
         // glm::vec3 RotationValue = glm::vec3(0.0f, 0.0f, 0.0f);
+        CameraPosDec transform;
+
         glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
 
         float fov = 45;
@@ -1062,8 +1071,44 @@ namespace HyperAPI {
     };
 
     namespace Experimental {
+        class ComponentEntity {
+        public:
+            std::string parentID = "NO_PARENT";
+            std::string name = "GameObject";
+            std::string ID;
+            std::string tag = "Untagged";
+
+            entt::entity entity;
+            ComponentEntity() {};
+
+            template<typename T, typename... Args>
+            void AddComponent(Args&&... args) {
+                if(!HasComponent<T>()) {
+                    T& component = Scene::m_Registry.emplace<T>(entity, std::forward<Args>(args)...);
+                    component.entity = entity;
+                    component.ID = ID;
+                }
+            }
+
+            template<typename T>
+            T& GetComponent() {
+                return Scene::m_Registry.get<T>(entity);
+            }
+
+            template<typename T>
+            bool HasComponent() {
+                return Scene::m_Registry.has<T>(entity);
+            }
+
+            template<typename T>
+            void RemoveComponent() {
+                Scene::m_Registry.remove<T>(entity);
+            }
+        };
+
         struct BaseComponent {
             entt::entity entity;
+            std::string ID;
         };
 
         struct Transform : public BaseComponent {
@@ -1098,7 +1143,7 @@ namespace HyperAPI {
         };
 
         struct MeshRenderer : public BaseComponent {
-            Mesh *m_Mesh;
+            Mesh *m_Mesh = nullptr;
             bool m_Model = false;
 
             glm::mat4 extraMatrix = glm::mat4(1.0f);
@@ -1261,6 +1306,12 @@ namespace HyperAPI {
             Camera *camera = new Camera(false, 1280, 720, Vector3(0,0,0));
 
             void GUI() {
+                TransformComponent camTransform = camera->GetComponent<TransformComponent>();
+                Transform &transform = Scene::m_Registry.get<Transform>(entity);
+                transform.position = camTransform.position;
+                transform.rotation = camTransform.rotation;
+                transform.scale = camTransform.scale;
+
                 if(ImGui::TreeNode("Camera")) {
                     if(camera != nullptr) {
                         ImGui::DragFloat("FOV", &camera->fov, 0.01f);
@@ -1291,6 +1342,12 @@ namespace HyperAPI {
                     }
                     ImGui::TreePop();
                 }
+
+                camTransform.position = transform.position;
+                camTransform.rotation = transform.rotation;
+                camTransform.scale = transform.scale;
+
+                camera->UpdateComponent(camTransform);
             }
         };
 
@@ -1388,14 +1445,8 @@ namespace HyperAPI {
             }
         };
 
-        class GameObject {
+        class GameObject : public ComponentEntity {
         public:
-            entt::entity entity;
-            std::string parentID = "NO_PARENT";
-            std::string name = "GameObject";
-            std::string ID;
-            std::string tag = "Untagged";
-
             GameObject() {
                 entity = Scene::m_Registry.create();
                 ID = uuid::generate_uuid_v4();
@@ -1412,29 +1463,6 @@ namespace HyperAPI {
                         childTransform.parentTransform = &transform;
                     }
                 }
-            }
-
-            template<typename T, typename... Args>
-            void AddComponent(Args&&... args) {
-                if(!HasComponent<T>()) {
-                    T& component = Scene::m_Registry.emplace<T>(entity, std::forward<Args>(args)...);
-                    component.entity = entity;
-                }
-            }
-
-            template<typename T>
-            T& GetComponent() {
-                return Scene::m_Registry.get<T>(entity);
-            }
-
-            template<typename T>
-            bool HasComponent() {
-                return Scene::m_Registry.has<T>(entity);
-            }
-
-            template<typename T>
-            void RemoveComponent() {
-                Scene::m_Registry.remove<T>(entity);
             }
 
             void GUI() {
@@ -1459,6 +1487,78 @@ namespace HyperAPI {
             }
         };
     
+        struct m_LuaScriptComponent : public BaseComponent {
+            GameObject *m_GameObject;
+            std::vector<ScriptEngine::m_LuaScript> scripts;
+
+            m_LuaScriptComponent() {
+                for(auto &gameObject : Scene::m_GameObjects) {
+
+                    if(gameObject->ID == ID) {
+                        m_GameObject = gameObject;
+                        std::cout << "FOUND" << std::endl;
+                        break;
+                    }
+                }
+            };
+
+            void Start() {
+                for(auto &script : scripts) {
+                    script.Init();
+                }
+            }
+
+            void Update() {
+                for(auto &script : scripts) {
+                    script.Update();
+                }
+            }
+
+            void GUI() {
+                if(ImGui::TreeNode("Lua Scripts")) {
+                    if(ImGui::TreeNode("Scripts")) {
+                        for(int i = 0; i < scripts.size(); i++) {
+                            if(ImGui::TreeNode(std::string("Script " + std::to_string(i)).c_str())) {
+                                ImGui::Text("Path: %s", scripts[i].pathToScript.c_str());
+                                if(ImGui::Button(ICON_FA_TRASH " Delete")) {
+                                    scripts.erase(scripts.begin() + i);
+                                }
+                                ImGui::TreePop();
+                            }
+                        }
+
+                        ImGui::TreePop();
+                    }
+
+                    if(ImGui::Button(ICON_FA_PLUS " Add Script")) {
+                        ImGuiFileDialog::Instance()->OpenDialog("ChooseScript", "Choose Script", ".lua", ".");
+                    }
+
+                    if (ImGuiFileDialog::Instance()->Display("ChooseScript")) 
+                    {
+                        // action if OK
+                        if (ImGuiFileDialog::Instance()->IsOk())
+                        {
+                            std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+                            // remove cwd from filePathName
+                            filePathName.erase(0, cwd.length() + 1);
+                            std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+                            
+                            ScriptEngine::m_LuaScript script(filePathName);
+                            script.m_GameObject = m_GameObject;
+                            script.ID = ID;
+                            script.Init();
+                            scripts.push_back(script);
+                        }
+
+                        ImGuiFileDialog::Instance()->Close();
+                    }
+                            
+                    ImGui::TreePop();
+                }
+            }
+        };
+
         class Model
         {
         private:
