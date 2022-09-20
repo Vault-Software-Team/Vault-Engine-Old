@@ -1,0 +1,10 @@
+bin
+GameJam
+*.o
+src/*.o
+api/*.o
+build.out
+g_build.out
+website/node_modules
+BASDGKAFSGL.ggg
+.vscode
