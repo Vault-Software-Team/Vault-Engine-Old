@@ -55,17 +55,6 @@ flex-direction: column;
 
 ### **Linux**
 
-**Required Dependencies**
-
--   GLFW
--   SDL2
--   SDL_mixer
--   Box2D
--   Bullet Physics
--   Assimp
--   GLEW \
-    other dependencies are in vendor folders
-
 ```bash
 git clone https://github.com/koki10190/Static-Engine.git
 cd Static-Engine
@@ -86,7 +75,7 @@ cd Static-Engine
 # Upcoming Features
 
 -   **Vulkan Rendering**
--   **Android Support (not for making games)**
+-   **Android Support**
 -   **Flowchart Editor (like in Unreal Engine)**
 -   **Video Player**
 
