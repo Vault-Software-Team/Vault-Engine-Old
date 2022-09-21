@@ -1,0 +1,9 @@
+{
+    "diffuse": "assets/planks.png",
+    "specular": "assets/planksSpec.png",
+    "normal": "nullptr",
+    "metallic": 0.0,
+    "roughness": 0.0,
+    "baseColor": { "a": 1, "b": 1.0, "g": 1.0, "r": 1.0 },
+    "texUV": { "x": 10, "y": 10 }
+}

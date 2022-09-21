@@ -717,8 +717,6 @@ int main() {
     getcwd(CWD, sizeof(CWD));
     cwd = std::string(CWD);
 
-    setenv("LD_LIBRARY_PATH", (cwd + "/lib").c_str(), 1);
-
     // check if game.config exists
     std::ifstream file("assets/game.config");
     bool mainSceneFound = false;
@@ -953,9 +951,9 @@ int main() {
         
         if(ImGui::Begin(ICON_FA_FOLDER " Assets")) {
             DirIter(cwd + std::string("/assets"));
-
             ImGui::End();
         }
+
 
         if(ImGui::Begin(ICON_FA_TERMINAL " Console")) {
             if(ImGui::Button(ICON_FA_TRASH " Clear")) {

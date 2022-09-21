@@ -1147,6 +1147,7 @@ namespace HyperAPI {
             bool m_Model = false;
 
             glm::mat4 extraMatrix = glm::mat4(1.0f);
+            std::string matPath = "";
 
             MeshRenderer() {}
             void GUI() {
@@ -1205,97 +1206,188 @@ namespace HyperAPI {
                     }
 
                     if(m_Mesh != nullptr) {
-                        if(ImGui::TreeNode("Diffuse")) {
-                            if(m_Mesh->material.diffuse != nullptr) {
-                                ImGui::ImageButton((void*)m_Mesh->material.diffuse->ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
-                                if(ImGui::IsItemClicked(0)) {
-                                    ImGuiFileDialog::Instance()->OpenDialog("ChooseDiffuseTexture", "Choose Diffuse Texture", ".png,.jpg,.jpeg", ".");
-                                }
-                                Scene::DropTargetMat(Scene::DRAG_DIFFUSE, m_Mesh);
-
-                                if(ImGui::IsItemClicked(1)) {
-                                    glDeleteTextures(1, &m_Mesh->material.diffuse->ID);
-                                    m_Mesh->material.diffuse = nullptr;
-                                }
-                            } else {
-                                ImGui::ImageButton((void*)0, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
-
-                                if(ImGui::IsItemClicked(0)) {
-                                    ImGuiFileDialog::Instance()->OpenDialog("ChooseDiffuseTexture", "Choose Diffuse Texture", ".png,.jpg,.jpeg", ".");
-                                }
-
-                                Scene::DropTargetMat(Scene::DRAG_DIFFUSE, m_Mesh);
-                            }
-                            ImGui::TreePop();
+                        if(ImGui::Button("Select Material")) {
+                            ImGuiFileDialog::Instance()->OpenDialog("SelectMaterial", "Select Material", ".material", ".");
                         }
-
-                        if(ImGui::TreeNode("Specular")) {
-                            if(m_Mesh->material.specular != nullptr) {
-                                ImGui::ImageButton((void*)m_Mesh->material.specular->ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
-                                if(ImGui::IsItemClicked(0)) {
-                                    ImGuiFileDialog::Instance()->OpenDialog("ChooseSpecularTexture", "Choose Specular Texture", ".png,.jpg,.jpeg", ".");
-                                }
-
-                                if(ImGui::IsItemClicked(1)) {
-                                    glDeleteTextures(1, &m_Mesh->material.specular->ID);
-                                    m_Mesh->material.specular = nullptr;
-                                }
-
-                                Scene::DropTargetMat(Scene::DRAG_SPECULAR, m_Mesh);
-                            } else {
-                                ImGui::ImageButton((void*)0, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
-
-                                if(ImGui::IsItemClicked(0)) {
-                                    ImGuiFileDialog::Instance()->OpenDialog("ChooseSpecularTexture", "Choose Specular Texture", ".png,.jpg,.jpeg", ".");
-                                }
-
-                                Scene::DropTargetMat(Scene::DRAG_SPECULAR, m_Mesh);
-                            }
-                            ImGui::TreePop();
-                        }
-
-                        if(ImGui::TreeNode("Normal")) {
-                            if(m_Mesh->material.normal != nullptr) {
-                                ImGui::ImageButton((void*)m_Mesh->material.normal->ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
-                                if(ImGui::IsItemClicked(0)) {
-                                    ImGuiFileDialog::Instance()->OpenDialog("ChooseNormalTexture", "Choose Normal Texture", ".png,.jpg,.jpeg", ".");
-                                }
-
-                                if(ImGui::IsItemClicked(1)) {
-                                    glDeleteTextures(1, &m_Mesh->material.normal->ID);
-                                    m_Mesh->material.normal = nullptr;
-                                }
-
-                                Scene::DropTargetMat(Scene::DRAG_NORMAL, m_Mesh);
-                            } else {
-                                ImGui::ImageButton((void*)0, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
-
-                                if(ImGui::IsItemClicked(0)) {
-                                    ImGuiFileDialog::Instance()->OpenDialog("ChooseNormalTexture", "Choose Normal Texture", ".png,.jpg,.jpeg", ".");
-                                }   
-
-                                Scene::DropTargetMat(Scene::DRAG_NORMAL, m_Mesh);
-                            }
-                            ImGui::TreePop();
-                        }
-
-                        ImGui::DragFloat2("UV", &m_Mesh->material.texUVs.x, 0.01f);
-                        ImGui::NewLine();
-                        ImGui::ColorEdit3("Color", &m_Mesh->material.baseColor.x);
-                        ImGui::DragFloat("Roughness", &m_Mesh->material.roughness, 0.01f, 0, 1);
-                        ImGui::DragFloat("Metallic", &m_Mesh->material.metallic, 0.01f, 0, 1);
-
-                        ImGui::NewLine();
-
-                        ImVec2 winSize = ImGui::GetWindowSize();
-                        if(false && ImGui::Button(ICON_FA_TRASH " Delete", ImVec2(winSize.x, 0))) {
-                            // delete m_Mesh;
-                            // m_Mesh = nullptr;
-                            Scene::m_Registry.remove<MeshRenderer>(entity);
-                        }
-                    } else {
-                        ImGui::Text("No Mesh");
                     }
+
+                    if(matPath != "") {
+                        ImGui::Text("Material: %s", matPath.c_str());
+                        if(ImGui::Button("Remove Material")) {
+                            matPath = "";
+                            if(m_Mesh->material.diffuse != nullptr) {
+                                delete m_Mesh->material.diffuse;
+                                m_Mesh->material.diffuse = nullptr;
+                            }
+
+                            if(m_Mesh->material.specular != nullptr) {
+                                delete m_Mesh->material.specular;
+                                m_Mesh->material.specular = nullptr;
+                            }
+
+                            if(m_Mesh->material.normal != nullptr) {
+                                delete m_Mesh->material.normal;
+                                m_Mesh->material.normal = nullptr;
+                            }
+
+                            m_Mesh->material.roughness = 0.0f;
+                            m_Mesh->material.metallic = 0.0f;
+                            m_Mesh->material.texUVs = Vector2(0, 0);
+                        }
+                    }
+
+                    if (ImGuiFileDialog::Instance()->Display("SelectMaterial")) 
+                    {
+                        // action if OK
+                        if (ImGuiFileDialog::Instance()->IsOk())
+                        {
+                            std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+                            // remove cwd from filePathName
+                            filePathName.erase(0, cwd.length() + 1);
+                            std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+                            
+                            std::ifstream file(filePathName);
+                            nlohmann::json JSON = nlohmann::json::parse(file);
+
+                            const std::string diffuseTexture = JSON["diffuse"];
+                            const std::string specularTexture = JSON["specular"];
+                            const std::string normalTexture = JSON["normal"];
+                        
+                            if(diffuseTexture != "nullptr") {
+                                if(m_Mesh->material.diffuse != nullptr) {
+                                    delete m_Mesh->material.diffuse;
+                                }
+
+                                m_Mesh->material.diffuse = new Texture(diffuseTexture.c_str(), 0, "texture_diffuse");
+                            }
+
+                            if(specularTexture != "nullptr") {
+                                if(m_Mesh->material.specular != nullptr) {
+                                    delete m_Mesh->material.specular;
+                                }
+
+                                m_Mesh->material.specular = new Texture(specularTexture.c_str(), 1, "texture_specular");
+                            }
+
+                            if(normalTexture != "nullptr") {
+                                if(m_Mesh->material.normal != nullptr) {
+                                    delete m_Mesh->material.normal;
+                                }
+
+                                m_Mesh->material.normal = new Texture(normalTexture.c_str(), 2, "texture_normal");
+                            }
+
+                            m_Mesh->material.baseColor = Vector4(
+                                JSON["baseColor"]["r"],
+                                JSON["baseColor"]["g"],
+                                JSON["baseColor"]["b"],
+                                JSON["baseColor"]["a"]
+                            );
+
+                            m_Mesh->material.roughness = JSON["roughness"];
+                            m_Mesh->material.metallic = JSON["metallic"];
+                            m_Mesh->material.texUVs = Vector2(JSON["texUV"]["x"], JSON["texUV"]["y"]);
+
+                            matPath = filePathName;
+                        }
+
+                        
+                        // close
+                        ImGuiFileDialog::Instance()->Close();
+                    }
+
+                    // if(m_Mesh != nullptr) {
+                    //     if(ImGui::TreeNode("Diffuse")) {
+                    //         if(m_Mesh->material.diffuse != nullptr) {
+                    //             ImGui::ImageButton((void*)m_Mesh->material.diffuse->ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
+                    //             if(ImGui::IsItemClicked(0)) {
+                    //                 ImGuiFileDialog::Instance()->OpenDialog("ChooseDiffuseTexture", "Choose Diffuse Texture", ".png,.jpg,.jpeg", ".");
+                    //             }
+                    //             Scene::DropTargetMat(Scene::DRAG_DIFFUSE, m_Mesh);
+
+                    //             if(ImGui::IsItemClicked(1)) {
+                    //                 glDeleteTextures(1, &m_Mesh->material.diffuse->ID);
+                    //                 m_Mesh->material.diffuse = nullptr;
+                    //             }
+                    //         } else {
+                    //             ImGui::ImageButton((void*)0, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
+
+                    //             if(ImGui::IsItemClicked(0)) {
+                    //                 ImGuiFileDialog::Instance()->OpenDialog("ChooseDiffuseTexture", "Choose Diffuse Texture", ".png,.jpg,.jpeg", ".");
+                    //             }
+
+                    //             Scene::DropTargetMat(Scene::DRAG_DIFFUSE, m_Mesh);
+                    //         }
+                    //         ImGui::TreePop();
+                    //     }
+
+                    //     if(ImGui::TreeNode("Specular")) {
+                    //         if(m_Mesh->material.specular != nullptr) {
+                    //             ImGui::ImageButton((void*)m_Mesh->material.specular->ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
+                    //             if(ImGui::IsItemClicked(0)) {
+                    //                 ImGuiFileDialog::Instance()->OpenDialog("ChooseSpecularTexture", "Choose Specular Texture", ".png,.jpg,.jpeg", ".");
+                    //             }
+
+                    //             if(ImGui::IsItemClicked(1)) {
+                    //                 glDeleteTextures(1, &m_Mesh->material.specular->ID);
+                    //                 m_Mesh->material.specular = nullptr;
+                    //             }
+
+                    //             Scene::DropTargetMat(Scene::DRAG_SPECULAR, m_Mesh);
+                    //         } else {
+                    //             ImGui::ImageButton((void*)0, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
+
+                    //             if(ImGui::IsItemClicked(0)) {
+                    //                 ImGuiFileDialog::Instance()->OpenDialog("ChooseSpecularTexture", "Choose Specular Texture", ".png,.jpg,.jpeg", ".");
+                    //             }
+
+                    //             Scene::DropTargetMat(Scene::DRAG_SPECULAR, m_Mesh);
+                    //         }
+                    //         ImGui::TreePop();
+                    //     }
+
+                    //     if(ImGui::TreeNode("Normal")) {
+                    //         if(m_Mesh->material.normal != nullptr) {
+                    //             ImGui::ImageButton((void*)m_Mesh->material.normal->ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
+                    //             if(ImGui::IsItemClicked(0)) {
+                    //                 ImGuiFileDialog::Instance()->OpenDialog("ChooseNormalTexture", "Choose Normal Texture", ".png,.jpg,.jpeg", ".");
+                    //             }
+
+                    //             if(ImGui::IsItemClicked(1)) {
+                    //                 glDeleteTextures(1, &m_Mesh->material.normal->ID);
+                    //                 m_Mesh->material.normal = nullptr;
+                    //             }
+
+                    //             Scene::DropTargetMat(Scene::DRAG_NORMAL, m_Mesh);
+                    //         } else {
+                    //             ImGui::ImageButton((void*)0, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
+
+                    //             if(ImGui::IsItemClicked(0)) {
+                    //                 ImGuiFileDialog::Instance()->OpenDialog("ChooseNormalTexture", "Choose Normal Texture", ".png,.jpg,.jpeg", ".");
+                    //             }   
+
+                    //             Scene::DropTargetMat(Scene::DRAG_NORMAL, m_Mesh);
+                    //         }
+                    //         ImGui::TreePop();
+                    //     }
+
+                    //     ImGui::DragFloat2("UV", &m_Mesh->material.texUVs.x, 0.01f);
+                    //     ImGui::NewLine();
+                    //     ImGui::ColorEdit3("Color", &m_Mesh->material.baseColor.x);
+                    //     ImGui::DragFloat("Roughness", &m_Mesh->material.roughness, 0.01f, 0, 1);
+                    //     ImGui::DragFloat("Metallic", &m_Mesh->material.metallic, 0.01f, 0, 1);
+
+                    //     ImGui::NewLine();
+
+                    //     ImVec2 winSize = ImGui::GetWindowSize();
+                    //     if(false && ImGui::Button(ICON_FA_TRASH " Delete", ImVec2(winSize.x, 0))) {
+                    //         // delete m_Mesh;
+                    //         // m_Mesh = nullptr;
+                    //         Scene::m_Registry.remove<MeshRenderer>(entity);
+                    //     }
+                    // } else {
+                    //     ImGui::Text("No Mesh");
+                    // }
 
                     ImGui::TreePop();
                 }
