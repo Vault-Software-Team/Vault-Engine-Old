@@ -730,39 +730,74 @@ namespace HyperAPI {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    Camera::Camera(bool mode2D, int width, int height, glm::vec3 position)
+    Camera::Camera(bool mode2D, int width, int height, glm::vec3 position, entt::entity entity)
     {
         Camera::width = width;
         Camera::height = height;
         Camera::mode2D = mode2D;
 
-        TransformComponent transform;
-        transform.position = position;
-        transform.rotation = glm::vec3(0.0f, 0.0f, -1.0f);
+        this->entity = entity;
 
-        AddComponent(transform);
+        if(entity != entt::null) {
+            EnttComp = true;
+        } else {
+            EnttComp = false;
+        }
+
+        if(EnttComp) {
+            auto &transform = Scene::m_Registry.get<Experimental::Transform>(entity);
+            transform.position = position;
+            transform.rotation = glm::vec3(0.0f, 0.0f, -1.0f);
+        } else {
+            TransformComponent transform;
+            transform.position = position;
+            transform.rotation = glm::vec3(0.0f, 0.0f, -1.0f);
+            AddComponent(transform);
+        }
     }
 
     void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane, Vector2 winSize)
     {
-        TransformComponent transform = GetComponent<TransformComponent>();
-        glm::mat4 view = glm::mat4(1.0f);
-        glm::mat4 projection = glm::mat4(1.0f);
+        if(EnttComp) {
+            auto &transform = Scene::m_Registry.get<Experimental::Transform>(entity);
         
-        width = winSize.x;
-        height = winSize.y;
+            glm::mat4 view = glm::mat4(1.0f);
+            glm::mat4 projection = glm::mat4(1.0f);
+            
+            width = winSize.x;
+            height = winSize.y;
 
-        view = glm::lookAt(transform.position, transform.position + transform.rotation, Up);
-        float aspect = (float)width/height;
-        
-        if(mode2D) {
-            projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.1f, 5000.0f);
+            view = glm::lookAt(transform.position, transform.position + transform.rotation, Up);
+            float aspect = (float)width/height;
+            
+            if(mode2D) {
+                projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.1f, 5000.0f);
+            } else {
+                projection = glm::perspective(glm::radians(FOVdeg), (float)width / height, nearPlane, farPlane);
+            }
+
+            camMatrix = projection * view;
         } else {
-            projection = glm::perspective(glm::radians(FOVdeg), (float)width / height, nearPlane, farPlane);
+            auto transform = GetComponent<TransformComponent>();
+        
+            glm::mat4 view = glm::mat4(1.0f);
+            glm::mat4 projection = glm::mat4(1.0f);
+            
+            width = winSize.x;
+            height = winSize.y;
+
+            view = glm::lookAt(transform.position, transform.position + transform.rotation, Up);
+            float aspect = (float)width/height;
+            
+            if(mode2D) {
+                projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.1f, 5000.0f);
+            } else {
+                projection = glm::perspective(glm::radians(FOVdeg), (float)width / height, nearPlane, farPlane);
+            }
+
+            camMatrix = projection * view;
         }
 
-        camMatrix = projection * view;
-        scriptComponent.OnUpdate();
     }
 
     void Camera::Matrix(Shader& shader, const char* uniform) {
@@ -772,8 +807,8 @@ namespace HyperAPI {
 
     void Camera::Inputs(GLFWwindow* window, Vector2 winPos)
     {
-        TransformComponent transform = GetComponent<TransformComponent>();
-
+        if(EnttComp) {
+            auto &transform = Scene::m_Registry.get<Experimental::Transform>(entity);
             if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
             {
                 if(!mode2D) {
@@ -815,45 +850,127 @@ namespace HyperAPI {
                 speed = 0.1f;
             }
 
-        if(!mode2D) {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-            if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-            {
+            if(!mode2D) {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-
-                if (firstClick)
+                if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
                 {
-                    glfwSetCursorPos(window, (width / 2), (height / 2));
-                    firstClick = false;
+                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
+                    if (firstClick)
+                    {
+                        glfwSetCursorPos(window, (width / 2), (height / 2));
+                        firstClick = false;
+                    }
+
+                    double mouseX;
+                    double mouseY;
+                    glfwGetCursorPos(window, &mouseX, &mouseY);
+
+                    rotX = sensitivity * (float)(mouseY - (winPos.y + (height / 2))) / height;
+                    rotY = sensitivity * (float)(mouseX - (winPos.x + (width / 2))) / width;
+
+                    glm::vec3 newOrientation = glm::rotate(transform.rotation, glm::radians(-rotX), glm::normalize(glm::cross(transform.rotation, Up)));
+
+                    // if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f))
+                    // {
+                    transform.rotation = newOrientation;
+                    // }
+
+                    transform.rotation = glm::rotate(transform.rotation, glm::radians(-rotY), Up);
+
+                    glfwSetCursorPos(window, winPos.x + (width / 2), winPos.y + (height / 2));
+                }
+                else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
+                {
+                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                    // glfwSetCursorPos(window, winPos.x + (width / 2), winPos.y + (height / 2));
+                    firstClick = true;
                 }
 
-                double mouseX;
-                double mouseY;
-                glfwGetCursorPos(window, &mouseX, &mouseY);
-
-                rotX = sensitivity * (float)(mouseY - (winPos.y + (height / 2))) / height;
-                rotY = sensitivity * (float)(mouseX - (winPos.x + (width / 2))) / width;
-
-                glm::vec3 newOrientation = glm::rotate(transform.rotation, glm::radians(-rotX), glm::normalize(glm::cross(transform.rotation, Up)));
-
-                // if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f))
-                // {
-                transform.rotation = newOrientation;
-                // }
-
-                transform.rotation = glm::rotate(transform.rotation, glm::radians(-rotY), Up);
-
-                glfwSetCursorPos(window, winPos.x + (width / 2), winPos.y + (height / 2));
             }
-            else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
+        } else {
+            auto transform = GetComponent<TransformComponent>();
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
             {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-                // glfwSetCursorPos(window, winPos.x + (width / 2), winPos.y + (height / 2));
-                firstClick = true;
+                if(!mode2D) {
+                    transform.position += speed * transform.rotation;
+                } else {
+                    transform.position.y += speed;
+                }
+            }
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            {
+                transform.position += speed * -glm::normalize(glm::cross(transform.rotation, Up));
+            }
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            {
+                if(!mode2D) {
+                    transform.position += speed * -transform.rotation;
+                } else {
+                    transform.position.y -= speed;
+                }
+            }
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            {
+                transform.position += speed * glm::normalize(glm::cross(transform.rotation, Up));
+            }
+            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+            {
+                transform.position += speed * Up;
+            }
+            if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+            {
+                transform.position += speed * -Up;
+            }
+            if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+            {
+                speed = 0.4f;
+            }
+            else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)
+            {
+                speed = 0.1f;
             }
 
+            if(!mode2D) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+                if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+                {
+                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
+                    if (firstClick)
+                    {
+                        glfwSetCursorPos(window, (width / 2), (height / 2));
+                        firstClick = false;
+                    }
+
+                    double mouseX;
+                    double mouseY;
+                    glfwGetCursorPos(window, &mouseX, &mouseY);
+
+                    rotX = sensitivity * (float)(mouseY - (winPos.y + (height / 2))) / height;
+                    rotY = sensitivity * (float)(mouseX - (winPos.x + (width / 2))) / width;
+
+                    glm::vec3 newOrientation = glm::rotate(transform.rotation, glm::radians(-rotX), glm::normalize(glm::cross(transform.rotation, Up)));
+
+                    // if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f))
+                    // {
+                    transform.rotation = newOrientation;
+                    // }
+
+                    transform.rotation = glm::rotate(transform.rotation, glm::radians(-rotY), Up);
+
+                    glfwSetCursorPos(window, winPos.x + (width / 2), winPos.y + (height / 2));
+                }
+                else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
+                {
+                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                    // glfwSetCursorPos(window, winPos.x + (width / 2), winPos.y + (height / 2));
+                    firstClick = true;
+                }
+
+            }
+            UpdateComponent(transform);
         }
-        UpdateComponent(transform);
     }
    
     void Model::Draw(Shader &shader, Camera &camera)
@@ -1716,11 +1833,13 @@ namespace HyperAPI {
                 gameObject->parentID = mainGameObject->ID;
                 gameObject->AddComponent<Transform>();
                 gameObject->AddComponent<MeshRenderer>();
+                
 
                 MeshRenderer &meshRenderer = gameObject->GetComponent<MeshRenderer>();
                 meshRenderer.m_Mesh = new Mesh(vertices, indices, material);
                 meshRenderer.m_Model = true;
-                
+                meshRenderer.meshType = std::string(path);
+
                 return gameObject;
             } else {
                 Material material(Color, textures);
@@ -1736,6 +1855,7 @@ namespace HyperAPI {
                 MeshRenderer &meshRenderer = gameObject->GetComponent<MeshRenderer>();
                 meshRenderer.m_Mesh = new Mesh(vertices, indices, material);
                 meshRenderer.m_Model = true;
+                meshRenderer.meshType = std::string(path);
                 
                 return gameObject;
             }

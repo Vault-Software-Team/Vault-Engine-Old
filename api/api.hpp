@@ -430,7 +430,8 @@ namespace HyperAPI {
         // glm::vec3 Position;
         // glm::vec3 Orientation = glm::vec3(0.0f, 0.0f, -1.0f);
         // glm::vec3 RotationValue = glm::vec3(0.0f, 0.0f, 0.0f);
-        CameraPosDec transform;
+        bool EnttComp = false;
+        entt::entity entity = entt::null;
 
         glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -452,7 +453,7 @@ namespace HyperAPI {
 
         glm::mat4 camMatrix;
 
-        Camera(bool mode2D, int width, int height, glm::vec3 position);
+        Camera(bool mode2D, int width, int height, glm::vec3 position, entt::entity entity = entt::null);
 
         void updateMatrix(float FOVdeg, float nearPlane, float farPlane, Vector2 winSize);
         void Matrix(Shader& shader, const char* uniform);
@@ -1085,8 +1086,9 @@ namespace HyperAPI {
             void AddComponent(Args&&... args) {
                 if(!HasComponent<T>()) {
                     T& component = Scene::m_Registry.emplace<T>(entity, std::forward<Args>(args)...);
-                    component.entity = entity;
-                    component.ID = ID;
+                    auto &comp = GetComponent<T>();
+                    comp.entity = entity;
+                    comp.ID = ID;
                 }
             }
 
@@ -1148,6 +1150,7 @@ namespace HyperAPI {
 
             glm::mat4 extraMatrix = glm::mat4(1.0f);
             std::string matPath = "";
+            std::string meshType = "";
 
             MeshRenderer() {}
             void GUI() {
@@ -1164,36 +1167,43 @@ namespace HyperAPI {
                                 ImVec2 windowSize = ImGui::GetWindowSize();
 
                                 if(ImGui::Button("Plane", ImVec2(200, 0))) {
+                                    meshType = "Plane";
                                     m_Mesh = Plane(Vector4(1,1,1,1)).m_Mesh;
                                     ImGui::CloseCurrentPopup();
                                 }
 
                                 if(ImGui::Button("Cube", ImVec2(200, 0))) {
+                                    meshType = "Cube";
                                     m_Mesh = Cube(Vector4(1,1,1,1)).meshes[0];
                                     ImGui::CloseCurrentPopup();
                                 }
 
                                 if(ImGui::Button("Sphere", ImVec2(200, 0))) {
+                                    meshType = "Sphere";
                                     m_Mesh = Sphere(Vector4(1,1,1,1)).meshes[0];
                                     ImGui::CloseCurrentPopup();
                                 }
 
                                 if(ImGui::Button("Cone", ImVec2(200, 0))) {
+                                    meshType = "Cone";
                                     m_Mesh = Cone(Vector4(1,1,1,1)).meshes[0];
                                     ImGui::CloseCurrentPopup();
                                 }
 
                                 if(ImGui::Button("Capsule", ImVec2(200, 0))) {
+                                    meshType = "Capsule";
                                     m_Mesh = Capsule(Vector4(1,1,1,1)).meshes[0];
                                     ImGui::CloseCurrentPopup();
                                 }
 
                                 if(ImGui::Button("Torus", ImVec2(200, 0))) {
+                                    meshType = "Torus";
                                     m_Mesh = Torus(Vector4(1,1,1,1)).meshes[0];
                                     ImGui::CloseCurrentPopup();
                                 }
 
                                 if(ImGui::Button("Cylinder", ImVec2(200, 0))) {
+                                    meshType = "Cylinder";
                                     m_Mesh = Cylinder(Vector4(1,1,1,1)).meshes[0];
                                     ImGui::CloseCurrentPopup();
                                 }
@@ -1289,6 +1299,7 @@ namespace HyperAPI {
                             m_Mesh->material.texUVs = Vector2(JSON["texUV"]["x"], JSON["texUV"]["y"]);
 
                             matPath = filePathName;
+                            file.close();
                         }
 
                         
@@ -1394,55 +1405,6 @@ namespace HyperAPI {
             }
         };
 
-        struct CameraComponent : public BaseComponent {
-            Camera *camera = new Camera(false, 1280, 720, Vector3(0,0,0));
-
-            void GUI() {
-                TransformComponent camTransform = camera->GetComponent<TransformComponent>();
-                Transform &transform = Scene::m_Registry.get<Transform>(entity);
-                transform.position = camTransform.position;
-                transform.rotation = camTransform.rotation;
-                transform.scale = camTransform.scale;
-
-                if(ImGui::TreeNode("Camera")) {
-                    if(camera != nullptr) {
-                        ImGui::DragFloat("FOV", &camera->fov, 0.01f);
-                        ImGui::DragFloat("Near", &camera->near, 0.01f);
-                        ImGui::DragFloat("Far", &camera->far, 0.01f);
-
-                        ImGui::Checkbox("Main Camera", &camera->mainCamera);
-                        ImGui::Checkbox("2D Mode", &camera->mode2D);
-
-                        if(Scene::mainCamera == camera) {
-                            if(ImGui::Button(ICON_FA_CAMERA " Unselect as Scene Camera")) {
-                                Scene::mainCamera = camera;
-                            }
-                        } else {
-                            if(ImGui::Button(ICON_FA_CAMERA " Select as Scene Camera")) {
-                                Scene::mainCamera = camera;
-                            }
-                        }
-                    }
-
-                    ImGui::NewLine();
-
-                    ImVec2 winSize = ImGui::GetWindowSize();
-                    if(false && ImGui::Button(ICON_FA_TRASH " Delete", ImVec2(winSize.x, 0))) {
-                        delete camera;
-                        camera = nullptr;
-                        Scene::m_Registry.remove<CameraComponent>(entity);    
-                    }
-                    ImGui::TreePop();
-                }
-
-                camTransform.position = transform.position;
-                camTransform.rotation = transform.rotation;
-                camTransform.scale = transform.scale;
-
-                camera->UpdateComponent(camTransform);
-            }
-        };
-
         struct c_PointLight : public BaseComponent {
             glm::vec3 lightPos = glm::vec3(0, 0, 0);
             glm::vec3 color = glm::vec3(1, 1, 1);
@@ -1455,8 +1417,6 @@ namespace HyperAPI {
             }
 
             void GUI() {
-                auto &transform = Scene::m_Registry.get<Transform>(entity);
-                lightPos = transform.position;
 
                 if(ImGui::TreeNode("Point Light")) {
                     ImGui::ColorEdit3("Color", &color.x, 0.01f);
@@ -1470,6 +1430,12 @@ namespace HyperAPI {
                     }
                     ImGui::TreePop();
                 }
+
+            }
+
+            void Update() {
+                auto &transform = Scene::m_Registry.get<Transform>(entity);
+                lightPos = transform.position;
 
                 light->lightPos = lightPos;
                 light->color = color;
@@ -1486,10 +1452,6 @@ namespace HyperAPI {
             SpotLight *light = new SpotLight(Scene::SpotLights, lightPos, color);
 
             void GUI() {
-                auto &transform = Scene::m_Registry.get<Transform>(entity);
-                lightPos = transform.position;
-                angle = transform.rotation;
-
                 if(ImGui::TreeNode("Spot Light")) {
                     ImGui::ColorEdit3("Color", &color.x, 0.01f);
                     ImGui::NewLine();
@@ -1501,6 +1463,12 @@ namespace HyperAPI {
                     }
                     ImGui::TreePop();
                 }
+            }
+
+            void Update() {
+                auto &transform = Scene::m_Registry.get<Transform>(entity);
+                lightPos = transform.position;
+                angle = transform.rotation;
 
                 light->lightPos = lightPos;
                 light->color = color;
@@ -1535,6 +1503,14 @@ namespace HyperAPI {
                 light->lightPos = lightPos;
                 light->color = color;
             }
+
+            void Update() {
+                auto &transform = Scene::m_Registry.get<Transform>(entity);
+                lightPos = transform.position;
+
+                light->lightPos = lightPos;
+                light->color = color;
+            }
         };
 
         class GameObject : public ComponentEntity {
@@ -1565,6 +1541,12 @@ namespace HyperAPI {
                     Scene::name[499] = '\0';
                 }
 
+                if(ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Delete)) && Scene::m_Object == this) {
+                    Scene::m_Object = nullptr;
+                    Scene::m_Registry.destroy(entity);
+                    Scene::m_GameObjects.erase(std::remove(Scene::m_GameObjects.begin(), Scene::m_GameObjects.end(), this), Scene::m_GameObjects.end());
+                }
+
                 if(item) {
 
                     for(auto &gameObject : Scene::m_GameObjects) {
@@ -1579,13 +1561,62 @@ namespace HyperAPI {
             }
         };
     
+        struct CameraComponent : public BaseComponent {
+            Camera *camera = nullptr;
+            GameObject *m_GameObject = nullptr;
+
+            CameraComponent(entt::entity m_Entity) {
+                camera = new Camera(false, 1280, 720, glm::vec3(0,0,0), m_Entity);
+                Scene::cameras.push_back(camera);
+                
+                for(auto &gameObject : Scene::m_GameObjects) {
+                    if(gameObject->ID == ID) {
+                        m_GameObject = gameObject;
+                        break;
+                    }
+                }
+            }
+
+            void GUI() {
+                if(ImGui::TreeNode("Camera")) {
+                    if(camera != nullptr) {
+                        ImGui::DragFloat("FOV", &camera->fov, 0.01f);
+                        ImGui::DragFloat("Near", &camera->near, 0.01f);
+                        ImGui::DragFloat("Far", &camera->far, 0.01f);
+
+                        ImGui::Checkbox("Main Camera", &camera->mainCamera);
+                        ImGui::Checkbox("2D Mode", &camera->mode2D);
+
+                        if(Scene::mainCamera == camera) {
+                            if(ImGui::Button(ICON_FA_CAMERA " Unselect as Scene Camera")) {
+                                Scene::mainCamera = nullptr;
+                            }
+                        } else {
+                            if(ImGui::Button(ICON_FA_CAMERA " Select as Scene Camera")) {
+                                Scene::mainCamera = camera;
+                            }
+                        }
+                    }
+
+                    ImGui::NewLine();
+
+                    ImVec2 winSize = ImGui::GetWindowSize();
+                    if(false && ImGui::Button(ICON_FA_TRASH " Delete", ImVec2(winSize.x, 0))) {
+                        delete camera;
+                        camera = nullptr;
+                        Scene::m_Registry.remove<CameraComponent>(entity);    
+                    }
+                    ImGui::TreePop();
+                }
+            }
+        };
+
         struct m_LuaScriptComponent : public BaseComponent {
             GameObject *m_GameObject;
             std::vector<ScriptEngine::m_LuaScript> scripts;
 
             m_LuaScriptComponent() {
                 for(auto &gameObject : Scene::m_GameObjects) {
-
                     if(gameObject->ID == ID) {
                         m_GameObject = gameObject;
                         std::cout << "FOUND" << std::endl;
@@ -1725,6 +1756,9 @@ namespace Hyper {
         bool renderOnScreen = false;
         int width;
         int height;
+
+        std::string vendor, srenderer, version;
+
         const std::string title;
         std::function<void()> m_update;
 
@@ -1733,6 +1767,11 @@ namespace Hyper {
         Application(const int width, const int height, const char *gameTitle, bool wireframe = false) 
         : width(width), height(height), title(std::string(gameTitle))  {
             renderer = new HyperAPI::Renderer(width, height, title.c_str(), {0, -1}, 8, wireframe);
+
+            //get vendor 
+            vendor = (char*)glGetString(GL_VENDOR);
+            srenderer = (char*)glGetString(GL_RENDERER);
+            version = (char*)glGetString(GL_VERSION);
 
             ImGui::CreateContext();
             ImGui_ImplGlfw_InitForOpenGL(renderer->window, true);

@@ -1,6 +1,12 @@
 #pragma once
 #include "vendor/glad/include/glad/glad.h"
 #include "vendor/GLFW/glfw3.h"
+#include "vendor/glm/glm.hpp"
+#include "vendor/glm/gtc/matrix_transform.hpp"
+#include "vendor/glm/gtc/type_ptr.hpp"
+#include "vendor/glm/ext.hpp"
+#include "vendor/glm/gtx/rotate_vector.hpp"
+#include "vendor/glm/gtx/vector_angle.hpp"
 
 /* The unknown key */
 #define KEY_UNKNOWN            -1
@@ -134,10 +140,16 @@
 namespace HyperAPI {
     namespace Input {
         extern GLFWwindow *window;
+        extern glm::vec3 winPos;
+        extern glm::vec3 winSize;
 
         bool IsKeyPressed(int key);
         bool IsKeyReleased(int key);
         bool IsMouseButtonPressed(int button);
         bool IsMouseButtonReleased(int button);
+        float GetMouseX();
+        float GetMouseY();
+        int GetMouseAxisX();
+        int GetMouseAxisY();
     }
 }

@@ -48,6 +48,8 @@ namespace HyperAPI {
             DRAG_MODEL,
             DRAG_SCENE
         };
+        void LoadScene(const std::string &scenePath);
+        void SaveScene(const std::string &path);
 
         void DropTargetMat(DragType type, Mesh *currEntity);
 
