@@ -243,6 +243,21 @@ namespace HyperAPI {
                             component["color"]["b"]
                         );
                     }
+
+                    if(type == "CameraComponent") {
+                        gameObject->AddComponent<Experimental::CameraComponent>();
+                        auto &camera = gameObject->GetComponent<Experimental::CameraComponent>();
+
+                        camera.camera->fov = component["fov"];
+                        camera.camera->near = component["near"];
+                        camera.camera->far = component["far"];
+                        camera.camera->mainCamera = component["mainCamera"];
+                        camera.camera->mode2D = component["mode2D"];
+
+                        if(camera.camera->mainCamera) {
+                            mainCamera = camera.camera;
+                        }                        
+                    }
                 }
 
                 if(parentID != "NO_PARENT") {
@@ -380,6 +395,20 @@ namespace HyperAPI {
                     JSON[i]["components"][componentOffset]["color"]["r"] = light.color.x;
                     JSON[i]["components"][componentOffset]["color"]["g"] = light.color.y;
                     JSON[i]["components"][componentOffset]["color"]["b"] = light.color.z;
+
+                    componentOffset++;
+                }
+
+                if(gameObject->HasComponent<Experimental::CameraComponent>()) {
+                    std::cout << "Camera" << std::endl;
+                    auto &camera = gameObject->GetComponent<Experimental::CameraComponent>();
+
+                    JSON[i]["components"][componentOffset]["type"] = "CameraComponent";
+                    JSON[i]["components"][componentOffset]["mainCamera"] = camera.camera->mainCamera;
+                    JSON[i]["components"][componentOffset]["mode2D"] = camera.camera->mode2D;
+                    JSON[i]["components"][componentOffset]["fov"] = camera.camera->fov;
+                    JSON[i]["components"][componentOffset]["near"] = camera.camera->near;
+                    JSON[i]["components"][componentOffset]["far"] = camera.camera->far;
 
                     componentOffset++;
                 }

@@ -41,60 +41,6 @@ AddComponentList AddComponentConfig;
 
 std::string originalName = "";
 bool LoadState = false;
-bool CheckName(std::string &name, int &repName, bool recursive = false) {
-    if(!recursive)
-        originalName = name;
-
-    for(auto e : Scene::entities) {
-        if(e->name == name) {
-            repName++;
-            name = originalName + std::string(" (" + std::to_string(repName) + ")");
-            CheckName(name, repName, true);
-        }
-    }
-
-    for(auto &model : Scene::models) {
-        for(auto mesh : model.meshes) {
-            if(mesh->name == name) {
-                repName++;
-                name = originalName + std::string(" (" + std::to_string(repName) + ")");
-                CheckName(name, repName, true);
-            }
-        }
-    }
-
-    for(auto &e : DirLights) {
-       if(e->name == name) {
-            repName++;
-            name = originalName + std::string(" (" + std::to_string(repName) + ")");
-            CheckName(name, repName, true);
-        }
-    }
-
-    for(auto &e : SpotLights) {
-       if(e->name == name) {
-            repName++;
-            name = originalName + std::string(" (" + std::to_string(repName) + ")");
-            CheckName(name, repName, true);
-        }
-    }
-
-    for(auto &e : PointLights) {
-       if(e->name == name) {
-            repName++;
-            name = originalName + std::string(" (" + std::to_string(repName) + ")");
-            CheckName(name, repName, true);
-        }
-    }
-
-    for(auto &e : Scene::cameras) {
-       if(e->name == name) {
-            repName++;
-            name = originalName + std::string(" (" + std::to_string(repName) + ")");
-            CheckName(name, repName, true);
-        }
-    }
-}
 
 void DirIter(std::string path) {
     for (const auto & entry : fs::directory_iterator(path)) {

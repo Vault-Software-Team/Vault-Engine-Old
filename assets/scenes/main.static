@@ -1,1 +1,36 @@
-[{"ID":"3b692995-e8c9-409c-b5e3-990680eba0a4","components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":10.0,"y":10.0,"z":10.0},"type":"Transform"},{"material":"assets/materials/planks.material","mesh":{"custom":false,"mesh":"Plane"},"type":"MeshRenderer"}],"name":"Floor","parentID":"NO_PARENT"},{"ID":"c0c12284-df2d-42de-90f9-4a85644b0326","components":[{"position":{"x":-1.5,"y":0.05000000074505806,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"color":{"b":0.0,"g":0.0,"r":1.0},"intensity":2.7200000286102295,"type":"PointLight"}],"name":"Red Light","parentID":"NO_PARENT"},{"ID":"342e1443-9530-4d35-878c-cc09983e02ff","components":[{"position":{"x":0.0,"y":0.05000000074505806,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"color":{"b":0.0,"g":1.0,"r":0.18548381328582764},"intensity":2.7200000286102295,"type":"PointLight"}],"name":"Green Light","parentID":"NO_PARENT"},{"ID":"b67a274a-b9bb-4ebf-9e7a-9938937be0e7","components":[{"position":{"x":1.5,"y":0.05000000074505806,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"color":{"b":1.0,"g":0.0,"r":0.0},"intensity":5.179999828338623,"type":"PointLight"}],"name":"Blue Light","parentID":"NO_PARENT"}]
+[
+	{
+		"ID": "b67a274a-b9bb-4ebf-9e7a-9938937be0e7",
+		"components": [
+			{
+				"position": {
+					"x": 0.5,
+					"y": 0.5,
+					"z": 0.5
+				},
+				"rotation": {
+					"x": 0,
+					"y": 0,
+					"z": 0
+				},
+				"scale": {
+					"x": 1,
+					"y": 1,
+					"z": 1
+				},
+				"type": "Transform"
+			},
+			{
+				"color": {
+					"b": 1,
+					"g": 1,
+					"r": 1
+				},
+				"intensity": 5.179999828338623,
+				"type": "DirectionalLight"
+			}
+		],
+		"name": "Directional Light",
+		"parentID": "NO_PARENT"
+	}
+]
