@@ -55,9 +55,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #   pragma GCC system_header
 #endif
 
-#include <assimp/vector3.h>
-#include <assimp/mesh.h>
-#include <assimp/ai_assert.h>
+#include "vector3.h"
+#include "mesh.h"
+#include "ai_assert.h"
 
 #include <functional>
 

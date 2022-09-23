@@ -42,6 +42,12 @@ AddComponentList AddComponentConfig;
 std::string originalName = "";
 bool LoadState = false;
 
+bool ends_with(std::string const & value, std::string const & ending)
+{
+    if (ending.size() > value.size()) return false;
+    return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
+
 void DirIter(std::string path) {
     for (const auto & entry : fs::directory_iterator(path)) {
         if(fs::is_directory(entry)) {
@@ -91,6 +97,23 @@ void ApplyMaterial(nlohmann::json JSON, Material &material, int i) {
         material.normal = new Texture((char*)normalPath.c_str(), 2, "texture_normal");
     }
 }
+
+namespace InspecType {
+    enum Type {
+        None,
+        Material
+    };
+}
+
+struct InspectorMaterial {
+    std::string diffuse = "None";
+    std::string specular = "None";
+    std::string normal = "None";
+    float metallic = 0;
+    float roughness = 0;
+    Vector4 baseColor = Vector4(1, 1, 1, 1);
+    Vector2 texUVs = Vector2(0, 0);
+};
 
 int main() {
     ScriptEngine::Init();
@@ -159,11 +182,17 @@ int main() {
 
     bool openConfig = false;
     bool openDetails = false;
+    bool openInspector = false;
+
+    int inspectorType = InspecType::None;
 
     ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeFile, "", ImVec4(1,1,1, 1.0f), ICON_FA_FILE);
     ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir, "", ImVec4(1,1,1, 1.0f), ICON_FA_FOLDER);
 
+    InspectorMaterial m_InspectorMaterial;
+
     Scene::LoadScene(config.mainScene);
+    Scene::mainCamera = camera;
     std::function<void(unsigned int &PPT, unsigned int &PPFBO)> GUI_EXP = 
     [&](unsigned int &PPT, unsigned int &PPFBO) {
         if(ImGui::BeginMainMenuBar()) {
@@ -175,9 +204,20 @@ int main() {
                 if(ImGui::MenuItem("Config")) {
                     openConfig = true;
                 }
+
+                if(ImGui::MenuItem("Build")) {
+                    ImGuiFileDialog::Instance()->OpenDialog("BuildDialog", "Build", nullptr, ".");
+                }
                 // if(ImGui::MenuItem("Build")) {
                     // ImGuiFileDialog::Instance()->OpenDialog("BuildDialog", "Build", nullptr, cwd + "/builds");
                 // }
+                ImGui::EndMenu();
+            }
+            if(ImGui::BeginMenu("Tools")) {
+                if(ImGui::MenuItem("Inspector")) {
+                    openInspector = true;
+                }
+
                 ImGui::EndMenu();
             }
             if(ImGui::BeginMenu("Info")) {
@@ -188,6 +228,150 @@ int main() {
                 ImGui::EndMenu();
             }
             ImGui::EndMainMenuBar();
+        }
+
+        if(openInspector) {
+            if(ImGui::Begin(ICON_FA_MAGNIFYING_GLASS " Inspector")) {
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("file"))
+                    {
+                        // const char* path = (const char*)payload->Data;
+                        dirPayloadData.erase(0, cwd.length() + 1);
+
+                        if(
+                            ends_with(dirPayloadData, ".material")
+                        ) {
+                            inspectorType = InspecType::Material;
+                            std::ifstream file(dirPayloadData);
+                            nlohmann::json JSON = nlohmann::json::parse(file);
+
+                            m_InspectorMaterial.diffuse = JSON["diffuse"] == "nullptr" ? "None" : JSON["diffuse"];
+                            m_InspectorMaterial.specular = JSON["specular"] == "nullptr" ? "None" : JSON["specular"];
+                            m_InspectorMaterial.normal = JSON["normal"] == "nullptr" ? "None" : JSON["normal"];
+                            m_InspectorMaterial.roughness = JSON["roughness"];
+                            m_InspectorMaterial.metallic = JSON["metallic"];
+
+                            file.close();
+                        }
+                    }
+
+                    ImGui::EndDragDropTarget();
+                }
+
+                switch (inspectorType)
+                {
+                    case InspecType::Material: {
+                        if(ImGui::TreeNode("Diffuse")) {
+                            if(ImGui::BeginDragDropTarget()) {
+                                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("file"))
+                                {
+                                    dirPayloadData.erase(0, cwd.length() + 1);
+                                    m_InspectorMaterial.diffuse = dirPayloadData;
+                                }
+
+                                ImGui::EndDragDropTarget();
+                            }
+
+                            ImGui::Text(m_InspectorMaterial.diffuse.c_str());
+
+                            ImGui::TreePop();
+                        }
+
+                        if(ImGui::TreeNode("Specular")) {
+                            if(ImGui::BeginDragDropTarget()) {
+                                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("file"))
+                                {
+                                    dirPayloadData.erase(0, cwd.length() + 1);
+                                    m_InspectorMaterial.specular = dirPayloadData;
+                                }
+
+                                ImGui::EndDragDropTarget();
+                            }
+
+                            ImGui::Text(m_InspectorMaterial.specular.c_str());
+
+                            ImGui::TreePop();
+                        }
+
+                        if(ImGui::TreeNode("Normal")) {
+                            if(ImGui::BeginDragDropTarget()) {
+                                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("file"))
+                                {
+                                    dirPayloadData.erase(0, cwd.length() + 1);
+                                    m_InspectorMaterial.normal = dirPayloadData;
+                                }
+
+                                ImGui::EndDragDropTarget();
+                            }
+
+                            ImGui::Text(m_InspectorMaterial.normal.c_str());
+
+                            ImGui::TreePop();
+                        }
+
+                        ImGui::DragFloat2("UV Scale", &m_InspectorMaterial.texUVs.x, 0.01f);
+                        ImGui::DragFloat("Roughness", &m_InspectorMaterial.roughness, 0.01f, 0.0f, 1.0f);
+                        ImGui::DragFloat("Metallic", &m_InspectorMaterial.metallic, 0.01f, 0.0f, 1.0f);
+                        ImGui::ColorEdit3("Color", &m_InspectorMaterial.baseColor.x);
+
+                        if(ImGui::Button(ICON_FA_FLOPPY_DISK " Save Material")) {
+                            ImGuiFileDialog::Instance()->OpenDialog("SaveMaterialDialog", ICON_FA_FLOPPY_DISK " Save Material", ".material", ".");
+                        }
+                        ImGui::NewLine();
+
+
+                        if (ImGuiFileDialog::Instance()->Display("SaveMaterialDialog")) 
+                        {
+                            // action if OK
+                            if (ImGuiFileDialog::Instance()->IsOk())
+                            {
+                                std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+                                // remove cwd from filePathName
+                                filePathName.erase(0, cwd.length() + 1);
+                                std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+                                
+                                std::ofstream file(filePathName);
+                                nlohmann::json j = {
+                                    {"diffuse", m_InspectorMaterial.diffuse},
+                                    {"specular", m_InspectorMaterial.specular},
+                                    {"normal", m_InspectorMaterial.normal},
+                                    {"roughness", m_InspectorMaterial.roughness},
+                                    {"metallic", m_InspectorMaterial.metallic},
+                                    {"baseColor", {
+                                            {"r", m_InspectorMaterial.baseColor.x},
+                                            {"g", m_InspectorMaterial.baseColor.y},
+                                            {"b", m_InspectorMaterial.baseColor.z},
+                                            {"a", m_InspectorMaterial.baseColor.w}
+                                        }
+                                    },
+                                    {"texUV", {
+                                            {"x", m_InspectorMaterial.texUVs.x},
+                                            {"y", m_InspectorMaterial.texUVs.y}
+                                        }
+                                    }
+                                };
+
+                                file << j.dump(4);
+                            }
+
+                            ImGuiFileDialog::Instance()->Close();
+                        }
+
+                        break;
+                    }
+                }
+
+                if(inspectorType == InspecType::None) {
+                    ImGui::Text("To inspect an object, drag it into the inspector window's title bar.");
+                }
+                if(ImGui::Button("Close")) {
+                    inspectorType = InspecType::None;
+                    openInspector = false;
+                }
+
+                ImGui::End();
+            }
         }
 
         if (ImGuiFileDialog::Instance()->Display("SaveSceneDialog")) 
@@ -293,29 +477,56 @@ int main() {
                         camera->mode2D = true;
                     }
                 }
-                // ImGui::SameLine();
-                // center the button
-                // center it
-                // if(!HyperAPI::isRunning) {
-                //     ImGui::SetCursorPosX((ImGui::GetWindowSize().x / 2) - 25 / 2);
-                //     if(ImGui::Button(ICON_FA_PLAY, ImVec2(25, 0))) {
-                //         HyperAPI::isRunning = true;
-                //         HyperAPI::isStopped = false;
-                //         for(auto &camera : Scene::cameras) {
-                //             if(camera->mainCamera) {
-                //                 Scene::mainCamera = camera;
-                //                 break;
-                //             }
-                //         }
-                //     }
-                // } else {
-                //     // move it more left
-                //     ImGui::SetCursorPosX((ImGui::GetWindowSize().x / 2) - 25 / 2 - (25/ 2));
-                //     if(ImGui::Button(ICON_FA_PAUSE, ImVec2(25, 0))) {
-                //         HyperAPI::isRunning = false;
-                //         Scene::mainCamera = camera;
-                //     }
-                // }
+                ImGui::SameLine();
+                if(!HyperAPI::isRunning) {
+                    if(HyperAPI::isStopped) {
+                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x / 2) - 25 / 2);
+                    } else {
+                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x / 2) - 25 / 2 - (25/ 2));
+                    }
+                        
+                    if(ImGui::Button(ICON_FA_PLAY, ImVec2(25, 0))) {
+                        if(HyperAPI::isStopped) {
+                            for(auto &gameObject : Scene::m_GameObjects) {
+                                if(gameObject->HasComponent<Experimental::m_LuaScriptComponent>()) {
+                                    gameObject->GetComponent<Experimental::m_LuaScriptComponent>().Start();
+                                }
+                            }
+                        }
+                        
+                        HyperAPI::isRunning = true;
+                        HyperAPI::isStopped = false;
+
+                        for(auto &camera : Scene::cameras) {
+                            if(camera->mainCamera) {
+                                Scene::mainCamera = camera;
+                                break;
+                            }
+                        }
+                    }
+
+                    if(!HyperAPI::isStopped) {
+                        // ImGui::SameLine();
+                        // if(ImGui::Button(ICON_FA_STOP, ImVec2(25, 0))) {
+                        //     HyperAPI::isRunning = false;
+                        //     HyperAPI::isStopped = true;
+                        //     Scene::mainCamera = camera;
+                        // }
+                    }
+                } else {
+                    // move it more left
+                    ImGui::SetCursorPosX((ImGui::GetWindowSize().x / 2) - 25 / 2 - (25/ 2));
+                    if(ImGui::Button(ICON_FA_PAUSE, ImVec2(25, 0))) {
+                        HyperAPI::isRunning = false;
+                        Scene::mainCamera = camera;
+                    }
+                    // ImGui::SameLine();
+                    // if(ImGui::Button(ICON_FA_STOP, ImVec2(25, 0))) {
+                    //     HyperAPI::isRunning = false;
+                    //     HyperAPI::isStopped = true;
+                    //     Scene::mainCamera = camera;
+                    // }
+                }
 
                 app.width = w_s.x;
                 app.height = w_s.y;
@@ -365,7 +576,8 @@ int main() {
         if(ImGui::Begin(ICON_FA_SHARE_NODES " Components")) {
             if(Scene::m_Object != nullptr) {
                 ImGui::InputText("Name", Scene::name, 500);
-                Scene::m_Object->name = Scene::name;
+                ImGui::InputText("Tag", Scene::tag, 500);
+                Scene::m_Object->tag = Scene::tag;
 
                 if(Scene::m_Object->HasComponent<Experimental::Transform>()) {
                     Scene::m_Object->GetComponent<Experimental::Transform>().GUI();
@@ -421,7 +633,7 @@ int main() {
 
                 if(ImGui::Button("Camera", ImVec2(200, 0))) {
                     // CameraComponent has one argument of type entt::entity
-                    Scene::m_Object->AddComponent<Experimental::CameraComponent>(Scene::m_Object->entity);
+                    Scene::m_Object->AddComponent<Experimental::CameraComponent>();
                     ImGui::CloseCurrentPopup();
                 }
 
@@ -451,8 +663,11 @@ int main() {
             ImGui::End();
         }
 
-
+        
+        //scroll to the bottom
         if(ImGui::Begin(ICON_FA_TERMINAL " Console")) {
+            if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+                ImGui::SetScrollHereY(1.0f);
             if(ImGui::Button(ICON_FA_TRASH " Clear")) {
                 Scene::logs.clear();
             }
@@ -464,6 +679,33 @@ int main() {
             }
 
             ImGui::End();
+        }
+
+        if (ImGuiFileDialog::Instance()->Display("BuildDialog")) 
+        {
+            // action if OK
+            if (ImGuiFileDialog::Instance()->IsOk())
+            {
+                std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+                std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+
+                std::string toCd = "cd \"" + filePathName + "\" && ";
+
+                system((toCd + "rm -r *").c_str());
+                if(system("cd sandbox && make") == 0) {
+                    system((std::string("cp ./sandbox/LaunchGame.sh ") + "\"" + filePathName + "/" + config.name + "\"").c_str());
+                    system(("chmod +x \"" + filePathName + "/" + config.name + "\"").c_str());
+                    system((std::string("cp -r assets ") + "\"" + filePathName + "/assets\"").c_str());
+                    system((std::string("cp -r build ") + "\"" + filePathName + "/build\"").c_str());
+                    system((std::string("cp -r shaders ") + "\"" + filePathName + "/shaders\"").c_str());
+                    system((std::string("cp -r lib ") + "\"" + filePathName + "/lib\"").c_str());                
+                    system((std::string("cp ./g_build.out ") + "\"" + filePathName + "/lib/build.out\"").c_str());
+                }
+            }
+
+            
+            // close
+            ImGuiFileDialog::Instance()->Close();
         }
     };
 
@@ -528,9 +770,9 @@ int main() {
         winSize = Vector2(app.width, app.height);
 
         for(auto &camera : Scene::cameras) {
-            camera->updateMatrix(camera->fov, camera->near, camera->far, winSize);
+            camera->updateMatrix(camera->cam_fov, camera->cam_near, camera->cam_far, winSize);
         }
-        camera->updateMatrix(camera->fov, camera->near, camera->far, winSize);
+        camera->updateMatrix(camera->cam_fov, camera->cam_near, camera->cam_far, winSize);
         skybox.Draw(*Scene::mainCamera, winSize.x, winSize.y);
 
         // floor.Draw(shader, *camera);
@@ -564,7 +806,9 @@ int main() {
 
             if(gameObject->HasComponent<Experimental::m_LuaScriptComponent>()) {
                 auto &script = gameObject->GetComponent<Experimental::m_LuaScriptComponent>();
-                script.Update();
+                if(HyperAPI::isRunning) {
+                    script.Update();
+                }
             }
             
             if(gameObject->HasComponent<Experimental::MeshRenderer>()) {

@@ -51,8 +51,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma GCC system_header
 #endif
 
-#include <assimp/ai_assert.h>
-#include <assimp/types.h>
+#include "ai_assert.h"
+#include "types.h"
 
 #include <cstddef>
 #include <cstdint>

@@ -52,8 +52,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include <stdexcept>
-#include <assimp/StreamReader.h>
-#include <assimp/ParsingUtils.h>
+#include "StreamReader.h"
+#include "ParsingUtils.h"
 
 namespace Assimp {
 

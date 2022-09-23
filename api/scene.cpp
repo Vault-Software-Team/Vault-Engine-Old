@@ -106,7 +106,10 @@ namespace HyperAPI {
                 std::string name = JSON[i]["name"];
                 std::string ID = JSON[i]["ID"];
                 std::string parentID = JSON[i]["parentID"];
+                std::string tag = JSON[i]["tag"];
+                
                 gameObject->name = name;
+                gameObject->tag = tag;
                 gameObject->ID = ID;
                 gameObject->parentID = parentID;
                 nlohmann::json components = JSON[i]["components"];
@@ -157,49 +160,51 @@ namespace HyperAPI {
                                 meshRenderer.m_Mesh = Cylinder(Vector4(1,1,1,1)).meshes[0];
                             }
 
-                            std::ifstream file(component["material"]);
-                            nlohmann::json JSON = nlohmann::json::parse(file);
+                            if(component["material"] != "") {
+                                std::ifstream file(component["material"]);
+                                nlohmann::json JSON = nlohmann::json::parse(file);
 
-                            const std::string diffuseTexture = JSON["diffuse"];
-                            const std::string specularTexture = JSON["specular"];
-                            const std::string normalTexture = JSON["normal"];
-                                
-                            if(diffuseTexture != "nullptr") {
-                                if(meshRenderer.m_Mesh->material.diffuse != nullptr) {
-                                    delete meshRenderer.m_Mesh->material.diffuse;
+                                const std::string diffuseTexture = JSON["diffuse"];
+                                const std::string specularTexture = JSON["specular"];
+                                const std::string normalTexture = JSON["normal"];
+                                    
+                                if(diffuseTexture != "nullptr") {
+                                    if(meshRenderer.m_Mesh->material.diffuse != nullptr) {
+                                        delete meshRenderer.m_Mesh->material.diffuse;
+                                    }
+
+                                    meshRenderer.m_Mesh->material.diffuse = new Texture(diffuseTexture.c_str(), 0, "texture_diffuse");
                                 }
 
-                                meshRenderer.m_Mesh->material.diffuse = new Texture(diffuseTexture.c_str(), 0, "texture_diffuse");
-                            }
+                                if(specularTexture != "nullptr") {
+                                    if(meshRenderer.m_Mesh->material.specular != nullptr) {
+                                        delete meshRenderer.m_Mesh->material.specular;
+                                    }
 
-                            if(specularTexture != "nullptr") {
-                                if(meshRenderer.m_Mesh->material.specular != nullptr) {
-                                    delete meshRenderer.m_Mesh->material.specular;
+                                    meshRenderer.m_Mesh->material.specular = new Texture(specularTexture.c_str(), 1, "texture_specular");
                                 }
 
-                                meshRenderer.m_Mesh->material.specular = new Texture(specularTexture.c_str(), 1, "texture_specular");
-                            }
+                                if(normalTexture != "nullptr") {
+                                    if(meshRenderer.m_Mesh->material.normal != nullptr) {
+                                        delete meshRenderer.m_Mesh->material.normal;
+                                    }
 
-                            if(normalTexture != "nullptr") {
-                                if(meshRenderer.m_Mesh->material.normal != nullptr) {
-                                    delete meshRenderer.m_Mesh->material.normal;
+                                    meshRenderer.m_Mesh->material.normal = new Texture(normalTexture.c_str(), 2, "texture_normal");
                                 }
 
-                                meshRenderer.m_Mesh->material.normal = new Texture(normalTexture.c_str(), 2, "texture_normal");
+                                meshRenderer.m_Mesh->material.baseColor = Vector4(
+                                    JSON["baseColor"]["r"],
+                                    JSON["baseColor"]["g"],
+                                    JSON["baseColor"]["b"],
+                                    JSON["baseColor"]["a"]
+                                );
+
+                                meshRenderer.m_Mesh->material.roughness = JSON["roughness"];
+                                meshRenderer.m_Mesh->material.metallic = JSON["metallic"];
+                                meshRenderer.m_Mesh->material.texUVs = Vector2(JSON["texUV"]["x"], JSON["texUV"]["y"]);
+
+                                meshRenderer.matPath = component["material"]; 
                             }
-
-                            meshRenderer.m_Mesh->material.baseColor = Vector4(
-                                JSON["baseColor"]["r"],
-                                JSON["baseColor"]["g"],
-                                JSON["baseColor"]["b"],
-                                JSON["baseColor"]["a"]
-                            );
-
-                            meshRenderer.m_Mesh->material.roughness = JSON["roughness"];
-                            meshRenderer.m_Mesh->material.metallic = JSON["metallic"];
-                            meshRenderer.m_Mesh->material.texUVs = Vector2(JSON["texUV"]["x"], JSON["texUV"]["y"]);
-
-                            meshRenderer.matPath = component["material"]; 
                         }
                         else {
                             meshType = meshConfig["mesh"];
@@ -246,17 +251,31 @@ namespace HyperAPI {
 
                     if(type == "CameraComponent") {
                         gameObject->AddComponent<Experimental::CameraComponent>();
+                        auto &transformg = gameObject->GetComponent<Experimental::Transform>();
+                        transformg.rotation = transform.rotation;
                         auto &camera = gameObject->GetComponent<Experimental::CameraComponent>();
 
-                        camera.camera->fov = component["fov"];
-                        camera.camera->near = component["near"];
-                        camera.camera->far = component["far"];
+                        camera.camera->cam_fov = component["fov"];
+                        camera.camera->cam_near = component["near"];
+                        camera.camera->cam_far = component["far"];
                         camera.camera->mainCamera = component["mainCamera"];
                         camera.camera->mode2D = component["mode2D"];
 
                         if(camera.camera->mainCamera) {
                             mainCamera = camera.camera;
                         }                        
+                    }
+
+                    if(type == "LuaScriptComponent") {
+                        gameObject->AddComponent<Experimental::m_LuaScriptComponent>();
+                        auto &m_script = gameObject->GetComponent<Experimental::m_LuaScriptComponent>();
+                        for(auto &scriptPath : component["scripts"]) {
+                            ScriptEngine::m_LuaScript script(scriptPath);
+                            script.m_GameObject = gameObject;
+                            script.ID = ID;
+                            // script.Init();
+                            m_script.scripts.push_back(script);
+                        }
                     }
                 }
 
@@ -328,9 +347,11 @@ namespace HyperAPI {
                 std::string name = gameObject->name; 
                 std::string ID = gameObject->ID; 
                 std::string parentID = gameObject->parentID; 
+                std::string tag = gameObject->tag;
 
                 JSON[i]["name"] = name;
                 JSON[i]["ID"] = ID;
+                JSON[i]["tag"] = tag;
                 JSON[i]["parentID"] = parentID;
                 JSON[i]["components"] = nlohmann::json::array();
 
@@ -406,9 +427,20 @@ namespace HyperAPI {
                     JSON[i]["components"][componentOffset]["type"] = "CameraComponent";
                     JSON[i]["components"][componentOffset]["mainCamera"] = camera.camera->mainCamera;
                     JSON[i]["components"][componentOffset]["mode2D"] = camera.camera->mode2D;
-                    JSON[i]["components"][componentOffset]["fov"] = camera.camera->fov;
-                    JSON[i]["components"][componentOffset]["near"] = camera.camera->near;
-                    JSON[i]["components"][componentOffset]["far"] = camera.camera->far;
+                    JSON[i]["components"][componentOffset]["fov"] = camera.camera->cam_fov;
+                    JSON[i]["components"][componentOffset]["near"] = camera.camera->cam_near;
+                    JSON[i]["components"][componentOffset]["far"] = camera.camera->cam_far;
+
+                    componentOffset++;
+                }
+
+                if(gameObject->HasComponent<Experimental::m_LuaScriptComponent>()) {
+                    auto &script = gameObject->GetComponent<Experimental::m_LuaScriptComponent>();
+
+                    JSON[i]["components"][componentOffset]["type"] = "LuaScriptComponent";
+                    for(int scr = 0; scr < script.scripts.size(); scr++) {
+                        JSON[i]["components"][componentOffset]["scripts"][scr] = script.scripts[scr].pathToScript;
+                    }
 
                     componentOffset++;
                 }
@@ -487,6 +519,7 @@ namespace HyperAPI {
 
         Experimental::GameObject *m_Object = nullptr;
         char name[499];
+        char tag[499];
 
         std::vector<Mesh*> entities = {};
         std::vector<Model> models = {};
@@ -495,9 +528,7 @@ namespace HyperAPI {
         std::vector<Log> logs = {};
         glm::mat4 projection = glm::mat4(1.0f);
 
-        std::vector<Mesh*> backup_entities = {};
-        std::vector<Model> backup_models = {};
-        std::vector<Camera*> backup_cameras = {};
+        std::vector<entt::entity> backup_entities = {};
 
         std::vector<HyperAPI::PointLight*> PointLights = {};
         std::vector<HyperAPI::Light2D*> Lights2D = {};

@@ -57,7 +57,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif // __cplusplus
 
 // Public ASSIMP data structures
-#include <assimp/types.h>
+#include "types.h"
 
 #include <exception>
 
@@ -592,7 +592,7 @@ public:
     // -------------------------------------------------------------------
     /** Get meta data for the importer corresponding to a specific index..
     *
-    *  For the declaration of #aiImporterDesc, include <assimp/importerdesc.h>.
+    *  For the declaration of #aiImporterDesc, include "importerdesc.h>"
     *  @param index Index to query, must be within [0,GetImporterCount())
     *  @return Importer meta data structure, nullptr if the index does not
     *     exist or if the importer doesn't offer meta information (

@@ -603,5 +603,48 @@ namespace ScriptEngine {
 
             return 1;
         }
+
+        int GetHorizontalAxis(lua_State *L) {
+            float axis = HyperAPI::Input::GetHorizontalAxis();
+            lua_pushnumber(L, axis);
+
+            return 1;
+        }
+
+        int GetVerticalAxis(lua_State *L) {
+            float axis = HyperAPI::Input::GetVerticalAxis();
+            lua_pushnumber(L, axis);
+
+            return 1;
+        }
+
+        int GetMouseXAxis(lua_State *L) {
+            float axis = HyperAPI::Input::GetMouseXAxis();
+            lua_pushnumber(L, axis);
+
+            return 1;
+        }
+
+        int GetMouseYAxis(lua_State *L) {
+            float axis = HyperAPI::Input::GetMouseYAxis();
+            lua_pushnumber(L, axis);
+
+            return 1;
+        }
+
+        int SetMouseHidden(lua_State *L) {
+            bool hidden = (bool)lua_toboolean(L, 1);
+            HyperAPI::Input::SetMouseHidden(hidden);
+
+            return 1;
+        }
+
+        int SetMousePosition(lua_State *L) {
+            float x = (float)lua_tonumber(L, 1);
+            float y = (float)lua_tonumber(L, 2);
+            HyperAPI::Input::SetMousePosition(x, y);
+
+            return 1;
+        }
     }
 }

@@ -3,6 +3,16 @@
 #include <iostream>
 #include <string>
 
+#ifdef _WIN32
+#ifdef BUILD_DLL
+#define DLL_EXPORT __declspec(dllexport)
+#else
+#define DLL_EXPORT __declspec(dllimport)
+#endif
+#else
+#define DLL_EXPORT
+#endif
+
 namespace HyperAPI {
     class ComponentSystem;
     namespace Experimental {
@@ -11,7 +21,6 @@ namespace HyperAPI {
 
     }
 }
-
 
 struct GLFWwindow;
 namespace ScriptEngine {
@@ -32,6 +41,12 @@ namespace ScriptEngine {
         int IsKeyReleased(lua_State *L);
         int IsMouseButtonPressed(lua_State *L);
         int IsMouseButtonReleased(lua_State *L);
+        int GetHorizontalAxis(lua_State *L);
+        int GetVerticalAxis(lua_State *L);
+        int GetMouseXAxis(lua_State *L);
+        int GetMouseYAxis(lua_State *L);
+        int SetMouseHidden(lua_State *L);
+        int SetMousePosition(lua_State *L);
     }
 
     class m_LuaScript {
@@ -55,5 +70,5 @@ namespace ScriptEngine {
         void Update();
     };
 
-    lua_State *Init();
+    lua_State* Init();
 }

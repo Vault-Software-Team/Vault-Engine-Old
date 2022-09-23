@@ -1,13 +1,11 @@
 #include "api.hpp"
 #include "scene.hpp"
 
-std::vector<HyperAPI::PointLight*> PointLights;
-std::vector<HyperAPI::SpotLight*> SpotLights;
-std::vector<HyperAPI::Light2D*> Lights2D;
-std::vector<HyperAPI::DirectionalLight*> DirLights;
-std::vector<HyperAPI::Mesh*> hyperEntities;
-b2World *world;
-b2Vec2 gravity = {0.0f,-10.0f};
+DLL_EXPORT std::vector<HyperAPI::PointLight*> PointLights;
+DLL_EXPORT std::vector<HyperAPI::SpotLight*> SpotLights;
+DLL_EXPORT std::vector<HyperAPI::Light2D*> Lights2D;
+DLL_EXPORT std::vector<HyperAPI::DirectionalLight*> DirLights;
+DLL_EXPORT std::vector<HyperAPI::Mesh*> hyperEntities;
 
 const int width = 1280;
 const int height = 720;
@@ -31,12 +29,12 @@ double previousTime = glfwGetTime();
 
 
 namespace uuid {
-    std::random_device              rd;
-    std::mt19937                    gen(rd());
-    std::uniform_int_distribution<> dis(0, 15);
-    std::uniform_int_distribution<> dis2(8, 11);
+    DLL_EXPORT std::random_device              rd;
+    DLL_EXPORT std::mt19937                    gen(rd());
+    DLL_EXPORT std::uniform_int_distribution<> dis(0, 15);
+    DLL_EXPORT std::uniform_int_distribution<> dis2(8, 11);
 
-    std::string generate_uuid_v4() {
+    std::string DLL_EXPORT generate_uuid_v4() {
         std::stringstream ss;
         int i;
         ss << std::hex;
@@ -78,7 +76,7 @@ std::string get_file_contents(const char *file) {
     return content;
 }
 
-void NewFrame(unsigned int FBO, int width, int height) {
+void DLL_EXPORT NewFrame(unsigned int FBO, int width, int height) {
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
     glClearColor(pow(0.3f, 2.2f), pow(0.3f, 2.2f), pow(0.3f, 2.2f), 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -88,13 +86,13 @@ void NewFrame(unsigned int FBO, int width, int height) {
     glEnable(GL_DEPTH_TEST); 
 }
 
-void EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height) {
+void DLL_EXPORT EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height) {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postProcessingFBO);
     glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    
+    glDisable(GL_BLEND);
     glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
     framebufferShader.Bind();
     framebufferShader.SetUniform1i("screenTexture", 15);
@@ -112,7 +110,7 @@ void EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer,
     }
 }
 
-void EndEndFrame(
+void DLL_EXPORT EndEndFrame(
     HyperAPI::Shader &framebufferShader, 
     HyperAPI::Renderer &renderer, 
     unsigned int FBO, 
@@ -154,7 +152,7 @@ void EndEndFrame(
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void SC_EndFrame(HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height) {
+void DLL_EXPORT SC_EndFrame(HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height) {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postProcessingFBO);
     glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
@@ -174,45 +172,9 @@ namespace HyperAPI {
     bool isRunning = false;
     bool isStopped = true;
 
-    std::vector<HyperAPI::Animation> GetAnimationsFromXML(const char *texPath, float delay, Vector2 sheetSize, const std::string &xmlFile)
+    std::vector<HyperAPI::Animation> DLL_EXPORT GetAnimationsFromXML(const char *texPath, float delay, Vector2 sheetSize, const std::string &xmlFile)
     {
-        tinyxml2::XMLDocument doc;
-        doc.LoadFile(xmlFile.c_str());
-
-        tinyxml2::XMLElement *root = doc.FirstChildElement("TextureAtlas");
-        tinyxml2::XMLElement *keyframe = root->FirstChildElement("SubTexture");
-        std::string test(keyframe->Attribute("name"));
-
         std::vector<HyperAPI::Animation> subtextures;
-        HyperAPI::Animation animation;
-        animation.keyframe = "";
-        for (tinyxml2::XMLElement *child = root->FirstChildElement(); child != NULL; child = child->NextSiblingElement())
-        {
-            std::string name(child->Attribute("name"));
-            int x = child->IntAttribute("x");
-            int y = child->IntAttribute("y");
-            int width = child->IntAttribute("width");
-            int height = child->IntAttribute("height");
-
-            std::string backupName = name;
-            std::string keyframeName = name.substr(0, name.find('0'));
-            if(animation.keyframe.rfind(keyframeName, 0) != 0) {
-                subtextures.push_back(animation);
-
-                animation.keyframe = backupName;
-                animation.frames.clear();
-                animation.delay = delay;
-            } else if(animation.keyframe.rfind(keyframeName, 0) == 0) {
-                animation.frames.push_back(HyperAPI::Spritesheet(texPath, sheetSize, Vector2(width, height), Vector2(x, y)));
-                animation.delay = delay;
-                animation.keyframe = backupName;
-                animation.currentFrame = 0;
-            }
-        }
-        if(animation.frames.size() > 0 && subtextures.size() > 0) {
-            subtextures.push_back(animation);
-        }
-
         return subtextures;
     }
 
@@ -269,12 +231,9 @@ namespace HyperAPI {
         glEnable(GL_STENCIL_TEST);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-        gravity = {
-            g_gravity.x,
-            g_gravity.y
-        };
-
-        world = new b2World(gravity);
+        //belnding
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        // glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
     }
 
     void Renderer::Render(Camera &camera) {
@@ -521,7 +480,7 @@ namespace HyperAPI {
             glBindVertexArray(0);
         }
 
-        scriptComponent.componentSystem = this;
+        // scriptComponent.componentSystem = this;
     }
 
     void Mesh::Draw(
@@ -537,11 +496,17 @@ namespace HyperAPI {
 
         previousTime = (float)glfwGetTime();
         shader.SetUniform1i("shadowMap", 2);
-        TransformComponent cameraTransform = camera.GetComponent<TransformComponent>();
-        shader.SetUniform3f("cameraPosition", cameraTransform.position.x, cameraTransform.position.y, cameraTransform.position.z);
+        if(camera.EnttComp) {
+            auto &cameraTransform = Scene::m_Registry.get<Experimental::Transform>(camera.entity);
+            shader.SetUniform3f("cameraPosition", cameraTransform.position.x, cameraTransform.position.y, cameraTransform.position.z);
+        }
+        else {
+            TransformComponent cameraTransform = camera.GetComponent<TransformComponent>();
+            shader.SetUniform3f("cameraPosition", cameraTransform.position.x, cameraTransform.position.y, cameraTransform.position.z);
+        }
         shader.SetUniform1i("cubeMap", 10);
 
-        scriptComponent.OnUpdate();
+        // scriptComponent.OnUpdate();
 
         TransformComponent component = GetComponent<TransformComponent>();
 
@@ -575,7 +540,7 @@ namespace HyperAPI {
 
         if(!camera.mode2D) {
             for(int i = 0; i < Scene::PointLights.size(); i++) {
-                Scene::PointLights[i]->scriptComponent.OnUpdate();
+                // Scene::PointLights[i]->scriptComponent.OnUpdate();
                 shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].lightPos").c_str(), Scene::PointLights[i]->lightPos.x, Scene::PointLights[i]->lightPos.y, Scene::PointLights[i]->lightPos.z);
                 shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].color").c_str(), Scene::PointLights[i]->color.x, Scene::PointLights[i]->color.y, Scene::PointLights[i]->color.z);
                 shader.SetUniform1f(("pointLights[" + std::to_string(i) + "].intensity").c_str(), Scene::PointLights[i]->intensity);
@@ -589,7 +554,7 @@ namespace HyperAPI {
             }
 
             for(int i = 0; i < Scene::SpotLights.size(); i++) {
-                Scene::SpotLights[i]->scriptComponent.OnUpdate();
+                // Scene::SpotLights[i]->scriptComponent.OnUpdate();
                 shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].lightPos").c_str(), Scene::SpotLights[i]->lightPos.x, Scene::SpotLights[i]->lightPos.y, Scene::SpotLights[i]->lightPos.z);
                 shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].color").c_str(), Scene::SpotLights[i]->color.x, Scene::SpotLights[i]->color.y, Scene::SpotLights[i]->color.z);
                 // shader.SetUniform1f(("spotLights[" + std::to_string(i) + "].outerCone").c_str(), Scene::SpotLights[i]->outerCone);
@@ -606,7 +571,7 @@ namespace HyperAPI {
             }
 
             for(int i = 0; i < Scene::DirLights.size(); i++) {
-                Scene::DirLights[i]->scriptComponent.OnUpdate();
+                // Scene::DirLights[i]->scriptComponent.OnUpdate();
                 shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].lightPos").c_str(), Scene::DirLights[i]->lightPos.x, Scene::DirLights[i]->lightPos.y, Scene::DirLights[i]->lightPos.z);
                 shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].color").c_str(), Scene::DirLights[i]->color.x, Scene::DirLights[i]->color.y, Scene::DirLights[i]->color.z);
                 shader.SetUniform1f(("dirLights[" + std::to_string(i) + "].intensity").c_str(), Scene::DirLights[i]->intensity);
@@ -745,9 +710,9 @@ namespace HyperAPI {
         }
 
         if(EnttComp) {
-            auto &transform = Scene::m_Registry.get<Experimental::Transform>(entity);
-            transform.position = position;
-            transform.rotation = glm::vec3(0.0f, 0.0f, -1.0f);
+            // auto &transform = Scene::m_Registry.get<Experimental::Transform>(entity);
+            // transform.position = position;
+            // transform.rotation = glm::vec3(0.0f, 0.0f, -1.0f);
         } else {
             TransformComponent transform;
             transform.position = position;
@@ -975,8 +940,8 @@ namespace HyperAPI {
    
     void Model::Draw(Shader &shader, Camera &camera)
     {
-        scriptComponent.componentSystem = this;
-        scriptComponent.OnUpdate();
+        // scriptComponent.componentSystem = this;
+        // scriptComponent.OnUpdate();
         for(unsigned int i = 0; i < meshes.size(); i++) {
             TransformComponent modelTransform = GetComponent<TransformComponent>();
             modelTransform.transform = glm::translate(glm::mat4(1.0f), modelTransform.position) *
@@ -1227,9 +1192,16 @@ namespace HyperAPI {
         shader->Bind();
         glm::mat4 view = glm::mat4(1.0f);
         glm::mat4 projection = glm::mat4(1.0f);
-        TransformComponent transform = camera.GetComponent<TransformComponent>();
-        view = glm::mat4(glm::mat3(glm::lookAt(transform.position, transform.position + transform.rotation, camera.Up)));
-        projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 5000.0f);
+        if(camera.EnttComp) {
+            auto &transform = Scene::m_Registry.get<Experimental::Transform>(camera.entity);
+            view = glm::mat4(glm::mat3(glm::lookAt(transform.position, transform.position + transform.rotation, camera.Up)));
+            projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 5000.0f);
+        }
+        else {
+            TransformComponent transform = camera.GetComponent<TransformComponent>();
+            view = glm::mat4(glm::mat3(glm::lookAt(transform.position, transform.position + transform.rotation, camera.Up)));
+            projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 5000.0f);
+        }
 
         shader->SetUniformMat4("view", view);
         shader->SetUniformMat4("projection", projection);
@@ -2033,8 +2005,6 @@ namespace Hyper {
 
             glfwPollEvents();
 
-            world->Step(timeStep, 6, 2);
-
             glEnable(GL_DEPTH_TEST);
             glViewport(0, 0, shadowMapWidth, shadowMapHeight);
             glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
@@ -2169,7 +2139,7 @@ namespace Hyper {
         }
     }
 
-    float LerpFloat(float a, float b, float t) {
+    float DLL_EXPORT LerpFloat(float a, float b, float t) {
         return a + t * (b - a);
     }
 }

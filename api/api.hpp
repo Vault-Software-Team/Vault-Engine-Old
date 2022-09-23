@@ -11,7 +11,7 @@
 #include "vendor/glm/gtx/rotate_vector.hpp"
 #include "vendor/glm/gtx/vector_angle.hpp"
 #include "vendor/json/json.hpp"
-// #include "vendor/imgui/imgui.h"
+#include "vendor/imgui/imgui.h"
 #include "vendor/imgui/imgui_impl_glfw.h"
 #include "vendor/imgui/imgui_impl_opengl3.h"
 #include "vendor/icons/icons.h"
@@ -19,25 +19,23 @@
 #include "vendor/ImGuiFileDialog/ImGuiFileDialog.h"
 #include <vector>
 #include <functional>
+#include <experimental/filesystem>
 #include "vendor/assimp/Importer.hpp"
 #include "vendor/assimp/scene.h"
 //import glm helpers
 #include "vendor/box2d/box2d.h"
-#include <assimp/postprocess.h>
+#include "vendor/assimp/postprocess.h"
 #include "vendor/SDL2/SDL_mixer.h"
-#include "vendor/tinyxml/tinyxml.h"
 #include <any>
 #include "scene.hpp"
 #include "ScriptEngine.hpp"
 #include "InputEvents.hpp"
 #include <random>
-#include <map>
-#include <sstream>
 
 #ifndef _WIN32
 #include <unistd.h>
-#elif
-// #include <windows.h>
+#else
+#include <windows.h>
 #endif
 
 #define Vector2 glm::vec2
@@ -50,8 +48,6 @@ using json = nlohmann::json;
 
 extern glm::mat4 projection;
 extern glm::mat4 view;
-extern b2World *world;
-extern b2Vec2 gravity;
 
 namespace uuid {
     extern std::random_device              rd;
@@ -102,83 +98,13 @@ namespace HyperAPI {
         bool IsPubliclyAddable = false;
     };
 
-    struct LuaScriptComponent : public Component {
-        HyperAPI::ComponentSystem *componentSystem;
-        
-        std::vector<ScriptEngine::LuaScript> scripts;
-
-        LuaScriptComponent() {
-
-        }
-
-        void AddScript(const std::string &path) {
-            ScriptEngine::LuaScript script(path);
-            script.bindedComp = componentSystem;
-            script.Init();
-            scripts.push_back(script);
-        }
-
-        void OnStart() {
-            for(auto &script : scripts) {
-                script.Init();
-            }
-        }
-
-        void OnUpdate() {
-            if(!isRunning) return; 
-            for(auto &script : scripts) {
-                script.Update();
-            }
-        }
-
-        void GUI() {
-            char CWD[1024];
-            getcwd(CWD, sizeof(CWD));
-            std::string cwd = std::string(CWD);
-
-            if (ImGuiFileDialog::Instance()->Display("AddScriptDialog")) 
-            {
-                // action if OK
-                if (ImGuiFileDialog::Instance()->IsOk())
-                {
-                    std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
-                    // remove cwd from filePathName
-                    filePathName.erase(0, cwd.length() + 1);
-                    std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
-                    
-                    ScriptEngine::LuaScript script(filePathName);
-                    script.bindedComp = componentSystem;
-                    script.Init();
-                    scripts.push_back(script);
-                }
-
-                
-                // close
-                ImGuiFileDialog::Instance()->Close();
-            }
-
-            if(ImGui::Button(ICON_FA_CODE " Add Script")) {
-                ImGuiFileDialog::Instance()->OpenDialog("AddScriptDialog", "Add Script", ".lua", ".");
-            }
-
-            for(int i = 0; i < scripts.size(); i++) {
-                if(ImGui::TreeNode((std::string("SCRIPTS ") + std::to_string(i)).c_str())) {
-                    if(ImGui::Button(ICON_FA_TRASH " Remove Script")) {
-                        scripts.erase(scripts.begin() + i);
-                    }
-                    ImGui::TreePop();
-                }
-            }
-        }
-    };
-
     class ComponentSystem {
     public:
         std::string ID = uuid::generate_uuid_v4();
         std::string name = "GameObject";
 
         std::string Tag;
-        HyperAPI::LuaScriptComponent scriptComponent;
+        // HyperAPI::LuaScriptComponent scriptComponent;
         std::vector<std::any> Components;
 
         ComponentSystem() {}
@@ -260,107 +186,6 @@ namespace HyperAPI {
         }
     };
 
-    struct BoxCollider2D : public Component {
-        glm::vec2 position;
-        glm::vec2 size;
-        b2PolygonShape shape;
-        BoxCollider2D(glm::vec2 position, glm::vec2 size) {
-            float offsetX = 0.497;
-            float offsetY = 0.48;
-            shape.SetAsBox(size.x * offsetX, size.y * offsetY);
-
-            this->position = position;
-            this->size = size;
-        }
-
-        void GUI() {
-            ImGui::Text("BoxCollider2D");
-        }
-    };
-
-    struct Rigidbody2D : public Component {
-        b2Body *body;
-        b2FixtureDef fixtureDef;
-        b2BodyDef bodyDef;
-        BoxCollider2D *collider;
-        float density;
-        float friction;
-        float restitution;
-        float restituionThreshold;
-        float gravityScale;
-        Rigidbody2D(BoxCollider2D *collider, bool g_static = false, float density = 10, float friction = 10, float restitution = 0, float restituionThreshold = 0, float gravityScale = 5) {
-            float offset = 0.48;
-            this->density = density;
-            this->collider = collider;
-            this->friction = friction;
-            this->restitution = restitution;
-            this->restituionThreshold = restituionThreshold;
-            this->gravityScale = gravityScale;
-
-            if(!g_static) {
-                this->bodyDef.fixedRotation = true;
-                this->bodyDef.type = b2_dynamicBody;
-                this->bodyDef.gravityScale = 5.0f;
-                this->bodyDef.position.Set(collider->position.x * offset, collider->position.y * offset);
-        
-                this->body = world->CreateBody(&bodyDef);
-                this->fixtureDef.friction = this->friction;
-                this->fixtureDef.shape = &collider->shape;
-                this->fixtureDef.density = this->density;
-                this->fixtureDef.restitution = this->restitution;
-                this->fixtureDef.restitutionThreshold = this->restituionThreshold;
-
-                this->body->CreateFixture(&fixtureDef);
-            } else {
-                this->bodyDef.position.Set(collider->position.x * offset, collider->position.y * offset);
-                this->body = world->CreateBody(&bodyDef);
-                this->body->CreateFixture(&collider->shape, 0.0f);
-            }
-        };
-
-        void SetTransform(TransformComponent &component) {
-            component.position.x = this->body->GetPosition().x;
-            component.position.y = this->body->GetPosition().y;
-            component.rotation.z = this->body->GetAngle();
-        };
-
-        void SetVelocity(Vector2 velocity) {
-            this->body->SetLinearVelocity(b2Vec2(velocity.x, velocity.y));
-        };
-
-        void AddForce(Vector2 force) {
-            this->body->ApplyForceToCenter(b2Vec2(force.x, force.y), true);
-        };
-
-        void AddTorque(float torque) {
-            this->body->ApplyTorque(torque, true);
-        };
-
-        void SetAngularVelocity(float velocity) {
-            this->body->SetAngularVelocity(velocity);
-        };
-
-        void SetGravityScale(float scale) {
-            this->body->SetGravityScale(scale);
-        };
-
-        void SetFixedRotation(bool fixed) {
-            this->body->SetFixedRotation(fixed);
-        };
-
-        void AddLinearImpulse(Vector2 impulse) {
-            this->body->ApplyLinearImpulse(b2Vec2(impulse.x, impulse.y), this->body->GetWorldCenter(), true);
-        };
-
-        Vector2 GetVelocity() {
-            return Vector2(this->body->GetLinearVelocity().x, this->body->GetLinearVelocity().y);
-        };
-
-        void GUI() {
-            ImGui::Text("Rigidbody2D");
-        }
-    };
-
     enum LOG_TYPE {
         LOG_INFO,
         LOG_WARNING,
@@ -435,9 +260,9 @@ namespace HyperAPI {
 
         glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-        float fov = 45;
-        float near = 0.1f;
-        float far = 100.0f;
+        float cam_fov = 45;
+        float cam_near = 0.1f;
+        float cam_far = 100.0f;
 
         float rotX, rotY;
 
@@ -506,7 +331,7 @@ namespace HyperAPI {
             AddComponent(transform);
 
             lights.push_back(this);
-            scriptComponent.componentSystem = this;
+            // scriptComponent.componentSystem = this;
         }
     };
 
@@ -529,7 +354,7 @@ namespace HyperAPI {
             AddComponent(transform);
 
             lights.push_back(this);
-            scriptComponent.componentSystem = this;
+            // scriptComponent.componentSystem = this;
         }
     };
 
@@ -547,7 +372,7 @@ namespace HyperAPI {
             AddComponent(transform);
 
             lights.push_back(this);
-            scriptComponent.componentSystem = this;
+            // scriptComponent.componentSystem = this;
         }
     };
 
@@ -564,7 +389,7 @@ namespace HyperAPI {
             AddComponent(transform);
 
             lights.push_back(this);
-            scriptComponent.componentSystem = this;
+            // scriptComponent.componentSystem = this;
         }
     };
 
@@ -734,7 +559,7 @@ namespace HyperAPI {
             TransformComponent transform;
             AddComponent(transform);
             loadModel(path);
-            scriptComponent.componentSystem = this;
+            // scriptComponent.componentSystem = this;
         }
 
         void Draw(Shader &shader, Camera &camera);
@@ -1089,6 +914,7 @@ namespace HyperAPI {
                     auto &comp = GetComponent<T>();
                     comp.entity = entity;
                     comp.ID = ID;
+                    comp.Init();
                 }
             }
 
@@ -1111,6 +937,8 @@ namespace HyperAPI {
         struct BaseComponent {
             entt::entity entity;
             std::string ID;
+
+            virtual void Init() {}
         };
 
         struct Transform : public BaseComponent {
@@ -1125,7 +953,12 @@ namespace HyperAPI {
                     ImGui::DragFloat3("Position", &position.x, 0.1f);
                     ImGui::DragFloat3("Rotation", &rotation.x, 0.1f);
                     ImGui::DragFloat3("Scale", &scale.x, 0.1f);
-                
+                    
+                    ImGui::NewLine();
+                    if(ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::m_Registry.remove<Transform>(entity);
+                    }
+                    
                     ImGui::TreePop();
                 }
             }
@@ -1307,98 +1140,26 @@ namespace HyperAPI {
                         ImGuiFileDialog::Instance()->Close();
                     }
 
-                    // if(m_Mesh != nullptr) {
-                    //     if(ImGui::TreeNode("Diffuse")) {
-                    //         if(m_Mesh->material.diffuse != nullptr) {
-                    //             ImGui::ImageButton((void*)m_Mesh->material.diffuse->ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
-                    //             if(ImGui::IsItemClicked(0)) {
-                    //                 ImGuiFileDialog::Instance()->OpenDialog("ChooseDiffuseTexture", "Choose Diffuse Texture", ".png,.jpg,.jpeg", ".");
-                    //             }
-                    //             Scene::DropTargetMat(Scene::DRAG_DIFFUSE, m_Mesh);
+                    ImGui::NewLine();
+                    if(ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        if(m_Mesh != nullptr) {
+                            if(m_Mesh->material.diffuse != nullptr) {
+                                delete m_Mesh->material.diffuse;
+                            }
 
-                    //             if(ImGui::IsItemClicked(1)) {
-                    //                 glDeleteTextures(1, &m_Mesh->material.diffuse->ID);
-                    //                 m_Mesh->material.diffuse = nullptr;
-                    //             }
-                    //         } else {
-                    //             ImGui::ImageButton((void*)0, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
+                            if(m_Mesh->material.specular != nullptr) {
+                                delete m_Mesh->material.specular;
+                            }
 
-                    //             if(ImGui::IsItemClicked(0)) {
-                    //                 ImGuiFileDialog::Instance()->OpenDialog("ChooseDiffuseTexture", "Choose Diffuse Texture", ".png,.jpg,.jpeg", ".");
-                    //             }
+                            if(m_Mesh->material.normal != nullptr) {
+                                delete m_Mesh->material.normal;
+                            }
 
-                    //             Scene::DropTargetMat(Scene::DRAG_DIFFUSE, m_Mesh);
-                    //         }
-                    //         ImGui::TreePop();
-                    //     }
-
-                    //     if(ImGui::TreeNode("Specular")) {
-                    //         if(m_Mesh->material.specular != nullptr) {
-                    //             ImGui::ImageButton((void*)m_Mesh->material.specular->ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
-                    //             if(ImGui::IsItemClicked(0)) {
-                    //                 ImGuiFileDialog::Instance()->OpenDialog("ChooseSpecularTexture", "Choose Specular Texture", ".png,.jpg,.jpeg", ".");
-                    //             }
-
-                    //             if(ImGui::IsItemClicked(1)) {
-                    //                 glDeleteTextures(1, &m_Mesh->material.specular->ID);
-                    //                 m_Mesh->material.specular = nullptr;
-                    //             }
-
-                    //             Scene::DropTargetMat(Scene::DRAG_SPECULAR, m_Mesh);
-                    //         } else {
-                    //             ImGui::ImageButton((void*)0, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
-
-                    //             if(ImGui::IsItemClicked(0)) {
-                    //                 ImGuiFileDialog::Instance()->OpenDialog("ChooseSpecularTexture", "Choose Specular Texture", ".png,.jpg,.jpeg", ".");
-                    //             }
-
-                    //             Scene::DropTargetMat(Scene::DRAG_SPECULAR, m_Mesh);
-                    //         }
-                    //         ImGui::TreePop();
-                    //     }
-
-                    //     if(ImGui::TreeNode("Normal")) {
-                    //         if(m_Mesh->material.normal != nullptr) {
-                    //             ImGui::ImageButton((void*)m_Mesh->material.normal->ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
-                    //             if(ImGui::IsItemClicked(0)) {
-                    //                 ImGuiFileDialog::Instance()->OpenDialog("ChooseNormalTexture", "Choose Normal Texture", ".png,.jpg,.jpeg", ".");
-                    //             }
-
-                    //             if(ImGui::IsItemClicked(1)) {
-                    //                 glDeleteTextures(1, &m_Mesh->material.normal->ID);
-                    //                 m_Mesh->material.normal = nullptr;
-                    //             }
-
-                    //             Scene::DropTargetMat(Scene::DRAG_NORMAL, m_Mesh);
-                    //         } else {
-                    //             ImGui::ImageButton((void*)0, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0));
-
-                    //             if(ImGui::IsItemClicked(0)) {
-                    //                 ImGuiFileDialog::Instance()->OpenDialog("ChooseNormalTexture", "Choose Normal Texture", ".png,.jpg,.jpeg", ".");
-                    //             }   
-
-                    //             Scene::DropTargetMat(Scene::DRAG_NORMAL, m_Mesh);
-                    //         }
-                    //         ImGui::TreePop();
-                    //     }
-
-                    //     ImGui::DragFloat2("UV", &m_Mesh->material.texUVs.x, 0.01f);
-                    //     ImGui::NewLine();
-                    //     ImGui::ColorEdit3("Color", &m_Mesh->material.baseColor.x);
-                    //     ImGui::DragFloat("Roughness", &m_Mesh->material.roughness, 0.01f, 0, 1);
-                    //     ImGui::DragFloat("Metallic", &m_Mesh->material.metallic, 0.01f, 0, 1);
-
-                    //     ImGui::NewLine();
-
-                    //     ImVec2 winSize = ImGui::GetWindowSize();
-                    //     if(false && ImGui::Button(ICON_FA_TRASH " Delete", ImVec2(winSize.x, 0))) {
-                    //         // delete m_Mesh;
-                    //         // m_Mesh = nullptr;
-                    //         Scene::m_Registry.remove<MeshRenderer>(entity);
-                    //     }
-                    // } else {
-                    //     ImGui::Text("No Mesh");
-                    // }
+                            delete m_Mesh;
+                            m_Mesh = nullptr;
+                        }
+                        Scene::m_Registry.remove<MeshRenderer>(entity);
+                    }
 
                     ImGui::TreePop();
                 }
@@ -1421,13 +1182,14 @@ namespace HyperAPI {
                 if(ImGui::TreeNode("Point Light")) {
                     ImGui::ColorEdit3("Color", &color.x, 0.01f);
                     ImGui::DragFloat("Intensity", &intensity, 0.01f);
+
                     ImGui::NewLine();
-                    ImVec2 winSize = ImGui::GetWindowSize();
-                    if(false && ImGui::Button(ICON_FA_TRASH " Delete", ImVec2(winSize.x, 0))) {
+                    if(ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::PointLights.erase(std::remove(Scene::PointLights.begin(), Scene::PointLights.end(), light), Scene::PointLights.end());
                         delete light;
-                        light = nullptr;
                         Scene::m_Registry.remove<c_PointLight>(entity);
                     }
+
                     ImGui::TreePop();
                 }
 
@@ -1454,11 +1216,11 @@ namespace HyperAPI {
             void GUI() {
                 if(ImGui::TreeNode("Spot Light")) {
                     ImGui::ColorEdit3("Color", &color.x, 0.01f);
+
                     ImGui::NewLine();
-                    ImVec2 winSize = ImGui::GetWindowSize();
-                    if(false && ImGui::Button(ICON_FA_TRASH " Delete", ImVec2(winSize.x, 0))) {
+                    if(ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::SpotLights.erase(std::remove(Scene::SpotLights.begin(), Scene::SpotLights.end(), light), Scene::SpotLights.end());
                         delete light;
-                        light = nullptr;
                         Scene::m_Registry.remove<c_SpotLight>(entity);
                     }
                     ImGui::TreePop();
@@ -1491,10 +1253,9 @@ namespace HyperAPI {
                     ImGui::DragFloat("Intensity", &intensity, 0.01f);
 
                     ImGui::NewLine();
-                    ImVec2 winSize = ImGui::GetWindowSize();
-                    if(false && ImGui::Button(ICON_FA_TRASH " Delete", ImVec2(winSize.x, 0))) {
+                    if(ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::DirLights.erase(std::remove(Scene::DirLights.begin(), Scene::DirLights.end(), light), Scene::DirLights.end());
                         delete light;
-                        light = nullptr;
                         Scene::m_Registry.remove<c_DirectionalLight>(entity);
                     }
                     ImGui::TreePop();
@@ -1539,10 +1300,29 @@ namespace HyperAPI {
                     Scene::m_Object = this;
                     strncpy(Scene::name, Scene::m_Object->name.c_str(), 499);
                     Scene::name[499] = '\0';
+
+                    strncpy(Scene::tag, Scene::m_Object->tag.c_str(), 499);
+                    Scene::tag[499] = '\0';
                 }
 
                 if(ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Delete)) && Scene::m_Object == this) {
                     Scene::m_Object = nullptr;
+
+                    if(HasComponent<c_DirectionalLight>()) {
+                        Scene::DirLights.erase(std::remove(Scene::DirLights.begin(), Scene::DirLights.end(), GetComponent<c_DirectionalLight>().light), Scene::DirLights.end());
+                        delete GetComponent<c_DirectionalLight>().light;
+                    }
+
+                    if(HasComponent<c_PointLight>()) {
+                        Scene::PointLights.erase(std::remove(Scene::PointLights.begin(), Scene::PointLights.end(), GetComponent<c_PointLight>().light), Scene::PointLights.end());
+                        delete GetComponent<c_PointLight>().light;
+                    }
+
+                    if(HasComponent<c_SpotLight>()) {
+                        Scene::SpotLights.erase(std::remove(Scene::SpotLights.begin(), Scene::SpotLights.end(), GetComponent<c_SpotLight>().light), Scene::SpotLights.end());
+                        delete GetComponent<c_SpotLight>().light;
+                    }
+
                     Scene::m_Registry.destroy(entity);
                     Scene::m_GameObjects.erase(std::remove(Scene::m_GameObjects.begin(), Scene::m_GameObjects.end(), this), Scene::m_GameObjects.end());
                 }
@@ -1565,8 +1345,13 @@ namespace HyperAPI {
             Camera *camera = nullptr;
             GameObject *m_GameObject = nullptr;
 
-            CameraComponent(entt::entity m_Entity) {
-                camera = new Camera(false, 1280, 720, glm::vec3(0,0,0), m_Entity);
+            CameraComponent() {}
+
+            void Init() {
+                auto &transform = Scene::m_Registry.get<Experimental::Transform>(entity);
+                transform.rotation = glm::vec3(0.0f, 0.0f, -1.0f);
+
+                camera = new Camera(false, 1280, 720, glm::vec3(0,0,0), entity);
                 Scene::cameras.push_back(camera);
                 
                 for(auto &gameObject : Scene::m_GameObjects) {
@@ -1580,9 +1365,9 @@ namespace HyperAPI {
             void GUI() {
                 if(ImGui::TreeNode("Camera")) {
                     if(camera != nullptr) {
-                        ImGui::DragFloat("FOV", &camera->fov, 0.01f);
-                        ImGui::DragFloat("Near", &camera->near, 0.01f);
-                        ImGui::DragFloat("Far", &camera->far, 0.01f);
+                        ImGui::DragFloat("FOV", &camera->cam_fov, 0.01f);
+                        ImGui::DragFloat("Near", &camera->cam_near, 0.01f);
+                        ImGui::DragFloat("Far", &camera->cam_far, 0.01f);
 
                         ImGui::Checkbox("Main Camera", &camera->mainCamera);
                         ImGui::Checkbox("2D Mode", &camera->mode2D);
@@ -1632,8 +1417,10 @@ namespace HyperAPI {
             }
 
             void Update() {
-                for(auto &script : scripts) {
-                    script.Update();
+                if(isRunning) {
+                    for(auto &script : scripts) {
+                        script.Update();
+                    }
                 }
             }
 
@@ -1670,11 +1457,16 @@ namespace HyperAPI {
                             ScriptEngine::m_LuaScript script(filePathName);
                             script.m_GameObject = m_GameObject;
                             script.ID = ID;
-                            script.Init();
+                            // script.Init();
                             scripts.push_back(script);
                         }
 
                         ImGuiFileDialog::Instance()->Close();
+                    }
+
+                    ImGui::NewLine();
+                    if(ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::m_Registry.remove<m_LuaScriptComponent>(entity);
                     }
                             
                     ImGui::TreePop();

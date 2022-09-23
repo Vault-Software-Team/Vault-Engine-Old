@@ -8,6 +8,16 @@
 #include "vendor/glm/gtx/rotate_vector.hpp"
 #include "vendor/glm/gtx/vector_angle.hpp"
 
+#ifdef _WIN32
+#ifdef BUILD_DLL
+#define __declspec(dllexport)
+#else
+#define __declspec(dllimport)
+#endif
+#else
+#define DLL_EXPORT
+#endif
+
 /* The unknown key */
 #define KEY_UNKNOWN            -1
 
@@ -149,7 +159,11 @@ namespace HyperAPI {
         bool IsMouseButtonReleased(int button);
         float GetMouseX();
         float GetMouseY();
-        int GetMouseAxisX();
-        int GetMouseAxisY();
+        int GetHorizontalAxis();
+        int GetVerticalAxis();
+        int GetMouseXAxis();
+        int GetMouseYAxis();
+        bool SetMouseHidden(bool hidden);
+        int SetMousePosition(float x, float y);
     }
 }

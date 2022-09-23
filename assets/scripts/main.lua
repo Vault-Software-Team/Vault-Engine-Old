@@ -1,4 +1,5 @@
 function OnStart()
+    Log("Test")
 end
 
 function OnUpdate()

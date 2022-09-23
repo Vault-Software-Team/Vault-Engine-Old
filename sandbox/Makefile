@@ -15,7 +15,6 @@ $(exec): $(objects)
 	g++ $(objects) $(flags) -o $(exec)
 	make clean
 	clear
-	# ./main.out
 
 %.o: %.cpp lib/%.h
 	g++ -c $(flags) $< -o $@
