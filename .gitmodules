@@ -1,0 +1,3 @@
+[submodule "api/vendor/Box2D"]
+	path = api/vendor/Box2D
+	url = https://github.com/erincatto/box2d
