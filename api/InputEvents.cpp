@@ -1,4 +1,5 @@
 #include "InputEvents.hpp"
+#include "api.hpp"
 
 namespace HyperAPI {
 

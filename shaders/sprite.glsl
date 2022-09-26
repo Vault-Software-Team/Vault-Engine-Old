@@ -61,7 +61,7 @@ uniform float roughness;
 
 vec4 pointLight(PointLight light) {
     if(isTex == 1) {
-        vec4 frag_color = texture(texture_diffuse0, texCoords);
+        vec4 frag_color = texture(texture_diffuse0, texCoords) * baseColor;
         if(frag_color.a < 1.0)
             discard;
 

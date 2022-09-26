@@ -51,6 +51,7 @@ void main() {
 #shader fragment
 #version 330 core
 layout(location = 0) out vec4 FragColor;
+layout(location = 1) out int EntityID;
 
 in vec2 texCoords;
 in vec3 Color;
@@ -297,6 +298,7 @@ void main() {
     }
     
     FragColor = result;
+    EntityID = 50;
     // FragColor = directionalLight(dirLights[0]);
     // FragColor = result;
     

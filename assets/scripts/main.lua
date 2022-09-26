@@ -1,25 +1,25 @@
 function OnStart()
-    Log("Test")
 end
 
+SpacePressed = false
 function OnUpdate()
+    local rigidbody = GetComponent("Rigidbody2D");
     local transform = GetComponent("Transform");
-
-    if IsKeyPressed(KEY_W) then
-        transform.rotationX = transform.rotationX + 1;
+    
+    if IsKeyPressed(KEY_SPACE) and SpacePressed == false and transform.positionY < 1 then
+        rigidbody:Force(0, 2500);
+        SpacePressed = true;
+    elseif IsKeyPressed(KEY_SPACE) == false then
+        SpacePressed = false;
     end
+    
+    UpdateComponent(rigidbody);
+end
 
-    if IsKeyPressed(KEY_S) then
-        transform.rotationX = transform.rotationX - 1;
-    end
+function Collision2D(other)
+    Log("Collision with " .. other.name);
+end
 
-    if IsKeyPressed(KEY_A) then
-        transform.rotationY = transform.rotationY + 1;
-    end
-
-    if IsKeyPressed(KEY_D) then
-        transform.rotationY = transform.rotationY - 1;
-    end
-
-    UpdateComponent(transform);
+function CollisionExit2D(other)
+    Log("Collision exited with " .. other.name);
 end

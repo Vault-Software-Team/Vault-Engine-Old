@@ -24,13 +24,22 @@ namespace HyperAPI {
 
 struct GLFWwindow;
 namespace ScriptEngine {
-    extern lua_State *L;
     extern GLFWwindow *window;
     extern HyperAPI::ComponentSystem *m_EntityComp;
     extern HyperAPI::Experimental::GameObject *m_Object;
     extern std::string objID;
     
+    lua_State* m_Init();
+
     namespace Functions {
+        //Rigidbody functions
+        int SetVelocity(lua_State *L);
+        int SetAngularVelocity(lua_State *L);
+        int SetPosition(lua_State *L);
+        int Force(lua_State *L);
+        int Torque(lua_State *L);
+        int GetVelocity(lua_State *L);
+
         int Log(lua_State *L);
         int LogWarning(lua_State *L);
         int LogError(lua_State *L);
@@ -47,21 +56,37 @@ namespace ScriptEngine {
         int GetMouseYAxis(lua_State *L);
         int SetMouseHidden(lua_State *L);
         int SetMousePosition(lua_State *L);
+        int GetEntComponent(lua_State *L);
+        int UpdateEntComponent(lua_State *L);
+        int FindGameObjectByName(lua_State *L);
+        int FindGameObjectByTag(lua_State *L);
+        int PlayAudio(lua_State *L);
+        int PlayMusic(lua_State *L);
+        int StopAudio(lua_State *L);
+        int StopMusic(lua_State *L);
+        int DisableResizing(lua_State *L);
     }
 
     class m_LuaScript {
     public:
+        lua_State *L;
         int r;
         HyperAPI::Experimental::GameObject *m_GameObject;
         std::string ID;
         std::string pathToScript;
         m_LuaScript(const std::string &pathToScript);
+        void Delete() {
+            lua_close(L);
+        }
         void Init();
-        void Update();   
+        void Update(); 
+        void Collision2D(HyperAPI::Experimental::GameObject *other);  
+        void CollisionExit2D(HyperAPI::Experimental::GameObject *other);  
     };
 
     class LuaScript {
     public:
+        lua_State *L;
         int r;
         HyperAPI::ComponentSystem *bindedComp;
         std::string pathToScript;
@@ -70,5 +95,4 @@ namespace ScriptEngine {
         void Update();
     };
 
-    lua_State* Init();
 }

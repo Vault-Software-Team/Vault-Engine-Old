@@ -2,6 +2,8 @@
 #include "vendor/glad/include/glad/glad.h"
 #include "vendor/GLFW/glfw3.h"
 #include <fstream>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 #include <iostream>
 #include "vendor/stb_image/stb_image.h"
 #include "vendor/glm/glm.hpp"
@@ -30,12 +32,24 @@
 #include "scene.hpp"
 #include "ScriptEngine.hpp"
 #include "InputEvents.hpp"
+#include "scripts.hpp"
 #include <random>
 
 #ifndef _WIN32
 #include <unistd.h>
 #else
 #include <windows.h>
+#endif
+
+
+#ifdef _WIN32
+#ifdef BUILD_DLL
+#define DLL_EXPORT __declspec(dllexport)
+#else
+#define DLL_EXPORT __declspec(dllimport)
+#endif
+#else
+#define DLL_EXPORT
 #endif
 
 #define Vector2 glm::vec2
@@ -46,25 +60,25 @@
 
 using json = nlohmann::json;
 
-extern glm::mat4 projection;
-extern glm::mat4 view;
+extern DLL_EXPORT glm::mat4 projection;
+extern DLL_EXPORT glm::mat4 view;
 
 namespace uuid {
-    extern std::random_device              rd;
-    extern std::mt19937                    gen;
-    extern std::uniform_int_distribution<> dis;
-    extern std::uniform_int_distribution<> dis2;
+    extern DLL_EXPORT std::random_device              rd;
+    extern DLL_EXPORT std::mt19937                    gen;
+    extern DLL_EXPORT std::uniform_int_distribution<> dis;
+    extern DLL_EXPORT std::uniform_int_distribution<> dis2;
 
     std::string generate_uuid_v4();
 }
 
 namespace HyperAPI {
-    extern std::string cwd;
-    extern std::string dirPayloadData;
-    extern bool isRunning;
-    extern bool isStopped;
+    extern DLL_EXPORT std::string cwd;
+    extern DLL_EXPORT std::string dirPayloadData;
+    extern DLL_EXPORT bool isRunning;
+    extern DLL_EXPORT bool isStopped;
 
-    class AssimpGLMHelpers
+    class DLL_EXPORT AssimpGLMHelpers
     {
     public:
 
@@ -94,11 +108,11 @@ namespace HyperAPI {
         void DropTargetMat(DragType type, Mesh *currEntity);
     }
 
-    struct Component {
+    struct DLL_EXPORT Component {
         bool IsPubliclyAddable = false;
     };
 
-    class ComponentSystem {
+    class DLL_EXPORT ComponentSystem {
     public:
         std::string ID = uuid::generate_uuid_v4();
         std::string name = "GameObject";
@@ -150,25 +164,25 @@ namespace HyperAPI {
         }
     };
 
-    struct KeyPosition
+    struct DLL_EXPORT KeyPosition
     {
         glm::vec3 position;
         float timeStamp;
     };
 
-    struct KeyRotation
+    struct DLL_EXPORT KeyRotation
     {
         glm::quat orientation;
         float timeStamp;
     };
 
-    struct KeyScale
+    struct DLL_EXPORT KeyScale
     {
         glm::vec3 scale;
         float timeStamp;
     };
 
-    struct TransformComponent : public Component {
+    struct DLL_EXPORT TransformComponent : public Component {
         glm::mat4 transform = glm::mat4(1.0f);
         glm::vec3 position = glm::vec3(0,0,0);
         glm::vec3 rotation = glm::vec3(0,0,0);
@@ -192,7 +206,7 @@ namespace HyperAPI {
         LOG_ERROR
     };
 
-    struct Log {
+    struct DLL_EXPORT Log {
         std::string message;
         LOG_TYPE type;
 
@@ -227,7 +241,7 @@ namespace HyperAPI {
         }
     };
 
-    class Shader {
+    class DLL_EXPORT Shader {
     public:
         unsigned int ID;
 
@@ -244,13 +258,13 @@ namespace HyperAPI {
         void SetUniformMat4(const char *name, glm::mat4 value);
     };
 
-    struct CameraPosDec {
+    struct DLL_EXPORT CameraPosDec {
         glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
         glm::vec3 rotation = glm::vec3(0.0f, 0.0f, 0.0f);
         glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
     };
 
-    class Camera : public ComponentSystem {
+    class DLL_EXPORT Camera : public ComponentSystem {
     public:
         // glm::vec3 Position;
         // glm::vec3 Orientation = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -285,7 +299,7 @@ namespace HyperAPI {
         void Inputs(GLFWwindow* window, Vector2 winPos);
     };
 
-    class Texture {
+    class DLL_EXPORT Texture {
     public:
         unsigned int ID;
         int width, height, nrChannels;
@@ -300,12 +314,12 @@ namespace HyperAPI {
         void Unbind();
     };
 
-    struct BoneInfo {
+    struct DLL_EXPORT BoneInfo {
         int id;
         glm::mat4 offset;
     };
     
-    struct Vertex {
+    struct DLL_EXPORT Vertex {
         glm::vec3 position;
         glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f);
         glm::vec3 normal = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -316,7 +330,7 @@ namespace HyperAPI {
         // glm::mat4 model = glm::mat4(1.0f);
     };
 
-    struct PointLight : public ComponentSystem {
+    struct DLL_EXPORT PointLight : public ComponentSystem {
         glm::vec3 lightPos;
         glm::vec3 color;
         float intensity;
@@ -335,7 +349,7 @@ namespace HyperAPI {
         }
     };
 
-    struct SpotLight : public ComponentSystem {
+    struct DLL_EXPORT SpotLight : public ComponentSystem {
         glm::vec3 lightPos;
         glm::vec3 color;
         float outerCone;
@@ -358,7 +372,7 @@ namespace HyperAPI {
         }
     };
 
-    struct DirectionalLight : public ComponentSystem {
+    struct DLL_EXPORT DirectionalLight : public ComponentSystem {
         glm::vec3 lightPos;
         glm::vec3 color;
         float intensity = 1;
@@ -376,7 +390,7 @@ namespace HyperAPI {
         }
     };
 
-    struct Light2D : public ComponentSystem {
+    struct DLL_EXPORT Light2D : public ComponentSystem {
         glm::vec2 lightPos;
         glm::vec3 color;
         float range;
@@ -393,7 +407,7 @@ namespace HyperAPI {
         }
     };
 
-    struct Instanced {
+    struct DLL_EXPORT Instanced {
         bool isInstanced = false;
         std::vector<TransformComponent> transforms = {};
         int count = 1;
@@ -404,7 +418,7 @@ namespace HyperAPI {
         }
     };
 
-    class Material {
+    class DLL_EXPORT Material {
     public:
         std::vector<Texture> textures;
 
@@ -437,7 +451,7 @@ namespace HyperAPI {
         void Unbind(Shader &shader);
     };
 
-    class Mesh : public ComponentSystem {
+    class DLL_EXPORT Mesh : public ComponentSystem {
     public:
         std::string parentType = "None";
         Material material{Vector4(1,1,1,1)};
@@ -468,7 +482,7 @@ namespace HyperAPI {
         );  
     };
 
-    class Model : public ComponentSystem 
+    class DLL_EXPORT Model : public ComponentSystem 
     {
     private:
         int currSlot = 0;
@@ -565,7 +579,7 @@ namespace HyperAPI {
         void Draw(Shader &shader, Camera &camera);
     };
 
-    class Skybox {
+    class DLL_EXPORT Skybox {
     public:
         unsigned int skyboxVAO, skyboxVBO, skyboxEBO;
         Shader *shader;
@@ -575,7 +589,7 @@ namespace HyperAPI {
         void Draw(Camera &camera, int width, int height);
     };
 
-    class Renderer {
+    class DLL_EXPORT Renderer {
     public:
         bool wireframe;
         unsigned int postProcessingTexture;
@@ -602,7 +616,7 @@ namespace HyperAPI {
         void NewFrame();
     };
     
-    class Audio {
+    class DLL_EXPORT Audio {
     public:
         Mix_Chunk *sound;
         float volume;
@@ -611,7 +625,7 @@ namespace HyperAPI {
         void Play();
     };
     
-    class Music {
+    class DLL_EXPORT Music {
     public:
         Mix_Music *music;
         float volume;
@@ -620,7 +634,7 @@ namespace HyperAPI {
         void Play();
     };
 
-    class Sprite {
+    class DLL_EXPORT Sprite {
     public:
         Mesh *m_Mesh;
         Sprite(const char *texPath);
@@ -643,10 +657,10 @@ namespace HyperAPI {
         void Draw(Shader &shader, Camera &camera, glm::mat4 trans = glm::mat4(1));
     };
 
-    class Spritesheet {
+    class DLL_EXPORT Spritesheet {
     public:
         Mesh *m_Mesh;
-        Spritesheet(const char *texPath, Vector2 sheetSize, Vector2 spriteSize, Vector2 spriteCoords);
+        Spritesheet(const char *texPath, Material &mat, Vector2 sheetSize, Vector2 spriteSize, Vector2 spriteCoords);
 
         template<typename T>
         void AddComponent(T component) {
@@ -666,14 +680,14 @@ namespace HyperAPI {
         void Draw(Shader &shader, Camera &camera);
     };
 
-    struct Animation {
+    struct DLL_EXPORT Animation {
         std::vector<Spritesheet> frames;
         int currentFrame = 0;
         float delay = 0.1;
         std::string keyframe;
     };
 
-    class SpritesheetAnimation {
+    class DLL_EXPORT SpritesheetAnimation {
     public:
         std::vector<Animation*> animations;
         Animation *currentAnimation = nullptr;
@@ -719,7 +733,7 @@ namespace HyperAPI {
 
     std::vector<HyperAPI::Animation> GetAnimationsFromXML(const char *texPath, float delay, Vector2 sheetSize, const std::string &xmlFile);
 
-    class Graphic {
+    class DLL_EXPORT Graphic {
     public:
         Mesh *m_Mesh;
         Graphic(Vector3 rgb);
@@ -742,17 +756,17 @@ namespace HyperAPI {
         void Draw(Shader &shader, Camera &camera);
     };
     
-    class Capsule : public Model {
+    class DLL_EXPORT Capsule : public Model {
     public:
         Capsule(Vector4 color = Vector4(1,1,1, 1));
     };
 
-    class Cube : public Model {
+    class DLL_EXPORT Cube : public Model {
     public:
         Cube(Vector4 color = Vector4(1,1,1, 1));
     };
 
-    class Plane {
+    class DLL_EXPORT Plane {
     public:
         Mesh *m_Mesh;
         Vector4 color;
@@ -797,27 +811,27 @@ namespace HyperAPI {
         }	
     };
 
-    class Cylinder : public Model {
+    class DLL_EXPORT Cylinder : public Model {
     public:
         Cylinder(Vector4 color = Vector4(1,1,1, 1));
     };
 
-    class Sphere : public Model {
+    class DLL_EXPORT Sphere : public Model {
     public:
         Sphere(Vector4 color = Vector4(1,1,1, 1));
     };
 
-    class Cone : public Model {
+    class DLL_EXPORT Cone : public Model {
     public:
         Cone(Vector4 color = Vector4(1,1,1, 1));
     };
 
-    class Torus : public Model {
+    class DLL_EXPORT Torus : public Model {
     public:
         Torus(Vector4 color = Vector4(1,1,1, 1));
     };
 
-    class SpriteShader : public Shader {
+    class DLL_EXPORT SpriteShader : public Shader {
     public:
         unsigned int ID;
 
@@ -834,7 +848,7 @@ namespace HyperAPI {
         virtual void SetUniformMat4(const char *name, glm::mat4 value);
     };
 
-    class BatchMesh {
+    class DLL_EXPORT BatchMesh {
     public:
         std::string parentType = "None";
         std::string ID;
@@ -897,7 +911,7 @@ namespace HyperAPI {
     };
 
     namespace Experimental {
-        class ComponentEntity {
+        class DLL_EXPORT ComponentEntity {
         public:
             std::string parentID = "NO_PARENT";
             std::string name = "GameObject";
@@ -908,13 +922,16 @@ namespace HyperAPI {
             ComponentEntity() {};
 
             template<typename T, typename... Args>
-            void AddComponent(Args&&... args) {
+            T& AddComponent(Args&&... args) {
                 if(!HasComponent<T>()) {
                     T& component = Scene::m_Registry.emplace<T>(entity, std::forward<Args>(args)...);
+
                     auto &comp = GetComponent<T>();
                     comp.entity = entity;
                     comp.ID = ID;
                     comp.Init();
+                    
+                    return comp;
                 }
             }
 
@@ -934,14 +951,14 @@ namespace HyperAPI {
             }
         };
 
-        struct BaseComponent {
+        struct DLL_EXPORT BaseComponent {
             entt::entity entity;
             std::string ID;
 
             virtual void Init() {}
         };
 
-        struct Transform : public BaseComponent {
+        struct DLL_EXPORT Transform : public BaseComponent {
             Transform *parentTransform = nullptr;
             glm::mat4 transform = glm::mat4(1.0f);
             glm::vec3 position = glm::vec3(0,0,0);
@@ -977,7 +994,224 @@ namespace HyperAPI {
             }
         };
 
-        struct MeshRenderer : public BaseComponent {
+        struct DLL_EXPORT SpriteRenderer : public BaseComponent {
+            Mesh *mesh;
+            bool noComponent = false;
+            SpriteRenderer() {
+                std::vector<Vertex> vertices = {
+                    Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(1,1,1), glm::vec3(0, 1, 0), glm::vec2(0.0f, 0.0f)},
+                    Vertex{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(1,1,1), glm::vec3(0, 1, 0), glm::vec2(1.0f, 0.0f)},
+                    Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(1,1,1), glm::vec3(0, 1, 0), glm::vec2(1.0f, 1.0f)},
+                    Vertex{glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(1,1,1), glm::vec3(0, 1, 0), glm::vec2(0.0f, 1.0f)}
+                };
+
+                std::vector<unsigned int> indices = {
+                    0, 1, 2,
+                    0, 2, 3
+                };
+
+                Material material(Vector4(1,1,1,1));
+                mesh = new Mesh(vertices, indices, material);
+            }
+
+            void GUI() {
+                if(ImGui::TreeNode("Sprite Renderer")) {
+                    if(ImGui::TreeNode("Texture")) {
+                        if(mesh->material.diffuse != nullptr) {
+                            ImGui::ImageButton((void*)mesh->material.diffuse->ID, ImVec2(128,128), ImVec2(0,1), ImVec2(1,0));
+                        } else {
+                            ImGui::ImageButton((void*)0, ImVec2(128,128));
+                        }
+                        Scene::DropTargetMat(Scene::DRAG_SPRITE, mesh);
+                        if(ImGui::IsItemHovered() && ImGui::IsMouseClicked(1) && mesh->material.diffuse != nullptr) {
+                            glDeleteTextures(1, &mesh->material.diffuse->ID);
+                            delete mesh->material.diffuse;
+                            mesh->material.diffuse = nullptr;
+                        }
+
+                        ImGui::TreePop();
+                    }
+                    ImGui::ColorEdit3("Color", &mesh->material.baseColor.x);                    
+                    ImGui::TreePop();
+                }
+            }
+
+            void Update() {
+
+            }
+        };
+
+        struct DLL_EXPORT SpritesheetRenderer : public BaseComponent {
+            Mesh *mesh = nullptr;
+            Spritesheet *sp = nullptr;
+            Vector2 spritesheetSize = Vector2(512,512);
+            Vector2 spriteSize = Vector2(32,32);
+            Vector2 spriteOffset = Vector2(0,0);
+            Material material{Vector4(1,1,1,1)};
+
+            SpritesheetRenderer() {
+                Spritesheet sp("", material, spritesheetSize, spriteSize, spriteOffset);
+
+                mesh = sp.m_Mesh;
+            }
+
+            void GUI() {
+                if(ImGui::TreeNode("Spritesheet Renderer")) {
+                    if(ImGui::TreeNode("Texture")) {
+                        if(material.diffuse != nullptr) {
+                            ImGui::ImageButton((void*)material.diffuse->ID, ImVec2(128,128), ImVec2(0,1), ImVec2(1,0));
+                        } else {
+                            ImGui::ImageButton((void*)0, ImVec2(128,128));
+                        }
+                        Scene::DropTargetMat(Scene::DRAG_SPRITE, mesh);
+                        if(ImGui::IsItemHovered() && ImGui::IsMouseClicked(1) && material.diffuse != nullptr) {
+                            glDeleteTextures(1, &material.diffuse->ID);
+                            delete material.diffuse;
+                            material.diffuse = nullptr;
+                        }
+
+                        ImGui::TreePop();
+                    }
+                    ImGui::ColorEdit3("Color", &mesh->material.baseColor.x);
+                    ImGui::DragFloat2("Spritesheet Size", &spritesheetSize.x, 1.0f, 1.0f);
+                    ImGui::DragFloat2("Sprite Size", &spriteSize.x, 1.0f, 1.0f);
+                    ImGui::DragFloat2("Sprite Offset", &spriteOffset.x, 1.0f, 0.0f);
+
+                    if(ImGui::Button("Apply Changes")) {
+                        if(sp != nullptr) {
+                            delete sp;
+                            sp = nullptr;
+                        }
+
+                        sp = new Spritesheet("", material, spritesheetSize, spriteSize, spriteOffset);
+                        if(mesh != nullptr) {
+                            delete mesh;
+                            mesh = nullptr;
+                        }
+                        mesh = sp->m_Mesh;
+                    }
+
+                    ImGui::NewLine();
+                    if(ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::m_Registry.remove<SpriteRenderer>(entity);
+                    }
+                    
+                    ImGui::TreePop();
+                }
+            }
+
+            void Update() {
+
+            }
+        };
+
+        struct DLL_EXPORT m_AnimationData {
+            char name[499] = "anim_name";
+            std::string id = uuid::generate_uuid_v4();
+            std::vector<SpriteRenderer> frames;
+            float delay = 0.1f;
+            bool loop = false;
+        };
+
+        struct DLL_EXPORT SpriteAnimation : public BaseComponent {
+            Mesh *currMesh;
+            std::vector<m_AnimationData> anims;
+            char currAnim[499] = "anim_name";
+            float prevTime, currTime, currDelay = 0;
+            int currFrame;
+
+            SpriteAnimation() {
+                currMesh = nullptr;
+            }
+
+            void GUI() {
+                if(ImGui::TreeNode("Sprite Animation")) {
+                    ImGui::InputText("Current Animation", currAnim, 499);
+                    if(ImGui::TreeNode("Animations")) {
+                        for(int i = 0; i < anims.size(); i++) {
+                            if(ImGui::TreeNode(anims[i].id.c_str(), anims[i].name)) {  
+                                ImGui::InputText("Name", anims[i].name, 499);
+                                ImGui::DragFloat("Delay", &anims[i].delay, 0.01f, 0.01f);
+                                ImGui::Checkbox("Loop", &anims[i].loop);
+                                for(int m = 0; m < anims[i].frames.size(); m++) {
+                                    SpriteRenderer &sr = anims[i].frames[m];
+                                    if(ImGui::TreeNode(std::string("Frame " + std::to_string(m)).c_str())) {
+                                        if(ImGui::TreeNode("Texture")) {
+                                            if(sr.mesh->material.diffuse != nullptr) {
+                                                ImGui::ImageButton((void*)sr.mesh->material.diffuse->ID, ImVec2(128,128), ImVec2(0,1), ImVec2(1,0));
+                                            } else {
+                                                ImGui::ImageButton((void*)0, ImVec2(128,128));
+                                            }
+                                            Scene::DropTargetMat(Scene::DRAG_SPRITE, sr.mesh);
+                                            if(ImGui::IsItemHovered() && ImGui::IsMouseClicked(1) && sr.mesh->material.diffuse != nullptr) {
+                                                glDeleteTextures(1, &sr.mesh->material.diffuse->ID);
+                                                delete sr.mesh->material.diffuse;
+                                                sr.mesh->material.diffuse = nullptr;
+                                            }
+
+                                            ImGui::TreePop();
+                                        }
+                                        ImGui::ColorEdit3("Color", &sr.mesh->material.baseColor.x);                    
+                                        ImGui::TreePop();
+                                    }
+                                }
+
+                                if(ImGui::Button("Add Frame")) {
+                                    anims[i].frames.push_back(SpriteRenderer());
+                                }
+
+                                ImGui::TreePop();
+                            }
+                        }
+
+                        if(ImGui::Button("Add Animation")) {
+                            anims.push_back(m_AnimationData());
+                        }
+                        ImGui::TreePop();
+                    }
+
+                    ImGui::NewLine();
+                    if(ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::m_Registry.remove<SpriteAnimation>(entity);
+                    }
+                    
+                    ImGui::TreePop();
+                }
+            }
+
+            void Play() {
+                currTime = glfwGetTime();
+                float deltaTime = currTime - prevTime;
+                prevTime = currTime;
+
+                for(int i = 0; i < anims.size(); i++) {
+                    if(std::string(anims[i].name) == std::string(currAnim) && anims[i].frames.size() > 0) {
+                        m_AnimationData &anim = anims[i];
+                        //delay   
+                        currDelay += deltaTime;
+                        if(currDelay >= anim.delay) {
+                            currDelay = 0;
+
+                            //frame
+                            currFrame++;
+                            if(anim.frames.size() <= 0) return;
+                            if(currFrame >= anim.frames.size()) {
+                                if(anim.loop) {
+                                    currFrame = 0;
+                                } else {
+                                    currFrame = anim.frames.size() - 1;
+                                }
+                            }
+
+                            currMesh = anim.frames[currFrame].mesh;
+                            std::cout << currFrame << std::endl;
+                        }
+                    }
+                }
+            }
+        };
+
+        struct DLL_EXPORT MeshRenderer : public BaseComponent {
             Mesh *m_Mesh = nullptr;
             bool m_Model = false;
 
@@ -1166,7 +1400,7 @@ namespace HyperAPI {
             }
         };
 
-        struct c_PointLight : public BaseComponent {
+        struct DLL_EXPORT c_PointLight : public BaseComponent {
             glm::vec3 lightPos = glm::vec3(0, 0, 0);
             glm::vec3 color = glm::vec3(1, 1, 1);
             float intensity = 1.0f;
@@ -1205,7 +1439,7 @@ namespace HyperAPI {
             }
         };
 
-        struct c_SpotLight : public BaseComponent {
+        struct DLL_EXPORT c_SpotLight : public BaseComponent {
             glm::vec3 lightPos = glm::vec3(0, 0, 0);
             glm::vec3 color = glm::vec3(1, 1, 1);
             float outerCone;
@@ -1238,7 +1472,7 @@ namespace HyperAPI {
             }
         };
 
-        struct c_DirectionalLight : public BaseComponent {
+        struct DLL_EXPORT c_DirectionalLight : public BaseComponent {
             glm::vec3 lightPos = glm::vec3(0, 0, 0);
             glm::vec3 color = glm::vec3(1, 1, 1);
             float intensity = 1;
@@ -1274,7 +1508,87 @@ namespace HyperAPI {
             }
         };
 
-        class GameObject : public ComponentEntity {
+        struct DLL_EXPORT Rigidbody2D : public BaseComponent {
+            b2BodyType type = b2_staticBody;
+            bool fixedRotation = false;
+            float gravityScale = 1.0f;
+            void *body = nullptr;
+
+            void GUI() {
+                if(ImGui::TreeNode("Rigidbody2D")) {
+                    ImGui::Text("Type");
+                    ImGui::RadioButton("Static", (int *)&type, 0);
+                    ImGui::RadioButton("Dynamic", (int *)&type, 1);
+                    ImGui::RadioButton("Kinematic", (int *)&type, 2);
+                    ImGui::Checkbox("Fixed Rotation", &fixedRotation);
+                    ImGui::DragFloat("Gravity Scale", &gravityScale, 0.01f);
+
+                    ImGui::TreePop();
+                }
+            }
+
+            void SetVelocity(float x, float y) {
+                if(body == nullptr) return;
+                b2Body *b = (b2Body*)body;
+                b->SetLinearVelocity(b2Vec2(x, y));
+            }
+
+            void SetAngularVelocity(float velocity) {
+                if(body == nullptr) return;
+                b2Body *b = (b2Body*)body;
+                b->SetAngularVelocity(velocity);
+            }
+
+            void SetPosition(float x, float y) {
+                if(body == nullptr) return;
+                b2Body *b = (b2Body*)body;
+                b->SetTransform(b2Vec2(x, y), b->GetAngle());
+            }
+
+            void Force(float x, float y) {
+                if(body == nullptr) return;
+                b2Body *b = (b2Body*)body;
+                b->ApplyForceToCenter(b2Vec2(x, y), true);
+            }
+
+            void Torque(float torque) {
+                if(body == nullptr) return;
+                b2Body *b = (b2Body*)body;
+                b->ApplyTorque(torque, true);
+            }
+        };
+
+        struct DLL_EXPORT BoxCollider2D : public BaseComponent {
+            Vector2 offset = Vector2(0, 0);
+            Vector2 size = Vector2(0.5, 0.5);
+
+            float density = 1.0f;
+            float friction = 0.5f;
+            float restitution = 0.0f;
+            float restitutionThreshold = 0.5f;
+
+            void *fixture = nullptr;
+
+            void GUI() {
+                if(ImGui::TreeNode("Box Collider 2D")) {
+                    ImGui::DragFloat2("Offset", &offset.x, 0.01f);
+                    ImGui::DragFloat2("Size", &size.x, 0.01f);
+
+                    ImGui::DragFloat("Density", &density, 0.01f);
+                    ImGui::DragFloat("Friction", &friction, 0.01f);
+                    ImGui::DragFloat("Restitution", &restitution, 0.01f);
+                    ImGui::DragFloat("Restitution Threshold", &restitutionThreshold, 0.01f);
+
+                    ImGui::NewLine();
+                    if(ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::m_Registry.remove<BoxCollider2D>(entity);
+                    }
+                    ImGui::TreePop();
+                }
+            }
+        };
+
+        class DLL_EXPORT GameObject : public ComponentEntity {
         public:
             GameObject() {
                 entity = Scene::m_Registry.create();
@@ -1303,6 +1617,13 @@ namespace HyperAPI {
 
                     strncpy(Scene::tag, Scene::m_Object->tag.c_str(), 499);
                     Scene::tag[499] = '\0';
+                }
+
+                if(ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+                    dirPayloadData = ID;
+                    ImGui::SetDragDropPayload("Prefab", dirPayloadData.c_str(), strlen(dirPayloadData.c_str()));
+                    ImGui::Text(name.c_str());
+                    ImGui::EndDragDropSource();
                 }
 
                 if(ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Delete)) && Scene::m_Object == this) {
@@ -1340,8 +1661,42 @@ namespace HyperAPI {
 
             }
         };
-    
-        struct CameraComponent : public BaseComponent {
+
+        struct DLL_EXPORT NativeScriptManager : public BaseComponent {
+            std::vector<StaticScript*> m_StaticScripts;
+            GameObject *gameObject;
+
+            NativeScriptManager() {}
+
+            void Init() {
+                for(auto &gameObject : Scene::m_GameObjects) {
+                    if(gameObject->ID == ID) {
+                        this->gameObject = gameObject;
+                        break;
+                    }
+                }
+            }
+        
+            template<typename T>
+            void AddScript() {
+                m_StaticScripts.push_back(new T());
+                m_StaticScripts.back()->gameObject = gameObject;
+            }
+
+            void Start() {
+                for(auto script : m_StaticScripts) {
+                    script->OnStart();
+                }
+            }
+
+            void Update() {
+                for(auto script : m_StaticScripts) {
+                    script->OnUpdate();
+                }
+            }
+        };
+
+        struct DLL_EXPORT CameraComponent : public BaseComponent {
             Camera *camera = nullptr;
             GameObject *m_GameObject = nullptr;
 
@@ -1386,7 +1741,7 @@ namespace HyperAPI {
                     ImGui::NewLine();
 
                     ImVec2 winSize = ImGui::GetWindowSize();
-                    if(false && ImGui::Button(ICON_FA_TRASH " Delete", ImVec2(winSize.x, 0))) {
+                    if(ImGui::Button(ICON_FA_TRASH " Delete", ImVec2(winSize.x, 0))) {
                         delete camera;
                         camera = nullptr;
                         Scene::m_Registry.remove<CameraComponent>(entity);    
@@ -1396,7 +1751,7 @@ namespace HyperAPI {
             }
         };
 
-        struct m_LuaScriptComponent : public BaseComponent {
+        struct DLL_EXPORT m_LuaScriptComponent : public BaseComponent {
             GameObject *m_GameObject;
             std::vector<ScriptEngine::m_LuaScript> scripts;
 
@@ -1474,7 +1829,7 @@ namespace HyperAPI {
             }
         };
 
-        class Model
+        class DLL_EXPORT Model
         {
         private:
             int currSlot = 0;
@@ -1517,16 +1872,21 @@ namespace HyperAPI {
             void Draw(Shader &shader, Camera &camera);
         };
     }
+
+    namespace f_GameObject {
+        Experimental::GameObject *FindGameObjectByName(const std::string &name);
+        Experimental::GameObject *FindGameObjectByTag(const std::string &tag);
+    }
 }
 
-extern const int width ;
-extern const int height;
-extern float rectangleVert[];
+extern DLL_EXPORT const int width ;
+extern DLL_EXPORT const int height;
+extern DLL_EXPORT float rectangleVert[];
 
-void NewFrame(unsigned int FBO, int width, int height);
-void EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height);
+void DLL_EXPORT NewFrame(unsigned int FBO, int width, int height);
+void DLL_EXPORT EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height);
 
-void EndEndFrame(
+void DLL_EXPORT EndEndFrame(
     HyperAPI::Shader &framebufferShader, 
     HyperAPI::Renderer &renderer, 
     unsigned int FBO, 
@@ -1540,11 +1900,13 @@ void EndEndFrame(
     const int height
 );
 
-void SC_EndFrame(HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height);
+void DLL_EXPORT SC_EndFrame(HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height);
 
 namespace Hyper {
-    class Application {
+    class DLL_EXPORT Application {
     public:
+        int sceneMouseX, sceneMouseY;
+
         bool renderOnScreen = false;
         int width;
         int height;
@@ -1591,8 +1953,8 @@ namespace Hyper {
     float LerpFloat(float a, float b, float t);
 }
 
-extern std::vector<HyperAPI::PointLight*> PointLights;
-extern std::vector<HyperAPI::Light2D*> Lights2D;
-extern std::vector<HyperAPI::SpotLight*> SpotLights;
-extern std::vector<HyperAPI::DirectionalLight*> DirLights;
-extern std::vector<HyperAPI::Mesh*> hyperEntities;
+extern DLL_EXPORT std::vector<HyperAPI::PointLight*> PointLights;
+extern DLL_EXPORT std::vector<HyperAPI::Light2D*> Lights2D;
+extern DLL_EXPORT std::vector<HyperAPI::SpotLight*> SpotLights;
+extern DLL_EXPORT std::vector<HyperAPI::DirectionalLight*> DirLights;
+extern DLL_EXPORT std::vector<HyperAPI::Mesh*> hyperEntities;

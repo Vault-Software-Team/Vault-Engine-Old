@@ -1,13 +1,17 @@
 {
     "baseColor": {
-        "r": 1.0,
-        "g": 1.0,
+        "a": 1.0,
         "b": 1.0,
-        "a": 1.0
+        "g": 1.0,
+        "r": 1.0
     },
-    "diffuse": "assets/logo2.png",
+    "diffuse": "assets/ground.png",
     "metallic": 0.0,
     "normal": "None",
     "roughness": 0.0,
-    "specular": "assets/planksSpec.png"
+    "specular": "assets/planksSpec.png",
+    "texUV": {
+        "x": 0.0,
+        "y": 0.0
+    }
 }

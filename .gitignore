@@ -8,4 +8,11 @@ g_build.out
 windows
 website/node_modules
 BASDGKAFSGL.ggg
+assets/flappy_bg.png
+assets/kevin.png
+assets/flappy.png
+assets/PONGON.png
+assets/guns
+assets/polyjam
+assets/scenes/*.static
 .vscode

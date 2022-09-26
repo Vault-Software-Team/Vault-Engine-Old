@@ -1,11 +1,11 @@
 #include "api.hpp"
 #include "scene.hpp"
 
-DLL_EXPORT std::vector<HyperAPI::PointLight*> PointLights;
-DLL_EXPORT std::vector<HyperAPI::SpotLight*> SpotLights;
-DLL_EXPORT std::vector<HyperAPI::Light2D*> Lights2D;
-DLL_EXPORT std::vector<HyperAPI::DirectionalLight*> DirLights;
-DLL_EXPORT std::vector<HyperAPI::Mesh*> hyperEntities;
+std::vector<HyperAPI::PointLight*> PointLights;
+std::vector<HyperAPI::SpotLight*> SpotLights;
+std::vector<HyperAPI::Light2D*> Lights2D;
+std::vector<HyperAPI::DirectionalLight*> DirLights;
+std::vector<HyperAPI::Mesh*> hyperEntities;
 
 const int width = 1280;
 const int height = 720;
@@ -26,15 +26,13 @@ glm::mat4 view;
 float rotation = 0.0f;
 double previousTime = glfwGetTime();
 
-
-
 namespace uuid {
-    DLL_EXPORT std::random_device              rd;
-    DLL_EXPORT std::mt19937                    gen(rd());
-    DLL_EXPORT std::uniform_int_distribution<> dis(0, 15);
-    DLL_EXPORT std::uniform_int_distribution<> dis2(8, 11);
+    std::random_device              rd;
+    std::mt19937                    gen(rd());
+    std::uniform_int_distribution<> dis(0, 15);
+    std::uniform_int_distribution<> dis2(8, 11);
 
-    std::string DLL_EXPORT generate_uuid_v4() {
+    std::string generate_uuid_v4() {
         std::stringstream ss;
         int i;
         ss << std::hex;
@@ -76,7 +74,7 @@ std::string get_file_contents(const char *file) {
     return content;
 }
 
-void DLL_EXPORT NewFrame(unsigned int FBO, int width, int height) {
+void NewFrame(unsigned int FBO, int width, int height) {
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
     glClearColor(pow(0.3f, 2.2f), pow(0.3f, 2.2f), pow(0.3f, 2.2f), 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -86,7 +84,7 @@ void DLL_EXPORT NewFrame(unsigned int FBO, int width, int height) {
     glEnable(GL_DEPTH_TEST); 
 }
 
-void DLL_EXPORT EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height) {
+void EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height) {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postProcessingFBO);
     glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
@@ -110,7 +108,7 @@ void DLL_EXPORT EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer
     }
 }
 
-void DLL_EXPORT EndEndFrame(
+void EndEndFrame(
     HyperAPI::Shader &framebufferShader, 
     HyperAPI::Renderer &renderer, 
     unsigned int FBO, 
@@ -152,7 +150,7 @@ void DLL_EXPORT EndEndFrame(
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void DLL_EXPORT SC_EndFrame(HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height) {
+void SC_EndFrame(HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height) {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postProcessingFBO);
     glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
@@ -172,7 +170,7 @@ namespace HyperAPI {
     bool isRunning = false;
     bool isStopped = true;
 
-    std::vector<HyperAPI::Animation> DLL_EXPORT GetAnimationsFromXML(const char *texPath, float delay, Vector2 sheetSize, const std::string &xmlFile)
+    std::vector<HyperAPI::Animation> GetAnimationsFromXML(const char *texPath, float delay, Vector2 sheetSize, const std::string &xmlFile)
     {
         std::vector<HyperAPI::Animation> subtextures;
         return subtextures;
@@ -182,6 +180,11 @@ namespace HyperAPI {
         this->samples = samples;
         this->wireframe = wireframe;
         Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
+        
+        FT_Library ft;
+        if (FT_Init_FreeType(&ft))
+            std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+
         if (!glfwInit()) {
             std::cout << "Failed to initialize GLFW" << std::endl;
         }
@@ -769,7 +772,6 @@ namespace HyperAPI {
         glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(camMatrix));
     }
 
-
     void Camera::Inputs(GLFWwindow* window, Vector2 winPos)
     {
         if(EnttComp) {
@@ -932,7 +934,7 @@ namespace HyperAPI {
                     // glfwSetCursorPos(window, winPos.x + (width / 2), winPos.y + (height / 2));
                     firstClick = true;
                 }
-
+                UpdateComponent(transform);
             }
             UpdateComponent(transform);
         }
@@ -1300,7 +1302,7 @@ namespace HyperAPI {
         m_Mesh->Draw(shader, camera, trans);
     }
 
-    Spritesheet::Spritesheet(const char *texPath, Vector2 sheetSize, Vector2 spriteSize, Vector2 spriteCoords) {
+    Spritesheet::Spritesheet(const char *texPath, Material &mat, Vector2 sheetSize, Vector2 spriteSize, Vector2 spriteCoords) {
         // square vertex
         float xCoord = spriteCoords.x + spriteSize.x;
         float yCoord = (sheetSize.y - (spriteCoords.y + spriteSize.y)) + spriteSize.y;
@@ -1330,8 +1332,8 @@ namespace HyperAPI {
             0, 2, 3
         };
 
-        Material material(Vector4(1,1,1,1), { Texture(texPath, 0, "texture_diffuse") });
-        m_Mesh = new Mesh(vertices, indices, material);
+        // Material material(Vector4(1,1,1,1), { Texture(texPath, 0, "texture_diffuse") });
+        m_Mesh = new Mesh(vertices, indices, mat);
     }
 
     void Spritesheet::Draw(Shader &shader, Camera &camera) {
@@ -1612,6 +1614,8 @@ namespace HyperAPI {
         if(specular != nullptr) {
             specular->Bind(1);
             shader.SetUniform1i("texture_specular0", 1);
+        } else {
+            shader.SetUniform1i("texture_specular0", -1);
         }
     
         if(normal != nullptr) {
@@ -1864,6 +1868,28 @@ namespace HyperAPI {
             return textures;
         }  
     }
+
+    namespace f_GameObject {
+        Experimental::GameObject *FindGameObjectByName(const std::string &name) {
+            for(auto &gameObject : Scene::m_GameObjects) {
+                if(gameObject->name == name) {
+                    return gameObject;
+                }
+            }
+
+            return nullptr;
+        }
+
+        Experimental::GameObject *FindGameObjectByTag(const std::string &tag) {
+            for(auto &gameObject : Scene::m_GameObjects) {
+                if(gameObject->tag == tag) {
+                    return gameObject;
+                }
+            }
+
+            return nullptr;
+        }
+    }
 }
 
 namespace Hyper {
@@ -1965,7 +1991,7 @@ namespace Hyper {
 
         float timeStep = 1.0f / 60.0f;
 
-       unsigned int shadowMapFBO;
+        unsigned int shadowMapFBO;
         glGenFramebuffers(1, &shadowMapFBO);
 
         unsigned int shadowMapWidth = 2042, shadowMapHeight = 2042;
@@ -1984,11 +2010,9 @@ namespace Hyper {
         glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowMap, 0);
 
-
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
 
         // Matrices needed for the light's perspective
         glm::mat4 orthgonalProjection = glm::ortho(-35.0f, 35.0f, -35.0f, 35.0f, 0.1f, 75.0f);
@@ -2044,6 +2068,18 @@ namespace Hyper {
             glDeleteTextures(1, &SbufferTexture);
 
             // ----------
+
+            // glGenFramebuffers(1, &mousePickFBO);
+            // glBindFramebuffer(GL_FRAMEBUFFER, mousePickFBO);
+
+            // glGenTextures(1, &mousePickTexture);
+            // glBindTexture(GL_TEXTURE_2D, mousePickTexture);
+            // glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER, GL_INT, NULL);
+            // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, mousePickTexture, 0);
         
             glGenFramebuffers(1, &FBO);
             glBindFramebuffer(GL_FRAMEBUFFER, FBO);
@@ -2117,6 +2153,8 @@ namespace Hyper {
             glBindTexture(GL_TEXTURE_2D, shadowMap);
             update();
 
+            // imgui in the framebuffer
+
             glClear(GL_DEPTH_BUFFER_BIT);
             if(!renderOnScreen) {
                 EndEndFrame(framebufferShader, *renderer, FBO, rectVAO, postProcessingTexture, postProcessingFBO, SFBO, S_PPT, S_PPFBO, width, height);
@@ -2139,7 +2177,7 @@ namespace Hyper {
         }
     }
 
-    float DLL_EXPORT LerpFloat(float a, float b, float t) {
+    float LerpFloat(float a, float b, float t) {
         return a + t * (b - a);
     }
 }

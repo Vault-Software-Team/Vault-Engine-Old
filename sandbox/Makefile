@@ -8,7 +8,7 @@ sources += $(wildcard vendor/*/*/*.c)
 sources += $(wildcard vendor/*/*/*/*.c)
 objects = $(sources:.cpp=.o)
 
-flags = -fno-stack-protector -std=c++20 -lstdc++fs -g -L"../lib" -lluajit-5.1 -lGL -lGLU -lglfw -ltinyxml2 -lm -lSDL2_mixer -lassimp -lXrandr -lXi -lbox2d -lX11 -lXxf86vm -lpthread -ldl -lXinerama -lXcursor -lGLEW -lhyper
+flags = -fno-stack-protector -std=c++20 -lstdc++fs -g -L"../lib" -lfreetype -lluajit-5.1 -lGL -lGLU -lglfw -ltinyxml2 -lm -lSDL2_mixer -lassimp -lXrandr -lXi -lbox2d -lX11 -lXxf86vm -lpthread -ldl -lXinerama -lXcursor -lGLEW -lhyper
 
 
 $(exec): $(objects)
