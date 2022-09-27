@@ -18,4 +18,5 @@ assets/guns
 assets/polyjam
 assets/scenes/*.static
 api
+platforms
 .vscode

@@ -249,14 +249,6 @@ vec4 spotLight(SpotLight light) {
 
 float near = 0.1;
 float far = 100.0;
-float linearizeDepth(float depth) {
-    return (2 * near * far) / (far + near - (depth * 2 - 1) * (far - near));
-}
-
-float logisticDepth(float depth, float steepness = 0.5, float offset = 0.5) {
-    float zVal = linearizeDepth(depth);
-    return (1 / (1 + exp(-steepness * (zVal - offset))));
-}
 
 // vec4 fog() {
 //     float depth = logisticDepth(gl_FragCoord.z);

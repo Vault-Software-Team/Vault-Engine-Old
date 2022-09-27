@@ -300,15 +300,15 @@ namespace HyperAPI {
             std::cout << infoLog << std::endl;
         }
 
-        geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
-        glShaderSource(geometryShader, 1, &geometryShaderCode, NULL);
-        glCompileShader(geometryShader);
-        glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
-        if(!success) {
-            glGetShaderInfoLog(geometryShader, 512, NULL, infoLog);
-            std::cout << "Failed to compile geometry shader" << std::endl;
-            std::cout << infoLog << std::endl;
-        }
+        // geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+        // glShaderSource(geometryShader, 1, &geometryShaderCode, NULL);
+        // glCompileShader(geometryShader);
+        // glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
+        // if(!success) {
+        //     glGetShaderInfoLog(geometryShader, 512, NULL, infoLog);
+        //     std::cout << "Failed to compile geometry shader" << std::endl;
+        //     std::cout << infoLog << std::endl;
+        // }
 
         ID = glCreateProgram();
         glAttachShader(ID, vertShader);
@@ -326,7 +326,7 @@ namespace HyperAPI {
 
         glDeleteShader(vertShader);
         glDeleteShader(fragShader);
-        glDeleteShader(geometryShader);
+        // glDeleteShader(geometryShader);
     }
 
     void Shader::Bind() {

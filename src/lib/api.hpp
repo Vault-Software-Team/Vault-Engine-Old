@@ -3,7 +3,8 @@
 #include "../vendor/GLFW/glfw3.h"
 #include <fstream>
 #include <iostream>
-#include "../vendor/stb_image/stb_image.h"
+#include <stb_image/stb_image.h>
+// #include "../vendor/stb_image/stb_image.h"
 #include "../vendor/glm/glm.hpp"
 #include "../vendor/glm/gtc/matrix_transform.hpp"
 #include "../vendor/glm/gtc/type_ptr.hpp"
@@ -1558,6 +1559,7 @@ namespace HyperAPI {
 
         class GameObject : public ComponentEntity {
         public:
+            std::string NODE_ID = uuid::generate_uuid_v4();
             GameObject() {
                 entity = Scene::m_Registry.create();
                 ID = uuid::generate_uuid_v4();
@@ -1577,7 +1579,7 @@ namespace HyperAPI {
             }
 
             void GUI() {
-                bool item = ImGui::TreeNode(ID.c_str(), name.c_str());
+                bool item = ImGui::TreeNode(NODE_ID.c_str(), name.c_str());
                 if(ImGui::IsItemClicked(0)) {
                     Scene::m_Object = this;
                     strncpy(Scene::name, Scene::m_Object->name.c_str(), 499);
@@ -1589,7 +1591,7 @@ namespace HyperAPI {
 
                 if(ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
                     dirPayloadData = ID;
-                    ImGui::SetDragDropPayload("Prefab", dirPayloadData.c_str(), strlen(dirPayloadData.c_str()));
+                    ImGui::SetDragDropPayload("file", dirPayloadData.c_str(), strlen(dirPayloadData.c_str()));
                     ImGui::Text(name.c_str());
                     ImGui::EndDragDropSource();
                 }

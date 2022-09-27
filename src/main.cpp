@@ -868,6 +868,7 @@ int main() {
         }
         
         if(ImGui::Begin(ICON_FA_FOLDER " Assets")) {
+            Scene::DropTargetMat(Scene::DRAG_GAMEOBJECT, nullptr);
             DirIter(cwd + std::string("/assets"));
             ImGui::End();
         }
@@ -896,16 +897,12 @@ int main() {
 
                 std::string toCd = "cd \"" + filePathName + "\" && ";
 
-                system((toCd + "rm -r *").c_str());
-                if(system("cd sandbox && make") == 0) {
-                    system((std::string("cp ./sandbox/LaunchGame.sh ") + "\"" + filePathName + "/" + config.name + "\"").c_str());
-                    system(("chmod +x \"" + filePathName + "/" + config.name + "\"").c_str());
-                    system((std::string("cp -r assets ") + "\"" + filePathName + "/assets\"").c_str());
-                    system((std::string("cp -r build ") + "\"" + filePathName + "/build\"").c_str());
-                    system((std::string("cp -r shaders ") + "\"" + filePathName + "/shaders\"").c_str());
-                    system((std::string("cp -r lib ") + "\"" + filePathName + "/lib\"").c_str());                
-                    system((std::string("cp ./g_build.out ") + "\"" + filePathName + "/lib/build.out\"").c_str());
-                }
+                fs::copy(cwd + "/assets", filePathName + "/assets", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+                fs::copy(cwd + "/build", filePathName + "/build", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+                fs::copy(cwd + "/shaders", filePathName + "/shaders", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+                // copy all files that start with *.dll AND THEY ARE NOT IN LIB FOLDER
+                fs::copy(cwd + "/dlls", filePathName, fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+                fs::copy(cwd + "/platforms/dist/windows/Game.exe", filePathName + "/" + config.name + ".exe", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
             }
 
             

@@ -18,13 +18,6 @@ if [ "$PLATFORM" = "windows" ]; then
     cp -r shaders dist/windows/shaders
     cp -r build dist/windows/build
     cp -r sandbox dist/windows/sandbox
-
-    if [ -d dist/windows/src ]; then
-        cp -r src/*.o dist/windows/src
-    else
-        mkdir dist/windows/src
-        cp -r src/*.o dist/windows/src
-    fi
 else 
     if [ -d dist/linux ]; then
         echo "dist/linux exists"
@@ -42,11 +35,4 @@ else
     cp -r shaders dist/linux/shaders
     cp -r build dist/linux/build
     cp -r sandbox dist/linux/sandbox
-
-    if [ -d dist/linux/src ]; then
-        cp -r src/*.o dist/linux/src
-    else
-        mkdir dist/linux/src
-        cp -r src/*.o dist/linux/src
-    fi
 fi

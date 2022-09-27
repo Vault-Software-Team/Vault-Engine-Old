@@ -56,10 +56,15 @@ namespace HyperAPI {
             DRAG_NORMAL,
             DRAG_MODEL,
             DRAG_SCENE,
-            DRAG_SPRITE
+            DRAG_SPRITE,
+            DRAG_PREFAB,
+            DRAG_GAMEOBJECT
         };
+        extern std::vector<Experimental::GameObject*> m_GameObjects;
         extern std::string currentScenePath;
         void LoadScene(const std::string &scenePath);
+        void LoadPrefab(const std::string &scenePath);
+        void SavePrefab(const std::string &path, Experimental::GameObject *gameObject);
         void SaveScene(const std::string &path);
 
         void DropTargetMat(DragType type, Mesh *currEntity);
@@ -68,7 +73,6 @@ namespace HyperAPI {
         extern char name[499];
         extern char tag[499];
         extern entt::registry m_Registry;
-        extern std::vector<Experimental::GameObject*> m_GameObjects;
 
         extern std::vector<Mesh*> entities;
         extern std::vector<Model> models;
