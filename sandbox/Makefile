@@ -1,4 +1,4 @@
-exec = g_build.out
+exec = ../g_build.out
 win_exec = g_win_build.exe
 cwd=$(shell pwd)
 sources = $(wildcard *.cpp)
@@ -29,7 +29,7 @@ win_flags = -L"../win_libs" -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.
 
 $(exec): $(objects)
 	g++ $(objects) $(flags) -o $(exec)
-	clear
+	# clear
 
 %.o: %.cpp ../src/lib/%.h
 	g++ -c $(flags) $< -o $@
