@@ -45,6 +45,17 @@
 
 #define MAX_BONE_INFLUENCE 4
 
+// command prompt colors
+#define RED "\033[0;31m"
+#define GREEN "\033[0;32m"
+#define YELLOW "\033[0;33m"
+#define BLUE "\033[0;34m"
+#define MAGENTA "\033[0;35m"
+#define CYAN "\033[0;36m"
+#define WHITE "\033[0;37m"
+#define RESET "\033[0m"
+#define HYPER_LOG(x) std::cout << RED "[STATIC] - " RESET << x << std::endl;
+
 using json = nlohmann::json;
 
 extern   glm::mat4 projection;
@@ -987,6 +998,7 @@ namespace HyperAPI {
                 if(ImGui::TreeNode("Sprite Renderer")) {
                     if(ImGui::TreeNode("Texture")) {
                         if(mesh->material.diffuse != nullptr) {
+                            HYPER_LOG("Changed diffuse texture");
                             ImGui::ImageButton((void*)mesh->material.diffuse->ID, ImVec2(128,128), ImVec2(0,1), ImVec2(1,0));
                         } else {
                             ImGui::ImageButton((void*)0, ImVec2(128,128));
@@ -1028,6 +1040,7 @@ namespace HyperAPI {
                 if(ImGui::TreeNode("Spritesheet Renderer")) {
                     if(ImGui::TreeNode("Texture")) {
                         if(material.diffuse != nullptr) {
+                            HYPER_LOG("Changed diffuse texture");
                             ImGui::ImageButton((void*)material.diffuse->ID, ImVec2(128,128), ImVec2(0,1), ImVec2(1,0));
                         } else {
                             ImGui::ImageButton((void*)0, ImVec2(128,128));
@@ -1560,6 +1573,8 @@ namespace HyperAPI {
         class GameObject : public ComponentEntity {
         public:
             std::string NODE_ID = uuid::generate_uuid_v4();
+            std::string layer = "Default";
+            char layerData[32] = "Default";
             GameObject() {
                 entity = Scene::m_Registry.create();
                 ID = uuid::generate_uuid_v4();
@@ -1587,6 +1602,9 @@ namespace HyperAPI {
 
                     strncpy(Scene::tag, Scene::m_Object->tag.c_str(), 499);
                     Scene::tag[499] = '\0';
+
+                    strncpy(Scene::layer, Scene::m_Object->layer.c_str(), 32);
+                    Scene::layer[31] = '\0';
                 }
 
                 if(ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
@@ -1651,6 +1669,7 @@ namespace HyperAPI {
             void AddScript() {
                 m_StaticScripts.push_back(new T());
                 m_StaticScripts.back()->gameObject = gameObject;
+                HYPER_LOG(std::string("Added script: ") + typeid(T).name());
             }
 
             void Start() {
@@ -1784,6 +1803,8 @@ namespace HyperAPI {
                             script.ID = ID;
                             // script.Init();
                             scripts.push_back(script);
+
+                            HYPER_LOG(std::string("Added lua script: ") + filePathName);
                         }
 
                         ImGuiFileDialog::Instance()->Close();
@@ -1890,7 +1911,9 @@ namespace Hyper {
 
         Application(const int width, const int height, const char *gameTitle, bool wireframe = false) 
         : width(width), height(height), title(std::string(gameTitle))  {
+            HYPER_LOG("Initializing Static Engine");
             renderer = new HyperAPI::Renderer(width, height, title.c_str(), {0, -1}, 8, wireframe);
+            HYPER_LOG("Initialized Static Engine");
 
             //get vendor 
             vendor = (char*)glGetString(GL_VENDOR);
@@ -1916,6 +1939,7 @@ namespace Hyper {
             io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;    
 
             ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 2.0f);  
+            HYPER_LOG("Initialized ImGui");
         }
         void Run(std::function<void()> update, std::function<void(unsigned int &PPT, unsigned int &PPFBO)> gui = [](unsigned int &PPT, unsigned int &PPFBO){});
     };

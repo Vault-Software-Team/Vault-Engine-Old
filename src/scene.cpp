@@ -385,17 +385,20 @@ namespace HyperAPI {
                     if(gameObject->HasComponent<Experimental::MeshRenderer>()) {
                         auto &meshRenderer = gameObject->GetComponent<Experimental::MeshRenderer>();
                         if(meshRenderer.m_Mesh != nullptr) {
-                            // if(meshRenderer.m_Mesh->material.diffuse != nullptr) {
-                            //     delete meshRenderer.m_Mesh->material.diffuse;
-                            // }
+                            if(meshRenderer.m_Mesh->material.diffuse != nullptr) {
+                                glDeleteTextures(1, &meshRenderer.m_Mesh->material.diffuse->ID);
+                                delete meshRenderer.m_Mesh->material.diffuse;
+                            }
 
-                            // if(meshRenderer.m_Mesh->material.specular != nullptr) {
-                            //     delete meshRenderer.m_Mesh->material.specular;
-                            // }
+                            if(meshRenderer.m_Mesh->material.specular != nullptr) {
+                                glDeleteTextures(1, &meshRenderer.m_Mesh->material.specular->ID);
+                                delete meshRenderer.m_Mesh->material.specular;
+                            }
 
-                            // if(meshRenderer.m_Mesh->material.normal != nullptr) {
-                            //     delete meshRenderer.m_Mesh->material.normal;
-                            // }
+                            if(meshRenderer.m_Mesh->material.normal != nullptr) {
+                                glDeleteTextures(1, &meshRenderer.m_Mesh->material.normal->ID);
+                                delete meshRenderer.m_Mesh->material.normal;
+                            }
 
                             meshRenderer.m_Mesh->material.textures.clear();
                             delete meshRenderer.m_Mesh;
@@ -456,11 +459,13 @@ namespace HyperAPI {
                 std::string ID = JSON[i]["ID"];
                 std::string parentID = JSON[i]["parentID"];
                 std::string tag = JSON[i]["tag"];
+                std::string layer = JSON[i]["layer"];
 
                 gameObject->name = name;
                 gameObject->tag = tag;
                 gameObject->ID = ID;
                 gameObject->parentID = parentID;
+                gameObject->layer = layer;
                 nlohmann::json components = JSON[i]["components"];
 
                 std::string meshType = "";
@@ -753,6 +758,8 @@ namespace HyperAPI {
                 }
 
             }
+
+            HYPER_LOG("Loaded scene: " + scenePath);
         }
         void LoadPrefab(const std::string &scenePath) {
             std::ifstream file(scenePath);
@@ -1077,6 +1084,8 @@ namespace HyperAPI {
                 }
 
             }
+        
+            HYPER_LOG("Loaded Prefab: " + scenePath);
         }
         void SaveScene(const std::string &path) { 
             std::ofstream file(path);
@@ -1091,11 +1100,13 @@ namespace HyperAPI {
                 std::string ID = gameObject->ID; 
                 std::string parentID = gameObject->parentID; 
                 std::string tag = gameObject->tag;
+                std::string layer = gameObject->layer;
 
                 JSON[i]["name"] = name;
                 JSON[i]["ID"] = ID;
                 JSON[i]["tag"] = tag;
                 JSON[i]["parentID"] = parentID;
+                JSON[i]["layer"] = layer;
                 JSON[i]["components"] = nlohmann::json::array();
 
                 int componentOffset = 0;
@@ -1256,6 +1267,7 @@ namespace HyperAPI {
             }
             
             file << JSON;
+            HYPER_LOG("Scene saved to " + path);
         }
 
         void DropTargetMat(DragType type, Mesh *currEntity) {
@@ -1349,11 +1361,13 @@ namespace HyperAPI {
 
         std::string currentScenePath = "";
         entt::registry m_Registry;
+        std::map<std::string, bool> layers;
         std::vector<Experimental::GameObject*> m_GameObjects = {};
 
         Experimental::GameObject *m_Object = nullptr;
         char name[499];
         char tag[499];
+        char layer[32];
 
         std::vector<Mesh*> entities = {};
         std::vector<Model> models = {};

@@ -33,6 +33,7 @@
 #include "../vendor/assimp/postprocess.h"
 #include "../vendor/SDL2/SDL_mixer.h"
 #include <any>
+#include <map>
 #include "scene.hpp"
 
 namespace HyperAPI {
@@ -61,6 +62,7 @@ namespace HyperAPI {
             DRAG_GAMEOBJECT
         };
         extern std::vector<Experimental::GameObject*> m_GameObjects;
+        extern std::map<std::string, bool> layers;
         extern std::string currentScenePath;
         void LoadScene(const std::string &scenePath);
         void LoadPrefab(const std::string &scenePath);
@@ -72,6 +74,7 @@ namespace HyperAPI {
         extern Experimental::GameObject *m_Object;
         extern char name[499];
         extern char tag[499];
+        extern char layer[32];
         extern entt::registry m_Registry;
 
         extern std::vector<Mesh*> entities;

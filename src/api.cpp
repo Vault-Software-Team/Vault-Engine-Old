@@ -286,7 +286,7 @@ namespace HyperAPI {
         glGetShaderiv(vertShader, GL_COMPILE_STATUS, &success);
         if(!success) {
             glGetShaderInfoLog(vertShader, 512, NULL, infoLog);
-            std::cout << "Failed to compile vertex shader" << std::endl;
+            HYPER_LOG("Failed to compile Vertex Shader");
             std::cout << infoLog << std::endl;
         }
 
@@ -296,7 +296,7 @@ namespace HyperAPI {
         glGetShaderiv(fragShader, GL_COMPILE_STATUS, &success);
         if(!success) {
             glGetShaderInfoLog(fragShader, 512, NULL, infoLog);
-            std::cout << "Failed to compile fragment shader" << std::endl;
+            HYPER_LOG("Failed to compile Fragment Shader");
             std::cout << infoLog << std::endl;
         }
 
@@ -320,7 +320,7 @@ namespace HyperAPI {
         glGetProgramiv(ID, GL_LINK_STATUS, &success);
         if(!success) {
             glGetProgramInfoLog(ID, 512, NULL, infoLog);
-            std::cout << "Failed to link program" << std::endl;
+            HYPER_LOG("Failed to link program");
             std::cout << infoLog << std::endl;
         }
 
@@ -609,6 +609,8 @@ namespace HyperAPI {
         this->slot = slot;
         texPath = std::string(texturePath);
         data = stbi_load(texturePath, &width, &height, &nrChannels, 0);
+
+        HYPER_LOG("Texture " + std::to_string(slot) + " loaded from " + texturePath);
 
         glGenTextures(1, &ID);
         glBindTexture(GL_TEXTURE_2D, ID);
@@ -1097,6 +1099,8 @@ namespace HyperAPI {
         facesCubemap.push_back(bottom);
         facesCubemap.push_back(front);
         facesCubemap.push_back(back);
+
+        HYPER_LOG("Skybox created");
 
         float skyboxVertices[] =
         {
@@ -1852,6 +1856,7 @@ namespace HyperAPI {
 
 namespace Hyper {
     void Application::Run(std::function<void()> update, std::function<void(unsigned int &PPT, unsigned int &PPFBO)> gui) {
+        HYPER_LOG("Application started");
         float gamma = 2.2f;
 
         HyperAPI::Shader shadowMapProgram("shaders/shadowMap.glsl");
@@ -1973,6 +1978,8 @@ namespace Hyper {
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        HYPER_LOG("Renderer initialized");
 
         // Matrices needed for the light's perspective
         glm::mat4 orthgonalProjection = glm::ortho(-35.0f, 35.0f, -35.0f, 35.0f, 0.1f, 75.0f);
@@ -2149,6 +2156,8 @@ namespace Hyper {
             glfwSwapBuffers(renderer->window);
 
         }
+    
+        HYPER_LOG("Closing Static Engine");
     }
 
     float LerpFloat(float a, float b, float t) {

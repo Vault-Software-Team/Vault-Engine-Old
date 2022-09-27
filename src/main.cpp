@@ -198,6 +198,7 @@ struct InspectorMaterial {
 };
 
 int main() {
+    Scene::layers["Default"] = true;
     // ScriptEngine::Init();
 
     char CWD[1024];
@@ -220,6 +221,9 @@ int main() {
         strcpy(config.name, ((std::string)JSON["name"]).c_str());
         config.ambientLight = JSON["ambientLight"];
         config.mainScene = JSON["mainScene"];
+        for(auto &layer : JSON["layers"]) {
+            Scene::layers[(std::string)layer] = true;
+        }
         mainSceneFound = true;
     } else {
         nlohmann::json j = {
@@ -227,7 +231,10 @@ int main() {
             {"ambientLight", config.ambientLight},
             {"mainScene", config.mainScene},
             {"width", config.width},
-            {"height", config.height}
+            {"height", config.height},
+            {"layers", {
+                "Default"
+            }}
         };
 
         std::ofstream o("assets/game.config");
@@ -269,6 +276,8 @@ int main() {
     bool openConfig = false;
     bool openDetails = false;
     bool openInspector = false;
+    bool openLayers = false;
+    char layerName[32] = "New Layer";
 
     int inspectorType = InspecType::None;
 
@@ -313,6 +322,10 @@ int main() {
                     openInspector = true;
                 }
 
+                if(ImGui::MenuItem("Layers")) {
+                    openLayers = true;
+                }
+
                 ImGui::EndMenu();
             }
             if(ImGui::BeginMenu("Info")) {
@@ -323,6 +336,52 @@ int main() {
                 ImGui::EndMenu();
             }
             ImGui::EndMainMenuBar();
+        }
+
+        if(openLayers) {
+            if(ImGui::Begin(ICON_FA_LAYER_GROUP " Layers")) {
+                if(ImGui::TreeNode("New Layer")) {
+                    ImGui::InputText("Name", layerName, 32);
+                    if(ImGui::Button("Create")) {
+                        std::ofstream file("assets/game.config");
+                        Scene::layers[layerName] = true;
+                        strcpy(layerName, "New Layer");
+                        std::vector<std::string> layerStarters;
+                        for(auto &layer : Scene::layers) {
+                            layerStarters.push_back(layer.first);
+                        }
+
+                        
+                        nlohmann::json j = {
+                            {"name", config.name},
+                            {"ambientLight", config.ambientLight},
+                            {"mainScene", config.mainScene},
+                            {"width", config.width},
+                            {"height", config.height},
+                            {"layers", layerStarters}
+                        };
+
+                        file << j.dump(4);
+                        file.close();
+                    }
+
+                    ImGui::TreePop();
+                }
+                ImGui::NewLine();
+
+                for(auto layer : Scene::layers) {
+                    ImGui::PushID(typeid(layer).hash_code());
+                    ImGui::Text(((std::string(ICON_FA_PHOTO_FILM)) + std::string(layer.first)).c_str());
+                    ImGui::PopID();
+                }
+
+                ImGui::NewLine();
+                if(ImGui::Button("Close")) {
+                    openLayers = false;
+                }
+
+                ImGui::End();
+            }
         }
 
         if(openInspector) {
@@ -738,8 +797,29 @@ int main() {
             if(Scene::m_Object != nullptr) {
                 ImGui::InputText("Name", Scene::name, 500);
                 ImGui::InputText("Tag", Scene::tag, 500);
+                // layer items
+                std::vector<const char*> layerItems;
+                for(auto &layer : Scene::layers) {
+                    layerItems.push_back(layer.first.c_str());
+                }
+
+                if(ImGui::BeginCombo("Layer", Scene::m_Object->layer.c_str())) {
+                    for(int i = 0; i < layerItems.size(); i++) {
+                        bool isSelected = (Scene::layer == layerItems[i]);
+                        if(ImGui::Selectable(layerItems[i], isSelected)) {
+                            Scene::m_Object->layer = layerItems[i];
+                            strcpy(Scene::layer, layerItems[i]);
+                        }
+                        if(isSelected) {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+
                 Scene::m_Object->tag = Scene::tag;
                 Scene::m_Object->name = Scene::name;
+                Scene::m_Object->layer = Scene::layer;
 
                 if(Scene::m_Object->HasComponent<Experimental::Transform>()) {
                     Scene::m_Object->GetComponent<Experimental::Transform>().GUI();
@@ -1051,53 +1131,60 @@ int main() {
                     script.Update();
                 }
             }
-            
-            if(gameObject->HasComponent<Experimental::MeshRenderer>()) {
-                // if(gameObject->GetComponcent<Experimental::MeshRenderer>().m_Model) continue;
+        }
 
-                auto meshRenderer = gameObject->GetComponent<Experimental::MeshRenderer>();
-                auto transform = gameObject->GetComponent<Experimental::Transform>();
-                transform.Update();
+        for(auto &layer : Scene::layers) {
+            for(auto &gameObject : Scene::m_GameObjects) {
+                if(gameObject->layer != layer.first) continue;
 
-                glm::mat4 extra = meshRenderer.extraMatrix;
+                if(gameObject->HasComponent<Experimental::MeshRenderer>()) {
+                    // if(gameObject->GetComponcent<Experimental::MeshRenderer>().m_Model) continue;
 
-                if(meshRenderer.m_Mesh != nullptr) {
-                    if(transform.parentTransform != nullptr) {
-                        transform.parentTransform->Update();
-                        meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera, transform.transform * transform.parentTransform->transform * extra);
-                    } else {
-                        meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera, transform.transform * extra);
+                    auto meshRenderer = gameObject->GetComponent<Experimental::MeshRenderer>();
+                    auto transform = gameObject->GetComponent<Experimental::Transform>();
+                    transform.Update();
+
+                    glm::mat4 extra = meshRenderer.extraMatrix;
+
+                    if(meshRenderer.m_Mesh != nullptr) {
+                        if(transform.parentTransform != nullptr) {
+                            transform.parentTransform->Update();
+                            meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera, transform.transform * transform.parentTransform->transform * extra);
+                        } else {
+                            meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera, transform.transform * extra);
+                        }
                     }
                 }
-            }
 
-            if(gameObject->HasComponent<Experimental::SpriteRenderer>()) {
-                auto spriteRenderer = gameObject->GetComponent<Experimental::SpriteRenderer>();
-                auto transform = gameObject->GetComponent<Experimental::Transform>();
-                transform.Update();
+                if(gameObject->HasComponent<Experimental::SpriteRenderer>()) {
+                    auto spriteRenderer = gameObject->GetComponent<Experimental::SpriteRenderer>();
+                    auto transform = gameObject->GetComponent<Experimental::Transform>();
+                    transform.Update();
 
-                spriteRenderer.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
-            }
-
-            if(gameObject->HasComponent<Experimental::SpritesheetRenderer>()) {
-                auto spritesheetRenderer = gameObject->GetComponent<Experimental::SpritesheetRenderer>();
-                auto transform = gameObject->GetComponent<Experimental::Transform>();
-                transform.Update();
-
-                if(spritesheetRenderer.mesh != nullptr) {
-                    spritesheetRenderer.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
+                    spriteRenderer.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
                 }
-            }
 
-            if(gameObject->HasComponent<Experimental::SpriteAnimation>()) {
-                auto spriteAnimation = gameObject->GetComponent<Experimental::SpriteAnimation>();
-                auto transform = gameObject->GetComponent<Experimental::Transform>();
-                transform.Update();
+                if(gameObject->HasComponent<Experimental::SpritesheetRenderer>()) {
+                    auto spritesheetRenderer = gameObject->GetComponent<Experimental::SpritesheetRenderer>();
+                    auto transform = gameObject->GetComponent<Experimental::Transform>();
+                    transform.Update();
 
-                spriteAnimation.Play();
+                    if(spritesheetRenderer.mesh != nullptr) {
+                        
+                        spritesheetRenderer.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
+                    }
+                }
 
-                if(spriteAnimation.currMesh != nullptr) {
-                    spriteAnimation.currMesh->Draw(shader, *Scene::mainCamera, transform.transform);
+                if(gameObject->HasComponent<Experimental::SpriteAnimation>()) {
+                    auto spriteAnimation = gameObject->GetComponent<Experimental::SpriteAnimation>();
+                    auto transform = gameObject->GetComponent<Experimental::Transform>();
+                    transform.Update();
+
+                    spriteAnimation.Play();
+
+                    if(spriteAnimation.currMesh != nullptr) {
+                        spriteAnimation.currMesh->Draw(shader, *Scene::mainCamera, transform.transform);
+                    }
                 }
             }
         }
