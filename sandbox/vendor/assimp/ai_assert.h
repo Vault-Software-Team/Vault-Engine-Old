@@ -47,7 +47,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef AI_ASSERT_H_INC
 #define AI_ASSERT_H_INC
 
-#include <assimp/defs.h>
+#include "defs.h"
 
 #if defined(ASSIMP_BUILD_DEBUG)
 

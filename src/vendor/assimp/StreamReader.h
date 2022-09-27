@@ -50,9 +50,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #   pragma GCC system_header
 #endif
 
-#include <assimp/ByteSwapper.h>
-#include <assimp/Exceptional.h>
-#include <assimp/IOStream.hpp>
+#include "ByteSwapper.h"
+#include "Exceptional.h"
+#include "IOStream.hpp"
 
 #include <memory>
 

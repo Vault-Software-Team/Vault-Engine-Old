@@ -50,8 +50,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma GCC system_header
 #endif
 
-#include <assimp/importerdesc.h>
-#include <assimp/types.h>
+#include "importerdesc.h"
+#include "types.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -2,8 +2,6 @@
 #include "vendor/glad/include/glad/glad.h"
 #include "vendor/GLFW/glfw3.h"
 #include <fstream>
-#include <ft2build.h>
-#include FT_FREETYPE_H
 #include <iostream>
 #include "vendor/stb_image/stb_image.h"
 #include "vendor/glm/glm.hpp"
@@ -27,7 +25,6 @@
 //import glm helpers
 #include "vendor/box2d/box2d.h"
 #include "vendor/assimp/postprocess.h"
-#include "vendor/SDL2/SDL_mixer.h"
 #include <any>
 #include "scene.hpp"
 #include "ScriptEngine.hpp"
@@ -41,17 +38,6 @@
 #include <windows.h>
 #endif
 
-
-#ifdef _WIN32
-#ifdef BUILD_DLL
-#define DLL_EXPORT __declspec(dllexport)
-#else
-#define DLL_EXPORT __declspec(dllimport)
-#endif
-#else
-#define DLL_EXPORT
-#endif
-
 #define Vector2 glm::vec2
 #define Vector3 glm::vec3
 #define Vector4 glm::vec4
@@ -60,25 +46,25 @@
 
 using json = nlohmann::json;
 
-extern DLL_EXPORT glm::mat4 projection;
-extern DLL_EXPORT glm::mat4 view;
+extern   glm::mat4 projection;
+extern   glm::mat4 view;
 
 namespace uuid {
-    extern DLL_EXPORT std::random_device              rd;
-    extern DLL_EXPORT std::mt19937                    gen;
-    extern DLL_EXPORT std::uniform_int_distribution<> dis;
-    extern DLL_EXPORT std::uniform_int_distribution<> dis2;
+    extern   std::random_device              rd;
+    extern   std::mt19937                    gen;
+    extern   std::uniform_int_distribution<> dis;
+    extern   std::uniform_int_distribution<> dis2;
 
     std::string generate_uuid_v4();
 }
 
 namespace HyperAPI {
-    extern DLL_EXPORT std::string cwd;
-    extern DLL_EXPORT std::string dirPayloadData;
-    extern DLL_EXPORT bool isRunning;
-    extern DLL_EXPORT bool isStopped;
+    extern   std::string cwd;
+    extern   std::string dirPayloadData;
+    extern   bool isRunning;
+    extern   bool isStopped;
 
-    class DLL_EXPORT AssimpGLMHelpers
+    class AssimpGLMHelpers
     {
     public:
 
@@ -108,11 +94,11 @@ namespace HyperAPI {
         void DropTargetMat(DragType type, Mesh *currEntity);
     }
 
-    struct DLL_EXPORT Component {
+    struct Component {
         bool IsPubliclyAddable = false;
     };
 
-    class DLL_EXPORT ComponentSystem {
+    class ComponentSystem {
     public:
         std::string ID = uuid::generate_uuid_v4();
         std::string name = "GameObject";
@@ -164,25 +150,25 @@ namespace HyperAPI {
         }
     };
 
-    struct DLL_EXPORT KeyPosition
+    struct KeyPosition
     {
         glm::vec3 position;
         float timeStamp;
     };
 
-    struct DLL_EXPORT KeyRotation
+    struct KeyRotation
     {
         glm::quat orientation;
         float timeStamp;
     };
 
-    struct DLL_EXPORT KeyScale
+    struct KeyScale
     {
         glm::vec3 scale;
         float timeStamp;
     };
 
-    struct DLL_EXPORT TransformComponent : public Component {
+    struct TransformComponent : public Component {
         glm::mat4 transform = glm::mat4(1.0f);
         glm::vec3 position = glm::vec3(0,0,0);
         glm::vec3 rotation = glm::vec3(0,0,0);
@@ -206,7 +192,7 @@ namespace HyperAPI {
         LOG_ERROR
     };
 
-    struct DLL_EXPORT Log {
+    struct Log {
         std::string message;
         LOG_TYPE type;
 
@@ -241,7 +227,7 @@ namespace HyperAPI {
         }
     };
 
-    class DLL_EXPORT Shader {
+    class Shader {
     public:
         unsigned int ID;
 
@@ -258,13 +244,13 @@ namespace HyperAPI {
         void SetUniformMat4(const char *name, glm::mat4 value);
     };
 
-    struct DLL_EXPORT CameraPosDec {
+    struct CameraPosDec {
         glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
         glm::vec3 rotation = glm::vec3(0.0f, 0.0f, 0.0f);
         glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
     };
 
-    class DLL_EXPORT Camera : public ComponentSystem {
+    class Camera : public ComponentSystem {
     public:
         // glm::vec3 Position;
         // glm::vec3 Orientation = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -299,7 +285,7 @@ namespace HyperAPI {
         void Inputs(GLFWwindow* window, Vector2 winPos);
     };
 
-    class DLL_EXPORT Texture {
+    class Texture {
     public:
         unsigned int ID;
         int width, height, nrChannels;
@@ -314,12 +300,12 @@ namespace HyperAPI {
         void Unbind();
     };
 
-    struct DLL_EXPORT BoneInfo {
+    struct BoneInfo {
         int id;
         glm::mat4 offset;
     };
     
-    struct DLL_EXPORT Vertex {
+    struct Vertex {
         glm::vec3 position;
         glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f);
         glm::vec3 normal = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -330,7 +316,7 @@ namespace HyperAPI {
         // glm::mat4 model = glm::mat4(1.0f);
     };
 
-    struct DLL_EXPORT PointLight : public ComponentSystem {
+    struct PointLight : public ComponentSystem {
         glm::vec3 lightPos;
         glm::vec3 color;
         float intensity;
@@ -349,7 +335,7 @@ namespace HyperAPI {
         }
     };
 
-    struct DLL_EXPORT SpotLight : public ComponentSystem {
+    struct SpotLight : public ComponentSystem {
         glm::vec3 lightPos;
         glm::vec3 color;
         float outerCone;
@@ -372,7 +358,7 @@ namespace HyperAPI {
         }
     };
 
-    struct DLL_EXPORT DirectionalLight : public ComponentSystem {
+    struct DirectionalLight : public ComponentSystem {
         glm::vec3 lightPos;
         glm::vec3 color;
         float intensity = 1;
@@ -390,7 +376,7 @@ namespace HyperAPI {
         }
     };
 
-    struct DLL_EXPORT Light2D : public ComponentSystem {
+    struct Light2D : public ComponentSystem {
         glm::vec2 lightPos;
         glm::vec3 color;
         float range;
@@ -407,7 +393,7 @@ namespace HyperAPI {
         }
     };
 
-    struct DLL_EXPORT Instanced {
+    struct Instanced {
         bool isInstanced = false;
         std::vector<TransformComponent> transforms = {};
         int count = 1;
@@ -418,7 +404,7 @@ namespace HyperAPI {
         }
     };
 
-    class DLL_EXPORT Material {
+    class Material {
     public:
         std::vector<Texture> textures;
 
@@ -451,7 +437,7 @@ namespace HyperAPI {
         void Unbind(Shader &shader);
     };
 
-    class DLL_EXPORT Mesh : public ComponentSystem {
+    class Mesh : public ComponentSystem {
     public:
         std::string parentType = "None";
         Material material{Vector4(1,1,1,1)};
@@ -482,7 +468,7 @@ namespace HyperAPI {
         );  
     };
 
-    class DLL_EXPORT Model : public ComponentSystem 
+    class Model : public ComponentSystem 
     {
     private:
         int currSlot = 0;
@@ -579,7 +565,7 @@ namespace HyperAPI {
         void Draw(Shader &shader, Camera &camera);
     };
 
-    class DLL_EXPORT Skybox {
+    class Skybox {
     public:
         unsigned int skyboxVAO, skyboxVBO, skyboxEBO;
         Shader *shader;
@@ -589,7 +575,7 @@ namespace HyperAPI {
         void Draw(Camera &camera, int width, int height);
     };
 
-    class DLL_EXPORT Renderer {
+    class Renderer {
     public:
         bool wireframe;
         unsigned int postProcessingTexture;
@@ -615,26 +601,8 @@ namespace HyperAPI {
         void Swap(HyperAPI::Shader &framebufferShader, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO);
         void NewFrame();
     };
-    
-    class DLL_EXPORT Audio {
-    public:
-        Mix_Chunk *sound;
-        float volume;
-        bool loop;
-        Audio(const char *path, float volume = 1, bool loop = false);
-        void Play();
-    };
-    
-    class DLL_EXPORT Music {
-    public:
-        Mix_Music *music;
-        float volume;
-        bool loop;
-        Music(const char *path, float volume = 1, bool loop = false);
-        void Play();
-    };
 
-    class DLL_EXPORT Sprite {
+    class Sprite {
     public:
         Mesh *m_Mesh;
         Sprite(const char *texPath);
@@ -657,7 +625,7 @@ namespace HyperAPI {
         void Draw(Shader &shader, Camera &camera, glm::mat4 trans = glm::mat4(1));
     };
 
-    class DLL_EXPORT Spritesheet {
+    class Spritesheet {
     public:
         Mesh *m_Mesh;
         Spritesheet(const char *texPath, Material &mat, Vector2 sheetSize, Vector2 spriteSize, Vector2 spriteCoords);
@@ -680,14 +648,14 @@ namespace HyperAPI {
         void Draw(Shader &shader, Camera &camera);
     };
 
-    struct DLL_EXPORT Animation {
+    struct Animation {
         std::vector<Spritesheet> frames;
         int currentFrame = 0;
         float delay = 0.1;
         std::string keyframe;
     };
 
-    class DLL_EXPORT SpritesheetAnimation {
+    class SpritesheetAnimation {
     public:
         std::vector<Animation*> animations;
         Animation *currentAnimation = nullptr;
@@ -733,7 +701,7 @@ namespace HyperAPI {
 
     std::vector<HyperAPI::Animation> GetAnimationsFromXML(const char *texPath, float delay, Vector2 sheetSize, const std::string &xmlFile);
 
-    class DLL_EXPORT Graphic {
+    class Graphic {
     public:
         Mesh *m_Mesh;
         Graphic(Vector3 rgb);
@@ -756,17 +724,17 @@ namespace HyperAPI {
         void Draw(Shader &shader, Camera &camera);
     };
     
-    class DLL_EXPORT Capsule : public Model {
+    class Capsule : public Model {
     public:
         Capsule(Vector4 color = Vector4(1,1,1, 1));
     };
 
-    class DLL_EXPORT Cube : public Model {
+    class Cube : public Model {
     public:
         Cube(Vector4 color = Vector4(1,1,1, 1));
     };
 
-    class DLL_EXPORT Plane {
+    class Plane {
     public:
         Mesh *m_Mesh;
         Vector4 color;
@@ -811,27 +779,27 @@ namespace HyperAPI {
         }	
     };
 
-    class DLL_EXPORT Cylinder : public Model {
+    class Cylinder : public Model {
     public:
         Cylinder(Vector4 color = Vector4(1,1,1, 1));
     };
 
-    class DLL_EXPORT Sphere : public Model {
+    class Sphere : public Model {
     public:
         Sphere(Vector4 color = Vector4(1,1,1, 1));
     };
 
-    class DLL_EXPORT Cone : public Model {
+    class Cone : public Model {
     public:
         Cone(Vector4 color = Vector4(1,1,1, 1));
     };
 
-    class DLL_EXPORT Torus : public Model {
+    class Torus : public Model {
     public:
         Torus(Vector4 color = Vector4(1,1,1, 1));
     };
 
-    class DLL_EXPORT SpriteShader : public Shader {
+    class SpriteShader : public Shader {
     public:
         unsigned int ID;
 
@@ -848,7 +816,7 @@ namespace HyperAPI {
         virtual void SetUniformMat4(const char *name, glm::mat4 value);
     };
 
-    class DLL_EXPORT BatchMesh {
+    class BatchMesh {
     public:
         std::string parentType = "None";
         std::string ID;
@@ -911,7 +879,7 @@ namespace HyperAPI {
     };
 
     namespace Experimental {
-        class DLL_EXPORT ComponentEntity {
+        class ComponentEntity {
         public:
             std::string parentID = "NO_PARENT";
             std::string name = "GameObject";
@@ -951,14 +919,14 @@ namespace HyperAPI {
             }
         };
 
-        struct DLL_EXPORT BaseComponent {
+        struct BaseComponent {
             entt::entity entity;
             std::string ID;
 
             virtual void Init() {}
         };
 
-        struct DLL_EXPORT Transform : public BaseComponent {
+        struct Transform : public BaseComponent {
             Transform *parentTransform = nullptr;
             glm::mat4 transform = glm::mat4(1.0f);
             glm::vec3 position = glm::vec3(0,0,0);
@@ -994,7 +962,7 @@ namespace HyperAPI {
             }
         };
 
-        struct DLL_EXPORT SpriteRenderer : public BaseComponent {
+        struct SpriteRenderer : public BaseComponent {
             Mesh *mesh;
             bool noComponent = false;
             SpriteRenderer() {
@@ -1041,7 +1009,7 @@ namespace HyperAPI {
             }
         };
 
-        struct DLL_EXPORT SpritesheetRenderer : public BaseComponent {
+        struct SpritesheetRenderer : public BaseComponent {
             Mesh *mesh = nullptr;
             Spritesheet *sp = nullptr;
             Vector2 spritesheetSize = Vector2(512,512);
@@ -1105,7 +1073,7 @@ namespace HyperAPI {
             }
         };
 
-        struct DLL_EXPORT m_AnimationData {
+        struct m_AnimationData {
             char name[499] = "anim_name";
             std::string id = uuid::generate_uuid_v4();
             std::vector<SpriteRenderer> frames;
@@ -1113,7 +1081,7 @@ namespace HyperAPI {
             bool loop = false;
         };
 
-        struct DLL_EXPORT SpriteAnimation : public BaseComponent {
+        struct SpriteAnimation : public BaseComponent {
             Mesh *currMesh;
             std::vector<m_AnimationData> anims;
             char currAnim[499] = "anim_name";
@@ -1211,7 +1179,7 @@ namespace HyperAPI {
             }
         };
 
-        struct DLL_EXPORT MeshRenderer : public BaseComponent {
+        struct MeshRenderer : public BaseComponent {
             Mesh *m_Mesh = nullptr;
             bool m_Model = false;
 
@@ -1400,7 +1368,7 @@ namespace HyperAPI {
             }
         };
 
-        struct DLL_EXPORT c_PointLight : public BaseComponent {
+        struct c_PointLight : public BaseComponent {
             glm::vec3 lightPos = glm::vec3(0, 0, 0);
             glm::vec3 color = glm::vec3(1, 1, 1);
             float intensity = 1.0f;
@@ -1439,7 +1407,7 @@ namespace HyperAPI {
             }
         };
 
-        struct DLL_EXPORT c_SpotLight : public BaseComponent {
+        struct c_SpotLight : public BaseComponent {
             glm::vec3 lightPos = glm::vec3(0, 0, 0);
             glm::vec3 color = glm::vec3(1, 1, 1);
             float outerCone;
@@ -1472,7 +1440,7 @@ namespace HyperAPI {
             }
         };
 
-        struct DLL_EXPORT c_DirectionalLight : public BaseComponent {
+        struct c_DirectionalLight : public BaseComponent {
             glm::vec3 lightPos = glm::vec3(0, 0, 0);
             glm::vec3 color = glm::vec3(1, 1, 1);
             float intensity = 1;
@@ -1508,7 +1476,7 @@ namespace HyperAPI {
             }
         };
 
-        struct DLL_EXPORT Rigidbody2D : public BaseComponent {
+        struct Rigidbody2D : public BaseComponent {
             b2BodyType type = b2_staticBody;
             bool fixedRotation = false;
             float gravityScale = 1.0f;
@@ -1558,7 +1526,7 @@ namespace HyperAPI {
             }
         };
 
-        struct DLL_EXPORT BoxCollider2D : public BaseComponent {
+        struct BoxCollider2D : public BaseComponent {
             Vector2 offset = Vector2(0, 0);
             Vector2 size = Vector2(0.5, 0.5);
 
@@ -1588,7 +1556,7 @@ namespace HyperAPI {
             }
         };
 
-        class DLL_EXPORT GameObject : public ComponentEntity {
+        class GameObject : public ComponentEntity {
         public:
             GameObject() {
                 entity = Scene::m_Registry.create();
@@ -1662,7 +1630,7 @@ namespace HyperAPI {
             }
         };
 
-        struct DLL_EXPORT NativeScriptManager : public BaseComponent {
+        struct NativeScriptManager : public BaseComponent {
             std::vector<StaticScript*> m_StaticScripts;
             GameObject *gameObject;
 
@@ -1696,7 +1664,7 @@ namespace HyperAPI {
             }
         };
 
-        struct DLL_EXPORT CameraComponent : public BaseComponent {
+        struct CameraComponent : public BaseComponent {
             Camera *camera = nullptr;
             GameObject *m_GameObject = nullptr;
 
@@ -1751,7 +1719,7 @@ namespace HyperAPI {
             }
         };
 
-        struct DLL_EXPORT m_LuaScriptComponent : public BaseComponent {
+        struct m_LuaScriptComponent : public BaseComponent {
             GameObject *m_GameObject;
             std::vector<ScriptEngine::m_LuaScript> scripts;
 
@@ -1829,7 +1797,7 @@ namespace HyperAPI {
             }
         };
 
-        class DLL_EXPORT Model
+        class Model
         {
         private:
             int currSlot = 0;
@@ -1879,14 +1847,14 @@ namespace HyperAPI {
     }
 }
 
-extern DLL_EXPORT const int width ;
-extern DLL_EXPORT const int height;
-extern DLL_EXPORT float rectangleVert[];
+extern   const int width ;
+extern   const int height;
+extern   float rectangleVert[];
 
-void DLL_EXPORT NewFrame(unsigned int FBO, int width, int height);
-void DLL_EXPORT EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height);
+void   NewFrame(unsigned int FBO, int width, int height);
+void   EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height);
 
-void DLL_EXPORT EndEndFrame(
+void   EndEndFrame(
     HyperAPI::Shader &framebufferShader, 
     HyperAPI::Renderer &renderer, 
     unsigned int FBO, 
@@ -1900,10 +1868,10 @@ void DLL_EXPORT EndEndFrame(
     const int height
 );
 
-void DLL_EXPORT SC_EndFrame(HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height);
+void   SC_EndFrame(HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height);
 
 namespace Hyper {
-    class DLL_EXPORT Application {
+    class Application {
     public:
         int sceneMouseX, sceneMouseY;
 
@@ -1953,8 +1921,8 @@ namespace Hyper {
     float LerpFloat(float a, float b, float t);
 }
 
-extern DLL_EXPORT std::vector<HyperAPI::PointLight*> PointLights;
-extern DLL_EXPORT std::vector<HyperAPI::Light2D*> Lights2D;
-extern DLL_EXPORT std::vector<HyperAPI::SpotLight*> SpotLights;
-extern DLL_EXPORT std::vector<HyperAPI::DirectionalLight*> DirLights;
-extern DLL_EXPORT std::vector<HyperAPI::Mesh*> hyperEntities;
+extern   std::vector<HyperAPI::PointLight*> PointLights;
+extern   std::vector<HyperAPI::Light2D*> Lights2D;
+extern   std::vector<HyperAPI::SpotLight*> SpotLights;
+extern   std::vector<HyperAPI::DirectionalLight*> DirLights;
+extern   std::vector<HyperAPI::Mesh*> hyperEntities;

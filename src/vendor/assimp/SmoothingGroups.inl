@@ -49,7 +49,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #   pragma GCC system_header
 #endif
 
-#include <assimp/SGSpatialSort.h>
+#include "SGSpatialSort.h"
 
 #include <algorithm>
 

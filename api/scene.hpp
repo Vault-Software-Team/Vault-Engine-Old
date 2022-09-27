@@ -35,16 +35,6 @@
 #include <any>
 #include "scene.hpp"
 
-#ifdef _WIN32
-#ifdef BUILD_DLL
-#define DLL_EXPORT __declspec(dllexport)
-#else
-#define DLL_EXPORT __declspec(dllimport)
-#endif
-#else
-#define DLL_EXPORT
-#endif
-
 namespace HyperAPI {
     class Mesh;
     class Model;
@@ -68,33 +58,33 @@ namespace HyperAPI {
             DRAG_SCENE,
             DRAG_SPRITE
         };
-        extern DLL_EXPORT std::string currentScenePath;
-        void DLL_EXPORT LoadScene(const std::string &scenePath);
-        void DLL_EXPORT SaveScene(const std::string &path);
+        extern std::string currentScenePath;
+        void LoadScene(const std::string &scenePath);
+        void SaveScene(const std::string &path);
 
-        void DLL_EXPORT DropTargetMat(DragType type, Mesh *currEntity);
+        void DropTargetMat(DragType type, Mesh *currEntity);
 
-        extern DLL_EXPORT Experimental::GameObject *m_Object;
-        extern DLL_EXPORT char name[499];
-        extern DLL_EXPORT char tag[499];
-        extern DLL_EXPORT entt::registry m_Registry;
-        extern DLL_EXPORT std::vector<Experimental::GameObject*> m_GameObjects;
+        extern Experimental::GameObject *m_Object;
+        extern char name[499];
+        extern char tag[499];
+        extern entt::registry m_Registry;
+        extern std::vector<Experimental::GameObject*> m_GameObjects;
 
-        extern DLL_EXPORT std::vector<Mesh*> entities;
-        extern DLL_EXPORT std::vector<Model> models;
-        extern DLL_EXPORT Camera *mainCamera;
-        extern DLL_EXPORT std::vector<Camera*> cameras;
-        extern DLL_EXPORT std::vector<Log> logs;
-        extern DLL_EXPORT glm::mat4 projection;
+        extern std::vector<Mesh*> entities;
+        extern std::vector<Model> models;
+        extern Camera *mainCamera;
+        extern std::vector<Camera*> cameras;
+        extern std::vector<Log> logs;
+        extern glm::mat4 projection;
 
-        extern DLL_EXPORT std::vector<entt::entity> backup_entities;
+        extern std::vector<entt::entity> backup_entities;
 
-        extern DLL_EXPORT std::vector<HyperAPI::PointLight*> PointLights;
-        extern DLL_EXPORT std::vector<HyperAPI::Light2D*> Lights2D;
-        extern DLL_EXPORT std::vector<HyperAPI::SpotLight*> SpotLights;
-        extern DLL_EXPORT std::vector<HyperAPI::DirectionalLight*> DirLights;
-        extern DLL_EXPORT std::vector<HyperAPI::Mesh*> hyperEntities;
+        extern std::vector<HyperAPI::PointLight*> PointLights;
+        extern std::vector<HyperAPI::Light2D*> Lights2D;
+        extern std::vector<HyperAPI::SpotLight*> SpotLights;
+        extern std::vector<HyperAPI::DirectionalLight*> DirLights;
+        extern std::vector<HyperAPI::Mesh*> hyperEntities;
 
-        extern DLL_EXPORT b2World *world;
+        extern b2World *world;
     }
 }

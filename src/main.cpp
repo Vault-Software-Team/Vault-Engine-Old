@@ -2,15 +2,15 @@
 #include <iostream>
 #include <random>
 #include <memory>
-#include "../api/api.hpp"
+#include "lib/api.hpp"
 #include <experimental/filesystem>
 
 namespace fs = std::experimental::filesystem;
 
 #ifndef _WIN32
 #include <unistd.h>
-#elif
-// #include <direct.h>
+#else
+#include <direct.h>
 #endif
 
 using namespace HyperAPI;
@@ -201,7 +201,11 @@ int main() {
     // ScriptEngine::Init();
 
     char CWD[1024];
-    getcwd(CWD, sizeof(CWD));
+    #ifdef _WIN32
+        _getcwd(CWD, sizeof(CWD));
+    #else
+        getcwd(CWD, sizeof(CWD));
+    #endif
     cwd = std::string(CWD);
 
     // check if game.config exists
@@ -654,9 +658,6 @@ int main() {
                 ImGui::SetCursorPosX((ImGui::GetWindowSize().x / 2) - 25 / 2 - (25/ 2));
                 if(ImGui::Button(ICON_FA_PAUSE, ImVec2(25, 0))) {
                     HyperAPI::isRunning = false;
-                    // stop all channels and music
-                    Mix_HaltChannel(-1);
-                    Mix_HaltMusic();
                     
                     for(auto &gameObject : Scene::m_GameObjects) {
                         if(gameObject->HasComponent<Experimental::NativeScriptManager>()) {

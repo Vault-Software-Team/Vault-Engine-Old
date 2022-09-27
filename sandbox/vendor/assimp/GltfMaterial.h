@@ -51,7 +51,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #   pragma GCC system_header
 #endif
 
-#include <assimp/material.h>
+#include "material.h"
 
 #define AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE aiTextureType_UNKNOWN, 0
 #define AI_MATKEY_GLTF_ALPHAMODE "$mat.gltf.alphaMode", 0, 0

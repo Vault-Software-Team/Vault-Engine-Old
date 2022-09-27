@@ -1,5 +1,6 @@
 #include "ScriptEngine.hpp"
 #include "api.hpp"
+#include "InputEvents.hpp"
 
 // THIS ISNT WORKING YET
 // BEACUSE OF ENTT SUPPORT THIS WONT WORK AT ALL DONT EVEN TRY
@@ -1005,30 +1006,11 @@ namespace ScriptEngine {
                 channel = (int)lua_tonumber(L, 4);
             }
 
-            Mix_Chunk *chunk = Mix_LoadWAV(path.c_str());
-            Mix_VolumeChunk(chunk, volume * 128);
-
-            if (loop)
-            {
-                Mix_PlayChannel(channel, chunk, -1);
-            }
-            else
-            {
-                Mix_PlayChannel(channel, chunk, 0);
-            }
-
-            //check if they stopped playing
-            if (Mix_Playing(-1) == 0)
-            {
-                Mix_FreeChunk(chunk);
-            }
-
             return 1;
         }
 
         int StopAudio(lua_State *L) {
             int channel = (int)lua_tonumber(L, 1);
-            Mix_HaltChannel(channel);
             return 1;
         }
 
@@ -1037,23 +1019,10 @@ namespace ScriptEngine {
             float volume = (float)lua_tonumber(L, 2);
             bool loop = (bool)lua_toboolean(L, 3);
 
-            Mix_Music *music = Mix_LoadMUS(path.c_str());
-            Mix_VolumeMusic(volume * 128);
-
-            if (loop)
-            {
-                Mix_PlayMusic(music, -1);
-            }
-            else
-            {
-                Mix_PlayMusic(music, 0);
-            }
-
             return 1;
         }
 
         int StopMusic(lua_State *L) {
-            Mix_HaltMusic();
             return 1;
         }
 

@@ -8,16 +8,6 @@
 #include "vendor/glm/gtx/rotate_vector.hpp"
 #include "vendor/glm/gtx/vector_angle.hpp"
 
-#ifdef _WIN32
-#ifdef BUILD_DLL
-#define __declspec(dllexport)
-#else
-#define __declspec(dllimport)
-#endif
-#else
-#define DLL_EXPORT
-#endif
-
 /* The unknown key */
 #define KEY_UNKNOWN            -1
 
@@ -149,21 +139,21 @@
 
 namespace HyperAPI {
     namespace Input {
-        extern DLL_EXPORT GLFWwindow *window;
-        extern DLL_EXPORT glm::vec3 winPos;
-        extern DLL_EXPORT glm::vec3 winSize;
+        extern GLFWwindow *window;
+        extern glm::vec3 winPos;
+        extern glm::vec3 winSize;
 
-        bool DLL_EXPORT IsKeyPressed(int key);
-        bool DLL_EXPORT IsKeyReleased(int key);
-        bool DLL_EXPORT IsMouseButtonPressed(int button);
-        bool DLL_EXPORT IsMouseButtonReleased(int button);
-        float DLL_EXPORT GetMouseX();
-        float DLL_EXPORT GetMouseY();
-        int DLL_EXPORT GetHorizontalAxis();
-        int DLL_EXPORT GetVerticalAxis();
-        int DLL_EXPORT GetMouseXAxis();
-        int DLL_EXPORT GetMouseYAxis();
-        bool DLL_EXPORT SetMouseHidden(bool hidden);
-        int DLL_EXPORT SetMousePosition(float x, float y);
+        bool IsKeyPressed(int key);
+        bool IsKeyReleased(int key);
+        bool IsMouseButtonPressed(int button);
+        bool IsMouseButtonReleased(int button);
+        float GetMouseX();
+        float GetMouseY();
+        int GetHorizontalAxis();
+        int GetVerticalAxis();
+        int GetMouseXAxis();
+        int GetMouseYAxis();
+        bool SetMouseHidden(bool hidden);
+        int SetMousePosition(float x, float y);
     }
 }

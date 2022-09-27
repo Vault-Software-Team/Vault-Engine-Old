@@ -2,15 +2,15 @@
 #include <iostream>
 #include <random>
 #include <memory>
-#include "../api/api.hpp"
+#include "../src/lib/api.hpp"
 #include <experimental/filesystem>
 
 namespace fs = std::experimental::filesystem;
 
 #ifndef _WIN32
 #include <unistd.h>
-#elif
-// #include <direct.h>
+#else
+#include <direct.h>
 #endif
 
 using namespace HyperAPI;
@@ -201,7 +201,11 @@ int main() {
     // ScriptEngine::Init();
 
     char CWD[1024];
-    getcwd(CWD, sizeof(CWD));
+    #ifdef _WIN32
+        _getcwd(CWD, sizeof(CWD));
+    #else
+        getcwd(CWD, sizeof(CWD));
+    #endif
     cwd = std::string(CWD);
 
     // check if game.config exists
@@ -230,7 +234,7 @@ int main() {
         o << std::setw(4) << j << std::endl;
     }
 
-    Hyper::Application app(1280, 720, "Static Engine");
+    Hyper::Application app(config.width, config.height, (const char*)config.name);
     app.renderOnScreen = true;
     Input::window = app.renderer->window;
     // glfw enable sticky mouse buttons
@@ -275,6 +279,11 @@ int main() {
     InspectorMaterial m_InspectorMaterial;
 
     Scene::LoadScene(config.mainScene);
+
+    std::function<void(unsigned int &PPT, unsigned int &PPFBO)> GUI_EXP = 
+    [&](unsigned int &PPT, unsigned int &PPFBO) {};
+
+    bool calledOnce = false;
 
     InitScripts();
 
@@ -332,8 +341,6 @@ int main() {
 
     HyperAPI::isRunning = true;
     HyperAPI::isStopped = false;
-
-    bool calledOnce = false;
 
     app.Run([&] {
         if(Scene::mainCamera == nullptr) {
@@ -523,7 +530,7 @@ int main() {
                 }
             }
         }
-    }, [&](unsigned int &PPT, unsigned int &PPFBO) {});
+    }, GUI_EXP);
 
     return 0;
 }

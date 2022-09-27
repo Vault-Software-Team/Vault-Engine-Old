@@ -3,15 +3,15 @@
 #include <iostream>
 #include <string>
 
-#ifdef _WIN32
-#ifdef BUILD_DLL
-#define DLL_EXPORT __declspec(dllexport)
-#else
-#define DLL_EXPORT __declspec(dllimport)
-#endif
-#else
-#define DLL_EXPORT
-#endif
+// #ifdef _WIN32
+// #ifdef BUILD_DLL
+// #define   __declspec(dllexport)
+// #else
+// #define   __declspec(dllimport)
+// #endif
+// #else
+// #define  
+// #endif
 
 namespace HyperAPI {
     class ComponentSystem;

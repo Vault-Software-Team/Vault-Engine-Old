@@ -52,8 +52,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include <cstdio>
-#include <assimp/IOStream.hpp>
-#include <assimp/importerdesc.h>
+#include "IOStream.hpp"
+#include "importerdesc.h"
 
 namespace Assimp {
 

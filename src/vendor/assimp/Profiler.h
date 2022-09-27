@@ -52,8 +52,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include <chrono>
-#include <assimp/DefaultLogger.hpp>
-#include <assimp/TinyFormatter.h>
+#include "DefaultLogger.hpp"
+#include "TinyFormatter.h"
 
 #include <map>
 

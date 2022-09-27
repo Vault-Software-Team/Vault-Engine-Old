@@ -24,17 +24,17 @@
 #include <cmath>
 #include <limits>
 #include <stdint.h>
-#include <assimp/defs.h>
+#include "defs.h>
 
 #include "StringComparison.h"
-#include <assimp/DefaultLogger.hpp>
-#include <assimp/Exceptional.h>
-#include <assimp/StringUtils.h>
+#include "DefaultLogger.hpp"
+#include "Exceptional.h"
+#include "StringUtils.h"
 
 #ifdef _MSC_VER
 #  include <stdint.h>
 #else
-#  include <assimp/Compiler/pstdint.h>
+#  include "Compiler/pstdint.h"
 #endif
 
 namespace Assimp {

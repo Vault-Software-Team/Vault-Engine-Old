@@ -51,7 +51,7 @@ http://www.jalix.org/ressources/graphics/3DS/_unofficials/3ds-unofficial.txt */
 #   pragma GCC system_header
 #endif
 
-#include <assimp/vector3.h>
+#include "vector3.h"
 
 #include <stdint.h>
 #include <vector>

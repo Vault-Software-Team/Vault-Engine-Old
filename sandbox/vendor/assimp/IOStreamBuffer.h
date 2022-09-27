@@ -47,9 +47,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma GCC system_header
 #endif
 
-#include <assimp/ParsingUtils.h>
-#include <assimp/types.h>
-#include <assimp/IOStream.hpp>
+#include "ParsingUtils.h"
+#include "types.h"
+#include "IOStream.hpp"
 
 #include <vector>
 

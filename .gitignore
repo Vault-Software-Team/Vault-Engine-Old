@@ -5,6 +5,7 @@ src/*.o
 api/*.o
 build.out
 g_build.out
+win_build.exe
 windows
 website/node_modules
 BASDGKAFSGL.ggg
@@ -12,7 +13,9 @@ assets/flappy_bg.png
 assets/kevin.png
 assets/flappy.png
 assets/PONGON.png
+dist
 assets/guns
 assets/polyjam
 assets/scenes/*.static
+api
 .vscode

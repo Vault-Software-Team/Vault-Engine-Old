@@ -179,11 +179,6 @@ namespace HyperAPI {
     Renderer::Renderer(int width, int height, const char *title, Vector2 g_gravity, unsigned int samples, bool wireframe) {
         this->samples = samples;
         this->wireframe = wireframe;
-        Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
-        
-        FT_Library ft;
-        if (FT_Init_FreeType(&ft))
-            std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
 
         if (!glfwInit()) {
             std::cout << "Failed to initialize GLFW" << std::endl;
@@ -1241,43 +1236,6 @@ namespace HyperAPI {
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
         glDepthFunc(GL_LEQUAL);
-    }   
-
-    Audio::Audio(const char *path, float volume, bool loop) {
-        this->sound = Mix_LoadWAV(path);
-        Mix_VolumeChunk(this->sound, volume * 128);
-        this->volume = volume;
-        this->loop = loop;
-    }
-
-    void Audio::Play()
-    {
-        if (loop)
-        {
-            Mix_PlayChannel(-1, this->sound, -1);
-        }
-        else
-        {
-            Mix_PlayChannel(-1, this->sound, 0);
-        }
-    }
-
-    Music::Music(const char *path, float volume, bool loop) {
-        this->music = Mix_LoadMUS(path);
-        Mix_VolumeMusic(volume * 128);
-        this->volume = volume;
-    }
-
-    void Music::Play()
-    {
-        if (loop)
-        {
-            Mix_PlayMusic(this->music, -1);
-        }
-        else
-        {
-            Mix_PlayMusic(this->music, 0);
-        }
     }
 
     Sprite::Sprite(const char *texPath) {
@@ -1913,7 +1871,9 @@ namespace Hyper {
         glGenBuffers(1, &rectVBO);
         glBindVertexArray(rectVAO);
         glBindBuffer(GL_ARRAY_BUFFER, rectVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(rectangleVert), &rectangleVert, GL_STATIC_DRAW);
+        // dynamic
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, nullptr, GL_DYNAMIC_DRAW);
+        // glBufferData(GL_ARRAY_BUFFER, sizeof(rectangleVert), &rectangleVert, GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(1);
@@ -2147,7 +2107,25 @@ namespace Hyper {
                 glfwGetWindowSize(renderer->window, &width, &height);
             }
 
+
+            glBindBuffer(GL_ARRAY_BUFFER, rectVBO);
+            // make it so that the framebuffer keeps the size of 1280x720 no matter the window size
+
+            float rectangleVert[] = {
+                1, -1,  1, 0,
+                -1, -1,  0, 0,
+                -1, 1,  0, 1,
+
+                1, 1,  1, 1,
+                1, -1,  1, 0,
+                -1, 1,  0, 1,
+            };
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(rectangleVert), rectangleVert);
+            
             NewFrame(FBO, width, height);
+            if(renderOnScreen) {
+                glViewport(0, 0, 1280, 720);
+            }
 
             glActiveTexture(GL_TEXTURE17);
             glBindTexture(GL_TEXTURE_2D, shadowMap);
@@ -2159,7 +2137,7 @@ namespace Hyper {
             if(!renderOnScreen) {
                 EndEndFrame(framebufferShader, *renderer, FBO, rectVAO, postProcessingTexture, postProcessingFBO, SFBO, S_PPT, S_PPFBO, width, height);
             } else {
-                EndFrame(framebufferShader, *renderer, FBO, rectVAO, postProcessingTexture, postProcessingFBO, width, height);
+                EndFrame(framebufferShader, *renderer, FBO, rectVAO, postProcessingTexture, postProcessingFBO, 1280, 720);
             }
 
             // HyperGUI::FrameBufferTexture = postProcessingTexture;

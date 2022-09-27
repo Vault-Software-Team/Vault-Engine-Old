@@ -5,8 +5,8 @@ namespace HyperAPI {
 
     namespace Input {
         GLFWwindow *window = nullptr;
-        glm::vec3 winPos;
-        glm::vec3 winSize;
+        glm::vec3 winPos = glm::vec3(0.0f);
+        glm::vec3 winSize = glm::vec3(0.0f);
         
         bool IsKeyPressed(int key) {
             if (glfwGetKey(window, key) == GLFW_PRESS) {
