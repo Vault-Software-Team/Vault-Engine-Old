@@ -1030,5 +1030,59 @@ namespace ScriptEngine {
             glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
             return 1;
         }
+
+        int LookAt(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            float x = (float)lua_tonumber(L, 1);
+            float y = (float)lua_tonumber(L, 2);
+            float z = (float)lua_tonumber(L, 3);
+
+            for(auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+                if(gameObject->ID == id) {
+                    auto &transform = gameObject->GetComponent<Transform>();
+                    transform.LookAt(glm::vec3(x, y, z));
+                    break;
+                }
+            }
+        }
+
+        int Translate(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            float x = (float)lua_tonumber(L, 1);
+            float y = (float)lua_tonumber(L, 2);
+            float z = (float)lua_tonumber(L, 3);
+
+            for(auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+                if(gameObject->ID == id) {
+                    auto &transform = gameObject->GetComponent<Transform>();
+                    transform.Translate(glm::vec3(x, y, z));
+                    break;
+                }
+            }
+        }
+
+        int Rotate(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            float x = (float)lua_tonumber(L, 1);
+            float y = (float)lua_tonumber(L, 2);
+            float z = (float)lua_tonumber(L, 3);
+
+            for(auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+                if(gameObject->ID == id) {
+                    auto &transform = gameObject->GetComponent<Transform>();
+                    transform.Rotate(glm::vec3(x, y, z));
+                    break;
+                }
+            }
+        }
     }
 }

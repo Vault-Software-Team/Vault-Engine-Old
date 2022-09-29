@@ -32,13 +32,19 @@ namespace ScriptEngine {
     lua_State* m_Init();
 
     namespace Functions {
-        //Rigidbody functions
+        //  Rigidbody functions
         int SetVelocity(lua_State *L);
         int SetAngularVelocity(lua_State *L);
         int SetPosition(lua_State *L);
         int Force(lua_State *L);
         int Torque(lua_State *L);
         int GetVelocity(lua_State *L);
+
+        // Transform functions
+        int LookAt(lua_State *L);
+        int Translate(lua_State *L);
+        int Rotate(lua_State *L);
+        int Scale(lua_State *L);
 
         int Log(lua_State *L);
         int LogWarning(lua_State *L);

@@ -181,7 +181,7 @@ namespace HyperAPI {
         this->wireframe = wireframe;
 
         if (!glfwInit()) {
-            std::cout << "Failed to initialize GLFW" << std::endl;
+            HYPER_LOG("Failed to initialize GLFW");
         }
         // //set verisons
         // glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
@@ -247,6 +247,8 @@ namespace HyperAPI {
         if(strcmp(shaderPath, "NULL_SHADER") == 0) {
             return;
         }
+
+        HYPER_LOG(std::string("Loading shader: ") + shaderPath);
 
         std::ifstream shaderFile(shaderPath);
         if (!shaderFile.is_open()) {
@@ -1602,63 +1604,137 @@ namespace HyperAPI {
         shader.Unbind();
     }
 
-    BatchMesh::BatchMesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices) {
+    BatchLayer::BatchLayer(std::vector<Vertex_Batch> &vertices, std::vector<unsigned int> &indices) {
         this->vertices = vertices;
         this->indices = indices;
-        this->ID = uuid::generate_uuid_v4();
 
-        TransformComponent component;
-        component.position = Vector3(0,0,0);
-        component.scale = Vector3(1,1,1);
-        this->Components.push_back(component);
-        
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
         glGenBuffers(1, &IBO);
-        glBindVertexArray(VAO);
 
+        glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
-        
+        glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex_Batch) * 1000, nullptr, GL_DYNAMIC_DRAW);
+
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
-        //coords
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+        // vertex positions
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex_Batch), (void*)0);
         glEnableVertexAttribArray(0);
 
         //color
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex_Batch), (void*)offsetof(Vertex_Batch, color));
         glEnableVertexAttribArray(1);
-        
+
         // normals
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex_Batch), (void*)offsetof(Vertex_Batch, normal));
         glEnableVertexAttribArray(2);
 
         //texuv
-        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texUV));
+        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex_Batch), (void*)offsetof(Vertex_Batch, texUV));
         glEnableVertexAttribArray(3);
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        // diffuse
+        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex_Batch), (void*)offsetof(Vertex_Batch, diffuse));
+        glEnableVertexAttribArray(4);
+
+        // specular
+        glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex_Batch), (void*)offsetof(Vertex_Batch, specular));
+        glEnableVertexAttribArray(5);
+
+        // normalmap
+        glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex_Batch), (void*)offsetof(Vertex_Batch, normalMap));
+        glEnableVertexAttribArray(6);
+
+        //metallic
+        glVertexAttribPointer(7, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex_Batch), (void*)offsetof(Vertex_Batch, metallic));
+        glEnableVertexAttribArray(7);
+
+        //roughness
+        glVertexAttribPointer(8, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex_Batch), (void*)offsetof(Vertex_Batch, roughness));
+        glEnableVertexAttribArray(8);
+
+        //texuvoffset
+        glVertexAttribPointer(9, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex_Batch), (void*)offsetof(Vertex_Batch, texUVs));
+        glEnableVertexAttribArray(9);
+
+        //position vec3
+        glVertexAttribPointer(10, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex_Batch), (void*)offsetof(Vertex_Batch, m_position));
+        glEnableVertexAttribArray(10);
+
+        // rotation
+        glVertexAttribPointer(11, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex_Batch), (void*)offsetof(Vertex_Batch, rotation));
+        glEnableVertexAttribArray(11);
+
+        // scale
+        glVertexAttribPointer(12, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex_Batch), (void*)offsetof(Vertex_Batch, scale));
+        glEnableVertexAttribArray(12);
+
         glBindVertexArray(0);
     }
 
-    void BatchMesh::Draw(
-        Shader &shader,
-        Camera &camera,
-        glm::mat4 matrix,
-        glm::vec3 translation,
-        glm::quat rotation,
-        glm::vec3 scale
-    )   
-    {
-        camera.Matrix(shader, "camera");
+    void BatchLayer::Draw(Shader &shader, Camera &camera) {
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex_Batch) * 1000, vertices.data());
 
         shader.Bind();
+        shader.SetUniformMat4("camera", camera.camMatrix);
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
         shader.Unbind();
+    }
+
+    QuadBatch::QuadBatch(BatchLayer *layer, std::vector<Vertex_Batch> &vertices, std::vector<unsigned int> &indices) : layer(layer) {
+        this->layer = layer;
+        vertices.push_back(
+            Vertex_Batch(glm::vec3(-0.5, 0, 0.5), glm::vec3(1,1,1), glm::vec3(0,1,0), glm::vec2(0, 0), 1)
+        );
+        vertices.push_back(
+            Vertex_Batch(glm::vec3(-0.5, 0, -0.5), glm::vec3(1,1,1), glm::vec3(0,1,0), glm::vec2(0, 1), 1)
+        );
+        vertices.push_back(
+            Vertex_Batch(glm::vec3(0.5, 0, -0.5), glm::vec3(1,1,1), glm::vec3(0,1,0), glm::vec2(1, 1), 1)
+        );
+        vertices.push_back(
+            Vertex_Batch(glm::vec3(0.5, 0, 0.5), glm::vec3(1,1,1), glm::vec3(0,1,0), glm::vec2(1, 0), 1)
+        );
+
+        vert1 = vertices.size() - 4;
+        vert2 = vertices.size() - 3;
+        vert3 = vertices.size() - 2;
+        vert4 = vertices.size() - 1;
+
+        // get the last 4 vertices for indices
+        int index = vertices.size() - 4;
+        indices.push_back(index);
+        indices.push_back(index + 1);
+        indices.push_back(index + 2);
+
+        indices.push_back(index);
+        indices.push_back(index + 2);
+        indices.push_back(index + 3);
+    }
+
+    void QuadBatch::Update() {
+        try {
+            layer->vertices[vert1].m_position = transform.position;
+        layer->vertices[vert2].m_position = transform.position;
+        layer->vertices[vert3].m_position = transform.position;
+        layer->vertices[vert4].m_position = transform.position;
+
+        layer->vertices[vert1].rotation = transform.rotation;
+        layer->vertices[vert2].rotation = transform.rotation;
+        layer->vertices[vert3].rotation = transform.rotation;
+        layer->vertices[vert4].rotation = transform.rotation;
+
+        layer->vertices[vert1].scale = transform.scale;
+        layer->vertices[vert2].scale = transform.scale;
+        layer->vertices[vert3].scale = transform.scale;
+        layer->vertices[vert4].scale = transform.scale;
+        }
+        catch(...) {}
     }
 
     namespace Experimental {
@@ -1851,6 +1927,121 @@ namespace HyperAPI {
 
             return nullptr;
         }
+    }
+
+    FontFace::FontFace(const char *path, int size) {
+        this->path = std::string(path); 
+        FT_Library ft;
+        if(FT_Init_FreeType(&ft)) {
+            HYPER_LOG("Could not init FreeType Library");
+        }
+
+        FT_Face face;
+        if(FT_New_Face(ft, path, 0, &face)) {
+            std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
+        }
+
+        FT_Set_Pixel_Sizes(face, 0, size);
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+        for(unsigned char c = 0; c < 128; c++) {
+            if(FT_Load_Char(face, c, FT_LOAD_RENDER)) {
+                std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+                continue;
+            }
+
+            unsigned int texture;
+            glGenTextures(1, &texture);
+            glBindTexture(GL_TEXTURE_2D, texture);
+            glTexImage2D(
+                GL_TEXTURE_2D,
+                0,
+                GL_RED,
+                face->glyph->bitmap.width,
+                face->glyph->bitmap.rows,
+                0,
+                GL_RED,
+                GL_UNSIGNED_BYTE,
+                face->glyph->bitmap.buffer
+            );
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            Character character = {
+                texture,
+                glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+                glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+                face->glyph->advance.x
+            };
+
+            Characters[c] = character;
+        }
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        FT_Done_Face(face);
+        FT_Done_FreeType(ft);
+
+        //create VAO VBO n shit
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glBindVertexArray(VAO);
+
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+
+    void FontFace::DrawText(Shader &shader, const char *text, float x, float y, float scale, Vector4 color) {
+        shader.Bind();
+        shader.SetUniform4f("textColor", color.x, color.y, color.z, color.w);
+        glActiveTexture(GL_TEXTURE0);
+        glBindVertexArray(VAO);
+
+        std::string textString = std::string(text);
+
+        for(auto &c : textString) {
+            Character ch = Characters[c];
+
+            float xpos = x + ch.Bearing.x * scale;
+            float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+
+            float w = ch.Size.x * scale;
+            float h = ch.Size.y * scale;
+
+            float vertices[6][4] = {
+                { xpos,     ypos + h,   0.0, 0.0 },
+                { xpos,     ypos,       0.0, 1.0 },
+                { xpos + w, ypos,       1.0, 1.0 },
+
+                { xpos,     ypos + h,   0.0, 0.0 },
+                { xpos + w, ypos,       1.0, 1.0 },
+                { xpos + w, ypos + h,   1.0, 0.0 }
+            };
+
+            glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+            // set text sampler2D 
+            shader.SetUniform1i("text", 0);
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
+            x += (ch.Advance >> 6) * scale;
+        }
+
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 }
 

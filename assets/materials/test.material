@@ -5,11 +5,11 @@
         "g": 1.0,
         "r": 1.0
     },
-    "diffuse": "assets/ground.png",
-    "metallic": 0.0,
+    "diffuse": "assets/models/skin/textures/F_MED_MeteorWoman_Alt_baseColor.png",
+    "metallic": 0.12999999523162842,
     "normal": "None",
     "roughness": 0.0,
-    "specular": "assets/planksSpec.png",
+    "specular": "assets/models/skin/textures/F_MED_MeteorWoman_Alt_baseColor.png",
     "texUV": {
         "x": 0.0,
         "y": 0.0

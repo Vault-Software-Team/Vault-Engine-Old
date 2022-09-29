@@ -24,8 +24,8 @@ api_obj = $(api:.cpp=.o)
 # relatively link shared libraries
 # -L$(cwd)/lib
 MONO_LIB=-I"$(cwd)/mono/include/mono-2.0" -D_REENTRANT  -L"$(cwd)/mono/lib" -lmono-2.0
-flags = -fno-stack-protector -std=c++20 -lstdc++fs -g -L"./lib" -lluajit-5.1 -I"./src/vendor" -I"./src/vendor/bullet/bullet" -lfreetype -lGL -lbox2d -lGLU -lglfw -lm -lSDL2_mixer -lassimp -lXrandr -lXi -lbox2d -lX11 -lXxf86vm -lpthread -ldl -lXinerama -lXcursor -lGLEW
-win_flags = -L"./win_libs" -I"./src/vendor" -I"./src/vendor/bullet/bullet" -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll
+flags = -fno-stack-protector -std=c++20 -lstdc++fs -g -L"./lib" -lluajit-5.1 -I"./src/vendor" -I"./src/vendor/bullet/bullet" -lfreetype -lGL -lbox2d -lGLU -lglfw -lm -lSDL2_mixer -lassimp -lXrandr -lXi -lbox2d -lX11 -lXxf86vm -lfreetype -lpthread -ldl -lXinerama -lXcursor -lGLEW
+win_flags = -L"./win_libs" -I"./src/vendor" -I"./src/vendor/bullet/bullet" -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype
 
 eng:
 	g++ -c $(api) $(flags)
@@ -39,13 +39,13 @@ app:
 	g++ -c src/main.cpp $(flags)
 	mv *.o src
 	g++ $(objects) -o $(exec) $(flags)
+	./Static\ Engine.sh
 
 bundle:
 	mv src/*.o bin
 linux: 
 	make eng
 	make app
-	./Static\ Engine.sh
 # compile to object files
 # g++ -c $(sources) $(flags)
 # mv *.o src

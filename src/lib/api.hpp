@@ -3,7 +3,9 @@
 #include "../vendor/GLFW/glfw3.h"
 #include <fstream>
 #include <iostream>
-#include <stb_image/stb_image.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include "../vendor/stb_image/stb_image.h"
 // #include "../vendor/stb_image/stb_image.h"
 #include "../vendor/glm/glm.hpp"
 #include "../vendor/glm/gtc/matrix_transform.hpp"
@@ -71,10 +73,10 @@ namespace uuid {
 }
 
 namespace HyperAPI {
-    extern   std::string cwd;
-    extern   std::string dirPayloadData;
-    extern   bool isRunning;
-    extern   bool isStopped;
+    extern std::string cwd;
+    extern std::string dirPayloadData;
+    extern bool isRunning;
+    extern bool isStopped;
 
     class AssimpGLMHelpers
     {
@@ -197,6 +199,14 @@ namespace HyperAPI {
             rotation = glm::degrees(glm::eulerAngles(glm::quatLookAt(direction, glm::vec3(0,1,0))));
         }
     };
+
+    struct Character {
+        unsigned int TextureID;  // ID handle of the glyph texture
+        glm::ivec2   Size;       // Size of glyph
+        glm::ivec2   Bearing;    // Offset from baseline to left/top of glyph
+        unsigned int Advance;    // Offset to advance to next glyph
+    };
+
 
     enum LOG_TYPE {
         LOG_INFO,
@@ -324,6 +334,28 @@ namespace HyperAPI {
         glm::vec2 texUV = glm::vec2(0.0f, 0.0f);
         int m_BoneIDs[MAX_BONE_INFLUENCE] = { -1 };
         float m_Weights[MAX_BONE_INFLUENCE] = { 0.0f };
+        // float texID = -1;
+        // glm::mat4 model = glm::mat4(1.0f);
+    };
+
+    struct Vertex_Batch {
+        glm::vec3 position;
+        glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f);
+        glm::vec3 normal = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec2 texUV = glm::vec2(0.0f, 0.0f);
+
+        int diffuse = -1;
+        int specular = -1;
+        int normalMap = -1;
+
+        float metallic = 0;
+        float roughness = 0;
+        Vector2 texUVs = Vector2(0, 0);
+        
+        glm::vec3 m_position = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
+
         // float texID = -1;
         // glm::mat4 model = glm::mat4(1.0f);
     };
@@ -828,67 +860,21 @@ namespace HyperAPI {
         virtual void SetUniformMat4(const char *name, glm::mat4 value);
     };
 
-    class BatchMesh {
+    class BatchLayer {
     public:
-        std::string parentType = "None";
-        std::string ID;
-        std::string name = "GameObject";
-        Material material{Vector4(1,1,1,1)};
-
-        unsigned int VBO, VAO, IBO;
-        std::vector<Vertex> vertices;
+        std::vector<Vertex_Batch> vertices;
         std::vector<unsigned int> indices;
-        std::vector<Texture> textures;
-        std::vector<std::any> Components;
-        glm::mat4 model = glm::mat4(1.0f);
+        unsigned int VBO, VAO, IBO;
 
-        BatchMesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices);
+        BatchLayer(
+            std::vector<Vertex_Batch> &vertices,
+            std::vector<unsigned int> &indices
+        );
 
-        void Draw(
-            Shader &shader,
-            Camera &camera,
-            glm::mat4 matrix = glm::mat4(1.0f),
-            glm::vec3 translation = glm::vec3(0.0f, 0.0f, 0.0f),
-            glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
-            glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f)
-        );  
-
-        template<typename T>
-        void AddComponent(T component) {
-            Components.push_back(std::any_cast<T>(component));
-        }
-
-        template<typename T>
-        T GetComponent() {
-            for (auto component : Components) {
-                try {
-                    if (typeid(T) == typeid(std::any_cast<T>(component))) {
-                        return std::any_cast<T>(component);
-                    }
-                } 
-                catch (const std::bad_any_cast& e) {}
-            }
-        }
-
-        template<typename T>
-        bool HasComponent() {
-            for (auto component : Components) {
-                if (typeid(T) == typeid(std::any_cast<T>(component))) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        
-        template<typename T>
-        void UpdateComponent(T component) {
-            for (auto& comp : Components) {
-                if (typeid(T) == typeid(std::any_cast<T>(comp))) {
-                    comp = component;
-                }
-            }
-        }
+        void Draw(Shader &shader, Camera &camera);
     };
+
+    extern std::vector<BatchLayer*> batchLayers;
 
     namespace Experimental {
         class ComponentEntity {
@@ -917,7 +903,13 @@ namespace HyperAPI {
 
             template<typename T>
             T& GetComponent() {
-                return Scene::m_Registry.get<T>(entity);
+                if(HasComponent<T>()) {
+                    return Scene::m_Registry.get<T>(entity);
+                } else {
+                    T& component = AddComponent<T>();
+                    component.hasGUI = false;
+                    return component;
+                }
             }
 
             template<typename T>
@@ -934,8 +926,10 @@ namespace HyperAPI {
         struct BaseComponent {
             entt::entity entity;
             std::string ID;
+            bool hasGUI = true;
 
             virtual void Init() {}
+            virtual void GUI() {}
         };
 
         struct Transform : public BaseComponent {
@@ -971,6 +965,18 @@ namespace HyperAPI {
             void LookAt(glm::vec3 target) {
                 glm::vec3 direction = glm::normalize(target - position);
                 rotation = glm::degrees(glm::eulerAngles(glm::quatLookAt(direction, glm::vec3(0,1,0))));
+            }
+
+            void Translate(glm::vec3 translation) {
+                position += translation;
+            }
+
+            void Rotate(glm::vec3 rotation) {
+                this->rotation += rotation;
+            }
+
+            void Scale(glm::vec3 scale) {
+                this->scale += scale;
             }
         };
 
@@ -1733,7 +1739,7 @@ namespace HyperAPI {
                     if(ImGui::Button(ICON_FA_TRASH " Delete", ImVec2(winSize.x, 0))) {
                         delete camera;
                         camera = nullptr;
-                        Scene::m_Registry.remove<CameraComponent>(entity);    
+                        m_GameObject->RemoveComponent<CameraComponent>();
                     }
                     ImGui::TreePop();
                 }
@@ -1864,10 +1870,34 @@ namespace HyperAPI {
         };
     }
 
+    class QuadBatch {
+    public:
+        BatchLayer *layer;
+        int vert1, vert2, vert3, vert4;
+        Experimental::Transform transform;
+
+        QuadBatch(BatchLayer *layer, std::vector<Vertex_Batch> &vertices, std::vector<unsigned int> &indices);
+        void Update();
+    };
+    
     namespace f_GameObject {
         Experimental::GameObject *FindGameObjectByName(const std::string &name);
         Experimental::GameObject *FindGameObjectByTag(const std::string &tag);
-    }
+    };
+
+    class FontFace {
+    public:
+        std::string path;
+        int size;
+        FT_Face face;
+        std::map<char, Character> Characters;
+
+        unsigned int texture;
+        unsigned int VAO, VBO;
+
+        FontFace(const char *path, int size);
+        void DrawText(Shader &shader, const char *text, float x, float y, float scale, Vector4 color);
+    };
 }
 
 extern   const int width ;

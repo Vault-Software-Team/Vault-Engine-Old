@@ -246,7 +246,7 @@ int main() {
     // glfw enable sticky mouse buttons
     Shader shader("shaders/default.glsl");
     Shader spriteShader("shaders/sprite.glsl");
-    Shader batchShader("shaders/batch.glsl");
+    // Shader batchShader("shaders/batch.glsl");
 
     spriteShader.Bind();
     spriteShader.SetUniform1f("ambient", 1);
@@ -288,6 +288,27 @@ int main() {
 
     Scene::LoadScene(config.mainScene);
     Scene::mainCamera = camera;
+
+    Experimental::Transform transform;
+    transform.position = glm::vec3(2, 0, 2);
+    transform.rotation = glm::vec3(15, 0, 0);
+    transform.scale = glm::vec3(1, 5, 1);
+    transform.Update();
+
+    std::vector<Vertex_Batch> vertices =
+    {
+    };
+
+    std::vector<unsigned int> indices =
+    {
+    };
+    // QuadBatch quadBatch(nullptr, vertices, indices);
+    // QuadBatch quadBatch2(nullptr, vertices, indices);
+    // BatchLayer batchLayer(vertices, indices);
+    // Texture texture("assets/planks.png", 0, "texture_diffuse");
+    // Texture texture2("assets/ground.png", 1, "texture_diffuse");
+    // quadBatch.layer = &batchLayer;
+    // quadBatch2.layer = &batchLayer;
 
     std::function<void(unsigned int &PPT, unsigned int &PPFBO)> GUI_EXP = 
     [&](unsigned int &PPT, unsigned int &PPFBO) {
@@ -822,51 +843,63 @@ int main() {
                 Scene::m_Object->layer = Scene::layer;
 
                 if(Scene::m_Object->HasComponent<Experimental::Transform>()) {
-                    Scene::m_Object->GetComponent<Experimental::Transform>().GUI();
+                    auto &comp = Scene::m_Object->GetComponent<Experimental::Transform>();
+                    if(comp.hasGUI) comp.GUI();
                 }
 
                 if(Scene::m_Object->HasComponent<Experimental::CameraComponent>()) {
-                    Scene::m_Object->GetComponent<Experimental::CameraComponent>().GUI();
+                    auto &comp = Scene::m_Object->GetComponent<Experimental::CameraComponent>();
+                    if(comp.hasGUI) comp.GUI();
                 }
 
                 if(Scene::m_Object->HasComponent<Experimental::MeshRenderer>()) {
-                    Scene::m_Object->GetComponent<Experimental::MeshRenderer>().GUI();
+                    auto &comp = Scene::m_Object->GetComponent<Experimental::MeshRenderer>();
+                    if(comp.hasGUI) comp.GUI();
                 }
 
                 if(Scene::m_Object->HasComponent<Experimental::m_LuaScriptComponent>()) {
-                    Scene::m_Object->GetComponent<Experimental::m_LuaScriptComponent>().GUI();
+                    auto &comp = Scene::m_Object->GetComponent<Experimental::m_LuaScriptComponent>();
+                    if(comp.hasGUI) comp.GUI();
                 }
 
                 if(Scene::m_Object->HasComponent<Experimental::c_PointLight>()) {
-                    Scene::m_Object->GetComponent<Experimental::c_PointLight>().GUI();
+                    auto &comp = Scene::m_Object->GetComponent<Experimental::c_PointLight>();
+                    if(comp.hasGUI) comp.GUI();
                 }
 
                 if(Scene::m_Object->HasComponent<Experimental::c_SpotLight>()) {
-                    Scene::m_Object->GetComponent<Experimental::c_SpotLight>().GUI();
+                    auto &comp = Scene::m_Object->GetComponent<Experimental::c_SpotLight>();
+                    if(comp.hasGUI) comp.GUI();
                 }
 
                 if(Scene::m_Object->HasComponent<Experimental::c_DirectionalLight>()) {
-                    Scene::m_Object->GetComponent<Experimental::c_DirectionalLight>().GUI();
+                    auto &comp = Scene::m_Object->GetComponent<Experimental::c_DirectionalLight>();
+                    if(comp.hasGUI) comp.GUI();
                 }
 
                 if(Scene::m_Object->HasComponent<Experimental::SpriteRenderer>()) {
-                    Scene::m_Object->GetComponent<Experimental::SpriteRenderer>().GUI();
+                    auto &comp = Scene::m_Object->GetComponent<Experimental::SpriteRenderer>();
+                    if(comp.hasGUI) comp.GUI();
                 }
 
                 if(Scene::m_Object->HasComponent<Experimental::SpriteAnimation>()) {
-                    Scene::m_Object->GetComponent<Experimental::SpriteAnimation>().GUI();
+                    auto &comp = Scene::m_Object->GetComponent<Experimental::SpriteAnimation>();
+                    if(comp.hasGUI) comp.GUI();
                 }
 
                 if(Scene::m_Object->HasComponent<Experimental::SpritesheetRenderer>()) {
-                    Scene::m_Object->GetComponent<Experimental::SpritesheetRenderer>().GUI();
+                    auto &comp = Scene::m_Object->GetComponent<Experimental::SpritesheetRenderer>();
+                    if(comp.hasGUI) comp.GUI();
                 }
 
                 if(Scene::m_Object->HasComponent<Experimental::BoxCollider2D>()) {
-                    Scene::m_Object->GetComponent<Experimental::BoxCollider2D>().GUI();
+                    auto &comp = Scene::m_Object->GetComponent<Experimental::BoxCollider2D>();
+                    if(comp.hasGUI) comp.GUI();
                 }
 
                 if(Scene::m_Object->HasComponent<Experimental::Rigidbody2D>()) {
-                    Scene::m_Object->GetComponent<Experimental::Rigidbody2D>().GUI();
+                    auto &comp = Scene::m_Object->GetComponent<Experimental::Rigidbody2D>();
+                    if(comp.hasGUI) comp.GUI();
                 }
 
                 ImGui::Separator();
@@ -993,7 +1026,26 @@ int main() {
 
     bool calledOnce = false;
 
+    // batchShader.Bind();
+    // batchShader.SetUniform1i("textures[0]", 0);
+    // batchShader.SetUniform1i("textures[1]", 1);
+    // batchShader.SetUniform1i("cubeMap", 10);
+
     app.Run([&] {
+        // quadBatch2.Update();
+        // quadBatch.Update();
+        // texture.Bind(0);
+        // texture2.Bind(1);
+
+        // batchShader.Bind();
+        // batchShader.SetUniform1f("ambient", config.ambientLight);
+        // TransformComponent cameraTransform = camera->GetComponent<TransformComponent>();
+        // batchShader.SetUniform3f("cameraPosition", cameraTransform.position.x, cameraTransform.position.y, cameraTransform.position.z);
+        // batchLayer.Draw(batchShader, *camera);
+
+        // texture.Unbind();
+        // texture2.Unbind();
+
         if(Scene::mainCamera == nullptr) {
             Scene::mainCamera = camera;
         }

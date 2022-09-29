@@ -17,7 +17,6 @@ if [ "$PLATFORM" = "windows" ]; then
     cp -r imgui.ini dist/windows/imgui.ini
     cp -r shaders dist/windows/shaders
     cp -r build dist/windows/build
-    cp -r sandbox dist/windows/sandbox
 else 
     if [ -d dist/linux ]; then
         echo "dist/linux exists"
@@ -34,5 +33,4 @@ else
     cp -r imgui.ini dist/linux/imgui.ini
     cp -r shaders dist/linux/shaders
     cp -r build dist/linux/build
-    cp -r sandbox dist/linux/sandbox
 fi
