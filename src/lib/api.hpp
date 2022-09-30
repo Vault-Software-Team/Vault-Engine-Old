@@ -3,8 +3,6 @@
 #include "../vendor/GLFW/glfw3.h"
 #include <fstream>
 #include <iostream>
-#include <ft2build.h>
-#include FT_FREETYPE_H
 #include "../vendor/stb_image/stb_image.h"
 // #include "../vendor/stb_image/stb_image.h"
 #include "../vendor/glm/glm.hpp"
@@ -33,6 +31,7 @@
 #include "ScriptEngine.hpp"
 #include "InputEvents.hpp"
 #include "scripts.hpp"
+#include "../vendor/SDL2/SDL_mixer.h"
 #include <random>
 
 #ifndef _WIN32
@@ -48,6 +47,18 @@
 #define MAX_BONE_INFLUENCE 4
 
 // command prompt colors
+#ifdef _WIN32
+#define RED SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12)
+#define GREEN SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10)
+#define BLUE SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 9)
+#define YELLOW SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 14)
+#define WHITE SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15)
+#define PURPLE SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 13)
+#define CYAN SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 11)
+#define GREY SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 8)
+#define RESET SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7)
+#define HYPER_LOG(x) RED; std::cout << "[STATIC] - "; RESET; std::cout << x << std::endl;
+#else
 #define RED "\033[0;31m"
 #define GREEN "\033[0;32m"
 #define YELLOW "\033[0;33m"
@@ -57,6 +68,7 @@
 #define WHITE "\033[0;37m"
 #define RESET "\033[0m"
 #define HYPER_LOG(x) std::cout << RED "[STATIC] - " RESET << x << std::endl;
+#endif
 
 using json = nlohmann::json;
 
@@ -77,6 +89,14 @@ namespace HyperAPI {
     extern std::string dirPayloadData;
     extern bool isRunning;
     extern bool isStopped;
+
+    namespace AudioEngine {
+        void PlaySound(const std::string &path, float volume = 1.0f, bool loop = false, int channel = -1);
+        void StopSound(int channel = -1);
+
+        void PlayMusic(const std::string &path, float volume = 1.0f, bool loop = false);
+        void StopMusic();
+    };
 
     class AssimpGLMHelpers
     {
@@ -193,11 +213,6 @@ namespace HyperAPI {
             ImGui::DragFloat3("Rotation", &rotation.x, 0.1f);
             ImGui::DragFloat3("Scale", &scale.x, 0.1f);
         }
-
-        void LookAt(glm::vec3 target) {
-            glm::vec3 direction = glm::normalize(target - position);
-            rotation = glm::degrees(glm::eulerAngles(glm::quatLookAt(direction, glm::vec3(0,1,0))));
-        }
     };
 
     struct Character {
@@ -281,6 +296,8 @@ namespace HyperAPI {
         entt::entity entity = entt::null;
 
         glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+        glm::mat4 view, projection;
 
         float cam_fov = 45;
         float cam_near = 0.1f;
@@ -1093,6 +1110,152 @@ namespace HyperAPI {
             }
         };
 
+        class Random {
+        public:
+            static void Init() {
+                s_Engine.seed(std::random_device()());
+            }
+
+            static float Float() {
+                return (float)s_Distribution(s_Engine) / (float)std::numeric_limits<uint32_t>::max();
+            }
+        private:
+            static std::mt19937 s_Engine;
+            static std::uniform_int_distribution<std::mt19937::result_type> s_Distribution;
+        };
+
+        struct ParticleProps {
+            Vector3 position;
+            Vector3 velocity, velocityVariation;
+            Vector4 colorBegin, colorEnd;
+            float sizeBegin, sizeEnd, sizeVariation;
+            float lifeTime = 1.0f;
+        };
+
+        struct ParticleSystem : public BaseComponent {
+            struct Particle {
+                glm::vec3 position;
+                glm::vec3 velocity;
+                glm::vec4 color_begin, color_end;
+                float rotation = 0;
+                float size_begin, size_end;
+                float lifeTime = 1;
+                float lifeRemaining = 1;
+                bool active = false;
+            };
+
+            std::vector<Particle> particlePool;
+            unsigned int poolIndex = 999;
+            unsigned int quadVA = 0;
+
+            ParticleSystem() {
+                particlePool.resize(1000);
+            }
+
+            void GUI() {
+                if(ImGui::TreeNode("Particle System")) {
+                    ImGui::NewLine();
+                    if(ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::m_Registry.remove<SpriteRenderer>(entity);
+                    }
+                    
+                    ImGui::TreePop();
+                }
+            }
+
+            void Update() {
+                for(auto &particle : particlePool) {
+                    if(particle.active) {
+                        // calculate delta time, there is no namespace as Time.
+                        float time = 0.016f;
+                        particle.lifeRemaining -= time;
+
+                        if(particle.lifeRemaining <= 0.0f) {
+                            particle.active = false;
+                            continue;
+                        }
+
+                        particle.position += particle.velocity * time;
+                        particle.color_begin.r += (particle.color_end.r - particle.color_begin.r) * time;
+                        particle.color_begin.g += (particle.color_end.g - particle.color_begin.g) * time;
+                        particle.color_begin.b += (particle.color_end.b - particle.color_begin.b) * time;
+                        particle.color_begin.a += (particle.color_end.a - particle.color_begin.a) * time;
+                        particle.size_begin += (particle.size_end - particle.size_begin) * time;
+                        particle.rotation += 0.01f * time;
+                    }
+                }
+            }
+
+            void Emit(const ParticleProps &props) {
+                Particle &particle = particlePool[poolIndex];
+                particle.active = true;
+                particle.position = props.position;
+                particle.rotation = Random::Float() * 2.0f * glm::pi<float>();
+
+                particle.velocity = props.velocity;
+                particle.velocity.x += props.velocityVariation.x * (Random::Float() - 0.5f);
+                particle.velocity.y += props.velocityVariation.y * (Random::Float() - 0.5f);
+
+                particle.color_begin = props.colorBegin;
+                particle.color_end = props.colorEnd;
+
+                particle.size_begin = props.sizeBegin;
+                particle.size_end = props.sizeEnd;
+                particle.size_begin += props.sizeVariation * (Random::Float() - 0.5f);
+                particle.size_end += props.sizeVariation * (Random::Float() - 0.5f);
+
+                particle.lifeRemaining = props.lifeTime;
+                particle.lifeTime = props.lifeTime;
+                
+                poolIndex = --poolIndex % particlePool.size();
+            } 
+
+            void Draw(Shader &shader, Camera *camera) {
+                if(!quadVA) {
+                    float vertices[] = {
+                        -0.5, -0.5, 0,
+                        0.5, -0.5, 0,
+                        0.5, 0.5, 0,
+                        -0.5, 0.5, 0
+                    };
+
+                    unsigned int quadVB;
+                    glGenVertexArrays(1, &quadVA);
+                    glGenBuffers(1, &quadVB);
+                    glBindVertexArray(quadVA);
+                    glBindBuffer(GL_ARRAY_BUFFER, quadVB);
+                    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+                    glEnableVertexAttribArray(0);
+                    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (const void*)0);
+
+                    unsigned int indices[] = {
+                        0, 1, 2,
+                        2, 3, 0
+                    };
+
+                    unsigned int quadIB;
+                    glGenBuffers(1, &quadIB);
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIB);
+                    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+                    glBindVertexArray(0);
+                    glBindBuffer(GL_ARRAY_BUFFER, 0);
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+                }
+
+                shader.Bind();
+                shader.SetUniformMat4("u_ViewProjection", camera->view);
+
+                for(auto &particle : particlePool) {
+                    if(!particle.active) {
+                        continue;
+                    }
+                    float life = particle.lifeRemaining / particle.lifeTime;
+                }
+            };
+        };
+
         struct m_AnimationData {
             char name[499] = "anim_name";
             std::string id = uuid::generate_uuid_v4();
@@ -1696,6 +1859,9 @@ namespace HyperAPI {
             GameObject *m_GameObject = nullptr;
 
             CameraComponent() {}
+            ~CameraComponent() {
+                Scene::cameras.erase(std::remove(Scene::cameras.begin(), Scene::cameras.end(), camera), Scene::cameras.end());
+            }
 
             void Init() {
                 auto &transform = Scene::m_Registry.get<Experimental::Transform>(entity);
@@ -1737,8 +1903,9 @@ namespace HyperAPI {
 
                     ImVec2 winSize = ImGui::GetWindowSize();
                     if(ImGui::Button(ICON_FA_TRASH " Delete", ImVec2(winSize.x, 0))) {
-                        delete camera;
-                        camera = nullptr;
+                        // delete camera;
+                        // camera = nullptr;
+                        // Scene::cameras.erase(std::remove(Scene::cameras.begin(), Scene::cameras.end(), camera), Scene::cameras.end());
                         m_GameObject->RemoveComponent<CameraComponent>();
                     }
                     ImGui::TreePop();
@@ -1884,20 +2051,6 @@ namespace HyperAPI {
         Experimental::GameObject *FindGameObjectByName(const std::string &name);
         Experimental::GameObject *FindGameObjectByTag(const std::string &tag);
     };
-
-    class FontFace {
-    public:
-        std::string path;
-        int size;
-        FT_Face face;
-        std::map<char, Character> Characters;
-
-        unsigned int texture;
-        unsigned int VAO, VBO;
-
-        FontFace(const char *path, int size);
-        void DrawText(Shader &shader, const char *text, float x, float y, float scale, Vector4 color);
-    };
 }
 
 extern   const int width ;
@@ -1945,6 +2098,10 @@ namespace Hyper {
             renderer = new HyperAPI::Renderer(width, height, title.c_str(), {0, -1}, 8, wireframe);
             HYPER_LOG("Initialized Static Engine");
 
+            // HYPER_LOG("Initializing Audio Engine");
+            // HyperAPI::AudioEngine::Init();
+            // HYPER_LOG("Initialized Audio Engine");
+
             //get vendor 
             vendor = (char*)glGetString(GL_VENDOR);
             srenderer = (char*)glGetString(GL_RENDERER);
@@ -1972,6 +2129,26 @@ namespace Hyper {
             HYPER_LOG("Initialized ImGui");
         }
         void Run(std::function<void()> update, std::function<void(unsigned int &PPT, unsigned int &PPFBO)> gui = [](unsigned int &PPT, unsigned int &PPFBO){});
+    };
+
+    class MousePicker {
+    public:
+        Vector3 currentRay;
+        glm::mat4 projectionMatrix;
+        HyperAPI::Camera *camera;
+        Application *appRef;
+
+        int winX, winY;
+        int mouseX, mouseY;
+    
+        MousePicker(Application *app, HyperAPI::Camera *camera, glm::mat4 projection);
+    
+        Vector3 getCurrentRay();
+        void update();
+        Vector3 calculateMouseRay();
+        Vector2 getNormalizedDeviceCoords(float mouseX, float mouseY);
+        Vector4 toEyeCoords(Vector4 clipCoords);
+        Vector3 toWorldCoords(Vector4 eyeCoords);
     };
 
     float LerpFloat(float a, float b, float t);

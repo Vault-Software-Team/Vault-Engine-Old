@@ -31,7 +31,6 @@
 #include "../vendor/box2d/b2_polygon_shape.h"
 
 #include "../vendor/assimp/postprocess.h"
-#include "../vendor/SDL2/SDL_mixer.h"
 #include <any>
 #include <map>
 #include "scene.hpp"

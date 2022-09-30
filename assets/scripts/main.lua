@@ -1,4 +1,5 @@
 function OnStart()
+    PlayAudio("assets/polyjam/Inst.ogg", 0.5, true);
 end
 
 SpacePressed = false

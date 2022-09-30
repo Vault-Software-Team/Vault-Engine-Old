@@ -1001,16 +1001,19 @@ namespace ScriptEngine {
             float volume = (float)lua_tonumber(L, 2);
             bool loop = (bool)lua_toboolean(L, 3);
             // optional argument
-            int channel = 1;
+            int channel = -1;
             if(lua_gettop(L) == 4) {
                 channel = (int)lua_tonumber(L, 4);
             }
+
+            HyperAPI::AudioEngine::PlaySound(path, volume, loop, channel);
 
             return 1;
         }
 
         int StopAudio(lua_State *L) {
             int channel = (int)lua_tonumber(L, 1);
+            HyperAPI::AudioEngine::StopSound(channel);
             return 1;
         }
 
@@ -1019,10 +1022,13 @@ namespace ScriptEngine {
             float volume = (float)lua_tonumber(L, 2);
             bool loop = (bool)lua_toboolean(L, 3);
 
+            HyperAPI::AudioEngine::PlayMusic(path, volume, loop);
+
             return 1;
         }
 
         int StopMusic(lua_State *L) {
+            HyperAPI::AudioEngine::StopMusic();
             return 1;
         }
 
@@ -1080,6 +1086,111 @@ namespace ScriptEngine {
                 if(gameObject->ID == id) {
                     auto &transform = gameObject->GetComponent<Transform>();
                     transform.Rotate(glm::vec3(x, y, z));
+                    break;
+                }
+            }
+        }
+
+        int ChangeMeshDiffuse(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto texturePath = (std::string)lua_tostring(L, 1);
+
+            for(auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+                if(gameObject->ID == id) {
+                    auto &meshRenderer = gameObject->GetComponent<MeshRenderer>();
+                    if(meshRenderer.m_Mesh->material.diffuse != nullptr) {
+                        glDeleteTextures(1, &meshRenderer.m_Mesh->material.diffuse->ID);
+                        delete meshRenderer.m_Mesh->material.diffuse;
+                    }
+
+                    meshRenderer.m_Mesh->material.diffuse = new HyperAPI::Texture(texturePath.c_str(), 0, "texture_diffuse");
+                    break;
+                }
+            }
+        }
+
+        int ChangeMeshSpecular(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto texturePath = (std::string)lua_tostring(L, 1);
+
+            for(auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+                if(gameObject->ID == id) {
+                    auto &meshRenderer = gameObject->GetComponent<MeshRenderer>();
+                    if(meshRenderer.m_Mesh->material.specular != nullptr) {
+                        glDeleteTextures(1, &meshRenderer.m_Mesh->material.specular->ID);
+                        delete meshRenderer.m_Mesh->material.specular;
+                    }
+                    
+                    meshRenderer.m_Mesh->material.specular = new HyperAPI::Texture(texturePath.c_str(), 0, "texture_specular");
+                    break;
+                }
+            }
+        }
+
+        int ChangeMeshNormal(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto texturePath = (std::string)lua_tostring(L, 1);
+
+            for(auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+                if(gameObject->ID == id) {
+                    auto &meshRenderer = gameObject->GetComponent<MeshRenderer>();
+                    if(meshRenderer.m_Mesh->material.normal != nullptr) {
+                        glDeleteTextures(1, &meshRenderer.m_Mesh->material.normal->ID);
+                        delete meshRenderer.m_Mesh->material.normal;
+                    }
+                    
+                    meshRenderer.m_Mesh->material.normal = new HyperAPI::Texture(texturePath.c_str(), 0, "texture_normal");
+                    break;
+                }
+            }
+        }
+
+        int ChangeSpriteDiffuse(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto texturePath = (std::string)lua_tostring(L, 1);
+
+            for(auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+                if(gameObject->ID == id) {
+                    auto &spriteRenderer = gameObject->GetComponent<SpriteRenderer>();
+                    if(spriteRenderer.mesh->material.diffuse != nullptr) {
+                        glDeleteTextures(1, &spriteRenderer.mesh->material.diffuse->ID);
+                        delete spriteRenderer.mesh->material.diffuse;
+                    }
+                    
+                    spriteRenderer.mesh->material.diffuse = new HyperAPI::Texture(texturePath.c_str(), 0, "texture_diffuse");
+                    break;
+                }
+            }
+        }
+
+        int ChangeSpritesheetDiffuse(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto texturePath = (std::string)lua_tostring(L, 1);
+
+            for(auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+                if(gameObject->ID == id) {
+                    auto &spriteRenderer = gameObject->GetComponent<SpriteRenderer>();
+                    if(spriteRenderer.mesh->material.diffuse != nullptr) {
+                        glDeleteTextures(1, &spriteRenderer.mesh->material.diffuse->ID);
+                        delete spriteRenderer.mesh->material.diffuse;
+                    }
+                    
+                    spriteRenderer.mesh->material.diffuse = new HyperAPI::Texture(texturePath.c_str(), 0, "texture_diffuse");
                     break;
                 }
             }

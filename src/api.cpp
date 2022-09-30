@@ -170,6 +170,37 @@ namespace HyperAPI {
     bool isRunning = false;
     bool isStopped = true;
 
+    namespace AudioEngine {
+        void PlaySound(const std::string &path, float volume, bool loop, int channel) {
+            Mix_Chunk *chunk = Mix_LoadWAV(path.c_str());
+
+            Mix_VolumeChunk(chunk, volume * 128);
+            Mix_PlayChannel(channel, chunk, loop ? -1 : 0);
+        }
+
+        void StopSound(int channel) {
+            Mix_HaltChannel(channel);
+        }
+        
+        void PlayMusic(const std::string &path, float volume, bool loop) {
+            // generate chunk
+            Mix_Music *music = Mix_LoadMUS(path.c_str());
+            if(music == NULL) {
+                HYPER_LOG("Failed to load music: " + path);
+                return;
+            }
+
+            // set volume, the volume scale is 0 - 1
+            Mix_VolumeMusic(volume * 128);
+
+            Mix_PlayMusic(music, loop ? -1 : 0);
+        }
+
+        void StopMusic() {
+            Mix_HaltMusic();
+        }
+    }
+
     std::vector<HyperAPI::Animation> GetAnimationsFromXML(const char *texPath, float delay, Vector2 sheetSize, const std::string &xmlFile)
     {
         std::vector<HyperAPI::Animation> subtextures;
@@ -179,6 +210,9 @@ namespace HyperAPI {
     Renderer::Renderer(int width, int height, const char *title, Vector2 g_gravity, unsigned int samples, bool wireframe) {
         this->samples = samples;
         this->wireframe = wireframe;
+
+        //mix
+        Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
 
         if (!glfwInit()) {
             HYPER_LOG("Failed to initialize GLFW");
@@ -728,8 +762,8 @@ namespace HyperAPI {
         if(EnttComp) {
             auto &transform = Scene::m_Registry.get<Experimental::Transform>(entity);
         
-            glm::mat4 view = glm::mat4(1.0f);
-            glm::mat4 projection = glm::mat4(1.0f);
+            view = glm::mat4(1.0f);
+            projection = glm::mat4(1.0f);
             
             width = winSize.x;
             height = winSize.y;
@@ -747,8 +781,8 @@ namespace HyperAPI {
         } else {
             auto transform = GetComponent<TransformComponent>();
         
-            glm::mat4 view = glm::mat4(1.0f);
-            glm::mat4 projection = glm::mat4(1.0f);
+            view = glm::mat4(1.0f);
+            projection = glm::mat4(1.0f);
             
             width = winSize.x;
             height = winSize.y;
@@ -1928,121 +1962,6 @@ namespace HyperAPI {
             return nullptr;
         }
     }
-
-    FontFace::FontFace(const char *path, int size) {
-        this->path = std::string(path); 
-        FT_Library ft;
-        if(FT_Init_FreeType(&ft)) {
-            HYPER_LOG("Could not init FreeType Library");
-        }
-
-        FT_Face face;
-        if(FT_New_Face(ft, path, 0, &face)) {
-            std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
-        }
-
-        FT_Set_Pixel_Sizes(face, 0, size);
-
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-        for(unsigned char c = 0; c < 128; c++) {
-            if(FT_Load_Char(face, c, FT_LOAD_RENDER)) {
-                std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
-                continue;
-            }
-
-            unsigned int texture;
-            glGenTextures(1, &texture);
-            glBindTexture(GL_TEXTURE_2D, texture);
-            glTexImage2D(
-                GL_TEXTURE_2D,
-                0,
-                GL_RED,
-                face->glyph->bitmap.width,
-                face->glyph->bitmap.rows,
-                0,
-                GL_RED,
-                GL_UNSIGNED_BYTE,
-                face->glyph->bitmap.buffer
-            );
-
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-            Character character = {
-                texture,
-                glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
-                glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-                face->glyph->advance.x
-            };
-
-            Characters[c] = character;
-        }
-
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        FT_Done_Face(face);
-        FT_Done_FreeType(ft);
-
-        //create VAO VBO n shit
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-        glBindVertexArray(VAO);
-
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-        glBindVertexArray(VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-    }
-
-    void FontFace::DrawText(Shader &shader, const char *text, float x, float y, float scale, Vector4 color) {
-        shader.Bind();
-        shader.SetUniform4f("textColor", color.x, color.y, color.z, color.w);
-        glActiveTexture(GL_TEXTURE0);
-        glBindVertexArray(VAO);
-
-        std::string textString = std::string(text);
-
-        for(auto &c : textString) {
-            Character ch = Characters[c];
-
-            float xpos = x + ch.Bearing.x * scale;
-            float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
-
-            float w = ch.Size.x * scale;
-            float h = ch.Size.y * scale;
-
-            float vertices[6][4] = {
-                { xpos,     ypos + h,   0.0, 0.0 },
-                { xpos,     ypos,       0.0, 1.0 },
-                { xpos + w, ypos,       1.0, 1.0 },
-
-                { xpos,     ypos + h,   0.0, 0.0 },
-                { xpos + w, ypos,       1.0, 1.0 },
-                { xpos + w, ypos + h,   1.0, 0.0 }
-            };
-
-            glBindTexture(GL_TEXTURE_2D, ch.TextureID);
-            // set text sampler2D 
-            shader.SetUniform1i("text", 0);
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-
-            x += (ch.Advance >> 6) * scale;
-        }
-
-        glBindVertexArray(0);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
 }
 
 namespace Hyper {
@@ -2325,8 +2244,6 @@ namespace Hyper {
             glBindTexture(GL_TEXTURE_2D, shadowMap);
             update();
 
-            // imgui in the framebuffer
-
             glClear(GL_DEPTH_BUFFER_BIT);
             if(!renderOnScreen) {
                 EndEndFrame(framebufferShader, *renderer, FBO, rectVAO, postProcessingTexture, postProcessingFBO, SFBO, S_PPT, S_PPFBO, width, height);
@@ -2349,6 +2266,49 @@ namespace Hyper {
         }
     
         HYPER_LOG("Closing Static Engine");
+    }
+
+    MousePicker::MousePicker(Application *app, HyperAPI::Camera *camera, glm::mat4 projection) {
+        this->camera = camera;
+        this->projectionMatrix = projection;
+        this->appRef = app;
+    }
+
+    Vector3 MousePicker::getCurrentRay() {
+        return currentRay;
+    }
+
+    void MousePicker::update() {
+        currentRay = calculateMouseRay();
+    }
+
+    Vector3 MousePicker::calculateMouseRay() {
+        Vector2 normalizedCoords = getNormalizedDeviceCoords(mouseX, mouseY);
+        Vector4 clipCoords = Vector4(normalizedCoords.x, normalizedCoords.y, -1.0f, 1.0f);
+        Vector4 eyeCoords = toEyeCoords(clipCoords);
+        Vector3 worldRay = toWorldCoords(eyeCoords);
+
+        return worldRay;
+    }   
+
+    Vector2 MousePicker::getNormalizedDeviceCoords(float mouseX, float mouseY) {
+        float x = (2.0f * mouseX) / winX - 1;
+        float y = (2.0f * mouseY) / winY - 1.0f;
+        return Vector2(x, y);
+    }
+
+    Vector4 MousePicker::toEyeCoords(Vector4 clipCoords) {
+        glm::mat4 invertedProjection = glm::inverse(camera->projection);
+        Vector4 eyeCoords = invertedProjection * clipCoords;
+        return Vector4(eyeCoords.x, eyeCoords.y, -1.0f, 0.0f);
+    }
+
+    Vector3 MousePicker::toWorldCoords(Vector4 eyeCoords) {
+        glm::mat4 invertedView = glm::inverse(camera->view);
+        Vector4 rayWorld = invertedView * eyeCoords;
+        Vector3 mouseRay = Vector3(rayWorld.x, rayWorld.y, rayWorld.z);
+        mouseRay = glm::normalize(mouseRay);
+        return mouseRay;
     }
 
     float LerpFloat(float a, float b, float t) {

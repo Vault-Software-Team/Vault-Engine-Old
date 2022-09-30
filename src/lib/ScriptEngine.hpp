@@ -46,6 +46,17 @@ namespace ScriptEngine {
         int Rotate(lua_State *L);
         int Scale(lua_State *L);
 
+        // MeshRenderer Functions
+        int ChangeMeshDiffuse(lua_State *L);
+        int ChangeMeshSpecular(lua_State *L);
+        int ChangeMeshNormal(lua_State *L);
+
+        // SpriteRenderer Functions
+        int ChangeSpriteDiffuse(lua_State *L);
+
+        // SpritesheetRenderer Functions
+        int ChangeSpritesheetDiffuse(lua_State *L);
+
         int Log(lua_State *L);
         int LogWarning(lua_State *L);
         int LogError(lua_State *L);

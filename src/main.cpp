@@ -1,5 +1,3 @@
-
-#include <iostream>
 #include <random>
 #include <memory>
 #include "lib/api.hpp"
@@ -258,6 +256,8 @@ int main() {
     Camera *camera = new Camera(false, app.width, app.height, Vector3(0,3,15));
     Scene::mainCamera = camera;
 
+    Hyper::MousePicker picker(&app, camera, camera->projection);
+
     bool focusedOnScene = false;
     bool hoveredScene = false;
 
@@ -294,6 +294,10 @@ int main() {
     transform.rotation = glm::vec3(15, 0, 0);
     transform.scale = glm::vec3(1, 5, 1);
     transform.Update();
+
+    ImVec2 mousePos = ImVec2(0,0);
+    ImVec2 windowPos = ImVec2(0,0);
+    ImVec2 windowSize = ImVec2(0,0);
 
     std::vector<Vertex_Batch> vertices =
     {
@@ -738,6 +742,9 @@ int main() {
                 ImGui::SetCursorPosX((ImGui::GetWindowSize().x / 2) - 25 / 2 - (25/ 2));
                 if(ImGui::Button(ICON_FA_PAUSE, ImVec2(25, 0))) {
                     HyperAPI::isRunning = false;
+                    // halt
+                    Mix_HaltChannel(-1);
+                    Mix_HaltMusic();
                     
                     for(auto &gameObject : Scene::m_GameObjects) {
                         if(gameObject->HasComponent<Experimental::NativeScriptManager>()) {
@@ -759,18 +766,18 @@ int main() {
                 // }
             }
             ImGui::BeginChild("View");
-                auto[mx, my] = ImGui::GetMousePos();
-                auto[wx, wy] = ImGui::GetWindowPos();
-                auto[sizex, sizey] = ImGui::GetWindowSize();
-                mx -= wx;
-                my -= wy;
-                my = sizey - my;
-                // std::cout << mx << " " << my << std::endl;
-                app.sceneMouseX = mx;
-                app.sceneMouseY = my;
+                mousePos = ImGui::GetMousePos();
+                windowPos = ImGui::GetWindowPos();
+                windowSize = ImGui::GetWindowSize();
+                mousePos.x -= windowPos.x;
+                mousePos.y -= windowPos.y;
+                mousePos.y = windowSize.y - mousePos.y;
+                // std::cout << mx << " " << mousePos.y << std::endl;
+                app.sceneMouseX = mousePos.x;
+                app.sceneMouseY = mousePos.y;
 
-                app.width = sizex;
-                app.height = sizey;
+                app.width = windowSize.x;
+                app.height = windowSize.y;
 
                 ImVec2 w_p = ImGui::GetWindowPos();
                 winPos = Vector2(w_p.x, w_p.y);
@@ -1032,6 +1039,14 @@ int main() {
     // batchShader.SetUniform1i("cubeMap", 10);
 
     app.Run([&] {
+        picker.projectionMatrix = camera->projection;
+        picker.mouseX = mousePos.x;
+        picker.mouseY = mousePos.y;
+        picker.winX = app.height;
+        picker.winY = app.width;
+        
+        // glfwGetWindowSize(app.renderer->window, &picker.winX, &picker.winY);
+
         // quadBatch2.Update();
         // quadBatch.Update();
         // texture.Bind(0);
