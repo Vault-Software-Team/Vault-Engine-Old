@@ -11,12 +11,12 @@ if [ "$PLATFORM" = "windows" ]; then
         mkdir dist/windows
     fi
     
-    cp -r win_build.exe dist/windows/Static\ Engine.exe
-    cp -r *.dll dist/windows/
-    cp -r assets dist/windows/assets
-    cp -r imgui.ini dist/windows/imgui.ini
-    cp -r shaders dist/windows/shaders
-    cp -r build dist/windows/build
+    cp win_build.exe dist/windows/Static\ Engine.exe
+    cp *.dll dist/windows/
+    cp assets dist/windows/assets
+    cp imgui.ini dist/windows/imgui.ini
+    cp shaders dist/windows/shaders
+    cp build dist/windows/build
 else 
     if [ -d dist/linux ]; then
         echo "dist/linux exists"
