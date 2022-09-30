@@ -62,7 +62,6 @@ $(exec): $(objects)
 	g++ -c -I"./src/vendor" $(flags) $< -o $@
 
 win:
-# staticly link libassimp.a
 	x86_64-w64-mingw32-g++ -static -g -std=c++20 $(sources) $(win_flags) -o $(win_exec)
 
 clean:	
