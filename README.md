@@ -19,6 +19,7 @@ flex-direction: column;
 ## Supported Platforms:
 
 -   **Linux**
+-   **Windows**
 
 ## Features
 
@@ -58,18 +59,28 @@ flex-direction: column;
 ```bash
 git clone https://github.com/koki10190/Static-Engine.git
 cd Static-Engine
-cd api
-./make.sh
-cd ../
-make
+make linux
+./Static\ Engine.sh
 ```
 
-Another way is:
+### **Windows**
+
+First! Go to Makefile and get to line 64 and change x86_64-w64-mingw32-g++ to g++ (MUST HAVE MINGW INSTALLED FOR THIS AND MINGW MAKE, you do not have to change this if you are on linux and want to compile it for windows, you just need to install x86_64-w64-mingw32)
 
 ```bash
 git clone https://github.com/koki10190/Static-Engine.git
 cd Static-Engine
-./build.sh
+make win
+./win_build.exe
+```
+
+### **Bundling**
+
+Bundling the application is very easy, this only works on linux since i do not have .bat file for this created
+
+```bash
+./bundle.sh # this will bundle for linux, in dist/linux
+./bundle.sh windows # this will bundle for windows, in dist/windows
 ```
 
 # Upcoming Features
@@ -78,11 +89,3 @@ cd Static-Engine
 -   **Android Support**
 -   **Flowchart Editor (like in Unreal Engine)**
 -   **Video Player**
-
-# How to run on Windows
-
-1. Install <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">Windows Subsystem for Linux</a>
-2. Install <a href="https://www.microsoft.com/en-us/p/ubuntu/9nblggh4msv6?activetab=pivot:overviewtab">Ubuntu</a> from Microsoft Store
-3. Install C++ compiler
-4. Compile the Static Engine using the Ubuntu bash
-5. Run the main.sh file using the Ubuntu bash (DO NOT RUN THE EXECUTABLE DIRECTLY)
