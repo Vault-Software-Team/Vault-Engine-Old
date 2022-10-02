@@ -77,6 +77,8 @@ namespace ScriptEngine {
         int UpdateEntComponent(lua_State *L);
         int FindGameObjectByName(lua_State *L);
         int FindGameObjectByTag(lua_State *L);
+        int InstantiatePrefab(lua_State *L);
+        int InstantiateTransformPrefab(lua_State *L);
         int PlayAudio(lua_State *L);
         int PlayMusic(lua_State *L);
         int StopAudio(lua_State *L);

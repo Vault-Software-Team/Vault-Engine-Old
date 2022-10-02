@@ -1,5 +1,6 @@
 function OnStart()
     PlayAudio("assets/polyjam/Inst.ogg", 0.5, true);
+    -- InstantiatePrefab("assets/spawn_of_satan.prefab");
 end
 
 SpacePressed = false
@@ -9,6 +10,7 @@ function OnUpdate()
     
     if IsKeyPressed(KEY_SPACE) and SpacePressed == false and transform.positionY < 1 then
         rigidbody:Force(0, 2500);
+
         SpacePressed = true;
     elseif IsKeyPressed(KEY_SPACE) == false then
         SpacePressed = false;

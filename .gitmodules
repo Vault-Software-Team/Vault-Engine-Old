@@ -1,0 +1,3 @@
+[submodule "src/vendor/ImGuizmo"]
+	path = src/vendor/ImGuizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo

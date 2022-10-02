@@ -39,6 +39,7 @@ namespace HyperAPI {
     class Mesh;
     class Model;
     class Camera;
+    class Texture;
     struct Log;
 
     struct PointLight;
@@ -47,6 +48,7 @@ namespace HyperAPI {
     struct Light2D;
     namespace Experimental {
         class GameObject;
+        struct m_AnimationData;
     }
 
     namespace Scene {
@@ -57,18 +59,21 @@ namespace HyperAPI {
             DRAG_MODEL,
             DRAG_SCENE,
             DRAG_SPRITE,
+            DRAG_SPRITE_NO_MESH,
             DRAG_PREFAB,
             DRAG_GAMEOBJECT
         };
         extern std::vector<Experimental::GameObject*> m_GameObjects;
         extern std::map<std::string, bool> layers;
+        extern std::map<std::string, std::map<std::string, int>> currFrames;
+        extern std::map<std::string, std::map<std::string, float>> currDelays;
         extern std::string currentScenePath;
         void LoadScene(const std::string &scenePath);
-        void LoadPrefab(const std::string &scenePath);
+        Experimental::GameObject *LoadPrefab(const std::string &scenePath);
         void SavePrefab(const std::string &path, Experimental::GameObject *gameObject);
         void SaveScene(const std::string &path);
 
-        void DropTargetMat(DragType type, Mesh *currEntity);
+        bool DropTargetMat(DragType type, Mesh *currEntity, Texture *otherData = nullptr);
 
         extern Experimental::GameObject *m_Object;
         extern char name[499];

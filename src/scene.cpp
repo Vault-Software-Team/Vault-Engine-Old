@@ -761,28 +761,17 @@ namespace HyperAPI {
 
             HYPER_LOG("Loaded scene: " + scenePath);
         }
-        void LoadPrefab(const std::string &scenePath) {
+        Experimental::GameObject *LoadPrefab(const std::string &scenePath) {
             std::ifstream file(scenePath);
             // get content
             std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
             nlohmann::json JSON;
             JSON = nlohmann::json::parse(content);
 
-            try {
-                for(int i = 0; i < Scene::cameras.size(); i++) {
-                    if(Scene::mainCamera == Scene::cameras[i]) {
-                        Scene::mainCamera = nullptr;
-                    }
-                    delete Scene::cameras[i];
-                }
-                Scene::cameras.clear();
-            } catch (std::exception &e) {
-                std::cout << e.what() << std::endl;
-            }
-
-
+            Experimental::GameObject *parentObject = nullptr;
             for(int i = 0; i < JSON.size(); i++) {
                 Experimental::GameObject *gameObject = new Experimental::GameObject();
+
                 std::string name = JSON[i]["name"];
                 std::string ID = JSON[i]["ID"];
                 std::string parentID = JSON[i]["parentID"];
@@ -792,6 +781,10 @@ namespace HyperAPI {
                 gameObject->tag = tag;
                 gameObject->ID = ID;
                 gameObject->parentID = parentID;
+                if(gameObject->parentID == "NO_PARENT") {
+                    parentObject = gameObject;
+                }
+
                 nlohmann::json components = JSON[i]["components"];
 
                 std::string meshType = "";
@@ -1086,7 +1079,9 @@ namespace HyperAPI {
             }
         
             HYPER_LOG("Loaded Prefab: " + scenePath);
+            return parentObject;
         }
+       
         void SaveScene(const std::string &path) { 
             std::ofstream file(path);
             nlohmann::json JSON;
@@ -1270,7 +1265,7 @@ namespace HyperAPI {
             HYPER_LOG("Scene saved to " + path);
         }
 
-        void DropTargetMat(DragType type, Mesh *currEntity) {
+        bool DropTargetMat(DragType type, Mesh *currEntity, Texture *otherData) {
             if (ImGui::BeginDragDropTarget())
             {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("file"))
@@ -1318,6 +1313,13 @@ namespace HyperAPI {
 
                                 break;
                             }
+                            case DRAG_SPRITE_NO_MESH: {
+                                if(otherData != nullptr) {
+                                    glDeleteTextures(1, &otherData->ID);
+                                }
+
+                                otherData = new Texture((char*)dirPayloadData.c_str(), 0, "texture_diffuse");
+                            }
                         }
                     }
 
@@ -1353,10 +1355,14 @@ namespace HyperAPI {
                             break;
                         }
                     }
+
+                    return true;
                 }
 
                 ImGui::EndDragDropTarget();
             }
+
+            return false;
         }
 
         std::string currentScenePath = "";
@@ -1383,6 +1389,8 @@ namespace HyperAPI {
         std::vector<HyperAPI::SpotLight*> SpotLights = {};
         std::vector<HyperAPI::DirectionalLight*> DirLights = {};
         std::vector<HyperAPI::Mesh*> hyperEntities = {};
+        std::map<std::string, std::map<std::string, int>> currFrames;
+        std::map<std::string, std::map<std::string, float>> currDelays;
 
         b2World *world = nullptr;
     }

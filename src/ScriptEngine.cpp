@@ -208,6 +208,13 @@ namespace ScriptEngine {
     }
 
     void m_LuaScript::Update() {
+        // set global variable with name "timestep" that is a table.
+        lua_newtable(L);
+        lua_pushstring(L, "DeltaTime");
+        lua_pushnumber(L, HyperAPI::Timestep::deltaTime);
+        lua_settable(L, -3);
+        lua_setglobal(L, "Timestep");
+
         objID = ID;
         for(int i = 0; i < HyperAPI::Scene::m_GameObjects.size(); i++) {
             if(HyperAPI::Scene::m_GameObjects[i]->ID == objID) {
@@ -515,6 +522,8 @@ namespace ScriptEngine {
         lua_register(L, "IsMouseButtonReleased", Functions::IsMouseButtonReleased);
         lua_register(L, "FindGameObjectByName", Functions::FindGameObjectByName);
         lua_register(L, "FindGameObjectByTag", Functions::FindGameObjectByTag);
+        lua_register(L, "InstantiatePrefab", Functions::InstantiatePrefab);
+        lua_register(L, "InstantiateTransformPrefab", Functions::InstantiateTransformPrefab);
         lua_register(L, "PlayAudio", Functions::PlayAudio);
         lua_register(L, "StopAudio", Functions::StopAudio);
         lua_register(L, "PlayMusic", Functions::PlayMusic);
@@ -1194,6 +1203,42 @@ namespace ScriptEngine {
                     break;
                 }
             }
+        }
+
+        int InstantiatePrefab(lua_State *L) {
+            auto prefabPath = (std::string)lua_tostring(L, 1);
+            HYPER_LOG("TEST TEST");
+            HyperAPI::Scene::LoadPrefab(prefabPath);
+            HYPER_LOG("TEST TEST");
+            // GameObject *gameObject = HyperAPI::f_GameObject::InstantiatePrefab(prefabPath);
+
+
+            // lua_newtable(L);
+            // PushTableKey(L, "obj_id", gameObject->ID.c_str());
+            // PushTableKey(L, "name", gameObject->name.c_str());
+            // PushTableKey(L, "tag", gameObject->tag.c_str());
+            // PushTableFunction(L, "GetComponent", GetEntComponent);
+            // PushTableFunction(L, "UpdateComponent", UpdateEntComponent);
+            return 1;
+        }
+
+        int InstantiateTransformPrefab(lua_State *L) {
+            auto prefabPath = (std::string)lua_tostring(L, 1);
+            Vector3 position = {lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4)};
+            Vector3 rotation = {lua_tonumber(L, 5), lua_tonumber(L, 6), lua_tonumber(L, 7)};
+        
+            GameObject *gameObject = HyperAPI::f_GameObject::InstantiatePrefab(prefabPath);
+            gameObject->GetComponent<Transform>().position = position;
+            gameObject->GetComponent<Transform>().rotation = rotation;
+           
+            lua_newtable(L);
+            PushTableKey(L, "obj_id", gameObject->ID.c_str());
+            PushTableKey(L, "name", gameObject->name.c_str());
+            PushTableKey(L, "tag", gameObject->tag.c_str());
+            PushTableFunction(L, "GetComponent", GetEntComponent);
+            PushTableFunction(L, "UpdateComponent", UpdateEntComponent);
+
+            return 1;
         }
     }
 }

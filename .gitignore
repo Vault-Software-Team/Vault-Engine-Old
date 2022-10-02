@@ -3,9 +3,8 @@ GameJam
 *.o
 src/*.o
 api/*.o
-build.out
-g_build.out
-win_build.exe
+*.exe
+*.out
 windows
 website/node_modules
 BASDGKAFSGL.ggg

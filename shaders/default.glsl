@@ -78,9 +78,16 @@ struct DirectionalLight {
     float intensity;
 };
 
+struct Light2D {
+    vec2 lightPos;
+    vec3 color;
+    float range;
+};
+
 uniform float ambient;
-#define MAX_LIGHTS 100
+#define MAX_LIGHTS 60
 uniform PointLight pointLights[MAX_LIGHTS];
+uniform Light2D light2ds[MAX_LIGHTS];
 uniform SpotLight spotLights[MAX_LIGHTS];
 uniform DirectionalLight dirLights[MAX_LIGHTS];
 
@@ -247,6 +254,34 @@ vec4 spotLight(SpotLight light) {
     }
 }
 
+vec4 light2d(Light2D light) {
+    if(isTex == 1) {
+        vec4 frag_color = texture(texture_diffuse0, texCoords) * baseColor;
+        if(frag_color.a < 1.0)
+            discard;
+
+        float distance = distance(light.lightPos, currentPosition.xy);
+        float diffuse = 0.0;
+
+        if (distance <= light.range)
+            diffuse =  1.0 - abs(distance / light.range);
+
+        return vec4(min(frag_color.rgb * ((light.color * diffuse)), frag_color.rgb), 1.0);
+    } else {
+        vec4 frag_color = baseColor;
+        if(frag_color.a < 1.0)
+            discard;
+
+        float distance = distance(light.lightPos, currentPosition.xy);
+        float diffuse = 0.0;
+
+        if (distance <= light.range)
+            diffuse =  1.0 - abs(distance / light.range);
+
+        return vec4(frag_color.rgb * ((light.color * diffuse)), frag_color.rgb);
+    }
+}
+
 float near = 0.1;
 float far = 100.0;
 
@@ -286,6 +321,10 @@ void main() {
 
         if(dirLights[i].intensity == 1) {
             result += directionalLight(dirLights[i]);
+        }
+
+        if(light2ds[i].color.r > 0 || spotLights[i].color.g > 0 || spotLights[i].color.b > 0) {
+            result += light2d(light2ds[i]);
         }
     }
     
