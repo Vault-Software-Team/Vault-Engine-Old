@@ -4,7 +4,7 @@
 ---
 
 <h3>An Open Source 2D and 3D Game Engine</h3>
-<p align="center">Build with C++</p>
+<p align="center">Built with C++</p>
 </div>
 
 <br>
