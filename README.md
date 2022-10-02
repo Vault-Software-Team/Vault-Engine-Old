@@ -1,15 +1,15 @@
 <div align="center">
 <img src="build/logo2.png">
 
-<h1 align="center" style="width: 100%; margin-top: 40px; font-size: 50px; color: #ff3b3b; margin-bottom: -10px">Static Engine</h1>
+<h1 align="center" style="width: 100%; margin-top: 40px; font-size: 50px; color: #ff3b3b; margin-bottom: 10px">Static Engine</h1>
 
 ## An Open Source 2D and 3D Game Engine
 
-### Built with C++
-
+<p align="center">Build with C++</p>
 </div>
 
----
+<br>
+<br>
 
 ## Supported Platforms:
 
