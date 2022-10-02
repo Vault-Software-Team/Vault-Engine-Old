@@ -1148,6 +1148,15 @@ int main() {
                 }
                 ImGui::End();
 
+                if(ImGui::Begin(ICON_FA_PERSON_RUNNING " Animatior")) {
+                    ImGui::Text("Animation");
+                    ImGui::Separator();
+                    ImGui::Text("Animation Name");
+
+
+                    ImGui::End();
+                }
+
                 if (ImGui::Begin(ICON_FA_CUBES " Hierarchy")) {
                     if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(0)) {
                         Scene::m_Object = nullptr;

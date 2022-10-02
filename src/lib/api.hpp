@@ -3,6 +3,7 @@
 #include "../vendor/glad/include/glad/glad.h"
 #include "../vendor/GLFW/glfw3.h"
 #include <ImGuizmo/ImGuizmo.h>
+#include <ImGuizmo/ImSequencer.h>
 #include <fstream>
 #include <iostream>
 #include "../vendor/discord-rpc/discord_rpc.h"
