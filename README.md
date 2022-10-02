@@ -1,7 +1,7 @@
 <div align="center">
 <img src="build/logo2.png">
 
-<p align="center" style="width: 100%; margin-top: 40px; font-size: 50px; color: #ff3b3b; margin-bottom: -10px">Static Engine</p>
+<h1 align="center" style="width: 100%; margin-top: 40px; font-size: 50px; color: #ff3b3b; margin-bottom: -10px">Static Engine</h1>
 
 ## An Open Source 2D and 3D Game Engine
 
