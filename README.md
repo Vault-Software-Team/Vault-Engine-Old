@@ -1,7 +1,7 @@
 <div align="center">
-<img src="build/logo2.png" width="300px">
+<img src="build/logo_github.png" width="400px">
 
-<h1 align="center" style=" margin-top: 40px; color: #ff3b3b; margin-bottom: 10px">Static Engine</h1>
+---
 
 <h3>An Open Source 2D and 3D Game Engine</h3>
 <p align="center">Build with C++</p>
