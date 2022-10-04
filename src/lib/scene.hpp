@@ -63,7 +63,15 @@ namespace HyperAPI {
             DRAG_PREFAB,
             DRAG_GAMEOBJECT
         };
+
+        enum SceneType {
+            MAIN_SCENE,
+            UI_SCENE
+        };
+
+        extern bool LoadingScene;
         extern std::vector<Experimental::GameObject*> m_GameObjects;
+        extern std::vector<Experimental::GameObject*> m_UIObjects;
         extern std::map<std::string, bool> layers;
         extern std::map<std::string, std::map<std::string, int>> currFrames;
         extern std::map<std::string, std::map<std::string, float>> currDelays;

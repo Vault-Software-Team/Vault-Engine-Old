@@ -45,6 +45,10 @@
 #include "../vendor/SDL2/SDL_mixer.h"
 #include <random>
 
+// bullet physics
+#include "../vendor/bullet/bullet/btBulletDynamicsCommon.h"
+#include "../vendor/bullet/bullet/BulletCollision/CollisionDispatch/btGhostObject.h"
+
 #ifndef _WIN32
 
 #include <unistd.h>
@@ -100,6 +104,8 @@ namespace HyperAPI {
     extern bool isRunning;
     extern bool isStopped;
 
+    bool DecomposeTransform(const glm::mat4 &transform, glm::vec3 &translation, glm::vec3 &rotation, glm::vec3 &scale);
+
     namespace AudioEngine {
         void PlaySound(const std::string &path, float volume = 1.0f, bool loop = false, int channel = -1);
 
@@ -108,13 +114,33 @@ namespace HyperAPI {
         void PlayMusic(const std::string &path, float volume = 1.0f, bool loop = false);
 
         void StopMusic();
-    };
+    }
+
+    namespace BulletPhysicsWorld {
+        extern btDiscreteDynamicsWorld *dynamicsWorld;
+        extern btBroadphaseInterface *broadphase;
+        extern btDefaultCollisionConfiguration *collisionConfiguration;
+        extern btCollisionDispatcher *dispatcher;
+        extern btSequentialImpulseConstraintSolver *solver;
+        extern btGhostPairCallback *ghostPairCallback;
+        extern btAlignedObjectArray<btCollisionShape *> collisionShapes;
+        extern btAlignedObjectArray<btRigidBody *> rigidBodies;
+        extern btAlignedObjectArray<btPairCachingGhostObject *> ghostObjects;
+        extern btAlignedObjectArray<btTypedConstraint *> constraints;
+        extern btAlignedObjectArray<btCollisionObject *> collisionObjects;
+
+        void Delete();
+        void Init();
+        void UpdatePhysics();
+
+        void CollisionCallback(std::function<void(const std::string&, const std::string&)> HandleEntities);
+    }
 
     namespace Timestep {
         extern float deltaTime;
         extern float lastFrame;
         extern float currentFrame;
-    };
+    }
 
     class AssimpGLMHelpers {
     public:
@@ -167,7 +193,7 @@ namespace HyperAPI {
         // HyperAPI::LuaScriptComponent scriptComponent;
         std::vector<std::any> Components;
 
-        ComponentSystem() {}
+        ComponentSystem() = default;
 
         void SetTag(const std::string &str) {
             Tag = str;
@@ -332,6 +358,7 @@ namespace HyperAPI {
         // glm::vec3 Orientation = glm::vec3(0.0f, 0.0f, -1.0f);
         // glm::vec3 RotationValue = glm::vec3(0.0f, 0.0f, 0.0f);
         bool EnttComp = false;
+        bool m_MouseMovement = false;
         entt::entity entity = entt::null;
 
         glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -359,10 +386,9 @@ namespace HyperAPI {
         Camera(bool mode2D, int width, int height, glm::vec3 position, entt::entity entity = entt::null);
 
         void updateMatrix(float FOVdeg, float nearPlane, float farPlane, Vector2 winSize, Vector2 prespectiveSize = Vector2(-15, -15));
-
         void Matrix(Shader &shader, const char *uniform);
-
         void Inputs(GLFWwindow *window, Vector2 winPos);
+        void MouseMovement(Vector2 winPos);
     };
 
     class Texture {
@@ -661,8 +687,8 @@ namespace HyperAPI {
             Color = color;
             this->name = "Model";
             texturesEnabled = AddTexture;
-            TransformComponent transform;
-            AddComponent(transform);
+            TransformComponent m_transform;
+            AddComponent(m_transform);
             loadModel(path);
             // scriptComponent.componentSystem = this;
         }
@@ -777,7 +803,7 @@ namespace HyperAPI {
         float time = 0.1;
         float prevTime = 0;
 
-        SpritesheetAnimation() {};
+        SpritesheetAnimation() = default;
 
         void AddAnimation(Animation *animation) {
             animations.push_back(animation);
@@ -913,30 +939,6 @@ namespace HyperAPI {
         Torus(Vector4 color = Vector4(1, 1, 1, 1));
     };
 
-    class SpriteShader : public Shader {
-    public:
-        unsigned int ID;
-
-        SpriteShader();
-
-        virtual void Bind();
-
-        virtual void Unbind();
-
-        // set uniforms
-        virtual void SetUniform1i(const char *name, int value);
-
-        virtual void SetUniform1f(const char *name, float value);
-
-        virtual void SetUniform2f(const char *name, float v0, float v1);
-
-        virtual void SetUniform3f(const char *name, float v0, float v1, float v2);
-
-        virtual void SetUniform4f(const char *name, float v0, float v1, float v2, float v3);
-
-        virtual void SetUniformMat4(const char *name, glm::mat4 value);
-    };
-
     class BatchLayer {
     public:
         std::vector<Vertex_Batch> vertices;
@@ -963,11 +965,11 @@ namespace HyperAPI {
 
             entt::entity entity;
 
-            ComponentEntity() {};
+            ComponentEntity() = default;
 
             template<typename T, typename... Args>
             T &AddComponent(Args &&... args) {
-                if (!HasComponent<T>()) {
+                if (!HasComponent<T>() && Scene::m_Registry.valid(entity)) {
                     T &component = Scene::m_Registry.emplace<T>(entity, std::forward<Args>(args)...);
 
                     auto &comp = GetComponent<T>();
@@ -984,9 +986,8 @@ namespace HyperAPI {
                 if (HasComponent<T>()) {
                     return Scene::m_Registry.get<T>(entity);
                 } else {
-                    T &component = AddComponent<T>();
-                    component.hasGUI = false;
-                    return component;
+                     T comp;
+                     return comp;
                 }
             }
 
@@ -1007,8 +1008,8 @@ namespace HyperAPI {
         };
 
         struct BaseComponent {
-            entt::entity entity;
-            std::string ID;
+            entt::entity entity = entt::null;
+            std::string ID = "";
             bool hasGUI = true;
 
             virtual void Init() {}
@@ -1016,8 +1017,8 @@ namespace HyperAPI {
             virtual void GUI() {}
         };
 
-        void
-        DrawVec3Control(const std::string &label, Vector3 &values, float resetValue = 0.0f, float columnWidth = 100.0f);
+        void DrawVec3Control(const std::string &label, Vector3 &values, float resetValue = 0.0f, float columnWidth = 100.0f);
+        void DrawVec2Control(const std::string &label, Vector2 &values, float resetValue = 0.0f, float columnWidth = 100.0f);
 
         struct Transform : public BaseComponent {
             Transform *parentTransform = nullptr;
@@ -1025,6 +1026,8 @@ namespace HyperAPI {
             glm::vec3 position = glm::vec3(0, 0, 0);
             glm::vec3 rotation = glm::vec3(0, 0, 0);
             glm::vec3 scale = glm::vec3(1, 1, 1);
+            // forward
+            glm::vec3 forward = glm::vec3(0, 0, 1);
 
             void GUI() {
                 if (ImGui::TreeNode("Transform")) {
@@ -1055,7 +1058,7 @@ namespace HyperAPI {
 
             void LookAt(glm::vec3 target) {
                 glm::vec3 direction = glm::normalize(target - position);
-                rotation = glm::degrees(glm::eulerAngles(glm::quatLookAt(direction, glm::vec3(0, 1, 0))));
+                rotation = glm::eulerAngles(glm::quatLookAt(direction, glm::vec3(0, 1, 0)));
             }
 
             void Translate(glm::vec3 translation) {
@@ -1157,9 +1160,9 @@ namespace HyperAPI {
                         ImGui::TreePop();
                     }
                     ImGui::ColorEdit3("Color", &mesh->material.baseColor.x);
-                    ImGui::DragFloat2("Spritesheet Size", &spritesheetSize.x, 1.0f, 1.0f);
-                    ImGui::DragFloat2("Sprite Size", &spriteSize.x, 1.0f, 1.0f);
-                    ImGui::DragFloat2("Sprite Offset", &spriteOffset.x, 1.0f, 0.0f);
+                    DrawVec2Control("Sheet Size", spritesheetSize);
+                    DrawVec2Control("Sprite Size", spriteSize);
+                    DrawVec2Control("Sprite Offset", spriteOffset);
 
                     if (ImGui::Button("Apply Changes")) {
                         if (sp != nullptr) {
@@ -1362,7 +1365,7 @@ namespace HyperAPI {
             std::string matPath = "";
             std::string meshType = "";
 
-            MeshRenderer() {}
+            MeshRenderer() = default;
 
             void GUI() {
                 if (ImGui::TreeNode("Material")) {
@@ -1557,7 +1560,7 @@ namespace HyperAPI {
             void GUI() {
 
                 if (ImGui::TreeNode("Point Light")) {
-                    ImGui::ColorEdit3("Color", &color.x, 0.01f);
+                    ImGui::ColorEdit3("Color", &color.x, 0);
                     ImGui::DragFloat("Intensity", &intensity, 0.01f);
 
                     ImGui::NewLine();
@@ -1591,7 +1594,7 @@ namespace HyperAPI {
 
             Light2D *light = new Light2D(Scene::Lights2D, lightPos, Vector4(color, 1.0f), range);
 
-            c_Light2D() {}
+            c_Light2D() = default;
 
             void GUI() {
 
@@ -1700,13 +1703,17 @@ namespace HyperAPI {
             void *body = nullptr;
 
             void GUI() {
-                if (ImGui::TreeNode("Rigidbody2D")) {
+                if (ImGui::TreeNode("Rigidbody 2D")) {
                     ImGui::Text("Type");
                     ImGui::RadioButton("Static", (int *) &type, 0);
                     ImGui::RadioButton("Dynamic", (int *) &type, 1);
                     ImGui::RadioButton("Kinematic", (int *) &type, 2);
                     ImGui::Checkbox("Fixed Rotation", &fixedRotation);
                     ImGui::DragFloat("Gravity Scale", &gravityScale, 0.01f);
+
+                    if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::m_Registry.remove<Rigidbody2D>(entity);
+                    }
 
                     ImGui::TreePop();
                 }
@@ -1751,14 +1758,18 @@ namespace HyperAPI {
             float friction = 0.5f;
             float restitution = 0.0f;
             float restitutionThreshold = 0.5f;
+            bool trigger = false;
 
             void *fixture = nullptr;
 
+            BoxCollider2D() = default;
+
             void GUI() {
                 if (ImGui::TreeNode("Box Collider 2D")) {
-                    ImGui::DragFloat2("Offset", &offset.x, 0.01f);
-                    ImGui::DragFloat2("Size", &size.x, 0.01f);
+                    DrawVec2Control("Offset", offset);
+                    DrawVec2Control("Size", size);
 
+                    ImGui::Checkbox("Trigger", &trigger);
                     ImGui::DragFloat("Density", &density, 0.01f);
                     ImGui::DragFloat("Friction", &friction, 0.01f);
                     ImGui::DragFloat("Restitution", &restitution, 0.01f);
@@ -1783,15 +1794,13 @@ namespace HyperAPI {
             GameObject() {
                 entity = Scene::m_Registry.create();
                 ID = uuid::generate_uuid_v4();
-
-                Scene::m_GameObjects.push_back(this);
             }
 
             void Update() {
                 for (auto &childObject : Scene::m_GameObjects) {
                     if (childObject->parentID == ID) {
-                        Transform &transform = GetComponent<Transform>();
-                        Transform &childTransform = childObject->GetComponent<Transform>();
+                        auto &transform = GetComponent<Transform>();
+                        auto &childTransform = childObject->GetComponent<Transform>();
 
                         childTransform.parentTransform = &transform;
                     }
@@ -1800,7 +1809,7 @@ namespace HyperAPI {
 
             void GUI() {
                 bool item = ImGui::TreeNode(NODE_ID.c_str(), name.c_str());
-                if (ImGui::IsItemClicked(0)) {
+                if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered() && !ImGui::IsMouseDragging(0)) {
                     Scene::m_Object = this;
                     strncpy(Scene::name, Scene::m_Object->name.c_str(), 499);
                     Scene::name[499] = '\0';
@@ -1814,7 +1823,7 @@ namespace HyperAPI {
 
                 if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
                     dirPayloadData = ID;
-                    ImGui::SetDragDropPayload("file", dirPayloadData.c_str(), strlen(dirPayloadData.c_str()));
+                    ImGui::SetDragDropPayload("game_object", &dirPayloadData, dirPayloadData.size());
                     ImGui::Text(name.c_str());
                     ImGui::EndDragDropSource();
                 }
@@ -1863,6 +1872,274 @@ namespace HyperAPI {
                     ImGui::TreePop();
                 }
 
+            }
+        };
+
+        struct Collider3D : public BaseComponent {
+            btCollisionShape *shape = nullptr;
+            virtual void CreateShape() {}
+
+            // make Collider3D be shape so for example you can do collider3D->setMargin(0.05f);
+            Collider3D() = default;
+            Collider3D(const Collider3D&) = default;
+            explicit operator const btCollisionShape*() const { return shape; }
+        };
+
+        struct BoxCollider3D : Collider3D {
+            Vector3 size = Vector3(1, 1, 1);
+
+            void CreateShape() override {
+                shape = new btBoxShape(btVector3(size.x / 2, size.y / 2, size.z / 2));
+                shape->setMargin(0.05f);
+            }
+
+            void GUI() override {
+                if(ImGui::TreeNode("Box Collider 3D")) {
+                    DrawVec3Control("Size", size);
+
+                    ImGui::NewLine();
+                    if(ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::m_Registry.remove<BoxCollider3D>(entity);
+                    }
+                    ImGui::TreePop();
+                }
+            }
+        };
+
+        struct MeshCollider3D : Collider3D {
+            Vector3 size = Vector3(1, 1, 1);
+
+            void CreateShape(MeshRenderer *renderer) {
+                if (renderer->m_Mesh) {
+                    auto *mesh = renderer->m_Mesh;
+
+                    shape = new btConvexHullShape();
+                    for (auto &vertex : mesh->vertices) {
+                        ((btConvexHullShape *) shape)->addPoint(btVector3(vertex.position.x, vertex.position.y, vertex.position.z));
+                    }
+                    // add transform scale to shape
+                    shape->setLocalScaling(btVector3(size.x / 2, size.y / 2, size.z / 2));
+                    shape->setMargin(0.05f);
+                }
+            }
+
+            void GUI() override {
+                if(ImGui::TreeNode("Mesh Collider 3D")) {
+                    DrawVec3Control("Size", size);
+
+                    ImGui::NewLine();
+                    if(ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::m_Registry.remove<MeshCollider3D>(entity);
+                    }
+                    ImGui::TreePop();
+                }
+            }
+        };
+
+        struct Rigidbody3D : public BaseComponent {
+            float mass = 1;
+            float restitution = 0.0f;
+            float friction = 0.5f;
+            bool trigger = false;
+            bool fixedRotation = false;
+
+            GameObject *gameObject = nullptr;
+            Transform *transform;
+
+            btRigidBody *body = nullptr;
+            btDefaultMotionState *motionState = nullptr;
+            btTransform *bt_transform = nullptr;
+            btCollisionShape *ref;
+
+            btVector3 inertia = btVector3(0, 0, 0);
+
+            Rigidbody3D() = default;
+
+            void Init() override {
+                for(auto &m_Object : Scene::m_GameObjects) {
+                    if(m_Object->ID == ID) {
+                        gameObject = m_Object;
+                        transform = &gameObject->GetComponent<Transform>();
+
+                        break;
+                    }
+                }
+            }
+
+            void CreateBody(btCollisionShape *shape) {
+                ref = shape;
+                bt_transform = new btTransform();
+                bt_transform->setIdentity();
+                bt_transform->setOrigin(btVector3(transform->position.x, transform->position.y, transform->position.z));
+                bt_transform->setRotation(btQuaternion(transform->rotation.x, transform->rotation.y, transform->rotation.z,
+                                                       1));
+
+                motionState = new btDefaultMotionState(*bt_transform);
+
+                if(mass > 0) {
+                    shape->calculateLocalInertia(mass, inertia);
+                }
+
+                btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, shape, inertia);
+                rbInfo.m_restitution = restitution;
+                rbInfo.m_friction = friction;
+                body = new btRigidBody(rbInfo);
+                // set user data
+                body->setUserPointer(&gameObject->ID);
+                // set trigger
+                body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+                if(trigger) {
+                    body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
+                }
+
+                if(fixedRotation) {
+                    body->setAngularFactor(btVector3(0, 0, 0));
+                }
+
+                BulletPhysicsWorld::dynamicsWorld->addRigidBody(body);
+            }
+
+            void DeleteBody() const {
+                BulletPhysicsWorld::dynamicsWorld->removeRigidBody(body);
+                delete body;
+                delete motionState;
+                delete bt_transform;
+            }
+
+            void Update() {
+                btTransform btTrans = body->getWorldTransform();
+                glm::mat4 mat = glm::mat4(1.0f);
+                btTrans.getOpenGLMatrix(&mat[0][0]);
+
+                // decompose
+                glm::vec3 pos, rot, scal;
+                DecomposeTransform(mat, pos, rot, scal);
+                transform->position = pos;
+                transform->rotation = rot;
+            }
+
+            void GUI() override {
+                if (ImGui::TreeNode("Rigidbody 3D")) {
+                    ImGui::DragFloat("Mass", &mass, 0.01f);
+                    ImGui::DragFloat("Friction", &friction, 0.01f);
+                    ImGui::DragFloat("Restitution", &restitution, 0.01f);
+                    ImGui::Checkbox("Trigger", &trigger);
+                    ImGui::Checkbox("Fixed Rotation", &fixedRotation);
+
+                    ImGui::NewLine();
+                    if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::m_Registry.remove<Rigidbody3D>(entity);
+                    }
+                    ImGui::TreePop();
+                }
+            }
+
+            // Rigidbody functions
+            void AddForce(const Vector3 &force) {
+                body->applyCentralForce(btVector3(force.x, force.y, force.z));
+            }
+
+            void AddTorque(const Vector3 &torque) {
+                body->applyTorque(btVector3(torque.x, torque.y, torque.z));
+            }
+
+            void AddForceAtPosition(const Vector3 &force, const Vector3 &position) {
+                body->applyForce(btVector3(force.x, force.y, force.z), btVector3(position.x, position.y, position.z));
+            }
+
+            // velocity functions
+            void SetVelocity(const Vector3 &velocity) {
+                body->setLinearVelocity(btVector3(velocity.x, velocity.y, velocity.z));
+            }
+
+            void SetAngularVelocity(const Vector3 &velocity) {
+                body->setAngularVelocity(btVector3(velocity.x, velocity.y, velocity.z));
+            }
+
+            Vector3 GetVelocity() {
+                auto velocity = body->getLinearVelocity();
+                return Vector3(velocity.x(), velocity.y(), velocity.z());
+            }
+
+            Vector3 GetAngularVelocity() {
+                auto velocity = body->getAngularVelocity();
+                return Vector3(velocity.x(), velocity.y(), velocity.z());
+            }
+
+            // make rigidbody move like a fps controller
+            void Move(const Vector3 &direction, float speed) {
+                auto velocity = body->getLinearVelocity();
+                body->setLinearVelocity(btVector3(direction.x * speed, velocity.y(), direction.z * speed));
+            }
+        };
+
+        struct FixedJoint3D : public BaseComponent {
+            GameObject *gameObject = nullptr;
+            GameObject *connectedGameObject = nullptr;
+            Transform *transform;
+
+            btRigidBody *body = nullptr;
+            btRigidBody *body2 = nullptr;
+            btTypedConstraint *joint = nullptr;
+
+            FixedJoint3D() = default;
+
+            void Init() override {
+                for(auto &m_Object : Scene::m_GameObjects) {
+                    if(m_Object->ID == ID) {
+                        gameObject = m_Object;
+                        transform = &gameObject->GetComponent<Transform>();
+
+                        break;
+                    }
+                }
+            }
+
+            void CreateJoint() {
+                if(!connectedGameObject) return;
+
+                body = gameObject->GetComponent<Rigidbody3D>().body;
+                body2 = connectedGameObject->GetComponent<Rigidbody3D>().body;
+
+                btTransform frameInA = btTransform::getIdentity();
+                btTransform frameInB = btTransform::getIdentity();
+
+                joint = new btFixedConstraint(*body, *body2, frameInA, frameInB);
+                BulletPhysicsWorld::dynamicsWorld->addConstraint(joint);
+            }
+
+            void DeleteJoint() const {
+                if(joint) {
+                    BulletPhysicsWorld::dynamicsWorld->removeConstraint(joint);
+                    delete joint;
+                }
+            }
+
+            void GUI() override {
+                if (ImGui::TreeNode("Fixed Joint 3D")) {
+                    if(!connectedGameObject) {
+                        ImGui::Selectable("Drag and drop another object with Rigidbody3D to connect");
+                    } else {
+                        ImGui::Selectable(std::string("Connected with: " + connectedGameObject->name).c_str());
+                    }
+
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("game_object")) {
+                            for(auto &m_Object : Scene::m_GameObjects) {
+                                if(m_Object->ID == *((std::string*)payload->Data) && m_Object->HasComponent<Rigidbody3D>()) {
+                                    connectedGameObject = m_Object;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    ImGui::NewLine();
+                    if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::m_Registry.remove<FixedJoint3D>(entity);
+                    }
+                    ImGui::TreePop();
+                }
             }
         };
 
@@ -1978,14 +2255,14 @@ namespace HyperAPI {
         std::vector<m_SpritesheetAnimationData>
         GetAnimationsFromXML(const char *texPath, float delay, Vector2 sheetSize, const std::string &xmlFile);
 
-        struct SpritesheetAnimation : public BaseComponent {
+        struct c_SpritesheetAnimation : public BaseComponent {
             Mesh *currMesh;
             std::vector<m_SpritesheetAnimationData> anims;
             char currAnim[499] = "";
             Texture *texture = new Texture("assets/PONGON.png", 0, "texture_diffuse");
             Vector2 sheetSize;
 
-            SpritesheetAnimation() {
+            c_SpritesheetAnimation() {
                 currMesh = nullptr;
                 for (auto &gameObject : Scene::m_GameObjects) {
                     if (gameObject->ID == ID) {
@@ -2019,7 +2296,7 @@ namespace HyperAPI {
                     }
 
                     if (ImGui::TreeNode("XML Data")) {
-                        ImGui::DragFloat2("Sheet Size", &sheetSize.x, 0.1f);
+                        DrawVec2Control("Sheet Size", sheetSize);
 
                         if (ImGui::Button(ICON_FA_FILE " Select XML")) {
                             ImGuiFileDialog::Instance()->OpenDialog("SelectXML", "Select XML", ".xml", ".");
@@ -2091,7 +2368,7 @@ namespace HyperAPI {
             std::vector<StaticScript *> m_StaticScripts;
             GameObject *gameObject;
 
-            NativeScriptManager() {}
+            NativeScriptManager() = default;
 
             void Init() {
                 for (auto &gameObject : Scene::m_GameObjects) {
@@ -2126,7 +2403,7 @@ namespace HyperAPI {
             Camera *camera = nullptr;
             GameObject *m_GameObject = nullptr;
 
-            CameraComponent() {}
+            CameraComponent() = default;
 
             ~CameraComponent() {
                 Scene::cameras.erase(std::remove(Scene::cameras.begin(), Scene::cameras.end(), camera),
@@ -2295,7 +2572,7 @@ namespace HyperAPI {
                 mainGameObject->name = "Model";
                 mainGameObject->ID = uuid::generate_uuid_v4();
                 mainGameObject->AddComponent<Transform>();
-                // Scene::m_GameObjects.push_back(mainGameObject);
+                Scene::m_GameObjects.push_back(mainGameObject);
 
                 texturesEnabled = AddTexture;
 
@@ -2321,9 +2598,8 @@ namespace HyperAPI {
 
     namespace f_GameObject {
         Experimental::GameObject *FindGameObjectByName(const std::string &name);
-
         Experimental::GameObject *FindGameObjectByTag(const std::string &tag);
-
+        Experimental::GameObject *FindGameObjectByID(const std::string &id);
         Experimental::GameObject *InstantiatePrefab(const std::string &path);
 
         Experimental::GameObject *
@@ -2332,8 +2608,6 @@ namespace HyperAPI {
     };
 }
 
-extern const int width;
-extern const int height;
 extern float rectangleVert[];
 
 void NewFrame(unsigned int FBO, int width, int height);

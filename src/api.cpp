@@ -7,9 +7,6 @@ std::vector<HyperAPI::Light2D*> Lights2D;
 std::vector<HyperAPI::DirectionalLight*> DirLights;
 std::vector<HyperAPI::Mesh*> hyperEntities;
 
-const int width = 1280;
-const int height = 720;
-
 float rectangleVert[] = {
     1, -1,  1, 0,
     -1, -1,  0, 0,
@@ -52,7 +49,7 @@ namespace uuid {
         ss << "-";
         for (i = 0; i < 12; i++) {
             ss << dis(gen);
-        };
+        }
         return ss.str();
     }
 }
@@ -74,11 +71,11 @@ std::string get_file_contents(const char *file) {
 void NewFrame(unsigned int FBO, int width, int height) {
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
     glClearColor(pow(0.3f, 2.2f), pow(0.3f, 2.2f), pow(0.3f, 2.2f), 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
     glViewport(0, 0, width, height);
-    glEnable(GL_DEPTH_TEST); 
+    glEnable(GL_DEPTH_TEST);
 }
 
 void EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height) {
@@ -167,6 +164,75 @@ namespace HyperAPI {
     bool isRunning = false;
     bool isStopped = true;
 
+    bool DecomposeTransform(const glm::mat4 &transform, glm::vec3 &translation, glm::vec3 &rotation, glm::vec3 &scale) {
+        // From glm::decompose in matrix_decompose.inl
+
+        using namespace glm;
+        using T = float;
+
+        mat4 LocalMatrix(transform);
+
+        // Normalize the matrix.
+        if (epsilonEqual(LocalMatrix[3][3], static_cast<float>(0), epsilon<T>()))
+            return false;
+
+        // First, isolate perspective.  This is the messiest.
+        if (
+                epsilonNotEqual(LocalMatrix[0][3], static_cast<T>(0), epsilon<T>()) ||
+                epsilonNotEqual(LocalMatrix[1][3], static_cast<T>(0), epsilon<T>()) ||
+                epsilonNotEqual(LocalMatrix[2][3], static_cast<T>(0), epsilon<T>())) {
+            // Clear the perspective partition
+            LocalMatrix[0][3] = LocalMatrix[1][3] = LocalMatrix[2][3] = static_cast<T>(0);
+            LocalMatrix[3][3] = static_cast<T>(1);
+        }
+
+        // Next take care of translation (easy).
+        translation = vec3(LocalMatrix[3]);
+        LocalMatrix[3] = vec4(0, 0, 0, LocalMatrix[3].w);
+
+        vec3 Row[3], Pdum3;
+
+        // Now get scale and shear.
+        for (length_t i = 0; i < 3; ++i)
+            for (length_t j = 0; j < 3; ++j)
+                Row[i][j] = LocalMatrix[i][j];
+
+        // Compute X scale factor and normalize first row.
+        scale.x = length(Row[0]);
+        Row[0] = detail::scale(Row[0], static_cast<T>(1));
+        scale.y = length(Row[1]);
+        Row[1] = detail::scale(Row[1], static_cast<T>(1));
+        scale.z = length(Row[2]);
+        Row[2] = detail::scale(Row[2], static_cast<T>(1));
+
+        // At this point, the matrix (in rows[]) is orthonormal.
+        // Check for a coordinate system flip.  If the determinant
+        // is -1, then negate the matrix and the scaling factors.
+#if 0
+        Pdum3 = cross(Row[1], Row[2]); // v3Cross(row[1], row[2], Pdum3);
+    if (dot(Row[0], Pdum3) < 0)
+    {
+        for (length_t i = 0; i < 3; i++)
+        {
+            scale[i] *= static_cast<T>(-1);
+            Row[i] *= static_cast<T>(-1);
+        }
+    }
+#endif
+
+        rotation.y = asin(-Row[0][2]);
+        if (cos(rotation.y) != 0) {
+            rotation.x = atan2(Row[1][2], Row[2][2]);
+            rotation.z = atan2(Row[0][1], Row[0][0]);
+        } else {
+            rotation.x = atan2(-Row[2][0], Row[1][1]);
+            rotation.z = 0;
+        }
+
+
+        return true;
+    }
+
     namespace AudioEngine {
         void PlaySound(const std::string &path, float volume, bool loop, int channel) {
             Mix_Chunk *chunk = Mix_LoadWAV(path.c_str());
@@ -183,7 +249,7 @@ namespace HyperAPI {
             // generate chunk
             Mix_Music *music = Mix_LoadMUS(path.c_str());
             if(music == NULL) {
-                HYPER_LOG("Failed to load music: " + path);
+                HYPER_LOG("Failed to load music: " + path)
                 return;
             }
 
@@ -195,6 +261,57 @@ namespace HyperAPI {
 
         void StopMusic() {
             Mix_HaltMusic();
+        }
+    }
+
+    namespace BulletPhysicsWorld {
+        btDiscreteDynamicsWorld *dynamicsWorld;
+        btBroadphaseInterface *broadphase;
+        btDefaultCollisionConfiguration *collisionConfiguration;
+        btCollisionDispatcher *dispatcher;
+        btSequentialImpulseConstraintSolver *solver;
+        btAlignedObjectArray<btCollisionShape*> collisionShapes;
+        btAlignedObjectArray<btRigidBody *> rigidBodies;
+        btAlignedObjectArray<btPairCachingGhostObject *> ghostObjects;
+        btAlignedObjectArray<btTypedConstraint *> constraints;
+        btAlignedObjectArray<btCollisionObject *> collisionObjects;
+
+        void Delete() {
+            delete dynamicsWorld;
+            delete solver;
+            delete dispatcher;
+            delete collisionConfiguration;
+        }
+
+
+        void Init() {
+            broadphase = new btDbvtBroadphase();
+            collisionConfiguration = new btDefaultCollisionConfiguration();
+            dispatcher = new btCollisionDispatcher(collisionConfiguration);
+            solver = new btSequentialImpulseConstraintSolver;
+            dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
+            dynamicsWorld->setGravity(btVector3(0, -9.81, 0));
+        }
+
+        void UpdatePhysics() {
+            dynamicsWorld->stepSimulation(1.f / 60.f, 10);
+        }
+
+        void CollisionCallback(std::function<void(const std::string&, const std::string&)> HandleEntities) {
+            int numManifolds = dynamicsWorld->getDispatcher()->getNumManifolds();
+            // do collision callback on all rigid bodies
+            for (int i = 0; i < numManifolds; i++) {
+                btPersistentManifold* contactManifold = dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
+                const auto *obA = static_cast<const btCollisionObject*>(contactManifold->getBody0());
+                const auto *obB = static_cast<const btCollisionObject*>(contactManifold->getBody1());
+
+                // get the entity names
+                auto *entityA = static_cast<std::string *>(obA->getUserPointer());
+                auto *entityB = static_cast<std::string *>(obB->getUserPointer());
+
+                // call the callback
+                HandleEntities(*entityA, *entityB);
+            }
         }
     }
 
@@ -212,7 +329,7 @@ namespace HyperAPI {
         Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
 
         if (!glfwInit()) {
-            HYPER_LOG("Failed to initialize GLFW");
+            HYPER_LOG("Failed to initialize GLFW")
         }
         // //set verisons
         glfwWindowHint(GLFW_RESIZABLE, resizable ? GL_TRUE : GL_FALSE);
@@ -267,10 +384,6 @@ namespace HyperAPI {
         glDepthFunc(GL_LESS);
         glEnable(GL_STENCIL_TEST);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-
-        //belnding
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        // glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
     }
 
     void Renderer::Render(Camera &camera) {
@@ -287,7 +400,7 @@ namespace HyperAPI {
             return;
         }
 
-        HYPER_LOG(std::string("Loading shader: ") + shaderPath);
+        HYPER_LOG(std::string("Loading shader: ") + shaderPath)
 
         std::ifstream shaderFile(shaderPath);
         if (!shaderFile.is_open()) {
@@ -327,7 +440,7 @@ namespace HyperAPI {
         glGetShaderiv(vertShader, GL_COMPILE_STATUS, &success);
         if(!success) {
             glGetShaderInfoLog(vertShader, 512, NULL, infoLog);
-            HYPER_LOG("Failed to compile Vertex Shader");
+            HYPER_LOG("Failed to compile Vertex Shader")
             std::cout << infoLog << std::endl;
         }
 
@@ -337,7 +450,7 @@ namespace HyperAPI {
         glGetShaderiv(fragShader, GL_COMPILE_STATUS, &success);
         if(!success) {
             glGetShaderInfoLog(fragShader, 512, NULL, infoLog);
-            HYPER_LOG("Failed to compile Fragment Shader");
+            HYPER_LOG("Failed to compile Fragment Shader")
             std::cout << infoLog << std::endl;
         }
 
@@ -361,7 +474,7 @@ namespace HyperAPI {
         glGetProgramiv(ID, GL_LINK_STATUS, &success);
         if(!success) {
             glGetProgramInfoLog(ID, 512, NULL, infoLog);
-            HYPER_LOG("Failed to link program");
+            HYPER_LOG("Failed to link program")
             std::cout << infoLog << std::endl;
         }
 
@@ -651,7 +764,7 @@ namespace HyperAPI {
         texPath = std::string(texturePath);
         data = stbi_load(texturePath, &width, &height, &nrChannels, 0);
 
-        HYPER_LOG("Texture " + std::to_string(slot) + " loaded from " + texturePath);
+        HYPER_LOG("Texture " + std::to_string(slot) + " loaded from " + texturePath)
 
         glGenTextures(1, &ID);
         glBindTexture(GL_TEXTURE_2D, ID);
@@ -779,7 +892,7 @@ namespace HyperAPI {
 
             view = glm::lookAt(transform.position, transform.position + glm::degrees(transform.rotation), Up);
             float aspect = usePrespectiveSize ? prespectiveSize.x / prespectiveSize.y : width / height;
-            
+
             if(mode2D) {
                 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.1f, 5000.0f);
             } else {
@@ -797,12 +910,12 @@ namespace HyperAPI {
             height = winSize.y;
 
             view = glm::lookAt(transform.position, transform.position + transform.rotation, Up);
-            float aspect = (float)width/height;
+            float aspect = usePrespectiveSize ? prespectiveSize.x / prespectiveSize.y : width / height;
             
             if(mode2D) {
                 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.1f, 5000.0f);
             } else {
-                projection = glm::perspective(glm::radians(FOVdeg), (float)width / height, nearPlane, farPlane);
+                projection = glm::perspective(glm::radians(FOVdeg), aspect, nearPlane, farPlane);
             }
 
             camMatrix = projection * view;
@@ -812,6 +925,71 @@ namespace HyperAPI {
 
     void Camera::Matrix(Shader& shader, const char* uniform) {
         glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(camMatrix));
+    }
+
+    void Camera::MouseMovement(glm::vec2 winPos) {
+        if(!EnttComp) return;
+
+        auto &transform = Scene::m_Registry.get<Experimental::Transform>(entity);
+        if(!mode2D) {
+            glfwSetInputMode(Input::window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+#ifndef GAME_BUILD
+            if (glfwGetMouseButton(Input::window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+            {
+                glfwSetInputMode(Input::window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
+                if (firstClick)
+                {
+                    glfwSetCursorPos(Input::window, (width / 2), (height / 2));
+                    firstClick = false;
+                }
+
+                double mouseX;
+                double mouseY;
+                glfwGetCursorPos(Input::window, &mouseX, &mouseY);
+
+                rotX = sensitivity * (float)(mouseY - (height / 2)) / height;
+                rotY = sensitivity * (float)(mouseX - (width / 2)) / width;
+
+                glm::vec3 newOrientation = glm::rotate(transform.rotation, glm::radians(-rotX), glm::normalize(glm::cross(transform.rotation, Up)));
+
+                // if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f))
+                // {
+                transform.rotation = newOrientation;
+                // }
+
+                transform.rotation = glm::rotate(transform.rotation, glm::radians(-rotY), Up);
+
+                glfwSetCursorPos(Input::window, (width / 2), (height / 2));
+            }
+            else if (glfwGetMouseButton(Input::window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
+            {
+                glfwSetInputMode(Input::window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                // glfwSetCursorPos(window, winPos.x + (width / 2), winPos.y + (height / 2));
+                firstClick = true;
+            }
+#else
+            glfwSetInputMode(Input::window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
+            double mouseX;
+            double mouseY;
+            glfwGetCursorPos(Input::window, &mouseX, &mouseY);
+
+            rotX = sensitivity * (float)(mouseY - (height / 2)) / height;
+            rotY = sensitivity * (float)(mouseX - (width / 2)) / width;
+
+            glm::vec3 newOrientation = glm::rotate(transform.rotation, glm::radians(-rotX), glm::normalize(glm::cross(transform.rotation, Up)));
+
+            // if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f))
+            // {
+            transform.rotation = newOrientation;
+            // }
+
+            transform.rotation = glm::rotate(transform.rotation, glm::radians(-rotY), Up);
+
+            glfwSetCursorPos(Input::window, (width / 2), (height / 2));
+#endif
+        }
     }
 
     void Camera::Inputs(GLFWwindow* window, Vector2 winPos)
@@ -1076,7 +1254,7 @@ namespace HyperAPI {
         Texture *specular = nullptr;
         Texture *normal = nullptr;
 
-        if(mesh->mMaterialIndex >= 0 && texturesEnabled == true)
+        if(mesh->mMaterialIndex >= 0 && texturesEnabled)
         {
             aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
             std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
@@ -1145,7 +1323,7 @@ namespace HyperAPI {
         facesCubemap.push_back(front);
         facesCubemap.push_back(back);
 
-        HYPER_LOG("Skybox created");
+        HYPER_LOG("Skybox created")
 
         float skyboxVertices[] =
         {
@@ -1398,181 +1576,6 @@ namespace HyperAPI {
     Cylinder::Cylinder(Vector4 color) : Model("assets/models/default/cylinder/cylinder.obj", false, color) {}
     Cone::Cone(Vector4 color) : Model("assets/models/default/cone/cone.obj", false, color) {}
     Torus::Torus(Vector4 color) : Model("assets/models/default/torus/torus.obj", false, color) {}
-
-    SpriteShader::SpriteShader() : Shader("NULL_SHADER") {
-        const char *vertShaderCode = 
-        "#version 330 core\n"
-        "layout(location = 0) in vec3 position;\n"
-        "layout(location = 1) in vec3 color;\n"
-        "layout(location = 2) in vec3 aNormal;\n"
-        "layout(location = 3) in vec2 g_texCoords;\n"
-
-        "out vec2 texCoords;\n"
-        "out vec3 Color;\n"
-        "out vec3 Normal;\n"
-        "out vec3 currentPosition;\n"
-        "out vec3 reflectedVector;\n"
-
-        "uniform mat4 camera;\n"
-        "uniform mat4 translation;\n"
-        "uniform mat4 rotation;\n"
-        "uniform mat4 scale;\n"
-        "uniform mat4 model;\n"
-        "uniform vec3 cameraPosition;\n"
-
-        "void main() {\n"
-        "    vec4 worldPosition = model * vec4(position, 1.0);\n"
-        "    currentPosition = vec3(model * translation * rotation * scale * vec4(position, 1.0));\n"
-        "    gl_Position = camera * vec4(currentPosition, 1.0);\n"
-        "    texCoords = g_texCoords;\n"
-        "    Color = color;\n"
-        "    Normal = aNormal;\n"
-
-        "    vec3 viewVector = normalize(worldPosition.xyz - cameraPosition);\n"
-        "    reflectedVector = reflect(viewVector, Normal);\n"
-        "}\n";
-
-        const char *fragShaderCode = 
-        "#version 330 core\n"
-        "in vec2 texCoords;\n"
-        "in vec3 Color;\n"
-        "in vec3 Normal;\n"
-        "in vec3 currentPosition;\n"
-        "in vec3 reflectedVector;\n"
-        "struct PointLight {\n"
-        "    vec2 lightPos;\n"
-        "    vec3 color;\n"
-        "    float range;\n"
-        "};\n"
-        "uniform float ambient;\n"
-        "#define MAX_POINT_LIGHTS 100\n"
-        "uniform PointLight pointLights[MAX_POINT_LIGHTS];\n"
-        "uniform int isTex;\n"
-        "uniform sampler2D texture_diffuse0;\n"
-        "uniform sampler2D texture_specular0;\n"
-        "uniform sampler2D shadowMap;\n"
-        "uniform samplerCube cubeMap;\n"
-        "uniform vec3 cameraPosition;\n"
-        "uniform vec3 DefaultColor;\n"
-        "vec4 pointLight(PointLight light) {\n"
-        "    if(isTex == 1) {\n"
-        "        vec4 frag_color = texture(texture_diffuse0, texCoords);\n"
-        "        if(frag_color.a < 1.0)"
-        "            discard;\n"
-        "        float distance = distance(light.lightPos, currentPosition.xy);\n"
-        "        float diffuse = 0.0;\n"
-        "        if (distance <= light.range)"
-        "            diffuse =  1.0 - abs(distance / light.range);\n"
-        "        return vec4(min(frag_color.rgb * ((light.color * diffuse)), frag_color.rgb), 1.0);\n"
-        "    } else {\n"
-        "        vec4 frag_color = vec4(DefaultColor, 1.0);\n"
-        "        if(frag_color.a < 1.0)"
-        "            discard;\n"
-        "        float distance = distance(light.lightPos, currentPosition.xy);\n"
-        "        float diffuse = 0.0;\n"
-        "        if (distance <= light.range)"
-        "            diffuse =  1.0 - abs(distance / light.range);\n"
-        "        return vec4(frag_color.rgb * ((light.color * diffuse)), frag_color.rgb);\n"
-        "    }\n"
-        "}\n"
-        "void main() {\n"
-        "    bool lights = false;\n"
-        "    vec4 result;\n"
-        "    if(isTex == 1) {\n"
-        "        result = texture(texture_diffuse0, texCoords) * ambient;\n"
-        "    } else {\n"
-        "        result = vec4(DefaultColor, 1) * ambient;\n"
-        "    }\n"
-        "    for (int i = 0; i < MAX_POINT_LIGHTS; i++) {\n"
-        "        if(Scene::pointLights[i].range > 0) {\n"
-        "            result += pointLight(Scene::pointLights[i]);\n"
-        "            lights = true;\n"
-        "        } else {\n"
-        "            if(!lights)"
-        "                lights = false;\n"
-        "        }\n"
-        "    }\n"
-        "    if(!lights) {\n"
-        "        if(isTex == 1) {\n"
-        "            result = texture(texture_diffuse0, texCoords) * ambient;\n"
-        "        } else {\n"
-        "            result = vec4(DefaultColor, 1) * ambient;\n"
-        "        }\n"
-        "    }\n"
-        "    gl_FragColor = result;\n"
-        "}\n";
-
-        const char *geometryShaderCode = "";
-        unsigned int vertShader, fragShader, geometryShader;
-        int success;
-        char infoLog[512];
-
-        vertShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertShader, 1, &vertShaderCode, NULL);
-        glCompileShader(vertShader);
-        glGetShaderiv(vertShader, GL_COMPILE_STATUS, &success);
-        if(!success) {
-            glGetShaderInfoLog(vertShader, 512, NULL, infoLog);
-            std::cout << "Failed to compile vertex shader" << std::endl;
-            std::cout << infoLog << std::endl;
-        }
-
-        fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragShader, 1, &fragShaderCode, NULL);
-        glCompileShader(fragShader);
-        glGetShaderiv(fragShader, GL_COMPILE_STATUS, &success);
-        if(!success) {
-            glGetShaderInfoLog(fragShader, 512, NULL, infoLog);
-            std::cout << "Failed to compile fragment shader" << std::endl;
-            std::cout << infoLog << std::endl;
-        }
-
-        ID = glCreateProgram();
-        glAttachShader(ID, vertShader);
-        glAttachShader(ID, fragShader);
-        // glAttachShader(ID, geometryShader);
-        glLinkProgram(ID);
-        glGetProgramiv(ID, GL_LINK_STATUS, &success);
-        if(!success) {
-            glGetProgramInfoLog(ID, 512, NULL, infoLog);
-            std::cout << "Failed to link program" << std::endl;
-            std::cout << infoLog << std::endl;
-        }
-
-        glDeleteShader(vertShader);
-        glDeleteShader(fragShader);
-    }
-
-    void SpriteShader::Bind() {
-        glUseProgram(ID);
-    }
-
-    void SpriteShader::Unbind() {
-        glUseProgram(0);
-    }
-
-    void SpriteShader::SetUniform1f(const char *name, float value) {
-        glUniform1f(glGetUniformLocation(ID, name), value);
-    }
-
-    void SpriteShader::SetUniform1i(const char *name, int value) {
-        glUniform1i(glGetUniformLocation(ID, name), value);
-    }
-
-    void SpriteShader::SetUniform2f(const char *name, float value1, float value2) {
-        glUniform2f(glGetUniformLocation(ID, name), value1, value2);
-    }
-
-    void SpriteShader::SetUniform3f(const char *name, float value1, float value2, float value3) {
-        glUniform3f(glGetUniformLocation(ID, name), value1, value2, value3);
-    }
-
-    void SpriteShader::SetUniform4f(const char *name, float value1, float value2, float value3, float value4) {
-        glUniform4f(glGetUniformLocation(ID, name), value1, value2, value3, value4);
-    }
-    void SpriteShader::SetUniformMat4(const char *name, glm::mat4 value) {
-        glUniformMatrix4fv(glGetUniformLocation(ID, name), 1, GL_FALSE, glm::value_ptr(value));
-    }
 
     Material::Material(Vector4 baseColor, std::vector<Texture> textures, float shininess, float metallic, float roughness) {
         this->baseColor = baseColor;
@@ -1841,6 +1844,54 @@ namespace HyperAPI {
             ImGui::PopID();
         }
 
+        void DrawVec2Control(const std::string &label, Vector2 &values, float resetValue, float columnWidth) {
+            ImGui::PushID(label.c_str());
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, 100);
+            ImGui::Text(label.c_str());
+            ImGui::NextColumn();
+
+            ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
+
+            float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+            ImVec2 buttonSize = {lineHeight + 2.0f, lineHeight};
+
+            // disable button rounded corners
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+
+            if(ImGui::Button("X", buttonSize)) {
+                values.x = 0;
+            }
+            ImGui::PopStyleColor(3);
+
+            ImGui::SameLine();
+            ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f");
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+
+            if(ImGui::Button("Y", buttonSize)) {
+                values.y = 0;
+            }
+            ImGui::PopStyleColor(3);
+
+            ImGui::SameLine();
+            ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f");
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+
+            ImGui::Columns(1);
+            ImGui::PopStyleVar(2);
+            ImGui::PopID();
+        }
+
         std::vector<m_SpritesheetAnimationData> GetAnimationsFromXML(const char *texPath, float delay, Vector2 sheetSize, const std::string &xmlFile) {
             tinyxml2::XMLDocument doc;
             doc.LoadFile(xmlFile.c_str());
@@ -1987,7 +2038,7 @@ namespace HyperAPI {
             Texture *specular = nullptr;
             Texture *normal = nullptr;
 
-            if(mesh->mMaterialIndex >= 0 && texturesEnabled == true)
+            if(mesh->mMaterialIndex >= 0 && texturesEnabled)
             {
                 aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
                 std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
@@ -2008,12 +2059,12 @@ namespace HyperAPI {
                 gameObject->parentID = mainGameObject->ID;
                 gameObject->AddComponent<Transform>();
                 gameObject->AddComponent<MeshRenderer>();
-                
 
                 MeshRenderer &meshRenderer = gameObject->GetComponent<MeshRenderer>();
                 meshRenderer.m_Mesh = new Mesh(vertices, indices, material);
                 meshRenderer.m_Model = true;
                 meshRenderer.meshType = std::string(path);
+                Scene::m_GameObjects.push_back(gameObject);
 
                 return gameObject;
             } else {
@@ -2031,6 +2082,7 @@ namespace HyperAPI {
                 meshRenderer.m_Mesh = new Mesh(vertices, indices, material);
                 meshRenderer.m_Model = true;
                 meshRenderer.meshType = std::string(path);
+                Scene::m_GameObjects.push_back(gameObject);
                 
                 return gameObject;
             }
@@ -2089,6 +2141,16 @@ namespace HyperAPI {
             return nullptr;
         }
 
+        Experimental::GameObject *FindGameObjectByID(const std::string &id) {
+            for(auto &gameObject : Scene::m_GameObjects) {
+                if(gameObject->ID == id) {
+                    return gameObject;
+                }
+            }
+
+            return nullptr;
+        }
+
         Experimental::GameObject *InstantiatePrefab(const std::string &path) {
             return Scene::LoadPrefab(path);
         }
@@ -2105,7 +2167,7 @@ namespace HyperAPI {
 
 namespace Hyper {
     void Application::Run(std::function<void()> update, std::function<void(unsigned int &PPT, unsigned int &PPFBO)> gui) {
-        HYPER_LOG("Application started");
+        HYPER_LOG("Application started")
         float gamma = 2.2f;
         if(renderOnScreen) {
             glEnable(GL_FRAMEBUFFER_SRGB);
@@ -2231,7 +2293,7 @@ namespace Hyper {
         glReadBuffer(GL_NONE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        HYPER_LOG("Renderer initialized");
+        HYPER_LOG("Renderer initialized")
 
         // Matrices needed for the light's perspective
         glm::mat4 orthgonalProjection = glm::ortho(-35.0f, 35.0f, -35.0f, 35.0f, 0.1f, 75.0f);
@@ -2372,6 +2434,8 @@ namespace Hyper {
             update();
 
             glClear(GL_DEPTH_BUFFER_BIT);
+
+            glClear(GL_DEPTH_BUFFER_BIT);
             if(!renderOnScreen) {
                 EndEndFrame(framebufferShader, *renderer, FBO, rectVAO, postProcessingTexture, postProcessingFBO, SFBO, S_PPT, S_PPFBO, width, height);
             } 
@@ -2401,7 +2465,7 @@ namespace Hyper {
 
         }
     
-        HYPER_LOG("Closing Static Engine");
+        HYPER_LOG("Closing Static Engine")
     }
 
     MousePicker::MousePicker(Application *app, HyperAPI::Camera *camera, glm::mat4 projection) {

@@ -21,10 +21,3 @@ void main() {
 void main() {
     gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 }
-
-#shader geometry
-#version 330 core
-
-void main() {
-    
-}

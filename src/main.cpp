@@ -14,6 +14,7 @@ namespace fs = std::experimental::filesystem;
 #endif
 
 using namespace HyperAPI;
+using namespace HyperAPI::Experimental;
 
 class CollisionListener : public b2ContactListener {
 public:
@@ -24,32 +25,32 @@ public:
         b2BodyUserData &bodyUserDataA = fixtureA->GetBody()->GetUserData();
         b2BodyUserData &bodyUserDataB = fixtureB->GetBody()->GetUserData();
 
-        auto *gameObjectA = (Experimental::GameObject *) bodyUserDataA.pointer;
-        auto *gameObjectB = (Experimental::GameObject *) bodyUserDataB.pointer;
+        auto *gameObjectA = (GameObject *) bodyUserDataA.pointer;
+        auto *gameObjectB = (GameObject *) bodyUserDataB.pointer;
 
-        if (gameObjectA->HasComponent<Experimental::NativeScriptManager>()) {
-            auto &scriptManager = gameObjectA->GetComponent<Experimental::NativeScriptManager>();
+        if (gameObjectA->HasComponent<NativeScriptManager>()) {
+            auto &scriptManager = gameObjectA->GetComponent<NativeScriptManager>();
             for (auto script : scriptManager.m_StaticScripts) {
                 script->Collision2D(gameObjectB);
             }
         }
 
-        if (gameObjectB->HasComponent<Experimental::NativeScriptManager>()) {
-            auto &scriptManager = gameObjectB->GetComponent<Experimental::NativeScriptManager>();
+        if (gameObjectB->HasComponent<NativeScriptManager>()) {
+            auto &scriptManager = gameObjectB->GetComponent<NativeScriptManager>();
             for (auto script : scriptManager.m_StaticScripts) {
                 script->Collision2D(gameObjectA);
             }
         }
 
-        if (gameObjectA->HasComponent<Experimental::m_LuaScriptComponent>()) {
-            auto &scriptManager = gameObjectA->GetComponent<Experimental::m_LuaScriptComponent>();
+        if (gameObjectA->HasComponent<m_LuaScriptComponent>()) {
+            auto &scriptManager = gameObjectA->GetComponent<m_LuaScriptComponent>();
             for (auto script : scriptManager.scripts) {
                 script.Collision2D(gameObjectB);
             }
         }
 
-        if (gameObjectB->HasComponent<Experimental::m_LuaScriptComponent>()) {
-            auto &scriptManager = gameObjectB->GetComponent<Experimental::m_LuaScriptComponent>();
+        if (gameObjectB->HasComponent<m_LuaScriptComponent>()) {
+            auto &scriptManager = gameObjectB->GetComponent<m_LuaScriptComponent>();
             for (auto script : scriptManager.scripts) {
                 script.Collision2D(gameObjectA);
             }
@@ -63,32 +64,32 @@ public:
         b2BodyUserData &bodyUserDataA = fixtureA->GetBody()->GetUserData();
         b2BodyUserData &bodyUserDataB = fixtureB->GetBody()->GetUserData();
 
-        auto *gameObjectA = (Experimental::GameObject *) bodyUserDataA.pointer;
-        auto *gameObjectB = (Experimental::GameObject *) bodyUserDataB.pointer;
+        auto *gameObjectA = (GameObject *) bodyUserDataA.pointer;
+        auto *gameObjectB = (GameObject *) bodyUserDataB.pointer;
 
-        if (gameObjectA->HasComponent<Experimental::NativeScriptManager>()) {
-            auto &scriptManager = gameObjectA->GetComponent<Experimental::NativeScriptManager>();
+        if (gameObjectA->HasComponent<NativeScriptManager>()) {
+            auto &scriptManager = gameObjectA->GetComponent<NativeScriptManager>();
             for (auto script : scriptManager.m_StaticScripts) {
                 script->CollisionExit2D(gameObjectB);
             }
         }
 
-        if (gameObjectB->HasComponent<Experimental::NativeScriptManager>()) {
-            auto &scriptManager = gameObjectB->GetComponent<Experimental::NativeScriptManager>();
+        if (gameObjectB->HasComponent<NativeScriptManager>()) {
+            auto &scriptManager = gameObjectB->GetComponent<NativeScriptManager>();
             for (auto script : scriptManager.m_StaticScripts) {
                 script->CollisionExit2D(gameObjectA);
             }
         }
 
-        if (gameObjectA->HasComponent<Experimental::m_LuaScriptComponent>()) {
-            auto &scriptManager = gameObjectA->GetComponent<Experimental::m_LuaScriptComponent>();
+        if (gameObjectA->HasComponent<m_LuaScriptComponent>()) {
+            auto &scriptManager = gameObjectA->GetComponent<m_LuaScriptComponent>();
             for (auto script : scriptManager.scripts) {
                 script.CollisionExit2D(gameObjectB);
             }
         }
 
-        if (gameObjectB->HasComponent<Experimental::m_LuaScriptComponent>()) {
-            auto &scriptManager = gameObjectB->GetComponent<Experimental::m_LuaScriptComponent>();
+        if (gameObjectB->HasComponent<m_LuaScriptComponent>()) {
+            auto &scriptManager = gameObjectB->GetComponent<m_LuaScriptComponent>();
             for (auto script : scriptManager.scripts) {
                 script.CollisionExit2D(gameObjectA);
             }
@@ -203,25 +204,27 @@ struct InspectorMaterial {
     Vector2 texUVs = Vector2(0, 0);
 };
 
+bool bulletPhysicsStarted = false;
 void StartWorld() {
     InitScripts();
 
     for (auto &gameObject : Scene::m_GameObjects) {
-        if (gameObject->HasComponent<Experimental::m_LuaScriptComponent>()) {
-            gameObject->GetComponent<Experimental::m_LuaScriptComponent>().Start();
+        if (gameObject->HasComponent<m_LuaScriptComponent>()) {
+            gameObject->GetComponent<m_LuaScriptComponent>().Start();
         }
 
-        if (gameObject->HasComponent<Experimental::NativeScriptManager>()) {
-            gameObject->GetComponent<Experimental::NativeScriptManager>().Start();
+        if (gameObject->HasComponent<NativeScriptManager>()) {
+            gameObject->GetComponent<NativeScriptManager>().Start();
         }
     }
 
     Scene::world = new b2World({0.0, -5.8f});
     Scene::world->SetContactListener(listener);
-    auto view = Scene::m_Registry.view<Experimental::Rigidbody2D>();
+    auto view = Scene::m_Registry.view<Rigidbody2D>();
+    auto view3D = Scene::m_Registry.view<Rigidbody3D>();
 
     for (auto e : view) {
-        Experimental::GameObject *gameObject;
+        GameObject *gameObject;
         for (auto &go : Scene::m_GameObjects) {
             if (go->entity == e) {
                 gameObject = go;
@@ -229,8 +232,8 @@ void StartWorld() {
             }
         }
 
-        auto &transform = gameObject->GetComponent<Experimental::Transform>();
-        auto &rb2d = gameObject->GetComponent<Experimental::Rigidbody2D>();
+        auto &transform = gameObject->GetComponent<Transform>();
+        auto &rb2d = gameObject->GetComponent<Rigidbody2D>();
 
         b2BodyDef bodyDef;
         bodyDef.userData.pointer = reinterpret_cast<uintptr_t>(gameObject);
@@ -243,12 +246,13 @@ void StartWorld() {
         body->SetFixedRotation(rb2d.fixedRotation);
         rb2d.body = body;
 
-        if (gameObject->HasComponent<Experimental::BoxCollider2D>()) {
-            auto &boxCollider2D = gameObject->GetComponent<Experimental::BoxCollider2D>();
+        if (gameObject->HasComponent<BoxCollider2D>()) {
+            auto &boxCollider2D = gameObject->GetComponent<BoxCollider2D>();
             b2PolygonShape shape;
             shape.SetAsBox((((boxCollider2D.size.x) / 2) - 0.02) / 2, (((boxCollider2D.size.y) / 2) - 0.02) / 2);
 
             b2FixtureDef fixtureDef;
+            fixtureDef.isSensor = boxCollider2D.trigger;
             fixtureDef.shape = &shape;
             fixtureDef.density = boxCollider2D.density;
             fixtureDef.friction = boxCollider2D.friction;
@@ -257,6 +261,88 @@ void StartWorld() {
             boxCollider2D.fixture = body->CreateFixture(&fixtureDef);
         }
     }
+
+    BulletPhysicsWorld::Init();
+
+    for(auto e : view3D) {
+        GameObject *gameObject;
+        for (auto &go : Scene::m_GameObjects) {
+            if (go->entity == e) {
+                gameObject = go;
+                break;
+            }
+        }
+
+        auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
+        rigidbody.transform = &gameObject->GetComponent<Transform>();
+
+        if(gameObject->HasComponent<BoxCollider3D>()) {
+            auto &collider = gameObject->GetComponent<BoxCollider3D>();
+            collider.CreateShape();
+            rigidbody.CreateBody(collider.shape);
+        }
+
+        if(gameObject->HasComponent<MeshCollider3D>()) {
+            auto &collider = gameObject->GetComponent<MeshCollider3D>();
+            collider.CreateShape(&gameObject->GetComponent<MeshRenderer>());
+            rigidbody.CreateBody(collider.shape);
+        }
+    }
+
+    auto jointView = Scene::m_Registry.view<FixedJoint3D>();
+
+    for(auto e : jointView) {
+        GameObject *gameObject;
+        for (auto &go : Scene::m_GameObjects) {
+            if (go->entity == e) {
+                gameObject = go;
+                break;
+            }
+        }
+
+        auto &joint = gameObject->GetComponent<FixedJoint3D>();
+        joint.CreateJoint();
+    }
+
+    bulletPhysicsStarted = true;
+}
+
+void DeleteWorld() {
+    bulletPhysicsStarted = false;
+
+    // halt
+    Mix_HaltChannel(-1);
+    Mix_HaltMusic();
+
+    for (auto &gameObject : Scene::m_GameObjects) {
+        if(gameObject->HasComponent<FixedJoint3D>()) {
+            auto &fixedJoint = gameObject->GetComponent<FixedJoint3D>();
+            fixedJoint.DeleteJoint();
+        }
+    }
+
+    for (auto &gameObject : Scene::m_GameObjects) {
+        if (gameObject->HasComponent<NativeScriptManager>()) {
+            auto &script = gameObject->GetComponent<NativeScriptManager>();
+            for (auto &script : script.m_StaticScripts) {
+                delete script;
+            }
+
+            gameObject->RemoveComponent<NativeScriptManager>();
+        }
+
+        if(gameObject->HasComponent<Rigidbody3D>()) {
+            auto &component = gameObject->GetComponent<Rigidbody3D>();
+            component.DeleteBody();
+            if(component.ref) {
+                delete component.ref;
+            }
+        }
+
+
+    }
+
+    BulletPhysicsWorld::Delete();
 }
 
 time_t timestamp = time(0);
@@ -285,75 +371,6 @@ void UpdatePresence(
 }
 
 #endif
-
-bool DecomposeTransform(const glm::mat4 &transform, glm::vec3 &translation, glm::vec3 &rotation, glm::vec3 &scale) {
-    // From glm::decompose in matrix_decompose.inl
-
-    using namespace glm;
-    using T = float;
-
-    mat4 LocalMatrix(transform);
-
-    // Normalize the matrix.
-    if (epsilonEqual(LocalMatrix[3][3], static_cast<float>(0), epsilon<T>()))
-        return false;
-
-    // First, isolate perspective.  This is the messiest.
-    if (
-            epsilonNotEqual(LocalMatrix[0][3], static_cast<T>(0), epsilon<T>()) ||
-            epsilonNotEqual(LocalMatrix[1][3], static_cast<T>(0), epsilon<T>()) ||
-            epsilonNotEqual(LocalMatrix[2][3], static_cast<T>(0), epsilon<T>())) {
-        // Clear the perspective partition
-        LocalMatrix[0][3] = LocalMatrix[1][3] = LocalMatrix[2][3] = static_cast<T>(0);
-        LocalMatrix[3][3] = static_cast<T>(1);
-    }
-
-    // Next take care of translation (easy).
-    translation = vec3(LocalMatrix[3]);
-    LocalMatrix[3] = vec4(0, 0, 0, LocalMatrix[3].w);
-
-    vec3 Row[3], Pdum3;
-
-    // Now get scale and shear.
-    for (length_t i = 0; i < 3; ++i)
-        for (length_t j = 0; j < 3; ++j)
-            Row[i][j] = LocalMatrix[i][j];
-
-    // Compute X scale factor and normalize first row.
-    scale.x = length(Row[0]);
-    Row[0] = detail::scale(Row[0], static_cast<T>(1));
-    scale.y = length(Row[1]);
-    Row[1] = detail::scale(Row[1], static_cast<T>(1));
-    scale.z = length(Row[2]);
-    Row[2] = detail::scale(Row[2], static_cast<T>(1));
-
-    // At this point, the matrix (in rows[]) is orthonormal.
-    // Check for a coordinate system flip.  If the determinant
-    // is -1, then negate the matrix and the scaling factors.
-#if 0
-    Pdum3 = cross(Row[1], Row[2]); // v3Cross(row[1], row[2], Pdum3);
-    if (dot(Row[0], Pdum3) < 0)
-    {
-        for (length_t i = 0; i < 3; i++)
-        {
-            scale[i] *= static_cast<T>(-1);
-            Row[i] *= static_cast<T>(-1);
-        }
-    }
-#endif
-
-    rotation.y = asin(-Row[0][2]);
-    if (cos(rotation.y) != 0) {
-        rotation.x = atan2(Row[1][2], Row[2][2]);
-        rotation.z = atan2(Row[0][1], Row[0][0]);
-    } else {
-        rotation.x = atan2(-Row[2][0], Row[1][1]);
-        rotation.z = 0;
-    }
-
-
-    return true;
-}
 
 int main() {
 #ifndef _WIN32 || GAME_BUILD
@@ -441,11 +458,12 @@ int main() {
     Hyper::Application app(1280, 720, "Static Engine", false);
 #endif
 
-
     Input::window = app.renderer->window;
     // glfw enable sticky mouse buttons
     Shader shader("shaders/default.glsl");
     Shader spriteShader("shaders/sprite.glsl");
+    Shader workerShader("shaders/worker.glsl");
+    Shader outlineShader("shaders/outline.glsl");
     // Shader batchShader("shaders/batch.glsl");
 
     spriteShader.Bind();
@@ -472,13 +490,6 @@ int main() {
 
     ScriptEngine::window = app.renderer->window;
 
-    Mesh *currEntity = nullptr;
-    PointLight *currPointLight = nullptr;
-    SpotLight *currSpotLight = nullptr;
-    Camera *selectedCamera = nullptr;
-    DirectionalLight *currDirectionalLight = nullptr;
-    int currModel = -1;
-
     bool openConfig = false;
     bool openDetails = false;
     bool openInspector = false;
@@ -498,9 +509,11 @@ int main() {
     if(Scene::mainCamera == nullptr) {
         Scene::mainCamera = camera;
     }
+#else
+    Scene::mainCamera = camera;
 #endif
 
-    Experimental::Transform transform;
+    Transform transform;
     transform.position = glm::vec3(2, 0, 2);
     transform.rotation = glm::vec3(15, 0, 0);
     transform.scale = glm::vec3(1, 5, 1);
@@ -524,15 +537,6 @@ int main() {
     std::vector<unsigned int> indices =
             {
             };
-    // QuadBatch quadBatch(nullptr, vertices, indices);
-    // QuadBatch quadBatch2(nullptr, vertices, indices);
-    // BatchLayer batchLayer(vertices, indices);
-    // Texture texture("assets/planks.png", 0, "texture_diffuse");
-    // Texture texture2("assets/ground.png", 1, "texture_diffuse");
-    // quadBatch.layer = &batchLayer;
-    // quadBatch2.layer = &batchLayer;
-
-    // Experimental::GetAnimationsFromXML("assets/PONGON.png", 0.1, Vector2(4096, 4096), "assets/PONGON.xml");
 
     bool usingImGuizmo = false;
 
@@ -575,11 +579,48 @@ int main() {
 
     Material material(Vector4(0, 4, 0.2, 1));
     Mesh CubeCollider(cubeVertices, cubeIndices, material);
-    Mesh BoxCollider2D(planeVertices, planeIndices, material);
+    Mesh mesh_BoxCollider2D(planeVertices, planeIndices, material);
     bool drawBoxCollider2D = false;
     glm::vec3 bc2dPos = glm::vec3(0, 0, 0);
     glm::vec3 bc2dScale = glm::vec3(1, 1, 1);
     float bc2dRotation = 0.0f;
+
+    std::vector<Vertex> sprite_vertices = {
+            Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(1, 1, 1), glm::vec3(0, 1, 0),
+                   glm::vec2(0.0f, 0.0f)},
+            Vertex{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(1, 1, 1), glm::vec3(0, 1, 0),
+                   glm::vec2(1.0f, 0.0f)},
+            Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(1, 1, 1), glm::vec3(0, 1, 0),
+                   glm::vec2(1.0f, 1.0f)},
+            Vertex{glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(1, 1, 1), glm::vec3(0, 1, 0),
+                   glm::vec2(0.0f, 1.0f)}
+    };
+
+    std::vector<unsigned int> sprite_indices = {
+            0, 1, 2,
+            0, 2, 3
+    };
+
+    auto *dirLightIcon_texture = new Texture("assets/icons/directional_light.png", 0, "texture_diffuse");
+    auto *pointLightIcon_texture = new Texture("assets/icons/point_light.png", 0, "texture_diffuse");
+    auto *spotLightIcon_texture = new Texture("assets/icons/spot_light.png", 0, "texture_diffuse");
+    auto *cameraIcon_texture = new Texture("assets/icons/camera.png", 0, "texture_diffuse");
+
+    Material dirLightIconMaterial(Vector4(1,1,1,1));
+    dirLightIconMaterial.diffuse = dirLightIcon_texture;
+    Mesh dirLightIconMesh(sprite_vertices, sprite_indices, dirLightIconMaterial);
+
+    Material pointLightIconMaterial(Vector4(1,1,1,1));
+    pointLightIconMaterial.diffuse = pointLightIcon_texture;
+    Mesh pointLightIconMesh(sprite_vertices, sprite_indices, pointLightIconMaterial);
+
+    Material spotLightIconMaterial(Vector4(1,1,1,1));
+    spotLightIconMaterial.diffuse = spotLightIcon_texture;
+    Mesh spotLightIconMesh(sprite_vertices, sprite_indices, spotLightIconMaterial);
+
+    Material cameraIconMaterial(Vector4(1,1,1,1));
+    cameraIconMaterial.diffuse = cameraIcon_texture;
+    Mesh cameraIconMesh(sprite_vertices, sprite_indices, cameraIconMaterial);
 
 #endif
 
@@ -589,14 +630,12 @@ int main() {
     HyperAPI::isStopped = false;
 #endif
 
-    int currFrame = 0;
-
+    Scene::SceneType sceneType = Scene::MAIN_SCENE;
     std::function<void(unsigned int &PPT, unsigned int &PPFBO)> GUI_EXP =
             [&](unsigned int &PPT, unsigned int &PPFBO) {
 #ifdef GAME_BUILD
                 return;
-#endif
-
+#else
                 if (ImGui::BeginMainMenuBar()) {
                     if (ImGui::BeginMenu("File")) {
                         if (ImGui::MenuItem("Save Scene", "CTRL+S")) {
@@ -655,6 +694,7 @@ int main() {
                 }
 
                 ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+//                ImGui::ShowDemoWindow();
 
                 if (openLayers) {
                     if (ImGui::Begin(ICON_FA_LAYER_GROUP " Layers")) {
@@ -953,8 +993,13 @@ int main() {
                     ImGui::EndPopup();
                 }
 
-                if (ImGui::Begin(ICON_FA_GAMEPAD" Scene")) {
+                if(ImGui::Begin(ICON_FA_GAMEPAD " Scene")) {
+                    sceneType = Scene::MAIN_SCENE;
+
                     bool complete = Scene::DropTargetMat(Scene::DRAG_SCENE, nullptr, nullptr);
+                    if(Scene::LoadingScene) {
+                        Scene::m_Object = nullptr;
+                    }
 
                     if(complete) {
                         Scene::mainCamera = nullptr;
@@ -975,8 +1020,8 @@ int main() {
                     // make them look like they are linked
                     ImGui::SameLine();
 
-                    if(ImGui::Button(ICON_FA_CROSSHAIRS)) {
-                         m_GuizmoMode = ImGuizmo::OPERATION::TRANSLATE;
+                    if(ImGui::Button(ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT)) {
+                        m_GuizmoMode = ImGuizmo::OPERATION::TRANSLATE;
                     }
                     ImGui::SameLine();
 
@@ -1025,20 +1070,7 @@ int main() {
                         ImGui::SetCursorPosX((ImGui::GetWindowSize().x / 2) - 25 / 2 - (25 / 2));
                         if (ImGui::Button(ICON_FA_PAUSE, ImVec2(25, 0))) {
                             HyperAPI::isRunning = false;
-                            // halt
-                            Mix_HaltChannel(-1);
-                            Mix_HaltMusic();
-
-                            for (auto &gameObject : Scene::m_GameObjects) {
-                                if (gameObject->HasComponent<Experimental::NativeScriptManager>()) {
-                                    auto &script = gameObject->GetComponent<Experimental::NativeScriptManager>();
-                                    for (auto &script : script.m_StaticScripts) {
-                                        delete script;
-                                    }
-
-                                    gameObject->RemoveComponent<Experimental::NativeScriptManager>();
-                                }
-                            }
+                            DeleteWorld();
                             Scene::mainCamera = camera;
                         }
                         // ImGui::SameLine();
@@ -1048,42 +1080,43 @@ int main() {
                         //     Scene::mainCamera = camera;
                         // }
                     }
-                    // fps counter
+
                     ImGui::BeginChild("View");
-                    mousePos = ImGui::GetMousePos();
-                    windowPos = ImGui::GetWindowPos();
-                    windowSize = ImGui::GetWindowSize();
-                    mousePos.x -= windowPos.x;
-                    mousePos.y -= windowPos.y;
-                    mousePos.y = windowSize.y - mousePos.y;
-                    // std::cout << mx << " " << mousePos.y << std::endl;
-                    app.sceneMouseX = mousePos.x;
-                    app.sceneMouseY = mousePos.y;
+                    if(sceneType == Scene::MAIN_SCENE) {
+                        mousePos = ImGui::GetMousePos();
+                        windowPos = ImGui::GetWindowPos();
+                        windowSize = ImGui::GetWindowSize();
+                        mousePos.x -= windowPos.x;
+                        mousePos.y -= windowPos.y;
+                        mousePos.y = windowSize.y - mousePos.y;
+                        // std::cout << mx << " " << mousePos.y << std::endl;
+                        app.sceneMouseX = mousePos.x;
+                        app.sceneMouseY = mousePos.y;
 
-                    app.width = windowSize.x;
-                    app.height = windowSize.y;
+                        app.width = windowSize.x;
+                        app.height = windowSize.y;
 
-                    ImVec2 w_p = ImGui::GetWindowPos();
-                    Input::winPos = Vector3(w_p.x, w_p.y, 0);
+                        ImVec2 w_p = ImGui::GetWindowPos();
+                        Input::winPos = Vector3(w_p.x, w_p.y, 0);
 
-                    glActiveTexture(GL_TEXTURE15);
-                    glBindTexture(GL_TEXTURE_2D, PPT);
+                        glActiveTexture(GL_TEXTURE15);
+                        glBindTexture(GL_TEXTURE_2D, PPT);
 
-                    // check window hovered
-                    if (ImGui::IsWindowHovered() && ImGui::IsMouseDragging(0)) {
-                        focusedOnScene = true;
-                    } else if (!ImGui::IsMouseDragging(0)) {
-                        focusedOnScene = false;
+                        // check window hovered
+                        if (ImGui::IsWindowHovered() && ImGui::IsMouseDragging(0)) {
+                            focusedOnScene = true;
+                        } else if (!ImGui::IsMouseDragging(0)) {
+                            focusedOnScene = false;
+                        }
+
+                        if (ImGui::IsWindowHovered()) {
+                            hoveredScene = true;
+                        } else if (!ImGui::IsMouseDragging(0)) {
+                            hoveredScene = false;
+                        }
+
+                        ImGui::Image((void *) PPT, ImVec2(w_s.x, w_s.y - 40), ImVec2(0, 1), ImVec2(1, 0));
                     }
-
-                    if (ImGui::IsWindowHovered()) {
-                        hoveredScene = true;
-                    } else if (!ImGui::IsMouseDragging(0)) {
-                        hoveredScene = false;
-                    }
-
-                    //move up the image so that the fps text will be over it
-                    ImGui::Image((void *) PPT, ImVec2(w_s.x, w_s.y - 40), ImVec2(0, 1), ImVec2(1, 0));
 
                     auto[viewWidth, viewHeight] = ImGui::GetWindowSize();
                     auto[viewX, viewY] = ImGui::GetWindowPos();
@@ -1091,6 +1124,7 @@ int main() {
                     auto *selectedObject = Scene::m_Object;
 
 //                    m_GuizmoMode = ImGuizmo::OPERATION::ROTATE
+                    if(Scene::mainCamera != camera) m_GuizmoMode = -1;
                     if (selectedObject && m_GuizmoMode != -1) {
                         ImGuizmo::SetOrthographic(camera->mode2D);
                         ImGuizmo::SetDrawlist();
@@ -1098,18 +1132,16 @@ int main() {
 
                         // check if ImGuizmo is hovered
 
-                        auto *camera = Scene::mainCamera;
-
                         glm::mat4 view = camera->view;
                         glm::mat4 projection = camera->projection;
 
-                        auto &transform = selectedObject->GetComponent<Experimental::Transform>();
+                        auto &transform = selectedObject->GetComponent<Transform>();
                         transform.Update();
                         glm::mat4 transformMat = transform.transform;
                         glm::vec3 originalRot = transform.rotation;
 
                         ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection),
-                                             (ImGuizmo::OPERATION) m_GuizmoMode, ImGuizmo::LOCAL,
+                                             (ImGuizmo::OPERATION) m_GuizmoMode, ImGuizmo::WORLD,
                                              glm::value_ptr(transformMat));
 
                         if (ImGuizmo::IsOver()) {
@@ -1128,16 +1160,49 @@ int main() {
                             switch(m_GuizmoMode) {
                                 case ImGuizmo::OPERATION::TRANSLATE: {
                                     transform.position = translation;
+
+                                    if(HyperAPI::isRunning) {
+                                        if(selectedObject->HasComponent<Rigidbody2D>()) {
+                                            auto &rigidbody = selectedObject->GetComponent<Rigidbody2D>();
+
+                                            b2Body *body = (b2Body *) rigidbody.body;
+                                            body->SetTransform(b2Vec2(translation.x, translation.y), body->GetAngle());
+                                        }
+
+                                        if(selectedObject->HasComponent<Rigidbody3D>()) {
+                                            auto &rigidbody = selectedObject->GetComponent<Rigidbody3D>();
+
+                                            btRigidBody *body = (btRigidBody *) rigidbody.body;
+                                            body->getWorldTransform().setOrigin(btVector3(translation.x, translation.y, translation.z));
+                                        }
+                                    }
                                     break;
                                 }
                                 case ImGuizmo::OPERATION::ROTATE: {
                                     glm::vec3 deltaRot = rotation - originalRot;
                                     transform.rotation += deltaRot;
+
+                                    if(HyperAPI::isRunning) {
+                                        if(selectedObject->HasComponent<Rigidbody2D>()) {
+                                            auto &rigidbody = selectedObject->GetComponent<Rigidbody2D>();
+
+                                            b2Body *body = (b2Body *) rigidbody.body;
+                                            body->SetTransform(body->GetPosition(), body->GetAngle() + glm::radians(deltaRot.z));
+                                        }
+
+                                        if(selectedObject->HasComponent<Rigidbody3D>()) {
+                                            auto &rigidbody = selectedObject->GetComponent<Rigidbody3D>();
+
+                                            btRigidBody *body = (btRigidBody *) rigidbody.body;
+                                            btQuaternion rot = body->getWorldTransform().getRotation();
+                                            rot.setEulerZYX(glm::radians(deltaRot.z), glm::radians(deltaRot.y), glm::radians(deltaRot.x));
+                                            body->getWorldTransform().setRotation(rot);
+                                        }
+                                    }
                                     break;
 
                                 }
                                 case ImGuizmo::OPERATION::SCALE: {
-
                                     transform.scale = Vector3(scale.x * 2, scale.y * 2, scale.z * 2);
                                     break;
                                 }
@@ -1145,20 +1210,14 @@ int main() {
                         }
                     }
                     ImGui::EndChild();
+
+                    ImGui::SetCursorPos(ImVec2(0, 0));
+                    ImGui::Text("FPS: %d", fps);
                 }
                 ImGui::End();
 
-                if(ImGui::Begin(ICON_FA_PERSON_RUNNING " Animatior")) {
-                    ImGui::Text("Animation");
-                    ImGui::Separator();
-                    ImGui::Text("Animation Name");
-
-
-                    ImGui::End();
-                }
-
                 if (ImGui::Begin(ICON_FA_CUBES " Hierarchy")) {
-                    if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(0)) {
+                    if (ImGui::IsWindowHovered() && ImGui::IsMouseDoubleClicked(0)) {
                         Scene::m_Object = nullptr;
                     }
 
@@ -1166,8 +1225,9 @@ int main() {
                     ImVec2 win_size = ImGui::GetWindowSize();
 
                     if (ImGui::Button(ICON_FA_PLUS " Add GameObject", ImVec2(win_size.x, 0))) {
-                        Experimental::GameObject *go = new Experimental::GameObject();
-                        go->AddComponent<Experimental::Transform>();
+                        GameObject *go = new GameObject();
+                        go->AddComponent<Transform>();
+                        Scene::m_GameObjects.push_back(go);
                     }
 
                     for (int i = 0; i < Scene::m_GameObjects.size(); i++) {
@@ -1179,7 +1239,7 @@ int main() {
                 ImGui::End();
 
                 if (ImGui::Begin(ICON_FA_SHARE_NODES " Components")) {
-                    if (Scene::m_Object != nullptr) {
+                    if (Scene::m_Object != nullptr && !Scene::LoadingScene) {
                         if (ImGui::IsWindowFocused()) {
 #ifndef _WIN32 || GAME_BUILD
                             UpdatePresence(
@@ -1214,74 +1274,86 @@ int main() {
                         Scene::m_Object->name = Scene::name;
                         Scene::m_Object->layer = Scene::layer;
 
-                        if (Scene::m_Object->HasComponent<Experimental::Transform>()) {
-                            auto &comp = Scene::m_Object->GetComponent<Experimental::Transform>();
+                        if (Scene::m_Object->HasComponent<Transform>()) {
+                            auto &comp = Scene::m_Object->GetComponent<Transform>();
+                            if (comp.hasGUI) comp.GUI();
+
+                            if(Scene::m_Object->HasComponent<Rigidbody2D>() && HyperAPI::isRunning) {
+                                auto &rigidbody = Scene::m_Object->GetComponent<Rigidbody2D>();
+                                b2Body *body = (b2Body *) rigidbody.body;
+                                body->SetTransform(b2Vec2(comp.position.x, comp.position.y), body->GetAngle());
+                            }
+
+                            if(Scene::m_Object->HasComponent<Rigidbody3D>() && HyperAPI::isRunning) {
+                                auto &rigidbody = Scene::m_Object->GetComponent<Rigidbody3D>();
+                                btRigidBody *body = (btRigidBody *) rigidbody.body;
+                                body->getWorldTransform().setOrigin(btVector3(comp.position.x, comp.position.y, comp.position.z));
+                            }
+                        }
+
+                        if (Scene::m_Object->HasComponent<CameraComponent>()) {
+                            auto &comp = Scene::m_Object->GetComponent<CameraComponent>();
                             if (comp.hasGUI) comp.GUI();
                         }
 
-                        if (Scene::m_Object->HasComponent<Experimental::CameraComponent>()) {
-                            auto &comp = Scene::m_Object->GetComponent<Experimental::CameraComponent>();
+                        if (Scene::m_Object->HasComponent<MeshRenderer>()) {
+                            auto &comp = Scene::m_Object->GetComponent<MeshRenderer>();
                             if (comp.hasGUI) comp.GUI();
                         }
 
-                        if (Scene::m_Object->HasComponent<Experimental::MeshRenderer>()) {
-                            auto &comp = Scene::m_Object->GetComponent<Experimental::MeshRenderer>();
+                        if (Scene::m_Object->HasComponent<m_LuaScriptComponent>()) {
+                            auto &comp = Scene::m_Object->GetComponent<m_LuaScriptComponent>();
                             if (comp.hasGUI) comp.GUI();
                         }
 
-                        if (Scene::m_Object->HasComponent<Experimental::m_LuaScriptComponent>()) {
-                            auto &comp = Scene::m_Object->GetComponent<Experimental::m_LuaScriptComponent>();
+                        if (Scene::m_Object->HasComponent<c_PointLight>()) {
+                            auto &comp = Scene::m_Object->GetComponent<c_PointLight>();
                             if (comp.hasGUI) comp.GUI();
                         }
 
-                        if (Scene::m_Object->HasComponent<Experimental::c_PointLight>()) {
-                            auto &comp = Scene::m_Object->GetComponent<Experimental::c_PointLight>();
+                        if (Scene::m_Object->HasComponent<c_Light2D>()) {
+                            auto &comp = Scene::m_Object->GetComponent<c_Light2D>();
                             if (comp.hasGUI) comp.GUI();
                         }
 
-                        if (Scene::m_Object->HasComponent<Experimental::c_Light2D>()) {
-                            auto &comp = Scene::m_Object->GetComponent<Experimental::c_Light2D>();
+                        if (Scene::m_Object->HasComponent<c_SpotLight>()) {
+                            auto &comp = Scene::m_Object->GetComponent<c_SpotLight>();
                             if (comp.hasGUI) comp.GUI();
                         }
 
-                        if (Scene::m_Object->HasComponent<Experimental::c_SpotLight>()) {
-                            auto &comp = Scene::m_Object->GetComponent<Experimental::c_SpotLight>();
+                        if (Scene::m_Object->HasComponent<c_DirectionalLight>()) {
+                            auto &comp = Scene::m_Object->GetComponent<c_DirectionalLight>();
                             if (comp.hasGUI) comp.GUI();
                         }
 
-                        if (Scene::m_Object->HasComponent<Experimental::c_DirectionalLight>()) {
-                            auto &comp = Scene::m_Object->GetComponent<Experimental::c_DirectionalLight>();
+                        if (Scene::m_Object->HasComponent<SpriteRenderer>()) {
+                            auto &comp = Scene::m_Object->GetComponent<SpriteRenderer>();
                             if (comp.hasGUI) comp.GUI();
                         }
 
-                        if (Scene::m_Object->HasComponent<Experimental::SpriteRenderer>()) {
-                            auto &comp = Scene::m_Object->GetComponent<Experimental::SpriteRenderer>();
+                        if (Scene::m_Object->HasComponent<SpriteAnimation>()) {
+                            auto &comp = Scene::m_Object->GetComponent<SpriteAnimation>();
                             if (comp.hasGUI) comp.GUI();
                         }
 
-                        if (Scene::m_Object->HasComponent<Experimental::SpriteAnimation>()) {
-                            auto &comp = Scene::m_Object->GetComponent<Experimental::SpriteAnimation>();
+                        if (Scene::m_Object->HasComponent<c_SpritesheetAnimation>()) {
+                            auto &comp = Scene::m_Object->GetComponent<c_SpritesheetAnimation>();
                             if (comp.hasGUI) comp.GUI();
                         }
 
-                        if (Scene::m_Object->HasComponent<Experimental::SpritesheetAnimation>()) {
-                            auto &comp = Scene::m_Object->GetComponent<Experimental::SpritesheetAnimation>();
+                        if (Scene::m_Object->HasComponent<SpritesheetRenderer>()) {
+                            auto &comp = Scene::m_Object->GetComponent<SpritesheetRenderer>();
                             if (comp.hasGUI) comp.GUI();
                         }
 
-                        if (Scene::m_Object->HasComponent<Experimental::SpritesheetRenderer>()) {
-                            auto &comp = Scene::m_Object->GetComponent<Experimental::SpritesheetRenderer>();
-                            if (comp.hasGUI) comp.GUI();
-                        }
-
-                        if (Scene::m_Object->HasComponent<Experimental::BoxCollider2D>()) {
-                            auto &comp = Scene::m_Object->GetComponent<Experimental::BoxCollider2D>();
+                        if (Scene::m_Object->HasComponent<BoxCollider2D>()) {
+                            auto &comp = Scene::m_Object->GetComponent<BoxCollider2D>();
                             if (comp.hasGUI) {
                                 comp.GUI();
                                 if (ImGui::IsWindowFocused()) {
                                     drawBoxCollider2D = true;
                                 }
-                                auto &transform = Scene::m_Object->GetComponent<Experimental::Transform>();
+                                auto &transform = Scene::m_Object->GetComponent<Transform>();
                                 bc2dPos = transform.position;
                                 bc2dRotation = transform.rotation.z;
                                 bc2dScale = Vector3(comp.size.x, comp.size.y, 1);
@@ -1290,8 +1362,28 @@ int main() {
                             drawBoxCollider2D = false;
                         }
 
-                        if (Scene::m_Object->HasComponent<Experimental::Rigidbody2D>()) {
-                            auto &comp = Scene::m_Object->GetComponent<Experimental::Rigidbody2D>();
+                        if (Scene::m_Object->HasComponent<Rigidbody2D>()) {
+                            auto &comp = Scene::m_Object->GetComponent<Rigidbody2D>();
+                            if (comp.hasGUI) comp.GUI();
+                        }
+
+                        if (Scene::m_Object->HasComponent<Rigidbody3D>()) {
+                            auto &comp = Scene::m_Object->GetComponent<Rigidbody3D>();
+                            if (comp.hasGUI) comp.GUI();
+                        }
+
+                        if (Scene::m_Object->HasComponent<FixedJoint3D>()) {
+                            auto &comp = Scene::m_Object->GetComponent<FixedJoint3D>();
+                            if (comp.hasGUI) comp.GUI();
+                        }
+
+                        if (Scene::m_Object->HasComponent<BoxCollider3D>()) {
+                            auto &comp = Scene::m_Object->GetComponent<BoxCollider3D>();
+                            if (comp.hasGUI) comp.GUI();
+                        }
+
+                        if(Scene::m_Object->HasComponent<MeshCollider3D>()) {
+                            auto &comp = Scene::m_Object->GetComponent<MeshCollider3D>();
                             if (comp.hasGUI) comp.GUI();
                         }
 
@@ -1307,74 +1399,97 @@ int main() {
 
                     if (ImGui::BeginPopup("Add Component")) {
                         if (ImGui::Button("Transform", ImVec2(200, 0))) {
-                            Scene::m_Object->AddComponent<Experimental::Transform>();
+                            Scene::m_Object->AddComponent<Transform>();
                             ImGui::CloseCurrentPopup();
                         }
 
                         if (ImGui::Button("Mesh Renderer", ImVec2(200, 0))) {
-                            Scene::m_Object->AddComponent<Experimental::MeshRenderer>();
+                            Scene::m_Object->AddComponent<MeshRenderer>();
                             ImGui::CloseCurrentPopup();
                         }
 
                         if (ImGui::Button("Lua Scripts", ImVec2(200, 0))) {
-                            Scene::m_Object->AddComponent<Experimental::m_LuaScriptComponent>();
+                            Scene::m_Object->AddComponent<m_LuaScriptComponent>();
                             ImGui::CloseCurrentPopup();
                         }
 
                         if (ImGui::Button("Camera", ImVec2(200, 0))) {
                             // CameraComponent has one argument of type entt::entity
-                            Scene::m_Object->AddComponent<Experimental::CameraComponent>();
+                            Scene::m_Object->AddComponent<CameraComponent>();
                             ImGui::CloseCurrentPopup();
                         }
 
                         if (ImGui::Button("Point Light", ImVec2(200, 0))) {
-                            Scene::m_Object->AddComponent<Experimental::c_PointLight>();
+                            Scene::m_Object->AddComponent<c_PointLight>();
                             ImGui::CloseCurrentPopup();
                         }
 
                         if (ImGui::Button("Spot Light", ImVec2(200, 0))) {
-                            Scene::m_Object->AddComponent<Experimental::c_SpotLight>();
+                            Scene::m_Object->AddComponent<c_SpotLight>();
                             ImGui::CloseCurrentPopup();
                         }
 
                         if (ImGui::Button("Directional Light", ImVec2(200, 0))) {
-                            Scene::m_Object->AddComponent<Experimental::c_DirectionalLight>();
+                            Scene::m_Object->AddComponent<c_DirectionalLight>();
                             ImGui::CloseCurrentPopup();
                         }
 
                         if (ImGui::Button("2D Light", ImVec2(200, 0))) {
-                            Scene::m_Object->AddComponent<Experimental::c_Light2D>();
+                            Scene::m_Object->AddComponent<c_Light2D>();
                             ImGui::CloseCurrentPopup();
                         }
 
                         if (ImGui::Button("Sprite Renderer", ImVec2(200, 0))) {
-                            Scene::m_Object->AddComponent<Experimental::SpriteRenderer>();
+                            Scene::m_Object->AddComponent<SpriteRenderer>();
                             ImGui::CloseCurrentPopup();
                         }
 
                         if (ImGui::Button("Sprite Animation", ImVec2(200, 0))) {
-                            Scene::m_Object->AddComponent<Experimental::SpriteAnimation>();
+                            Scene::m_Object->AddComponent<SpriteAnimation>();
                             ImGui::CloseCurrentPopup();
                         }
 
                         if (ImGui::Button("Spritesheet Renderer", ImVec2(200, 0))) {
-                            Scene::m_Object->AddComponent<Experimental::SpritesheetRenderer>();
+                            Scene::m_Object->AddComponent<SpritesheetRenderer>();
                             ImGui::CloseCurrentPopup();
                         }
 
                         if (ImGui::Button("Spritesheet Animation", ImVec2(200, 0))) {
-                            Scene::m_Object->AddComponent<Experimental::SpritesheetAnimation>();
+                            Scene::m_Object->AddComponent<c_SpritesheetAnimation>();
                             ImGui::CloseCurrentPopup();
                         }
 
                         if (ImGui::Button("Rigidbody 2D", ImVec2(200, 0))) {
-                            Scene::m_Object->AddComponent<Experimental::Rigidbody2D>();
+                            Scene::m_Object->AddComponent<Rigidbody2D>();
                             ImGui::CloseCurrentPopup();
                         }
 
+
                         if (ImGui::Button("Box Collider 2D", ImVec2(200, 0))) {
-                            Scene::m_Object->AddComponent<Experimental::BoxCollider2D>();
+                            Scene::m_Object->AddComponent<BoxCollider2D>();
                             ImGui::CloseCurrentPopup();
+                        }
+
+                        if (ImGui::Button("Rigidbody 3D", ImVec2(200, 0))) {
+                            Scene::m_Object->AddComponent<Rigidbody3D>();
+                            ImGui::CloseCurrentPopup();
+                        }
+
+                        if (ImGui::Button("Fixed Joint 3D", ImVec2(200, 0))) {
+                            Scene::m_Object->AddComponent<FixedJoint3D>();
+                            ImGui::CloseCurrentPopup();
+                        }
+
+                        if (ImGui::Button("Box Collider 3D", ImVec2(200, 0))) {
+                            Scene::m_Object->AddComponent<BoxCollider3D>();
+                            ImGui::CloseCurrentPopup();
+                        }
+
+                        if (ImGui::Button("Mesh Collider 3D", ImVec2(200, 0))) {
+                            if(Scene::m_Object->HasComponent<MeshRenderer>()) {
+                                Scene::m_Object->AddComponent<MeshCollider3D>();
+                                ImGui::CloseCurrentPopup();
+                            }
                         }
 
                         ImGui::EndPopup();
@@ -1408,15 +1523,25 @@ int main() {
                     if (ImGuiFileDialog::Instance()->IsOk()) {
                         std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
                         std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
-
-                        std::string toCd = "cd \"" + filePathName + "\" && ";
-                        system(std::string("rm -r \"" + filePathName + "/*\"").c_str());
+#ifdef _WIN32
+                        system(("rmdir /s /q " + filePathName).c_str());
+                        system(("mkdir " + filePathName).c_str());
+                        system(("xcopy /s /e /y \"" + cwd + "\\assets\" \"" + filePathName + "\\assets\\\"").c_str());
+                        system(("xcopy /s /e /y \"" + cwd + "\\build\" \"" + filePathName + "\\build\\\"").c_str());
+                        system(("xcopy /s /e /y \"" + cwd + "\\shaders\" \"" + filePathName + "\\shaders\\\"").c_str());
+                        system(("xcopy /s /e /y \"" + cwd + "\\dlls\\*.dll\" \"" + filePathName + "\"").c_str());
+                        system(("xcopy /s /e /y \"" + cwd + "\\game.exe\" \"" + filePathName + "\"").c_str());
+                        // rename game.exe to game name
+                        system(("rename " + filePathName + "\\game.exe " + config.name + ".exe").c_str());
+#else
+                        system(std::string("rm -r \"" + filePathName + "\"").c_str());
+                        system(std::string("mkdir \"" + filePathName + "\"").c_str());
                         system(std::string("cp assets \"" + filePathName + "/assets\" -r").c_str());
                         system(std::string("cp build \"" + filePathName + "/build\" -r").c_str());
                         system(std::string("cp shaders \"" + filePathName + "/shaders\" -r").c_str());
-                        system(std::string("cp *.dll \"" + filePathName + "\"").c_str());
+                        system(std::string("cp dlls/*.dll \"" + filePathName + "\"").c_str());
                         system(std::string("cp game.exe \"" + filePathName + "/" + config.name + ".exe\"").c_str());
-
+#endif
 
                         // fs::copy(cwd + "/assets", filePathName + "/assets", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
                         // fs::copy(cwd + "/build", filePathName + "/build", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
@@ -1437,15 +1562,27 @@ int main() {
                         std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
                         std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
 
-                        std::string toCd = "cd \"" + filePathName + "\" && ";
-                        system(std::string("rm -r \"" + filePathName + "/*\"").c_str());
+#ifdef _WIN32
+                        system(("rmdir /s /q " + filePathName).c_str());
+                        system(("mkdir " + filePathName).c_str());
+                        // mark xcopy as directory
+                        system(("xcopy /s /e /y  \"" + cwd + "\\assets\" \"" + filePathName + "\\assets\\\"").c_str());
+                        system(("xcopy /s /e /y \"" + cwd + "\\build\" \"" + filePathName + "\\build\\\"").c_str());
+                        system(("xcopy /s /e /y \"" + cwd + "\\shaders\" \"" + filePathName + "\\shaders\\\"").c_str());
+                        system(("xcopy /s /e /y \"" + cwd + "\\lib\" \"" + filePathName + "\\lib\\\"").c_str());
+                        system(("xcopy /s /e /y \"" + cwd + "\\game.out\" \"" + filePathName + "\"").c_str());
+                        system(("xcopy /s /e /y \"" + cwd + "\\LaunchGame.sh\" \"" + filePathName + "\"").c_str());
+                        system(("rename \"" + filePathName + "\\LaunchGame.sh\" \"" + config.name + ".sh\"").c_str());
+#else
+                        system(std::string("rm -r \"" + filePathName + "\"").c_str());
+                        system(std::string("mkdir \"" + filePathName + "\"").c_str());
                         system(std::string("cp assets \"" + filePathName + "/assets\" -r").c_str());
                         system(std::string("cp build \"" + filePathName + "/build\" -r").c_str());
                         system(std::string("cp shaders \"" + filePathName + "/shaders\" -r").c_str());
                         system(std::string("cp lib \"" + filePathName + "/lib\" -r").c_str());
-                        system(std::string("cp game.out \"" + filePathName + "/build.out\"").c_str());
+                        system(std::string("cp game.out \"" + filePathName + "/game.out\"").c_str());
                         system(std::string("cp LaunchGame.sh \"" + filePathName + "/" + config.name + ".sh\"").c_str());
-
+#endif
 
                         // fs::copy(cwd + "/assets", filePathName + "/assets", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
                         // fs::copy(cwd + "/build", filePathName + "/build", fs::copy_options::recursive | fs::copy_options::overwrite_existing);
@@ -1459,6 +1596,7 @@ int main() {
                     // close
                     ImGuiFileDialog::Instance()->Close();
                 }
+#endif
             };
 
     bool calledOnce = false;
@@ -1469,7 +1607,43 @@ int main() {
     // batchShader.SetUniform1i("cubeMap", 10);
 
     app.Run([&] {
+        if(Scene::LoadingScene) return;
+
         if (HyperAPI::isRunning) {
+            BulletPhysicsWorld::UpdatePhysics();
+            BulletPhysicsWorld::CollisionCallback([&](const std::string &idA, const std::string &idB) {
+                auto *gameObjectA = f_GameObject::FindGameObjectByID(idA);
+                auto *gameObjectB = f_GameObject::FindGameObjectByID(idB);
+
+                if (gameObjectA->HasComponent<NativeScriptManager>()) {
+                    auto &scriptManager = gameObjectA->GetComponent<NativeScriptManager>();
+                    for (auto script : scriptManager.m_StaticScripts) {
+                        script->Collision3D(gameObjectB);
+                    }
+                }
+
+                if (gameObjectB->HasComponent<NativeScriptManager>()) {
+                    auto &scriptManager = gameObjectB->GetComponent<NativeScriptManager>();
+                    for (auto script : scriptManager.m_StaticScripts) {
+                        script->Collision3D(gameObjectA);
+                    }
+                }
+
+                if (gameObjectA->HasComponent<m_LuaScriptComponent>()) {
+                    auto &scriptManager = gameObjectA->GetComponent<m_LuaScriptComponent>();
+                    for (auto script : scriptManager.scripts) {
+                        script.Collision3D(gameObjectB);
+                    }
+                }
+
+                if (gameObjectB->HasComponent<m_LuaScriptComponent>()) {
+                    auto &scriptManager = gameObjectB->GetComponent<m_LuaScriptComponent>();
+                    for (auto script : scriptManager.scripts) {
+                        script.Collision3D(gameObjectA);
+                    }
+                }
+            });
+
 #ifndef _WIN32 || GAME_BUILD
             UpdatePresence(
                     "In Editor",
@@ -1477,6 +1651,7 @@ int main() {
             );
 #endif
         }
+
         picker.projectionMatrix = camera->projection;
         picker.mouseX = mousePos.x;
         picker.mouseY = mousePos.y;
@@ -1559,13 +1734,13 @@ int main() {
         // Input::winPos = Vector3(winPos.x, winPos.y, 0);
         Input::winSize = Vector3(app.width, app.height, 0);
 
-        if (hoveredScene && !usingImGuizmo && camera->mode2D) {
+        if (hoveredScene && !usingImGuizmo && camera->mode2D && Scene::mainCamera == camera) {
             auto transform = camera->GetComponent<TransformComponent>();
             transform.rotation = glm::vec3(0.0f, 0.0f, -1.0f);
             camera->Inputs(app.renderer->window, winPos);
             camera->UpdateComponent(transform);
         }
-        if (hoveredScene && !usingImGuizmo) {
+        if (hoveredScene && !usingImGuizmo && Scene::mainCamera == camera) {
             camera->Inputs(app.renderer->window, winPos);
         }
         winSize = Vector2(app.width, app.height);
@@ -1576,6 +1751,16 @@ int main() {
 
             camera->updateMatrix(camera->cam_fov, camera->cam_near, camera->cam_far,
                                  Vector2(app.winWidth, app.winHeight), winSize);
+
+            if(camera->m_MouseMovement && HyperAPI::isRunning) {
+#ifdef GAME_BUILD
+                camera->MouseMovement(winPos);
+#else
+                if(hoveredScene) {
+                    camera->MouseMovement(winPos);
+                }
+#endif
+            }
         }
         camera->cursorWinW = winSize.x;
         camera->cursorWinH = winSize.y;
@@ -1597,17 +1782,17 @@ int main() {
             const int32_t positionIterations = 2;
             Scene::world->Step(1.0f / 60.0f, velocityIterations, positionIterations);
 
-            auto view = Scene::m_Registry.view<Experimental::Rigidbody2D>();
+            auto view = Scene::m_Registry.view<Rigidbody2D>();
             for (auto e : view) {
-                Experimental::GameObject *m_GameObject;
+                GameObject *m_GameObject;
                 for (auto &gameObject : Scene::m_GameObjects) {
                     if (gameObject->entity == e) {
                         m_GameObject = gameObject;
                     }
                 }
 
-                auto &transform = m_GameObject->GetComponent<Experimental::Transform>();
-                auto &rigidbody = m_GameObject->GetComponent<Experimental::Rigidbody2D>();
+                auto &transform = m_GameObject->GetComponent<Transform>();
+                auto &rigidbody = m_GameObject->GetComponent<Rigidbody2D>();
 
                 b2Body *body = (b2Body *) rigidbody.body;
                 const auto &position = body->GetPosition();
@@ -1617,43 +1802,61 @@ int main() {
             }
         }
 
+        if(bulletPhysicsStarted) {
+            auto view = Scene::m_Registry.view<Rigidbody3D>();
+
+            for(auto e : view) {
+                GameObject *m_GameObject;
+
+                for(auto &obj : Scene::m_GameObjects) {
+                    if(obj->entity == e) {
+                        m_GameObject = obj;
+                    }
+                }
+
+                auto &rigidbody = m_GameObject->GetComponent<Rigidbody3D>();
+                rigidbody.transform = &m_GameObject->GetComponent<Transform>();
+                rigidbody.Update();
+            }
+        }
+
         for (auto &gameObject : Scene::m_GameObjects) {
             if (!gameObject) continue;
             gameObject->Update();
 
-            if (gameObject->HasComponent<Experimental::Transform>()) {
-                gameObject->GetComponent<Experimental::Transform>().Update();
+            if (gameObject->HasComponent<Transform>()) {
+                gameObject->GetComponent<Transform>().Update();
             }
 
-            if (gameObject->HasComponent<Experimental::m_LuaScriptComponent>()) {
-                gameObject->GetComponent<Experimental::m_LuaScriptComponent>().Update();
+            if (gameObject->HasComponent<m_LuaScriptComponent>()) {
+                gameObject->GetComponent<m_LuaScriptComponent>().Update();
             }
 
-            if (gameObject->HasComponent<Experimental::c_PointLight>()) {
-                gameObject->GetComponent<Experimental::c_PointLight>().Update();
+            if (gameObject->HasComponent<c_PointLight>()) {
+                gameObject->GetComponent<c_PointLight>().Update();
             }
 
-            if (gameObject->HasComponent<Experimental::c_Light2D>()) {
-                gameObject->GetComponent<Experimental::c_Light2D>().Update();
+            if (gameObject->HasComponent<c_Light2D>()) {
+                gameObject->GetComponent<c_Light2D>().Update();
             }
 
-            if (gameObject->HasComponent<Experimental::c_SpotLight>()) {
-                gameObject->GetComponent<Experimental::c_SpotLight>().Update();
+            if (gameObject->HasComponent<c_SpotLight>()) {
+                gameObject->GetComponent<c_SpotLight>().Update();
             }
 
-            if (gameObject->HasComponent<Experimental::c_DirectionalLight>()) {
-                gameObject->GetComponent<Experimental::c_DirectionalLight>().Update();
+            if (gameObject->HasComponent<c_DirectionalLight>()) {
+                gameObject->GetComponent<c_DirectionalLight>().Update();
             }
 
-            if (gameObject->HasComponent<Experimental::m_LuaScriptComponent>()) {
-                auto &script = gameObject->GetComponent<Experimental::m_LuaScriptComponent>();
+            if (gameObject->HasComponent<m_LuaScriptComponent>()) {
+                auto &script = gameObject->GetComponent<m_LuaScriptComponent>();
                 if (HyperAPI::isRunning) {
                     script.Update();
                 }
             }
 
-            if (gameObject->HasComponent<Experimental::NativeScriptManager>()) {
-                auto &script = gameObject->GetComponent<Experimental::NativeScriptManager>();
+            if (gameObject->HasComponent<NativeScriptManager>()) {
+                auto &script = gameObject->GetComponent<NativeScriptManager>();
                 if (HyperAPI::isRunning) {
                     script.Update();
                 }
@@ -1664,11 +1867,11 @@ int main() {
             for (auto &gameObject : Scene::m_GameObjects) {
                 if (gameObject->layer != layer.first) continue;
 
-                if (gameObject->HasComponent<Experimental::MeshRenderer>()) {
-                    // if(gameObject->GetComponcent<Experimental::MeshRenderer>().m_Model) continue;
+                if (gameObject->HasComponent<MeshRenderer>()) {
+                    // if(gameObject->GetComponcent<MeshRenderer>().m_Model) continue;
 
-                    auto meshRenderer = gameObject->GetComponent<Experimental::MeshRenderer>();
-                    auto transform = gameObject->GetComponent<Experimental::Transform>();
+                    auto meshRenderer = gameObject->GetComponent<MeshRenderer>();
+                    auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
 
                     glm::mat4 extra = meshRenderer.extraMatrix;
@@ -1676,26 +1879,34 @@ int main() {
                     if (meshRenderer.m_Mesh != nullptr) {
                         if (transform.parentTransform != nullptr) {
                             transform.parentTransform->Update();
+                            if(Scene::m_Object == gameObject) {
+                                glStencilFunc(GL_ALWAYS, 1, 0xFF);
+                                glStencilMask(0xFF);
+                            }
                             meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera,
                                                       transform.transform * transform.parentTransform->transform *
                                                       extra);
                         } else {
+                            if(Scene::m_Object == gameObject) {
+                                glStencilFunc(GL_ALWAYS, 1, 0xFF);
+                                glStencilMask(0xFF);
+                            }
                             meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera, transform.transform * extra);
                         }
                     }
                 }
 
-                if (gameObject->HasComponent<Experimental::SpriteRenderer>()) {
-                    auto spriteRenderer = gameObject->GetComponent<Experimental::SpriteRenderer>();
-                    auto transform = gameObject->GetComponent<Experimental::Transform>();
+                if (gameObject->HasComponent<SpriteRenderer>()) {
+                    auto spriteRenderer = gameObject->GetComponent<SpriteRenderer>();
+                    auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
 
                     spriteRenderer.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
                 }
 
-                if (gameObject->HasComponent<Experimental::SpritesheetRenderer>()) {
-                    auto spritesheetRenderer = gameObject->GetComponent<Experimental::SpritesheetRenderer>();
-                    auto transform = gameObject->GetComponent<Experimental::Transform>();
+                if (gameObject->HasComponent<SpritesheetRenderer>()) {
+                    auto spritesheetRenderer = gameObject->GetComponent<SpritesheetRenderer>();
+                    auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
 
                     if (spritesheetRenderer.mesh != nullptr) {
@@ -1704,9 +1915,9 @@ int main() {
                     }
                 }
 
-                if (gameObject->HasComponent<Experimental::SpriteAnimation>()) {
-                    auto spriteAnimation = gameObject->GetComponent<Experimental::SpriteAnimation>();
-                    auto transform = gameObject->GetComponent<Experimental::Transform>();
+                if (gameObject->HasComponent<SpriteAnimation>()) {
+                    auto spriteAnimation = gameObject->GetComponent<SpriteAnimation>();
+                    auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
 
                     spriteAnimation.Play();
@@ -1715,9 +1926,9 @@ int main() {
                     }
                 }
 
-                if (gameObject->HasComponent<Experimental::SpritesheetAnimation>()) {
-                    auto spritesheetAnimation = gameObject->GetComponent<Experimental::SpritesheetAnimation>();
-                    auto transform = gameObject->GetComponent<Experimental::Transform>();
+                if (gameObject->HasComponent<c_SpritesheetAnimation>()) {
+                    auto spritesheetAnimation = gameObject->GetComponent<c_SpritesheetAnimation>();
+                    auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
 
                     spritesheetAnimation.Play();
@@ -1727,9 +1938,10 @@ int main() {
                 }
             }
         }
-
-        if (Scene::mainCamera == camera && drawBoxCollider2D) {
-            glClear(GL_DEPTH_BUFFER_BIT);
+#ifndef GAME_BUILD
+        if(Scene::mainCamera != camera) return;
+        glClear(GL_DEPTH_BUFFER_BIT);
+        if (drawBoxCollider2D) {
             glDepthFunc(GL_LEQUAL);
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -1737,16 +1949,127 @@ int main() {
             model = glm::translate(model, bc2dPos) *
                     glm::scale(model, glm::vec3(bc2dScale.x / 2, bc2dScale.y / 2, 1.0f)) *
                     glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-            BoxCollider2D.Draw(shader, *camera, model);
+            mesh_BoxCollider2D.Draw(workerShader, *camera, model);
 
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
+
+        for(auto &gameObject : Scene::m_GameObjects) {
+            if(gameObject->HasComponent<c_DirectionalLight>()) {
+                for(auto &game_object : Scene::m_GameObjects) {
+                    if(game_object->HasComponent<MeshRenderer>()) {
+                        auto &meshRenderer = game_object->GetComponent<MeshRenderer>();
+                        if(meshRenderer.m_Mesh)
+                            meshRenderer.m_Mesh->material.Unbind(shader);
+                    }
+                }
+
+                auto &transform = gameObject->GetComponent<Transform>();
+                Transform t = transform;
+                t.scale = glm::vec3(-1.5f, 1.5f, 1.5f);
+
+                auto camTransform = camera->GetComponent<TransformComponent>();
+                t.LookAt(camTransform.position);
+                t.Update();
+
+                glDepthFunc(GL_LEQUAL);
+                dirLightIconMesh.Draw(workerShader, *camera, t.transform);
+            }
+
+            if(gameObject->HasComponent<c_DirectionalLight>()) {
+                for(auto &game_object : Scene::m_GameObjects) {
+                    if(game_object->HasComponent<MeshRenderer>()) {
+                        auto &meshRenderer = game_object->GetComponent<MeshRenderer>();
+                        if(meshRenderer.m_Mesh)
+                            meshRenderer.m_Mesh->material.Unbind(shader);
+                    }
+                }
+
+                auto &transform = gameObject->GetComponent<Transform>();
+                Transform t = transform;
+                t.scale = glm::vec3(-1.5f, 1.5f, 1.5f);
+
+                auto camTransform = camera->GetComponent<TransformComponent>();
+                t.LookAt(camTransform.position);
+                t.Update();
+
+                glDepthFunc(GL_LEQUAL);
+                dirLightIconMesh.Draw(workerShader, *camera, t.transform);
+            }
+
+            if(gameObject->HasComponent<c_PointLight>()) {
+                for(auto &game_object : Scene::m_GameObjects) {
+                    if(game_object->HasComponent<MeshRenderer>()) {
+                        auto &meshRenderer = game_object->GetComponent<MeshRenderer>();
+                        if(meshRenderer.m_Mesh)
+                            meshRenderer.m_Mesh->material.Unbind(shader);
+                    }
+                }
+
+                auto &transform = gameObject->GetComponent<Transform>();
+                Transform t = transform;
+                t.scale = glm::vec3(-1.5f, 1.5f, 1.5f);
+
+                auto camTransform = camera->GetComponent<TransformComponent>();
+                t.LookAt(camTransform.position);
+                t.Update();
+
+                glDepthFunc(GL_LEQUAL);
+                pointLightIconMesh.Draw(workerShader, *camera, t.transform);
+            }
+
+            if(gameObject->HasComponent<c_SpotLight>()) {
+                for(auto &game_object : Scene::m_GameObjects) {
+                    if(game_object->HasComponent<MeshRenderer>()) {
+                        auto &meshRenderer = game_object->GetComponent<MeshRenderer>();
+                        if(meshRenderer.m_Mesh)
+                            meshRenderer.m_Mesh->material.Unbind(shader);
+                    }
+                }
+
+                auto &transform = gameObject->GetComponent<Transform>();
+                Transform t = transform;
+                t.scale = glm::vec3(-1.5f, 1.5f, 1.5f);
+
+                auto camTransform = camera->GetComponent<TransformComponent>();
+                t.LookAt(camTransform.position);
+                t.Update();
+
+                glDepthFunc(GL_LEQUAL);
+                spotLightIconMesh.Draw(workerShader, *camera, t.transform);
+            }
+
+            if(gameObject->HasComponent<CameraComponent>()) {
+                for(auto &game_object : Scene::m_GameObjects) {
+                    if(game_object->HasComponent<MeshRenderer>()) {
+                        auto &meshRenderer = game_object->GetComponent<MeshRenderer>();
+                        if(meshRenderer.m_Mesh)
+                            meshRenderer.m_Mesh->material.Unbind(shader);
+                    }
+                }
+
+                auto &transform = gameObject->GetComponent<Transform>();
+                Transform t = transform;
+                t.scale = glm::vec3(-1.5f, 1.5f, 1.5f);
+
+                auto camTransform = camera->GetComponent<TransformComponent>();
+                t.LookAt(camTransform.position);
+                t.Update();
+
+                glDepthFunc(GL_LEQUAL);
+                cameraIconMesh.Draw(workerShader, *camera, t.transform);
+            }
+        }
+#endif
     }, GUI_EXP);
 
     // shutdown discord-rpc
 #ifndef _WIN32 || GAME_BUILD
     Discord_Shutdown();
 #endif
+
+    // kill program
+    exit(0);
 
     return 0;
 }

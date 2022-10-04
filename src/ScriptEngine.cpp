@@ -6,6 +6,7 @@
 // BEACUSE OF ENTT SUPPORT THIS WONT WORK AT ALL DONT EVEN TRY
 
 using namespace HyperAPI::Experimental;
+using namespace HyperAPI;
 
 void PushTableKey(lua_State *L, const char *key, const char *value) {
     lua_pushstring(L, key);
@@ -70,6 +71,7 @@ void LuaSetComponentValues(lua_State *L, const std::string &type, HyperAPI::Comp
         PushTableKey(L, "scaleX", transform.scale.x);
         PushTableKey(L, "scaleY", transform.scale.y);
         PushTableKey(L, "scaleZ", transform.scale.z);
+        PushTableFunction(L, "LookAt", ScriptEngine::Functions::LookAt);
     }
 }
 
@@ -145,6 +147,34 @@ void LuaUpdateComponentValues(lua_State *L, const std::string &type, GameObject 
         GetTableArg(L, "friction", boxCollider.friction);
         GetTableArg(L, "restitution", boxCollider.restitution);
         GetTableArg(L, "restitutionThreshold", boxCollider.restitutionThreshold);
+    }
+    else if(type == "Rigidbody3D") {
+        auto &rigidbody = ent->GetComponent<Rigidbody3D>();
+
+        GetTableArg(L, "fixedRotation", rigidbody.fixedRotation);
+        GetTableArg(L, "trigger", rigidbody.trigger);
+        GetTableArg(L, "mass", rigidbody.mass);
+    }
+    else if(type == "BoxCollider3D") {
+        auto &boxCollider = ent->GetComponent<BoxCollider3D>();
+
+        GetTableArg(L, "sizeX", boxCollider.size.x);
+        GetTableArg(L, "sizeY", boxCollider.size.y);
+        GetTableArg(L, "sizeZ", boxCollider.size.z);
+    }
+    else if(type == "MeshCollider3D") {
+        auto &meshCollider = ent->GetComponent<MeshCollider3D>();
+
+        GetTableArg(L, "sizeX", meshCollider.size.x);
+        GetTableArg(L, "sizeY", meshCollider.size.y);
+        GetTableArg(L, "sizeZ", meshCollider.size.z);
+    }
+    else if(type == "CameraComponent") {
+        auto &camera = ent->GetComponent<CameraComponent>();
+
+        GetTableArg(L, "fov", camera.camera->cam_fov);
+        GetTableArg(L, "near", camera.camera->cam_near);
+        GetTableArg(L, "far", camera.camera->cam_far);
     }
 }
 
@@ -257,6 +287,34 @@ namespace ScriptEngine {
             PushTableFunction(L, "GetComponent", Functions::GetEntComponent);
             PushTableFunction(L, "UpdateComponent", Functions::UpdateEntComponent);
             
+            lua_pcall(L, 1, 0, 0);
+        }
+    }
+
+    void m_LuaScript::Collision3D(GameObject *other) {
+        lua_getglobal(L, "Collision3D");
+        if(lua_isfunction(L, -1)) {
+            lua_newtable(L);
+            PushTableKey(L, "obj_id", other->ID.c_str());
+            PushTableKey(L, "name", other->name.c_str());
+            PushTableKey(L, "tag", other->tag.c_str());
+            PushTableFunction(L, "GetComponent", Functions::GetEntComponent);
+            PushTableFunction(L, "UpdateComponent", Functions::UpdateEntComponent);
+
+            lua_pcall(L, 1, 0, 0);
+        }
+    }
+
+    void m_LuaScript::CollisionExit3D(GameObject *other) {
+        lua_getglobal(L, "CollisionExit3D");
+        if(lua_isfunction(L, -1)) {
+            lua_newtable(L);
+            PushTableKey(L, "obj_id", other->ID.c_str());
+            PushTableKey(L, "name", other->name.c_str());
+            PushTableKey(L, "tag", other->tag.c_str());
+            PushTableFunction(L, "GetComponent", Functions::GetEntComponent);
+            PushTableFunction(L, "UpdateComponent", Functions::UpdateEntComponent);
+
             lua_pcall(L, 1, 0, 0);
         }
     }
@@ -561,6 +619,7 @@ namespace ScriptEngine {
                 PushTableKey(L, "scaleX", transform.scale.x);
                 PushTableKey(L, "scaleY", transform.scale.y);
                 PushTableKey(L, "scaleZ", transform.scale.z);
+                PushTableFunction(L, "LookAt", LookAt);
             }
             else if(type == "MeshRenderer") {
                 MeshRenderer &meshRenderer = m_Object->GetComponent<MeshRenderer>();
@@ -649,6 +708,55 @@ namespace ScriptEngine {
                 PushTableKey(L, "friction", boxCollider.friction);
                 PushTableKey(L, "restitution", boxCollider.restitution);
                 PushTableKey(L, "restitutionThreshold", boxCollider.restitutionThreshold);
+            }
+            else if(type == "Rigidbody3D") {
+                auto &rigidbody = m_Object->GetComponent<Rigidbody3D>();
+
+                lua_newtable(L);
+                PushTableKey(L, "obj_id", m_Object->ID.c_str());
+                PushTableKey(L, "type", "Rigidbody3D");
+                PushTableKey(L, "mass", rigidbody.mass);
+                PushTableKey(L, "friction", rigidbody.friction);
+                PushTableKey(L, "trigger", rigidbody.trigger);
+                PushTableKey(L, "fixedRotation", rigidbody.fixedRotation);
+                PushTableFunction(L, "AddForce", AddForce3D);
+                PushTableFunction(L, "AddTorque", AddTorque3D);
+                PushTableFunction(L, "AddForceAtPosition", AddForceAtPosition3D);
+                PushTableFunction(L, "SetVelocity", SetVelocity3D);
+                PushTableFunction(L, "SetAngularVelocity", SetAngularVelocity3D);
+                PushTableFunction(L, "GetVelocity", GetVelocity3D);
+                PushTableFunction(L, "GetAngularVelocity", GetAngularVelocity3D);
+            }
+            else if(type == "BoxCollider3D") {
+                auto &collider = m_Object->GetComponent<BoxCollider3D>();
+
+                lua_newtable(L);
+                PushTableKey(L, "obj_id", m_Object->ID.c_str());
+                PushTableKey(L, "type", "BoxCollider3D");
+                PushTableKey(L, "sizeX", collider.size.x);
+                PushTableKey(L, "sizeY", collider.size.y);
+                PushTableKey(L, "sizeZ", collider.size.z);
+            }
+            else if(type == "MeshCollider3D") {
+                auto &collider = m_Object->GetComponent<MeshCollider3D>();
+
+                lua_newtable(L);
+                PushTableKey(L, "obj_id", m_Object->ID.c_str());
+                PushTableKey(L, "type", "BoxCollider3D");
+                PushTableKey(L, "sizeX", collider.size.x);
+                PushTableKey(L, "sizeY", collider.size.y);
+                PushTableKey(L, "sizeZ", collider.size.z);
+            }
+            else if(type == "CameraComponent") {
+                auto &cam = m_Object->GetComponent<CameraComponent>();
+
+                lua_newtable(L);
+                PushTableKey(L, "obj_id", m_Object->ID.c_str());
+                PushTableKey(L, "type", "CameraComponent");
+                PushTableKey(L, "fov", cam.camera->cam_fov);
+                PushTableKey(L, "near", cam.camera->cam_near);
+                PushTableKey(L, "far", cam.camera->cam_far);
+                PushTableFunction(L, "MouseInput", MouseInput);
             }
 
             return 1;
@@ -1062,6 +1170,8 @@ namespace ScriptEngine {
                     break;
                 }
             }
+
+            return 1;
         }
 
         int Translate(lua_State *L) {
@@ -1207,9 +1317,9 @@ namespace ScriptEngine {
 
         int InstantiatePrefab(lua_State *L) {
             auto prefabPath = (std::string)lua_tostring(L, 1);
-            HYPER_LOG("TEST TEST");
+            HYPER_LOG("TEST TEST")
             HyperAPI::Scene::LoadPrefab(prefabPath);
-            HYPER_LOG("TEST TEST");
+            HYPER_LOG("TEST TEST")
             // GameObject *gameObject = HyperAPI::f_GameObject::InstantiatePrefab(prefabPath);
 
 
@@ -1237,6 +1347,131 @@ namespace ScriptEngine {
             PushTableKey(L, "tag", gameObject->tag.c_str());
             PushTableFunction(L, "GetComponent", GetEntComponent);
             PushTableFunction(L, "UpdateComponent", UpdateEntComponent);
+
+            return 1;
+        }
+
+        int SetVelocity3D(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+            if(gameObject != nullptr) {
+                auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
+                rigidbody.SetVelocity({lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4)});
+            }
+
+            return 1;
+        }
+
+        int SetAngularVelocity3D(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+            if(gameObject != nullptr) {
+                auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
+                rigidbody.SetAngularVelocity({lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4)});
+            }
+
+            return 1;
+        }
+        int AddForce3D(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+            if(gameObject != nullptr) {
+                auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
+                rigidbody.AddForce({lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4)});
+            }
+
+            return 1;
+        }
+        int AddTorque3D(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+            if(gameObject != nullptr) {
+                auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
+                rigidbody.AddTorque({lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4)});
+            }
+
+            return 1;
+        }
+        int GetVelocity3D(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+            if(gameObject != nullptr) {
+                auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
+                auto velocity = rigidbody.GetVelocity();
+                lua_newtable(L);
+                PushTableKey(L, "x", velocity.x);
+                PushTableKey(L, "y", velocity.y);
+                PushTableKey(L, "z", velocity.z);
+                return 3;
+            }
+
+            return 1;
+        }
+        int GetAngularVelocity3D(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+            if(gameObject != nullptr) {
+                auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
+                auto velocity = rigidbody.GetAngularVelocity();
+                lua_newtable(L);
+                PushTableKey(L, "x", velocity.x);
+                PushTableKey(L, "y", velocity.y);
+                PushTableKey(L, "z", velocity.z);
+                return 3;
+            }
+
+            return 1;
+        }
+        int AddForceAtPosition3D(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+            if(gameObject != nullptr) {
+                auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
+                rigidbody.AddForceAtPosition({lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4)}, {lua_tonumber(L, 5), lua_tonumber(L, 6), lua_tonumber(L, 7)});
+            }
+
+            return 1;
+        }
+
+        int MouseInput(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+            if(gameObject != nullptr) {
+                auto &cam = gameObject->GetComponent<CameraComponent>();
+                cam.camera->m_MouseMovement = true;
+            }
 
             return 1;
         }

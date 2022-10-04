@@ -57,6 +57,18 @@ namespace ScriptEngine {
         // SpritesheetRenderer Functions
         int ChangeSpritesheetDiffuse(lua_State *L);
 
+        // Rigidbody3D Functions
+        int SetVelocity3D(lua_State *L);
+        int SetAngularVelocity3D(lua_State *L);
+        int AddForce3D(lua_State *L);
+        int AddTorque3D(lua_State *L);
+        int GetVelocity3D(lua_State *L);
+        int GetAngularVelocity3D(lua_State *L);
+        int AddForceAtPosition3D(lua_State *L);
+
+        // Camera Functions
+        int MouseInput(lua_State *L);
+
         int Log(lua_State *L);
         int LogWarning(lua_State *L);
         int LogError(lua_State *L);
@@ -100,7 +112,10 @@ namespace ScriptEngine {
         void Init();
         void Update(); 
         void Collision2D(HyperAPI::Experimental::GameObject *other);  
-        void CollisionExit2D(HyperAPI::Experimental::GameObject *other);  
+        void CollisionExit2D(HyperAPI::Experimental::GameObject *other);
+
+        void Collision3D(HyperAPI::Experimental::GameObject *other);
+        void CollisionExit3D(HyperAPI::Experimental::GameObject *other);
     };
 
     class LuaScript {

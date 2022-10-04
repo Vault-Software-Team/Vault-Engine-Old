@@ -15,6 +15,9 @@ namespace HyperAPI
         virtual void OnUpdate() {}
         virtual void Collision2D(Experimental::GameObject *other) {}
         virtual void CollisionExit2D(Experimental::GameObject *other) {}
+
+        virtual void Collision3D(Experimental::GameObject *other) {}
+        virtual void CollisionExit3D(Experimental::GameObject *other) {}
     };
 }
 
