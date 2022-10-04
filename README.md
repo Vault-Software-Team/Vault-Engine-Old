@@ -20,7 +20,7 @@
 -   **2D and 3D Rendering**
 -   **Script Engine: Lua**
 -   **Physics Engine: Box2D, Bullet Physics (3D)**
--   **Audio (3D): OpenAL, (2D) SDL_mixer**
+-   **Audio: SDL_mixer**
 -   **Level Editor**
 -   **Native Scripting**
 -   **2D Lighting**
@@ -31,6 +31,9 @@
 
 -   **Assimp**
 -   **Box2D**
+-   **Discord RPC**
+-   **Freetype**
+-   **ImGuizmo**
 -   **EnTT**
 -   **GLAD**
 -   **GLFW**
@@ -76,10 +79,17 @@ Bundling the application is very easy, this only works on linux since i do not h
 ./bundle.sh # this will bundle for linux, in dist/linux
 ./bundle.sh windows # this will bundle for windows, in dist/windows
 ```
+NOTE: When you bundle the application, building will not work!
+This will be changed in the future when I'll add a project system to the engine
 
 # Upcoming Features
 
--   **Vulkan Rendering**
--   **Android Support**
--   **Flowchart Editor (like in Unreal Engine)**
--   **Video Player**
+-  **Vulkan Rendering** 
+-  **Project System**
+-  **JavaScript Scripting**
+-  **Python Scripting**
+-  **Full C++ Scripting support**
+-  **Asset Packager**
+-  **Android Support**
+-  **Flowchart Editor (like in Unreal Engine)**
+-  **Video Player**
