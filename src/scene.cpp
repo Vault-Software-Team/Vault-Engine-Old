@@ -153,6 +153,7 @@ namespace HyperAPI {
                 JSON[0]["components"][componentOffset]["type"] = "Rigidbody2D";
                 JSON[0]["components"][componentOffset]["gravityScale"] = rigidbody.gravityScale;
                 JSON[0]["components"][componentOffset]["bodyType"] = rigidbody.type;
+                JSON[0]["components"][componentOffset]["fixedRotation"] = rigidbody.fixedRotation;
 
                 componentOffset++;
             }
@@ -163,11 +164,12 @@ namespace HyperAPI {
                 JSON[0]["components"][componentOffset]["type"] = "BoxCollider2D";
                 JSON[0]["components"][componentOffset]["density"] = collider.density;
                 JSON[0]["components"][componentOffset]["friction"] = collider.friction;
+                JSON[0]["components"][componentOffset]["trigger"] = collider.trigger;
                 JSON[0]["components"][componentOffset]["restitution"] = collider.restitution;
                 JSON[0]["components"][componentOffset]["restitutionThreshold"] = collider.restitutionThreshold;
                 JSON[0]["components"][componentOffset]["size"] = {
-                    {"x", collider.size.x},
-                    {"y", collider.size.y}
+                        {"x", collider.size.x},
+                        {"y", collider.size.y}
                 };
 
                 componentOffset++;
@@ -182,21 +184,60 @@ namespace HyperAPI {
                 JSON[0]["components"][componentOffset]["color"]["b"] = spritesheetRenderer.material.baseColor.z;
 
                 JSON[0]["components"][componentOffset]["spritesheetSize"] = {
-                    {"x", spritesheetRenderer.spritesheetSize.x},
-                    {"y", spritesheetRenderer.spritesheetSize.y}
+                        {"x", spritesheetRenderer.spritesheetSize.x},
+                        {"y", spritesheetRenderer.spritesheetSize.y}
                 };
 
                 JSON[0]["components"][componentOffset]["spriteSize"] = {
-                    {"x", spritesheetRenderer.spriteSize.x},
-                    {"y", spritesheetRenderer.spriteSize.y}
+                        {"x", spritesheetRenderer.spriteSize.x},
+                        {"y", spritesheetRenderer.spriteSize.y}
                 };
 
                 JSON[0]["components"][componentOffset]["spriteOffset"] = {
-                    {"x", spritesheetRenderer.spriteOffset.x},
-                    {"y", spritesheetRenderer.spriteOffset.y}
+                        {"x", spritesheetRenderer.spriteOffset.x},
+                        {"y", spritesheetRenderer.spriteOffset.y}
                 };
 
                 JSON[0]["components"][componentOffset]["spritesheet"] = spritesheetRenderer.material.diffuse == nullptr ? "" : spritesheetRenderer.material.diffuse->texPath;
+
+                componentOffset++;
+            }
+
+            if(gameObject->HasComponent<Experimental::Rigidbody3D>()) {
+                auto &rigidbody = gameObject->GetComponent<Experimental::Rigidbody3D>();
+
+                JSON[0]["components"][componentOffset]["type"] = "Rigidbody3D";
+                JSON[0]["components"][componentOffset]["mass"] = rigidbody.mass;
+                JSON[0]["components"][componentOffset]["friction"] = rigidbody.friction;
+                JSON[0]["components"][componentOffset]["restitution"] = rigidbody.restitution;
+                JSON[0]["components"][componentOffset]["fixedRotation"] = rigidbody.fixedRotation;
+                JSON[0]["components"][componentOffset]["trigger"] = rigidbody.trigger;
+
+                componentOffset++;
+            }
+
+            if(gameObject->HasComponent<Experimental::BoxCollider3D>()) {
+                auto &collider = gameObject->GetComponent<Experimental::BoxCollider3D>();
+
+                JSON[0]["components"][componentOffset]["type"] = "BoxCollider3D";
+                JSON[0]["components"][componentOffset]["size"] = {
+                        {"x", collider.size.x},
+                        {"y", collider.size.y},
+                        {"z", collider.size.z}
+                };
+
+
+                componentOffset++;
+            }
+
+            if(gameObject->HasComponent<Experimental::MeshCollider3D>()) {
+                auto &collider = gameObject->GetComponent<Experimental::MeshCollider3D>();
+                JSON[0]["components"][componentOffset]["type"] = "MeshCollider3D";
+                JSON[0]["components"][componentOffset]["size"] = {
+                        {"x", collider.size.x},
+                        {"y", collider.size.y},
+                        {"z", collider.size.z}
+                };
 
                 componentOffset++;
             }
@@ -381,7 +422,6 @@ namespace HyperAPI {
             currentScenePath = scenePath;
             try {
                 for(auto &gameObject : m_GameObjects) {
-                    //delete entt entity
                     if(gameObject->HasComponent<Experimental::MeshRenderer>()) {
                         auto &meshRenderer = gameObject->GetComponent<Experimental::MeshRenderer>();
                         if(meshRenderer.m_Mesh != nullptr) {
@@ -392,6 +432,7 @@ namespace HyperAPI {
                     m_Registry.destroy(gameObject->entity);
                     delete gameObject;
                 }
+                m_GameObjects.clear();
 
                 for(auto &light : DirLights) {
                     delete light;
@@ -831,7 +872,7 @@ namespace HyperAPI {
                         if(!meshConfig["custom"]) {
                             std::string meshType = meshConfig["mesh"];
                             meshRenderer.meshType = meshType;
-                            
+
                             if(meshType == "Plane") {
                                 meshRenderer.m_Mesh = Plane(Vector4(1,1,1,1)).m_Mesh;
                             }
@@ -861,7 +902,7 @@ namespace HyperAPI {
                                 const std::string diffuseTexture = JSON["diffuse"];
                                 const std::string specularTexture = JSON["specular"];
                                 const std::string normalTexture = JSON["normal"];
-                                    
+
                                 if(diffuseTexture != "nullptr") {
                                     if(meshRenderer.m_Mesh->material.diffuse != nullptr) {
                                         delete meshRenderer.m_Mesh->material.diffuse;
@@ -887,17 +928,17 @@ namespace HyperAPI {
                                 }
 
                                 meshRenderer.m_Mesh->material.baseColor = Vector4(
-                                    JSON["baseColor"]["r"],
-                                    JSON["baseColor"]["g"],
-                                    JSON["baseColor"]["b"],
-                                    JSON["baseColor"]["a"]
+                                        JSON["baseColor"]["r"],
+                                        JSON["baseColor"]["g"],
+                                        JSON["baseColor"]["b"],
+                                        JSON["baseColor"]["a"]
                                 );
 
                                 meshRenderer.m_Mesh->material.roughness = JSON["roughness"];
                                 meshRenderer.m_Mesh->material.metallic = JSON["metallic"];
                                 meshRenderer.m_Mesh->material.texUVs = Vector2(JSON["texUV"]["x"], JSON["texUV"]["y"]);
 
-                                meshRenderer.matPath = component["material"]; 
+                                meshRenderer.matPath = component["material"];
                             }
                         }
                         else {
@@ -905,17 +946,17 @@ namespace HyperAPI {
                         }
 
                     }
-                
+
                     if(type == "DirectionalLight") {
                         gameObject->AddComponent<Experimental::c_DirectionalLight>();
                         auto &light = gameObject->GetComponent<Experimental::c_DirectionalLight>();
 
                         light.color = Vector3(
-                            component["color"]["r"],
-                            component["color"]["g"],
-                            component["color"]["b"]
+                                component["color"]["r"],
+                                component["color"]["g"],
+                                component["color"]["b"]
                         );
-                        
+
                         light.intensity = component["intensity"];
                     }
 
@@ -924,11 +965,11 @@ namespace HyperAPI {
                         auto &light = gameObject->GetComponent<Experimental::c_PointLight>();
 
                         light.color = Vector3(
-                            component["color"]["r"],
-                            component["color"]["g"],
-                            component["color"]["b"]
+                                component["color"]["r"],
+                                component["color"]["g"],
+                                component["color"]["b"]
                         );
-                        
+
                         light.intensity = component["intensity"];
                     }
 
@@ -937,9 +978,9 @@ namespace HyperAPI {
                         auto &light = gameObject->GetComponent<Experimental::c_SpotLight>();
 
                         light.color = Vector3(
-                            component["color"]["r"],
-                            component["color"]["g"],
-                            component["color"]["b"]
+                                component["color"]["r"],
+                                component["color"]["g"],
+                                component["color"]["b"]
                         );
                     }
 
@@ -957,7 +998,7 @@ namespace HyperAPI {
 
                         if(camera.camera->mainCamera) {
                             mainCamera = camera.camera;
-                        }                        
+                        }
                     }
 
                     if(type == "LuaScriptComponent") {
@@ -978,10 +1019,10 @@ namespace HyperAPI {
                         if(component["sprite"] != "") {
                             spriteRenderer.mesh->material.diffuse = new Texture(((std::string)component["sprite"]).c_str(), 0, "texture_diffuse");
                             spriteRenderer.mesh->material.baseColor = Vector4(
-                                component["color"]["r"],
-                                component["color"]["g"],
-                                component["color"]["b"],
-                                1
+                                    component["color"]["r"],
+                                    component["color"]["g"],
+                                    component["color"]["b"],
+                                    1
                             );
                         }
                     }
@@ -992,6 +1033,7 @@ namespace HyperAPI {
 
                         rigidbody.type = component["bodyType"];
                         rigidbody.gravityScale = component["gravityScale"];
+                        rigidbody.fixedRotation = component["fixedRotation"];
                     }
 
                     if(type == "BoxCollider2D") {
@@ -999,38 +1041,39 @@ namespace HyperAPI {
                         auto &boxCollider = gameObject->GetComponent<Experimental::BoxCollider2D>();
 
                         boxCollider.size = Vector2(
-                            component["size"]["x"],
-                            component["size"]["y"]
+                                component["size"]["x"],
+                                component["size"]["y"]
                         );
                         boxCollider.friction = component["friction"];
                         boxCollider.density = component["density"];
                         boxCollider.restitution = component["restitution"];
                         boxCollider.restitutionThreshold = component["restitutionThreshold"];
+                        boxCollider.trigger = component["trigger"];
                     }
 
                     if(type == "SpritesheetRenderer") {
                         gameObject->AddComponent<Experimental::SpritesheetRenderer>();
                         auto &spritesheetRenderer = gameObject->GetComponent<Experimental::SpritesheetRenderer>();
                         spritesheetRenderer.mesh->material.baseColor = Vector4(
-                            component["color"]["r"],
-                            component["color"]["g"],
-                            component["color"]["b"],
-                            1
+                                component["color"]["r"],
+                                component["color"]["g"],
+                                component["color"]["b"],
+                                1
                         );
 
                         spritesheetRenderer.spriteOffset = Vector2(
-                            component["spriteOffset"]["x"],
-                            component["spriteOffset"]["y"]
+                                component["spriteOffset"]["x"],
+                                component["spriteOffset"]["y"]
                         );
 
                         spritesheetRenderer.spriteSize = Vector2(
-                            component["spriteSize"]["x"],
-                            component["spriteSize"]["y"]
+                                component["spriteSize"]["x"],
+                                component["spriteSize"]["y"]
                         );
 
                         spritesheetRenderer.spritesheetSize = Vector2(
-                            component["spritesheetSize"]["x"],
-                            component["spritesheetSize"]["y"]
+                                component["spritesheetSize"]["x"],
+                                component["spritesheetSize"]["y"]
                         );
 
                         delete spritesheetRenderer.mesh;
@@ -1040,6 +1083,39 @@ namespace HyperAPI {
                         }
                         spritesheetRenderer.sp = new Spritesheet("", spritesheetRenderer.material, spritesheetRenderer.spritesheetSize, spritesheetRenderer.spriteSize, spritesheetRenderer.spriteOffset);
                         spritesheetRenderer.mesh = spritesheetRenderer.sp->m_Mesh;
+                    }
+
+                    if(type == "Rigidbody3D") {
+                        gameObject->AddComponent<Experimental::Rigidbody3D>();
+                        auto &rigidbody = gameObject->GetComponent<Experimental::Rigidbody3D>();
+
+                        rigidbody.mass = component["mass"];
+                        rigidbody.friction = component["friction"];
+                        rigidbody.restitution = component["restitution"];
+                        rigidbody.fixedRotation = component["fixedRotation"];
+                        rigidbody.trigger = component["trigger"];
+                    }
+
+                    if(type == "BoxCollider3D") {
+                        gameObject->AddComponent<Experimental::BoxCollider3D>();
+                        auto &boxCollider = gameObject->GetComponent<Experimental::BoxCollider3D>();
+
+                        boxCollider.size = Vector3(
+                                component["size"]["x"],
+                                component["size"]["y"],
+                                component["size"]["z"]
+                        );
+                    }
+
+                    if(type == "MeshCollider3D") {
+                        gameObject->AddComponent<Experimental::MeshCollider3D>();
+                        auto &meshCollider = gameObject->GetComponent<Experimental::MeshCollider3D>();
+
+                        meshCollider.size = Vector3(
+                                component["size"]["x"],
+                                component["size"]["y"],
+                                component["size"]["z"]
+                        );
                     }
                 }
 

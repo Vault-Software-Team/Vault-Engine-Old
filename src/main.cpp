@@ -345,6 +345,138 @@ void DeleteWorld() {
     BulletPhysicsWorld::Delete();
 }
 
+void ShortcutManager(bool &openConfig) {
+    if(ImGui::IsKeyDown(GLFW_KEY_LEFT_CONTROL) && ImGui::IsKeyPressed(GLFW_KEY_S) && !ImGui::IsKeyDown(GLFW_KEY_LEFT_SHIFT)){
+        if (Scene::currentScenePath == "") {
+            ImGuiFileDialog::Instance()->OpenDialog("SaveSceneDialog",
+                                                    ICON_FA_FLOPPY_DISK " Save Scene", ".static",
+                                                    ".");
+        } else {
+            Scene::SaveScene(Scene::currentScenePath);
+        }
+    }
+
+    if(ImGui::IsKeyDown(GLFW_KEY_LEFT_CONTROL) && ImGui::IsKeyDown(GLFW_KEY_LEFT_SHIFT) && ImGui::IsKeyPressed(GLFW_KEY_S)){
+        ImGuiFileDialog::Instance()->OpenDialog("SaveSceneDialog",
+                                                ICON_FA_FLOPPY_DISK " Save Scene", ".static", ".");
+    }
+
+    if(ImGui::IsKeyDown(GLFW_KEY_LEFT_CONTROL) && ImGui::IsKeyDown(GLFW_KEY_LEFT_SHIFT) && ImGui::IsKeyPressed(GLFW_KEY_C)){
+        openConfig = true;
+    }
+
+    if(ImGui::IsKeyDown(GLFW_KEY_LEFT_CONTROL) && ImGui::IsKeyPressed(GLFW_KEY_B) && ImGui::IsKeyPressed(GLFW_KEY_L)){
+        ImGuiFileDialog::Instance()->OpenDialog("BuildLinuxDialog", "Build for Linux", nullptr,
+                                                ".");
+    }
+
+    if(ImGui::IsKeyDown(GLFW_KEY_LEFT_CONTROL) && ImGui::IsKeyPressed(GLFW_KEY_B) && ImGui::IsKeyPressed(GLFW_KEY_W)){
+        ImGuiFileDialog::Instance()->OpenDialog("BuildWindowsDialog", "Build for Windows", nullptr,
+                                                ".");
+    }
+
+    // copying the Scene::m_Object
+    if(ImGui::IsKeyDown(GLFW_KEY_LEFT_CONTROL) && ImGui::IsKeyPressed(GLFW_KEY_D)) {
+        // copy Scene::m_Object entt entity into a new one
+        if(Scene::m_Object == nullptr) return;
+        auto *gameObject = new GameObject();
+        gameObject->name = Scene::m_Object->name + " (Copy)";
+        gameObject->layer = Scene::m_Object->layer;
+        gameObject->tag = Scene::m_Object->tag;
+
+        if (Scene::m_Object->HasComponent<Transform>()) {
+            auto &comp = Scene::m_Object->GetComponent<Transform>();
+            Scene::m_Registry.emplace<Transform>(gameObject->entity, comp);
+        }
+
+        if (Scene::m_Object->HasComponent<CameraComponent>()) {
+            auto &comp = Scene::m_Object->GetComponent<CameraComponent>();
+            Scene::m_Registry.emplace<CameraComponent>(gameObject->entity, comp);
+        }
+
+        if (Scene::m_Object->HasComponent<MeshRenderer>()) {
+            auto &comp = Scene::m_Object->GetComponent<MeshRenderer>();
+            Scene::m_Registry.emplace<MeshRenderer>(gameObject->entity, comp);
+        }
+
+        if (Scene::m_Object->HasComponent<m_LuaScriptComponent>()) {
+            auto &comp = Scene::m_Object->GetComponent<m_LuaScriptComponent>();
+            Scene::m_Registry.emplace<m_LuaScriptComponent>(gameObject->entity, comp);
+        }
+
+        if (Scene::m_Object->HasComponent<c_PointLight>()) {
+            auto &comp = Scene::m_Object->GetComponent<c_PointLight>();
+            Scene::m_Registry.emplace<c_PointLight>(gameObject->entity, comp);
+        }
+
+        if (Scene::m_Object->HasComponent<c_Light2D>()) {
+            auto &comp = Scene::m_Object->GetComponent<c_Light2D>();
+            Scene::m_Registry.emplace<c_Light2D>(gameObject->entity, comp);
+        }
+
+        if (Scene::m_Object->HasComponent<c_SpotLight>()) {
+            auto &comp = Scene::m_Object->GetComponent<c_SpotLight>();
+            Scene::m_Registry.emplace<c_SpotLight>(gameObject->entity, comp);
+        }
+
+        if (Scene::m_Object->HasComponent<c_DirectionalLight>()) {
+            auto &comp = Scene::m_Object->GetComponent<c_DirectionalLight>();
+            Scene::m_Registry.emplace<c_DirectionalLight>(gameObject->entity, comp);
+        }
+
+        if (Scene::m_Object->HasComponent<SpriteRenderer>()) {
+            auto &comp = Scene::m_Object->GetComponent<SpriteRenderer>();
+            Scene::m_Registry.emplace<SpriteRenderer>(gameObject->entity, comp);
+        }
+
+        if (Scene::m_Object->HasComponent<SpriteAnimation>()) {
+            auto &comp = Scene::m_Object->GetComponent<SpriteAnimation>();
+            Scene::m_Registry.emplace<SpriteAnimation>(gameObject->entity, comp);
+        }
+
+        if (Scene::m_Object->HasComponent<c_SpritesheetAnimation>()) {
+            auto &comp = Scene::m_Object->GetComponent<c_SpritesheetAnimation>();
+            Scene::m_Registry.emplace<c_SpritesheetAnimation>(gameObject->entity, comp);
+        }
+
+        if (Scene::m_Object->HasComponent<SpritesheetRenderer>()) {
+            auto &comp = Scene::m_Object->GetComponent<SpritesheetRenderer>();
+            Scene::m_Registry.emplace<SpritesheetRenderer>(gameObject->entity, comp);
+        }
+
+        if (Scene::m_Object->HasComponent<BoxCollider2D>()) {
+            auto &comp = Scene::m_Object->GetComponent<BoxCollider2D>();
+            Scene::m_Registry.emplace<BoxCollider2D>(gameObject->entity, comp);
+        }
+
+        if (Scene::m_Object->HasComponent<Rigidbody2D>()) {
+            auto &comp = Scene::m_Object->GetComponent<Rigidbody2D>();
+            Scene::m_Registry.emplace<Rigidbody2D>(gameObject->entity, comp);
+        }
+
+        if (Scene::m_Object->HasComponent<Rigidbody3D>()) {
+            auto &comp = Scene::m_Object->GetComponent<Rigidbody3D>();
+            Scene::m_Registry.emplace<Rigidbody3D>(gameObject->entity, comp);
+        }
+
+        if (Scene::m_Object->HasComponent<FixedJoint3D>()) {
+            auto &comp = Scene::m_Object->GetComponent<FixedJoint3D>();
+            Scene::m_Registry.emplace<FixedJoint3D>(gameObject->entity, comp);
+        }
+
+        if (Scene::m_Object->HasComponent<BoxCollider3D>()) {
+            auto &comp = Scene::m_Object->GetComponent<BoxCollider3D>();
+            Scene::m_Registry.emplace<BoxCollider3D>(gameObject->entity, comp);
+        }
+
+        if(Scene::m_Object->HasComponent<MeshCollider3D>()) {
+            auto &comp = Scene::m_Object->GetComponent<MeshCollider3D>();
+            Scene::m_Registry.emplace<MeshCollider3D>(gameObject->entity, comp);
+        }
+        Scene::m_GameObjects.push_back(gameObject);
+    }
+}
+
 time_t timestamp = time(0);
 
 #ifndef _WIN32 || GAME_BUILD
@@ -372,6 +504,8 @@ void UpdatePresence(
 
 #endif
 
+// opened project
+#ifndef NO_PROJECT
 int main() {
 #ifndef _WIN32 || GAME_BUILD
     DiscordEventHandlers handlers;
@@ -452,10 +586,45 @@ int main() {
     }
 
 #ifdef GAME_BUILD
-    Hyper::Application app(1280, 720, "Static Engine", config.fullscreenOnLaunch, config.resizable);
+    Hyper::Application app(1280, 720, "Static Engine", config.fullscreenOnLaunch, config.resizable, [&]() {
+        // get io
+        auto &io = ImGui::GetIO();
+        io.ConfigWindowsMoveFromTitleBarOnly = true;
+
+        // io.Fonts->AddFontDefault();
+        ImGui::StyleColorsDark();
+
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+        io.Fonts->AddFontFromFileTTF("assets/fonts/OpenSans-Regulars.ttf", 18.f);
+        static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
+        ImFontConfig icons_config;
+        icons_config.MergeMode = true;
+        icons_config.PixelSnapH = true;
+        io.Fonts->AddFontFromFileTTF("assets/fonts/fa-solid-900.ttf", 16.0f, &icons_config, icons_ranges);
+    });
+
     app.renderOnScreen = true;
 #else
-    Hyper::Application app(1280, 720, "Static Engine", false);
+    Hyper::Application app(1280, 720, "Static Engine", false, true, false, [&]() {
+        // get io
+        auto &io = ImGui::GetIO();
+        io.ConfigWindowsMoveFromTitleBarOnly = true;
+        // io.Fonts->AddFontDefault();
+        ImGui::StyleColorsDark();
+
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+        io.Fonts->AddFontFromFileTTF("assets/fonts/OpenSans-Semibold.ttf", 18.f);
+        static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
+        ImFontConfig icons_config;
+        icons_config.MergeMode = true;
+        icons_config.PixelSnapH = true;
+        io.Fonts->AddFontFromFileTTF("assets/fonts/fa-solid-900.ttf", 16.0f, &icons_config, icons_ranges);
+    });
 #endif
 
     Input::window = app.renderer->window;
@@ -464,7 +633,7 @@ int main() {
     Shader spriteShader("shaders/sprite.glsl");
     Shader workerShader("shaders/worker.glsl");
     Shader outlineShader("shaders/outline.glsl");
-    // Shader batchShader("shaders/batch.glsl");
+     Shader batchShader("shaders/batch.glsl");
 
     spriteShader.Bind();
     spriteShader.SetUniform1f("ambient", 1);
@@ -475,6 +644,7 @@ int main() {
     Skybox skybox("assets/skybox/right.jpg", "assets/skybox/left.jpg", "assets/skybox/top.jpg",
                   "assets/skybox/bottom.jpg", "assets/skybox/front.jpg", "assets/skybox/back.jpg");
     auto *camera = new Camera(false, app.width, app.height, Vector3(0, 3, 15));
+    camera->cam_far = 5000;
 
 #ifndef GAME_BUILD
     Scene::mainCamera = camera;
@@ -529,14 +699,6 @@ int main() {
     std::string fpsText;
 
     int m_GuizmoMode = -1;
-
-    std::vector<Vertex_Batch> vertices =
-            {
-            };
-
-    std::vector<unsigned int> indices =
-            {
-            };
 
     bool usingImGuizmo = false;
 
@@ -601,10 +763,19 @@ int main() {
             0, 2, 3
     };
 
+#ifdef _WIN32
+    auto *dirLightIcon_texture = new Texture("assets\\icons\\directional_light.png", 0, "texture_diffuse");
+    auto *pointLightIcon_texture = new Texture("assets\\icons\\point_light.png", 0, "texture_diffuse");
+    auto *spotLightIcon_texture = new Texture("assets\\icons\\spot_light.png", 0, "texture_diffuse");
+    auto *cameraIcon_texture = new Texture("assets\\icons\\camera.png", 0, "texture_diffuse");
+    auto *engineLogo = new Texture("build\\logo2.png", 0, "texture_diffuse");
+#else
     auto *dirLightIcon_texture = new Texture("assets/icons/directional_light.png", 0, "texture_diffuse");
     auto *pointLightIcon_texture = new Texture("assets/icons/point_light.png", 0, "texture_diffuse");
     auto *spotLightIcon_texture = new Texture("assets/icons/spot_light.png", 0, "texture_diffuse");
     auto *cameraIcon_texture = new Texture("assets/icons/camera.png", 0, "texture_diffuse");
+    auto *engineLogo = new Texture("build/logo2.png", 0, "texture_diffuse");
+#endif
 
     Material dirLightIconMaterial(Vector4(1,1,1,1));
     dirLightIconMaterial.diffuse = dirLightIcon_texture;
@@ -636,6 +807,9 @@ int main() {
 #ifdef GAME_BUILD
                 return;
 #else
+
+
+                ShortcutManager(openConfig);
                 if (ImGui::BeginMainMenuBar()) {
                     if (ImGui::BeginMenu("File")) {
                         if (ImGui::MenuItem("Save Scene", "CTRL+S")) {
@@ -666,10 +840,6 @@ int main() {
                             ImGuiFileDialog::Instance()->OpenDialog("BuildWindowsDialog", "Build for Windows", nullptr,
                                                                     ".");
                         }
-
-                        // if(ImGui::MenuItem("Build")) {
-                        // ImGuiFileDialog::Instance()->OpenDialog("BuildDialog", "Build", nullptr, cwd + "/builds");
-                        // }
                         ImGui::EndMenu();
                     }
                     if (ImGui::BeginMenu("Tools")) {
@@ -686,6 +856,106 @@ int main() {
                     if (ImGui::BeginMenu("Info")) {
                         if (ImGui::MenuItem("Details")) {
                             openDetails = true;
+                        }
+
+                        ImGui::EndMenu();
+                    }
+                    if (ImGui::BeginMenu("Editor")) {
+                        if (ImGui::BeginMenu("Themes")) {
+                            if (ImGui::MenuItem("Default")) {
+                                auto &colors = ImGui::GetStyle().Colors;
+                                ImGui::StyleColorsDark();
+                                colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.105f, 0.11f, 1.0f);
+
+                                colors[ImGuiCol_Header] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+                                colors[ImGuiCol_HeaderHovered] = ImVec4(0.3f, 0.305f, 0.3f, 1.0f);
+                                colors[ImGuiCol_HeaderActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+
+                                colors[ImGuiCol_Button] = ImVec4(0.6f, 0.2f, 0.2f, 1.0f);
+                                colors[ImGuiCol_ButtonHovered] = ImVec4(1, 0.205f, 0.2f, 1.0f);
+                                colors[ImGuiCol_ButtonActive] = ImVec4(1, 0.305f, 0.3f, 1.0f);
+
+                                colors[ImGuiCol_FrameBg] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+                                colors[ImGuiCol_FrameBgHovered] = ImVec4(0.3, 0.305f, 0.3f, 1.0f);
+                                colors[ImGuiCol_FrameBgActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+
+                                colors[ImGuiCol_Tab] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+                                colors[ImGuiCol_TabHovered] = ImVec4(0.3f, 0.305f, 0.3f, 1.0f);
+                                colors[ImGuiCol_TabActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+                                colors[ImGuiCol_TabUnfocused] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+                                colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+
+                                colors[ImGuiCol_TitleBg] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+                                colors[ImGuiCol_TitleBgActive] = ImVec4(0.25f, 0.255f, 0.25f, 1.0f);
+                                colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+
+                                colors[ImGuiCol_ResizeGrip] = ImVec4(1, 0.15, 0.15, 1);
+                                colors[ImGuiCol_ResizeGripActive] = ImVec4(1, 0.30, 0.30, 1);
+                                colors[ImGuiCol_ResizeGripHovered] = ImVec4(1, 0.20, 0.20, 1);
+                                colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1, 0.15, 0.15, 1);
+                                // text color
+                                colors[ImGuiCol_Text] = ImVec4(1, 1, 1, 1);
+
+                                colors[ImGuiCol_DockingPreview] = ImVec4(1, 0.15, 0.15, 1);
+                            }
+
+                            if(ImGui::MenuItem("Blue")) {
+                                ImGui::StyleColorsDark();
+                            }
+
+                            if(ImGui::MenuItem("Green")) {
+                                auto &colors = ImGui::GetStyle().Colors;
+                                ImGui::StyleColorsDark();
+                                colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.105f, 0.11f, 1.0f);
+
+                                colors[ImGuiCol_Header] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+                                colors[ImGuiCol_HeaderHovered] = ImVec4(0.3f, 0.305f, 0.3f, 1.0f);
+                                colors[ImGuiCol_HeaderActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+
+                                colors[ImGuiCol_Button] = ImVec4(0.2f, 0.6f, 0.2f, 1.0f);
+                                colors[ImGuiCol_ButtonHovered] = ImVec4(0.2, 1.0f, 0.2f, 1.0f);
+                                colors[ImGuiCol_ButtonActive] = ImVec4(0.305, 1.0f, 0.3f, 1.0f);
+
+                                colors[ImGuiCol_FrameBg] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+                                colors[ImGuiCol_FrameBgHovered] = ImVec4(0.3, 0.305f, 0.3f, 1.0f);
+                                colors[ImGuiCol_FrameBgActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+
+                                colors[ImGuiCol_Tab] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+                                colors[ImGuiCol_TabHovered] = ImVec4(0.3f, 0.305f, 0.3f, 1.0f);
+                                colors[ImGuiCol_TabActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+                                colors[ImGuiCol_TabUnfocused] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+                                colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+
+                                colors[ImGuiCol_TitleBg] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+                                colors[ImGuiCol_TitleBgActive] = ImVec4(0.25f, 0.255f, 0.25f, 1.0f);
+                                colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+
+                                colors[ImGuiCol_ResizeGrip] = ImVec4(0.15, 1, 0.15, 1);
+                                colors[ImGuiCol_ResizeGripActive] = ImVec4(0.30, 1, 0.30, 1);
+                                colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.20, 1, 0.20, 1);
+                                colors[ImGuiCol_NavWindowingHighlight] = ImVec4(0.15, 1, 0.15, 1);
+                                colors[ImGuiCol_Text] = ImVec4(1, 1, 1, 1);
+
+                                colors[ImGuiCol_DockingPreview] = ImVec4(0.15, 1, 0.15, 1);
+                            }
+
+                            if (ImGui::MenuItem("Light")) {
+                                ImGui::StyleColorsLight();
+                            }
+
+                            if (ImGui::MenuItem("Classic")) {
+                                ImGui::StyleColorsClassic();
+                            }
+
+                            ImGui::EndMenu();
+                        }
+
+                        if(ImGui::MenuItem("Wireframe")) {
+                            if(!app.renderer->wireframe) {
+                                app.renderer->wireframe = true;
+                            } else {
+                                app.renderer->wireframe = false;
+                            }
                         }
 
                         ImGui::EndMenu();
@@ -784,6 +1054,9 @@ int main() {
                                     }
 
                                     ImGui::Text(m_InspectorMaterial.diffuse.c_str());
+                                    if(ImGui::Button(ICON_FA_TRASH" Remove Texture")) {
+                                        m_InspectorMaterial.diffuse = "None";
+                                    }
 
                                     ImGui::TreePop();
                                 }
@@ -799,6 +1072,9 @@ int main() {
                                     }
 
                                     ImGui::Text(m_InspectorMaterial.specular.c_str());
+                                    if(ImGui::Button(ICON_FA_TRASH" Remove Texture")) {
+                                        m_InspectorMaterial.specular = "None";
+                                    }
 
                                     ImGui::TreePop();
                                 }
@@ -814,6 +1090,9 @@ int main() {
                                     }
 
                                     ImGui::Text(m_InspectorMaterial.normal.c_str());
+                                    if(ImGui::Button(ICON_FA_TRASH" Remove Texture")) {
+                                        m_InspectorMaterial.normal = "None";
+                                    }
 
                                     ImGui::TreePop();
                                 }
@@ -841,16 +1120,16 @@ int main() {
 
                                         std::ofstream file(filePathName);
                                         nlohmann::json j = {
-                                                {"diffuse",   m_InspectorMaterial.diffuse},
-                                                {"specular",  m_InspectorMaterial.specular},
-                                                {"normal",    m_InspectorMaterial.normal},
+                                                {"diffuse",   m_InspectorMaterial.diffuse == "None" ? "nullptr" : m_InspectorMaterial.diffuse},
+                                                {"specular",  m_InspectorMaterial.specular == "None" ? "nullptr" : m_InspectorMaterial.specular},
+                                                {"normal",    m_InspectorMaterial.normal == "None" ? "nullptr" : m_InspectorMaterial.normal},
                                                 {"roughness", m_InspectorMaterial.roughness},
                                                 {"metallic",  m_InspectorMaterial.metallic},
                                                 {"baseColor", {
                                                                       {"r", m_InspectorMaterial.baseColor.x},
                                                                       {"g", m_InspectorMaterial.baseColor.y},
                                                                       {"b", m_InspectorMaterial.baseColor.z},
-                                                                      {"a", m_InspectorMaterial.baseColor.w}
+                                                                      {"a", 1}
                                                               }
                                                 },
                                                 {"texUV",     {
@@ -979,6 +1258,7 @@ int main() {
                     ImGui::Text("Renderer: %s", glGetString(GL_RENDERER));
                     ImGui::Text("Version: %s", glGetString(GL_VERSION));
                     ImGui::Text("Shading Language Version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+                    ImGui::Text("FPS: %s", fpsText.c_str());
 
 #ifndef _WIN32 || GAME_BUILD
                     UpdatePresence(
@@ -1125,6 +1405,7 @@ int main() {
 
 //                    m_GuizmoMode = ImGuizmo::OPERATION::ROTATE
                     if(Scene::mainCamera != camera) m_GuizmoMode = -1;
+                    else if(m_GuizmoMode == -1) m_GuizmoMode = ImGuizmo::OPERATION::TRANSLATE;
                     if (selectedObject && m_GuizmoMode != -1) {
                         ImGuizmo::SetOrthographic(camera->mode2D);
                         ImGuizmo::SetDrawlist();
@@ -1217,6 +1498,24 @@ int main() {
                 ImGui::End();
 
                 if (ImGui::Begin(ICON_FA_CUBES " Hierarchy")) {
+                    // drop target for child objects
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("game_object")) {
+                            for(auto &gameObject : Scene::m_GameObjects) {
+                                if(gameObject->ID == HyperAPI::dirPayloadData) {
+                                    if(gameObject->HasComponent<Transform>()) {
+                                        auto &transform = gameObject->GetComponent<Transform>();
+                                        transform.parentTransform = nullptr;
+                                    }
+                                    gameObject->parentID = "NO_PARENT";
+                                    break;
+                                }
+                            }
+                        }
+
+                        ImGui::EndDragDropTarget();
+                    }
+
                     if (ImGui::IsWindowHovered() && ImGui::IsMouseDoubleClicked(0)) {
                         Scene::m_Object = nullptr;
                     }
@@ -1231,7 +1530,28 @@ int main() {
                     }
 
                     for (int i = 0; i < Scene::m_GameObjects.size(); i++) {
-                        if (Scene::m_GameObjects[i]->parentID != "NO_PARENT") continue;
+                        if (Scene::m_GameObjects[i]->parentID != "NO_PARENT") {
+                            bool parentFound;
+                            for(auto &gameObject : Scene::m_GameObjects) {
+                                if(gameObject->ID == Scene::m_GameObjects[i]->parentID) {
+                                    parentFound = true;
+                                    break;
+                                } else {
+                                    parentFound = false;
+                                }
+
+                            }
+
+                            if(!parentFound) {
+                                Scene::m_GameObjects[i]->parentID = "NO_PARENT";
+
+                                if(Scene::m_GameObjects[i]->HasComponent<Transform>()) {
+                                    auto &transform = Scene::m_GameObjects[i]->GetComponent<Transform>();
+                                    transform.parentTransform = nullptr;
+                                }
+                            }
+                            continue;
+                        }
                         Scene::m_GameObjects[i]->GUI();
                     }
 
@@ -1606,7 +1926,7 @@ int main() {
     // batchShader.SetUniform1i("textures[1]", 1);
     // batchShader.SetUniform1i("cubeMap", 10);
 
-    app.Run([&] {
+    app.Run([&](unsigned int &shadowMapTex) {
         if(Scene::LoadingScene) return;
 
         if (HyperAPI::isRunning) {
@@ -1769,11 +2089,12 @@ int main() {
         // floor.Draw(shader, *camera);
         shader.Bind();
         shader.SetUniform1f("ambient", config.ambientLight);
-        shader.SetUniform1i("shadowMap", 17);
-        shader.SetUniformMat4("lightProjection", Scene::projection);
 
         spriteShader.Bind();
         spriteShader.SetUniform1f("ambient", config.ambientLight);
+
+        batchShader.Bind();
+        batchShader.SetUniform1f("ambient", config.ambientLight);
 
         // Physics
 
@@ -1877,20 +2198,23 @@ int main() {
                     glm::mat4 extra = meshRenderer.extraMatrix;
 
                     if (meshRenderer.m_Mesh != nullptr) {
+                        glBindTexture(GL_TEXTURE_2D, dirLightIcon_texture->ID);
+                        glActiveTexture(GL_TEXTURE13);
+
+                        shader.Bind();
+                        shader.SetUniformMat4("lightSpaceMatrix", Scene::projection);
+                        shader.SetUniform1i("shadowMap", 13);
+
+                        if(Scene::m_Object == gameObject) {
+                            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+                            glStencilMask(0xFF);
+                        }
                         if (transform.parentTransform != nullptr) {
                             transform.parentTransform->Update();
-                            if(Scene::m_Object == gameObject) {
-                                glStencilFunc(GL_ALWAYS, 1, 0xFF);
-                                glStencilMask(0xFF);
-                            }
                             meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera,
                                                       transform.transform * transform.parentTransform->transform *
                                                       extra);
                         } else {
-                            if(Scene::m_Object == gameObject) {
-                                glStencilFunc(GL_ALWAYS, 1, 0xFF);
-                                glStencilMask(0xFF);
-                            }
                             meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera, transform.transform * extra);
                         }
                     }
@@ -1940,6 +2264,38 @@ int main() {
         }
 #ifndef GAME_BUILD
         if(Scene::mainCamera != camera) return;
+
+        for(auto &gameObject : Scene::m_GameObjects) {
+            if(Scene::m_Object != gameObject) continue;
+
+            if(gameObject->HasComponent<MeshRenderer>()) {
+                if(gameObject->GetComponent<MeshRenderer>().m_Mesh == nullptr) break;
+                glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+                glStencilMask(0x00);
+                glDisable(GL_DEPTH_TEST);
+
+                auto meshRenderer = gameObject->GetComponent<MeshRenderer>();
+                auto transform = gameObject->GetComponent<Transform>();
+                transform.Update();
+
+                glm::mat4 extra = meshRenderer.extraMatrix;
+                outlineShader.Bind();
+                outlineShader.SetUniform1f("outlining", 0.08f);
+                if (transform.parentTransform != nullptr) {
+                    transform.parentTransform->Update();
+                    meshRenderer.m_Mesh->Draw(outlineShader, *Scene::mainCamera,
+                                              transform.transform * transform.parentTransform->transform *
+                                              extra);
+                } else {
+                    meshRenderer.m_Mesh->Draw(outlineShader, *Scene::mainCamera, transform.transform * extra);
+                }
+
+                glStencilMask(0xFF);
+                glStencilFunc(GL_ALWAYS, 0, 0xFF);
+                glEnable(GL_DEPTH_TEST);
+            }
+        }
+
         glClear(GL_DEPTH_BUFFER_BIT);
         if (drawBoxCollider2D) {
             glDepthFunc(GL_LEQUAL);
@@ -2061,7 +2417,8 @@ int main() {
             }
         }
 #endif
-    }, GUI_EXP);
+    }, GUI_EXP, [&](Shader &m_shadowMapShader) {
+    });
 
     // shutdown discord-rpc
 #ifndef _WIN32 || GAME_BUILD
@@ -2073,3 +2430,119 @@ int main() {
 
     return 0;
 }
+#else
+#define APP_NAME "Static Engine"
+
+int main(int argc, char **argv) {
+    // get app data path FROM SCRATCH
+    std::string appDataPath = "";
+
+#if defined(_WIN32)
+    appDataPath = getenv("APPDATA") + std::string("\\") + std::string(APP_NAME);
+#else
+    appDataPath = getenv("HOME") + std::string("/.config") + std::string(APP_NAME);
+#endif
+    bool exists = fs::exists(appDataPath);
+    if(exists) {
+        HYPER_LOG("App data path exists: " + appDataPath)
+    } else {
+        HYPER_LOG("Creating app data... ")
+        fs::create_directories(appDataPath);
+    }
+    // CREATE A FUCKING FILE
+    std::string appDataFile = appDataPath + std::string("/projects.json");
+    exists = fs::exists(appDataFile);
+    if(exists) {
+        HYPER_LOG("App data file exists: " + appDataFile)
+    } else {
+        HYPER_LOG("Creating app data file... ")
+        std::ofstream file(appDataFile);
+        file << "{}";
+        file.close();
+    }
+
+    nlohmann::json Projects = nlohmann::json::parse(std::ifstream(appDataFile));
+
+    Hyper::Application app(1280, 720, "Static Engine", false, true, false, [&]() {
+        // get io
+        auto &io = ImGui::GetIO();
+        io.ConfigWindowsMoveFromTitleBarOnly = true;
+
+        // io.Fonts->AddFontDefault();
+        ImGui::StyleColorsDark();
+
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+        io.Fonts->AddFontFromFileTTF("assets/fonts/OpenSans-Bold.ttf", 18.f);
+        static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
+        ImFontConfig icons_config;
+        icons_config.MergeMode = true;
+        icons_config.PixelSnapH = true;
+        io.Fonts->AddFontFromFileTTF("assets/fonts/fa-solid-900.ttf", 16.0f, &icons_config, icons_ranges);
+    });
+
+    std::function<void(unsigned int &PPT, unsigned int &PPFBO)> GUI_EXP =
+    [&](unsigned int &PPT, unsigned int &PPFBO) {
+        ImGui::SetNextWindowSize(ImVec2(app.width, app.height));
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+
+        ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+
+        if(ImGui::Begin(ICON_FA_LAYER_GROUP" Side Panel")) {
+
+        }
+        ImGui::End();
+
+        if(ImGui::Begin(ICON_FA_CUBES " Projects")) {
+        }
+        ImGui::End();
+    };
+
+    bool calledOnce;
+
+    app.Run([&]{
+        if (!calledOnce) {
+            auto &colors = ImGui::GetStyle().Colors;
+            colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.105f, 0.11f, 1.0f);
+
+            colors[ImGuiCol_Header] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+            colors[ImGuiCol_HeaderHovered] = ImVec4(0.3f, 0.305f, 0.3f, 1.0f);
+            colors[ImGuiCol_HeaderActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+
+            colors[ImGuiCol_Button] = ImVec4(0.6f, 0.2f, 0.2f, 1.0f);
+            colors[ImGuiCol_ButtonHovered] = ImVec4(1, 0.205f, 0.2f, 1.0f);
+            colors[ImGuiCol_ButtonActive] = ImVec4(1, 0.305f, 0.3f, 1.0f);
+
+            colors[ImGuiCol_FrameBg] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+            colors[ImGuiCol_FrameBgHovered] = ImVec4(0.3, 0.305f, 0.3f, 1.0f);
+            colors[ImGuiCol_FrameBgActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+
+            colors[ImGuiCol_Tab] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+            colors[ImGuiCol_TabHovered] = ImVec4(0.3f, 0.305f, 0.3f, 1.0f);
+            colors[ImGuiCol_TabActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+            colors[ImGuiCol_TabUnfocused] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+            colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+
+            colors[ImGuiCol_TitleBg] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+            colors[ImGuiCol_TitleBgActive] = ImVec4(0.25f, 0.255f, 0.25f, 1.0f);
+            colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+
+            colors[ImGuiCol_ResizeGrip] = ImVec4(1, 0.15, 0.15, 1);
+            colors[ImGuiCol_ResizeGripActive] = ImVec4(1, 0.30, 0.30, 1);
+            colors[ImGuiCol_ResizeGripHovered] = ImVec4(1, 0.20, 0.20, 1);
+            colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1, 0.15, 0.15, 1);
+
+            colors[ImGuiCol_DockingPreview] = ImVec4(1, 0.15, 0.15, 1);
+
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.5, 2.5));
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
+        }
+
+        calledOnce = true;
+    }, GUI_EXP);
+
+    exit(0);
+    return 0;
+}
+#endif

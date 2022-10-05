@@ -20,6 +20,7 @@ api = $(wildcard src/api.cpp)
 api += $(wildcard src/InputEvents.cpp)
 api += $(wildcard src/scene.cpp)
 api += $(wildcard src/ScriptEngine.cpp)
+api += $(wildcard src/networking.cpp)
 
 api_obj = $(api:.cpp=.o)
 

@@ -11,7 +11,7 @@ uniform float outlining;
 uniform mat4 model;
 
 void main() {
-    vec3 currentPosition = vec3(translation * rotation * scale * vec4(position + normal * outlining, 1));
+    vec3 currentPosition = vec3(model * translation * rotation * scale * vec4(position + normal * outlining, 1));
     gl_Position = camera * vec4(currentPosition, 1);
 }
 
@@ -19,5 +19,5 @@ void main() {
 #version 330 core
 
 void main() {
-    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    gl_FragColor = vec4(1.0, 0.5, 0, 1.0);
 }

@@ -17,7 +17,7 @@ uniform mat4 translation;
 uniform mat4 rotation;
 uniform mat4 scale;
 uniform mat4 model;
-uniform mat4 lightProjection;
+uniform mat4 lightSpaceMatrix;
 uniform vec3 cameraPosition;
 uniform vec2 texUvOffset;
 
@@ -42,7 +42,7 @@ void main() {
     Normal = mat3(transpose(inverse(model))) * aNormal;
     // Normal = aNormal;
 
-    fragPosLight = lightProjection * vec4(currentPosition, 1.0);
+    fragPosLight = lightSpaceMatrix * vec4(currentPosition, 1.0);
 
     vec3 viewVector = normalize(worldPosition.xyz - cameraPosition);
     reflectedVector = reflect(viewVector, Normal);
@@ -113,6 +113,24 @@ vec4 reflectedColor = texture(cubeMap, reflectedVector);
 
 float specularTexture = texture(texture_specular0, texCoords).r;
 
+
+float ShadowCalculation(vec4 fragPosLightSpace)
+{
+    // perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+    // check whether current frag pos is in shadow
+    // shadow without bias
+     float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
+
+    return shadow;
+}
+
 vec4 pointLight(PointLight light) {
     float specular = 0;
     vec3 lightVec = light.lightPos - currentPosition;
@@ -182,21 +200,7 @@ vec4 directionalLight(DirectionalLight light) {
     }
 
     // shadows
-    float shadow = 0.0;
-    vec3 projCoords = fragPosLight.xyz / fragPosLight.w;
-    vec2 UVCoords;
-    UVCoords.x = projCoords.x * 0.5 + 0.5;
-    UVCoords.y = projCoords.y * 0.5 + 0.5;
-    
-    float z = 0.5 * projCoords.z + 0.5;
-    float Depth = texture(shadowMap, UVCoords).r;
-
-    float bias = 0.0025;
-    if(Depth + bias < z) {
-        shadow = 0.5;
-    } else {
-        shadow = 1.0;
-    }
+    float shadow = 0;
 
     float _smoothness = 1 - roughness;
     if(_smoothness == 0) {
@@ -208,7 +212,7 @@ vec4 directionalLight(DirectionalLight light) {
     float shadowAdder = 1.0;
 
 	if(isTex == 1) {
-        return (mix(texture(texture_diffuse0, texCoords), reflectedColor, metallic) * baseColor * vec4(light.color, 1) * ((diffuse) * shadowAdder) + specularTexture * (((specular * shadowAdder) * vec4(light.color, 1)) * light.intensity));
+        return (mix(texture(texture_diffuse0, texCoords), reflectedColor, metallic) * baseColor * vec4(light.color, 1) * ((diffuse ) * shadowAdder) + specularTexture * (((specular * shadowAdder) * vec4(light.color, 1)) * light.intensity));
     } else {
         return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * ((diffuse) * shadowAdder) + vec4(1,1,1,1)  * (((specular * shadowAdder) * vec4(light.color, 1)) * light.intensity));
     }
@@ -291,6 +295,7 @@ float far = 100.0;
 // }
 
 void main() {
+    float shadow = ShadowCalculation(fragPosLight);
     if(specularTexture == 0) {
         specularTexture = texture(texture_diffuse0, texCoords).r;
     }
@@ -327,10 +332,11 @@ void main() {
             result += light2d(light2ds[i]);
         }
     }
-    
+
+//    FragColor = texture(shadowMap, texCoords);
     FragColor = result;
     EntityID = 50;
     // FragColor = directionalLight(dirLights[0]);
-    // FragColor = result;
+//     FragColor = result;
     
 }

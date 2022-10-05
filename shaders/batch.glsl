@@ -1,29 +1,30 @@
 #shader vertex
 #version 330 core
 layout(location = 0) in vec3 position;
-layout(location = 1) in vec3 color;
-layout(location = 2) in vec3 aNormal;
-layout(location = 3) in vec2 g_texCoords;
-layout(location = 4) in float diffuseTexture;
-layout(location = 5) in float specularTexture;
-layout(location = 6) in float normalMapTexture;
-layout(location = 7) in float g_metallic;
-layout(location = 8) in float g_roughness;
+layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec2 g_texCoords;
+layout(location = 3) in int diffuseTexture;
+layout(location = 4) in int specularTexture;
+layout(location = 5) in int normalMapTexture;
+layout(location = 6) in float g_metallic;
+layout(location = 7) in float g_roughness;
+layout(location = 8) in vec3 color;
 layout(location = 9) in vec2 texUvOffset;
 layout(location = 10) in vec3 transformPosition;
 layout(location = 11) in vec3 transformRotation;
 layout(location = 12) in vec3 transformScale;
 
 out vec4 gColor;
-out float texture_diffuse0;
-out float texture_specular0;
-out float texture_normal0;
+flat out float texture_diffuse0;
+flat out float texture_specular0;
+flat out float texture_normal0;
 
 out vec2 g_g_texCoords;
 out vec3 Normal;
 out vec3 currentPosition;
 out vec4 fragPosLight;
 out vec3 reflectedVector;
+out vec4 baseColor;
 
 out float metallic;
 out float roughness;
@@ -47,18 +48,18 @@ mat4 rotate(vec3 v)
     mat4 x = mat4(1.0);
     mat4 y = mat4(1.0);
     mat4 z = mat4(1.0);
-    x[1][1] = cos(radians(v.x));
-    x[1][2] = -sin(radians(v.x));
-    x[2][1] = sin(radians(v.x));
-    x[2][2] = cos(radians(v.x));
-    y[0][0] = cos(radians(v.y));
-    y[0][2] = sin(radians(v.y));
-    y[2][0] = -sin(radians(v.y));
-    y[2][2] = cos(radians(v.y));
-    z[0][0] = cos(radians(v.z));
-    z[0][1] = -sin(radians(v.z));
-    z[1][0] = sin(radians(v.z));
-    z[1][1] = cos(radians(v.z));
+    x[1][1] = cos(v.x);
+    x[1][2] = -sin(v.x);
+    x[2][1] = sin(v.x);
+    x[2][2] = cos(v.x);
+    y[0][0] = cos(v.y);
+    y[0][2] = sin(v.y);
+    y[2][0] = -sin(v.y);
+    y[2][2] = cos(v.y);
+    z[0][0] = cos(v.z);
+    z[0][1] = -sin(v.z);
+    z[1][0] = sin(v.z);
+    z[1][1] = cos(v.z);
     return x * y * z;
 }
 
@@ -84,20 +85,11 @@ void main() {
     vec4 worldPosition = model * vec4(position, 1.0);
     currentPosition = vec3(model * vec4(position, 1.0));
 
-    vec2 finalCoords = texCoords;
+    g_g_texCoords = g_texCoords;
 
-    if(finalCoords.x > 0) {
-        finalCoords.x = finalCoords.x + texUvOffset.x;
-    }
-
-    if(finalCoords.y > 0) {
-        finalCoords.y = finalCoords.y + texUvOffset.y;
-    }
-    g_texCoords = finalCoords;
-
-    texture_diffuse0 = diffuseTexture;
-    texture_specular0 = specularTexture;
-    texture_normal0 = normalMapTexture;
+    texture_diffuse0 = float(diffuseTexture);
+    texture_specular0 = float(specularTexture);
+    texture_normal0 = float(normalMapTexture);
     metallic = g_metallic;
     roughness = g_roughness;
     Normal = mat3(transpose(inverse(model))) * aNormal;
@@ -109,15 +101,14 @@ void main() {
 
     gl_Position = camera * vec4(currentPosition, 1.0);
 }
-
 #shader fragment
 #version 330 core
 layout(location = 0) out vec4 FragColor;
 
 in vec4 baseColor;
-in float texture_diffuse0;
-in float texture_specular0;
-in float texture_normal0;
+flat in float texture_diffuse0;
+flat in float texture_specular0;
+flat in float texture_normal0;
 
 in vec2 g_g_texCoords;
 in vec3 Normal;
@@ -128,6 +119,7 @@ in vec4 fragPosLight;
 in float metallic;
 in float roughness;
 
+uniform samplerCube cubeMap;
 uniform sampler2D textures[32];
 
 struct PointLight {
@@ -148,17 +140,22 @@ struct DirectionalLight {
     float intensity;
 };
 
+struct Light2D {
+    vec2 lightPos;
+    vec3 color;
+    float range;
+};
+
 uniform float ambient;
-#define MAX_LIGHTS 100
+#define MAX_LIGHTS 50
 uniform PointLight pointLights[MAX_LIGHTS];
 uniform SpotLight spotLights[MAX_LIGHTS];
 uniform DirectionalLight dirLights[MAX_LIGHTS];
+uniform Light2D light2ds[MAX_LIGHTS];
 
-uniform samplerCube cubeMap;
 uniform vec3 cameraPosition;
-
+float specularTexture_g = texture(textures[int(texture_specular0)], g_g_texCoords).r;
 vec4 reflectedColor = texture(cubeMap, reflectedVector);
-float specularTexture = texture(texture_specular0, g_texCoords).r;
 
 vec4 pointLight(PointLight light) {
     float specular = 0;
@@ -168,36 +165,36 @@ vec4 pointLight(PointLight light) {
     vec3 lightDir = normalize(lightVec);
     float diffuse = max(dot(normal, lightDir), 0.0);
 
-	float dist = length(lightVec);
-	float a = 1.0;
-	float b = 0.04;
-	float inten = 1.0f / (a * dist * dist + b * dist + 1.0f);
+    float dist = length(lightVec);
+    float a = 1.0;
+    float b = 0.04;
+    float inten = 1.0f / (a * dist * dist + b * dist + 1.0f);
     inten *= light.intensity;
 
     if(diffuse != 0.0f) {
         float specularLight = 0.5;
         vec3 viewDirection = normalize(cameraPosition - currentPosition);
         vec3 reflectDir = reflect(-lightDir, normal);
-        
+
         vec3 halfwayVec = normalize(viewDirection + lightDir);
-        
+
         float specAmount = pow(max(dot(normal, halfwayVec), 0.0), 16);
         specular = specAmount * specularLight;
     }
 
     float _smoothness = 1 - roughness;
 
-	if(_smoothness == 0.0) {
+    if(_smoothness == 0.0) {
         specular = 0.0;
     }
 
     // add smoothness to the specular
     specular = specular * _smoothness;
 
-    if(int(texture_diffuse0) > -1) {
-        return (mix(texture(texture_diffuse0, g_texCoords), reflectedColor, metallic) * baseColor * (diffuse * inten) + specularTexture * ((specular * inten) * vec4(light.color, 1)))  * vec4(light.color, 1);
+    if(texture_diffuse0 != -1) {
+        return (mix(texture(textures[int(texture_diffuse0)], g_g_texCoords), reflectedColor, metallic) * baseColor * (diffuse * inten) + specularTexture_g * ((specular * inten) * vec4(light.color, 1)))  * vec4(light.color, 1);
     } else {
-        return (mix(baseColor, reflectedColor, metallic) * (diffuse * inten) * ((specular * inten) * vec4(light.color, 1))) * vec4(light.color, 1);
+        return (baseColor * (diffuse * inten) * ((specular * inten) * vec4(light.color, 1))) * vec4(light.color, 1);
     }
 }
 
@@ -205,12 +202,12 @@ vec4 directionalLight(DirectionalLight light) {
     // float ambient = 0.4;
 
     vec3 normal;
-    normal = normalize(Normal);
-    // if(int(texture_diffuse0) > -1 && hasNormalMap == 1) {
-        // normal = normalize(texture(texture_normal0, g_texCoords).rgb * 2.0 - 1.0);
-    // } else {
-        // normal = normalize(Normal);
-    // 
+    if(texture_diffuse0 != -1 && texture_normal0 != -1) {
+        normal = normalize(Normal);
+        // normal = normalize(texture(texture_normal0, texCoords).rgb * 2.0 - 1.0);
+    } else {
+        normal = normalize(Normal);
+    }
     vec3 lightDir = normalize(light.lightPos);
     float diffuse = max(dot(normal, lightDir), 0.0);
 
@@ -221,13 +218,16 @@ vec4 directionalLight(DirectionalLight light) {
         float specularLight = 0.5;
         vec3 viewDirection = normalize(cameraPosition - currentPosition);
         vec3 reflectDir = reflect(-lightDir, normal);
-        
+
         vec3 halfwayVec = normalize(viewDirection + lightDir);
-        
+
         float specAmount = pow(max(dot(normal, halfwayVec), 0.0), 16);
         specular = specAmount * specularLight;
     }
-    
+
+    // shadows
+    float shadow = 0;
+
     float _smoothness = 1 - roughness;
     if(_smoothness == 0) {
         specular = 0;
@@ -235,18 +235,19 @@ vec4 directionalLight(DirectionalLight light) {
 
 
     specular = specular * _smoothness;
+    float shadowAdder = 1.0;
 
-	if(int(texture_diffuse0) > -1) {
-        return (mix(texture(texture_diffuse0, g_texCoords), reflectedColor, metallic) * baseColor * vec4(light.color, 1) * ((diffuse)) + specularTexture * (((specular) * vec4(light.color, 1)) * light.intensity));
+    if(texture_diffuse0 != -1) {
+        return (mix(texture(textures[int(texture_diffuse0)], g_g_texCoords), reflectedColor, metallic) * baseColor * vec4(light.color, 1) * ((diffuse ) * shadowAdder) + specularTexture_g * (((specular * shadowAdder) * vec4(light.color, 1)) * light.intensity));
     } else {
-        return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * ((diffuse)) + vec4(1,1,1,1)  * (((specular) * vec4(light.color, 1)) * light.intensity));
+        return (baseColor * vec4(light.color, 1) * ((diffuse) * shadowAdder) + vec4(1,1,1,1)  * (((specular * shadowAdder) * vec4(light.color, 1)) * light.intensity));
     }
 }
 
 vec4 spotLight(SpotLight light) {
     float outerCone = 0.9;
     float innerCone = 0.95;
-    
+
     float specular = 0;
     vec3 lightVec = light.lightPos - currentPosition;
 
@@ -258,15 +259,15 @@ vec4 spotLight(SpotLight light) {
         float specularLight = 0.5;
         vec3 viewDirection = normalize(cameraPosition - currentPosition);
         vec3 reflectDir = reflect(-lightDir, normal);
-        
+
         vec3 halfwayVec = normalize(viewDirection + lightDir);
-        
+
         float specAmount = pow(max(dot(normal, halfwayVec), 0.0), 16);
         specular = specAmount * specularLight;
     }
     float _smoothness = 1 - roughness;
 
-	if(_smoothness == 0.0) {
+    if(_smoothness == 0.0) {
         specular = 0.0;
     }
 
@@ -276,29 +277,66 @@ vec4 spotLight(SpotLight light) {
     // add smoothness to the specular
     specular = specular * _smoothness;
 
-    if(int(texture_diffuse0) > -1) {
-        return (mix(texture(texture_diffuse0, g_texCoords), reflectedColor, metallic) * baseColor * (diffuse * inten) + specularTexture * ((specular * inten) * vec4(light.color, 1)))  * vec4(light.color, 1);
+    if(texture_diffuse0 != -1) {
+        return (mix(texture(textures[int(texture_diffuse0)], g_g_texCoords), reflectedColor, metallic) * baseColor * (diffuse * inten) + specularTexture_g * ((specular * inten) * vec4(light.color, 1)))  * vec4(light.color, 1);
     } else {
-        return (mix(baseColor, reflectedColor, metallic) * (diffuse * inten) * ((specular * inten) * vec4(light.color, 1))) * vec4(light.color, 1);
+        return (baseColor * (diffuse * inten) * ((specular * inten) * vec4(light.color, 1))) * vec4(light.color, 1);
+    }
+}
+
+vec4 light2d(Light2D light) {
+    if(texture_diffuse0 != -1) {
+        vec4 frag_color = mix(texture(textures[int(texture_diffuse0)], g_g_texCoords), reflectedColor, metallic) * baseColor;
+        if(frag_color.a < 1.0)
+        discard;
+
+        float distance = distance(light.lightPos, currentPosition.xy);
+        float diffuse = 0.0;
+
+        if (distance <= light.range)
+        diffuse =  1.0 - abs(distance / light.range);
+
+        return vec4(min(frag_color.rgb * ((light.color * diffuse)), frag_color.rgb), 1.0);
+    } else {
+        vec4 frag_color = baseColor;
+        if(frag_color.a < 1.0)
+        discard;
+
+        float distance = distance(light.lightPos, currentPosition.xy);
+        float diffuse = 0.0;
+
+        if (distance <= light.range)
+        diffuse =  1.0 - abs(distance / light.range);
+
+        return vec4(frag_color.rgb * ((light.color * diffuse)), frag_color.rgb);
     }
 }
 
 void main() {
     // sampler2D to int
     vec4 result = vec4(1.0f);
-    
-    if(texture_diffuse0 > -1) {
-        // result = vec4(texture_diffuse0, texture_diffuse0, texture_diffuse0, 1.0f);
-        result = texture(textures[int(texture_diffuse0)], g_g_texCoords) * ambient;
-        // result = vec4(result.rgb, 1.0f) * gColor;
-        // result = gColor;
-    } else {
-        result = gColor * ambient;
+    result = mix(texture(textures[int(texture_diffuse0)], g_g_texCoords), reflectedColor, metallic) * ambient;
+
+    for(int i = 0; i < MAX_LIGHTS; i++) {
+        if(pointLights[i].intensity > 0) {
+            result += pointLight(pointLights[i]);
+        }
+
+        if(spotLights[i].color.r > 0 || spotLights[i].color.g > 0 || spotLights[i].color.b > 0) {
+            result += spotLight(spotLights[i]);
+        }
+
+        if(dirLights[i].intensity == 1) {
+            result += directionalLight(dirLights[i]);
+        }
+
+        if(light2ds[i].color.r > 0 || spotLights[i].color.g > 0 || spotLights[i].color.b > 0) {
+            result += light2d(light2ds[i]);
+        }
     }
 
-    if(result.a < 0.1f) {
+    if(result.a < 0.1)
         discard;
-    }
-    
+
     FragColor = result;
 }

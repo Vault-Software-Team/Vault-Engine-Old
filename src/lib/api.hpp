@@ -426,7 +426,6 @@ namespace HyperAPI {
 
     struct Vertex_Batch {
         glm::vec3 position;
-        glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f);
         glm::vec3 normal = glm::vec3(0.0f, 0.0f, 0.0f);
         glm::vec2 texUV = glm::vec2(0.0f, 0.0f);
 
@@ -436,6 +435,8 @@ namespace HyperAPI {
 
         float metallic = 0;
         float roughness = 0;
+
+        glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f);
         Vector2 texUVs = Vector2(0, 0);
 
         glm::vec3 m_position = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -939,22 +940,6 @@ namespace HyperAPI {
         Torus(Vector4 color = Vector4(1, 1, 1, 1));
     };
 
-    class BatchLayer {
-    public:
-        std::vector<Vertex_Batch> vertices;
-        std::vector<unsigned int> indices;
-        unsigned int VBO, VAO, IBO;
-
-        BatchLayer(
-                std::vector<Vertex_Batch> &vertices,
-                std::vector<unsigned int> &indices
-        );
-
-        void Draw(Shader &shader, Camera &camera);
-    };
-
-    extern std::vector<BatchLayer *> batchLayers;
-
     namespace Experimental {
         class ComponentEntity {
         public:
@@ -1030,6 +1015,8 @@ namespace HyperAPI {
             glm::vec3 forward = glm::vec3(0, 0, 1);
 
             void GUI() {
+                // make the treenode not transparent
+                ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
                 if (ImGui::TreeNode("Transform")) {
 //                    ImGui::DragFloat3("Position", &position.x, 0.1f);
 //                    ImGui::DragFloat3("Rotation", &rotation.x, 0.1f);
@@ -1048,6 +1035,7 @@ namespace HyperAPI {
 
                     ImGui::TreePop();
                 }
+                ImGui::PopStyleColor();
             }
 
             void Update() {
@@ -1367,7 +1355,7 @@ namespace HyperAPI {
 
             MeshRenderer() = default;
 
-            void GUI() {
+            void GUI() override {
                 if (ImGui::TreeNode("Material")) {
                     if (!m_Model) {
                         // mesh selection
@@ -1807,8 +1795,63 @@ namespace HyperAPI {
                 }
             }
 
+            void DeleteGameObject() {
+                Scene::m_Object = nullptr;
+                keyDown = true;
+
+                if (HasComponent<c_DirectionalLight>()) {
+                    Scene::DirLights.erase(std::remove(Scene::DirLights.begin(), Scene::DirLights.end(),
+                                                       GetComponent<c_DirectionalLight>().light),
+                                           Scene::DirLights.end());
+                    delete GetComponent<c_DirectionalLight>().light;
+                }
+
+                if (HasComponent<c_PointLight>()) {
+                    Scene::PointLights.erase(std::remove(Scene::PointLights.begin(), Scene::PointLights.end(),
+                                                         GetComponent<c_PointLight>().light),
+                                             Scene::PointLights.end());
+                    delete GetComponent<c_PointLight>().light;
+                }
+
+                if (HasComponent<c_SpotLight>()) {
+                    Scene::SpotLights.erase(std::remove(Scene::SpotLights.begin(), Scene::SpotLights.end(),
+                                                        GetComponent<c_SpotLight>().light),
+                                            Scene::SpotLights.end());
+                    delete GetComponent<c_SpotLight>().light;
+                }
+
+                Scene::m_Registry.destroy(entity);
+                Scene::m_GameObjects.erase(
+                        std::remove(Scene::m_GameObjects.begin(), Scene::m_GameObjects.end(), this),
+                        Scene::m_GameObjects.end());
+
+                for(auto &gameObject : Scene::m_GameObjects) {
+                    if(gameObject->parentID == ID) {
+                        gameObject->parentID = "NO_PARENT";
+                        gameObject->DeleteGameObject();
+                    }
+                }
+            }
+
             void GUI() {
-                bool item = ImGui::TreeNode(NODE_ID.c_str(), name.c_str());
+                // remove the expandable arrow IF theres nothing in the treenode
+                bool item;
+                bool hasChildren = false;
+                for (auto &gameObject : Scene::m_GameObjects) {
+                    if (gameObject->parentID == ID) {
+                        hasChildren = true;
+                        item = ImGui::TreeNode(NODE_ID.c_str(), std::string(std::string(ICON_FA_CUBE) + " " + name).c_str());
+                        break;
+                    }
+                }
+
+                if(!hasChildren) {
+                    ImGui::PushID(NODE_ID.c_str());
+                    ImGui::SetCursorPos( ImVec2(ImGui::GetCursorPos().x + 16, ImGui::GetCursorPos().y));
+                    item = ImGui::Selectable(std::string(std::string(ICON_FA_CUBE) + " " + name).c_str());
+                    ImGui::PopID();
+                }
+
                 if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered() && !ImGui::IsMouseDragging(0)) {
                     Scene::m_Object = this;
                     strncpy(Scene::name, Scene::m_Object->name.c_str(), 499);
@@ -1828,40 +1871,28 @@ namespace HyperAPI {
                     ImGui::EndDragDropSource();
                 }
 
+                // drop target
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("game_object")) {
+                        if (dirPayloadData != ID) {
+                            for (auto &gameObject : Scene::m_GameObjects) {
+                                if (gameObject->ID == dirPayloadData) {
+                                    gameObject->parentID = ID;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
                 if (Input::IsKeyPressed(KEY_DELETE) && Scene::m_Object == this && !keyDown) {
-                    Scene::m_Object = nullptr;
-                    keyDown = true;
-
-                    if (HasComponent<c_DirectionalLight>()) {
-                        Scene::DirLights.erase(std::remove(Scene::DirLights.begin(), Scene::DirLights.end(),
-                                                           GetComponent<c_DirectionalLight>().light),
-                                               Scene::DirLights.end());
-                        delete GetComponent<c_DirectionalLight>().light;
-                    }
-
-                    if (HasComponent<c_PointLight>()) {
-                        Scene::PointLights.erase(std::remove(Scene::PointLights.begin(), Scene::PointLights.end(),
-                                                             GetComponent<c_PointLight>().light),
-                                                 Scene::PointLights.end());
-                        delete GetComponent<c_PointLight>().light;
-                    }
-
-                    if (HasComponent<c_SpotLight>()) {
-                        Scene::SpotLights.erase(std::remove(Scene::SpotLights.begin(), Scene::SpotLights.end(),
-                                                            GetComponent<c_SpotLight>().light),
-                                                Scene::SpotLights.end());
-                        delete GetComponent<c_SpotLight>().light;
-                    }
-
-                    Scene::m_Registry.destroy(entity);
-                    Scene::m_GameObjects.erase(
-                            std::remove(Scene::m_GameObjects.begin(), Scene::m_GameObjects.end(), this),
-                            Scene::m_GameObjects.end());
+                     DeleteGameObject();
                 } else if (!Input::IsKeyPressed(KEY_DELETE)) {
                     keyDown = false;
                 }
 
-                if (item) {
+                if (item && hasChildren) {
 
                     for (auto &gameObject : Scene::m_GameObjects) {
                         if (gameObject->parentID == ID) {
@@ -2584,18 +2615,6 @@ namespace HyperAPI {
         };
     }
 
-    class QuadBatch {
-    public:
-        BatchLayer *layer;
-        int vert1, vert2, vert3, vert4;
-        Experimental::Transform transform;
-
-        [[maybe_unused]] QuadBatch(BatchLayer *layer, std::vector<Vertex_Batch> &vertices,
-                                   std::vector<unsigned int> &indices);
-
-        void Update();
-    };
-
     namespace f_GameObject {
         Experimental::GameObject *FindGameObjectByName(const std::string &name);
         Experimental::GameObject *FindGameObjectByTag(const std::string &tag);
@@ -2651,7 +2670,7 @@ namespace Hyper {
         HyperAPI::Renderer *renderer;
 
         Application(const int width, const int height, const char *gameTitle, bool fullscreen = false,
-                    bool resizable = true, bool wireframe = false)
+                    bool resizable = true, bool wireframe = false, std::function<void()> ioConf = [](){})
                 : width(width), height(height), title(std::string(gameTitle)) {
             HYPER_LOG("Initializing Static Engine");
             renderer = new HyperAPI::Renderer(width, height, title.c_str(), {0, -1}, 8, fullscreen, resizable,
@@ -2670,33 +2689,20 @@ namespace Hyper {
             ImGui::CreateContext();
             ImGuiIO &io = ImGui::GetIO();
 
-            io.ConfigWindowsMoveFromTitleBarOnly = true;
-
-            // io.Fonts->AddFontDefault();
-            ImGui::StyleColorsDark();
-
-            io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-            io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-
-            //enable so that windows can be their own windows
-            io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+            ioConf();
 
             ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 2.0f);
 
             ImGui_ImplGlfw_InitForOpenGL(renderer->window, true);
             ImGui_ImplOpenGL3_Init("#version 330");
-            io.Fonts->AddFontFromFileTTF("assets/fonts/OpenSans-Bold.ttf", 18.f);
-            static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
-            ImFontConfig icons_config;
-            icons_config.MergeMode = true;
-            icons_config.PixelSnapH = true;
-            io.Fonts->AddFontFromFileTTF("assets/fonts/fa-solid-900.ttf", 16.0f, &icons_config, icons_ranges);
             HYPER_LOG("Initialized ImGui");
         }
 
-        void Run(std::function<void()> update,
-                 std::function<void(unsigned int &PPT, unsigned int &PPFBO)> gui = [](unsigned int &PPT,
-                                                                                      unsigned int &PPFBO) {});
+        void Run(
+            std::function<void(unsigned int &)> update,
+            std::function<void(unsigned int &PPT, unsigned int &PPFBO)> gui = [](unsigned int &PPT, unsigned int &PPFBO) {},
+            std::function<void(HyperAPI::Shader &)> shadowMapRender = [](HyperAPI::Shader &m_shadowMapShader) {}
+        );
     };
 
     class MousePicker {

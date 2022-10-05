@@ -48,4 +48,5 @@ void main() {
     vec3 toneMapped = vec3(1.0) - exp(-fragment.rgb * exposure);
 
     gl_FragColor.rgb = pow(fragment.rgb, vec3(1.0/2.2));
+//    gl_FragColor = vec4(fragment.r, fragment.r, fragment.r, 1.0);
 }
