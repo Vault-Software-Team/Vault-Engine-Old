@@ -2,15 +2,6 @@
 #define STATIC_ENGINE_NETWORKING_H
 
 #if defined(_WIN32)
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <windows.h>
-#include <iphlpapi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string>
-#include <vector>
-#include <sstream>
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -18,10 +9,9 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
-#include <string>
+#include <string.h>
 #include <vector>
 #include <sstream>
-#endif
 
 namespace HyperAPI {
     namespace Networking {
@@ -40,7 +30,9 @@ namespace HyperAPI {
                     u_long interface
             );
 
-            virtual int Connect(int sock, struct sockaddr_in address) = 0;
+            virtual int Connect(int sock, struct sockaddr_in address) {
+                return 0;
+            }
             void Test(int) const;
             struct sockaddr_in GetAddress() const;
             int GetSocket() const;
@@ -74,7 +66,59 @@ namespace HyperAPI {
 
             int Connect(int sock, struct sockaddr_in address) override;
         };
+
+        class ListenSocket : public BindSocket {
+        private:
+            int backlog;
+            int listening;
+        public:
+            ListenSocket(
+                    int domain,
+                    int service,
+                    int protocol,
+                    int port,
+                    u_long interface,
+                    int backlog
+            );
+
+            void Listen();
+        };
+
+        class Server {
+        protected:
+            ListenSocket *socket;
+            virtual void Accepter(){};
+            virtual void Handler(){};
+            virtual void Responder(){};
+        public:
+            Server(
+                int domain,
+                int service,
+                int protocol,
+                int port,
+                u_long interface,
+                int backlog
+            );
+
+            virtual void Launch() {};
+            ListenSocket *GetSocket() const;
+        };
+
+        class TestServer : public Server {
+        private:
+            char buffer[30000] = {0};
+            int newSocket;
+
+            void Accepter() override;
+            void Handler() override;
+            void Responder() override;
+        public:
+            TestServer();
+
+            void Launch() override;
+        };
     }
 }
+#endif
 
 #endif

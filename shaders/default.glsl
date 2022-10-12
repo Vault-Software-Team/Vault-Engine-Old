@@ -4,6 +4,8 @@ layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 color;
 layout(location = 2) in vec3 aNormal;
 layout(location = 3) in vec2 g_texCoords;
+layout(location = 4) in ivec4 boneIds;
+layout(location = 5) in vec4 weights;
 
 out vec2 texCoords;
 out vec3 Color;
@@ -21,10 +23,39 @@ uniform mat4 lightSpaceMatrix;
 uniform vec3 cameraPosition;
 uniform vec2 texUvOffset;
 
+const int MAX_BONES = 100;
+const int MAX_BONE_INFLUENCE = 4;
+uniform mat4 finalBonesMatrices[MAX_BONES];
+
 void main() {
-    vec4 worldPosition = model * translation * rotation * scale * vec4(position, 1.0);
-    currentPosition = vec3(model * translation * rotation * scale * vec4(position, 1.0));
+
+    vec4 totalPosition = vec4(0);
+
+    for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
+    {
+        if(boneIds[i] == -1) {
+            continue;
+        }
+
+        if(boneIds[i] >=MAX_BONES)
+        {
+            totalPosition = vec4(position, 1.0f);
+            break;
+        }
+
+        vec4 localPosition = finalBonesMatrices[boneIds[i]] * vec4(position, 1.0f);
+        totalPosition += localPosition * weights[i];
+        vec3 localNormal = mat3(finalBonesMatrices[boneIds[i]]) * aNormal;
+    }
+    if(totalPosition == vec4(0))
+    {
+        totalPosition = vec4(position, 1.0f);
+    }
+
+    vec4 worldPosition = model * translation * rotation * scale * totalPosition;
+    currentPosition = vec3(model * translation * rotation * scale * totalPosition);
     gl_Position = camera * vec4(currentPosition, 1.0);
+
 
     vec2 finalCoords = g_texCoords;
 
@@ -51,7 +82,7 @@ void main() {
 #shader fragment
 #version 330 core
 layout(location = 0) out vec4 FragColor;
-layout(location = 1) out int EntityID;
+layout(location = 1) out int entityId;
 
 in vec2 texCoords;
 in vec3 Color;
@@ -335,7 +366,7 @@ void main() {
 
 //    FragColor = texture(shadowMap, texCoords);
     FragColor = result;
-    EntityID = 50;
+    entityId = 69;
     // FragColor = directionalLight(dirLights[0]);
 //     FragColor = result;
     

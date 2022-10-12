@@ -15,11 +15,14 @@ void main() {
 
 #shader fragment
 #version 330 core
+layout(location = 0) out vec4 FragColor;
+layout(location = 1) out int entityId;
 
 in vec3 texCoords;
 
 uniform samplerCube skybox;
 
 void main() {
-    gl_FragColor = texture(skybox, texCoords); 
+    FragColor = texture(skybox, texCoords);
+    entityId = 555;
 }

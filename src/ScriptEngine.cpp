@@ -5,6 +5,8 @@
 // THIS ISNT WORKING YET
 // BEACUSE OF ENTT SUPPORT THIS WONT WORK AT ALL DONT EVEN TRY
 
+#define lua_pushglobaltable(L) lua_pushvalue(L,LUA_GLOBALSINDEX)
+
 using namespace HyperAPI::Experimental;
 using namespace HyperAPI;
 
@@ -178,6 +180,13 @@ void LuaUpdateComponentValues(lua_State *L, const std::string &type, GameObject 
     }
 }
 
+bool is_number(const std::string& s)
+{
+    std::string::const_iterator it = s.begin();
+    while (it != s.end() && std::isdigit(*it)) ++it;
+    return !s.empty() && it == s.end();
+}
+
 namespace ScriptEngine {
     GLFWwindow *window = nullptr;
     HyperAPI::ComponentSystem *m_ComponentSystem = nullptr;
@@ -226,6 +235,29 @@ namespace ScriptEngine {
         L = m_Init();
         r = luaL_dofile(L, pathToScript.c_str());
 
+        lua_pushglobaltable(L);
+        lua_pushnil(L);
+        while (lua_next(L,-2) != 0) {
+            std::string key = lua_tostring(L, -2);
+            if(key.find("fx_") != std::string::npos) {
+                // get the value of the key
+                lua_getglobal(L, key.c_str());
+                std::string value = lua_tostring(L, -1);
+                lua_pop(L, 1);
+
+                if(is_number(value)) {
+                    float num = std::stof(std::string(m_Fields[key].value));
+                    lua_pushnumber(L, num);
+                } else {
+                    lua_pushstring(L, m_Fields[key].value);
+                }
+
+                lua_setglobal(L, key.c_str());
+            }
+            lua_pop(L,1);
+        }
+        lua_pop(L,1);
+
         if(r == LUA_OK) {
             lua_getglobal(L, "OnStart");
             if(lua_isfunction(L, -1)) {
@@ -235,6 +267,48 @@ namespace ScriptEngine {
             std::string error = lua_tostring(L, -1);
             std::cout << error << std::endl;
         }
+    }
+
+    void m_LuaScript::GetFields() {
+        lua_State *fxL = m_Init();
+        int r = luaL_dofile(fxL, pathToScript.c_str());
+
+        lua_pushglobaltable(fxL);
+        lua_pushnil(fxL);
+        while (lua_next(fxL,-2) != 0) {
+            std::string key = lua_tostring(fxL, -2);
+            if(key.find("fx_") != std::string::npos) {
+                // get the value of the key
+                lua_getglobal(fxL, key.c_str());
+                std::string value = lua_tostring(fxL, -1);
+                lua_pop(fxL, 1);
+
+                auto it = m_Fields.find(key);
+                if(it != m_Fields.end()) {
+                    m_Fields[key].updated = true;
+                } else {
+                    m_FieldValue fv;
+                    fv.updated = true;
+                    strcpy(fv.value, value.c_str());
+
+                    m_Fields[key] = fv;
+                }
+            }
+
+            lua_pop(fxL,1);
+        }
+
+        for(auto &field : m_Fields) {
+            if(field.second.updated) {
+                field.second.updated = false;
+            } else {
+                m_Fields.erase(field.first);
+                break;
+            }
+        }
+        lua_pop(fxL,1);
+
+        lua_close(fxL);
     }
 
     void m_LuaScript::Update() {
@@ -261,6 +335,33 @@ namespace ScriptEngine {
             std::string error = lua_tostring(L, -1);
             std::cout << error << std::endl;
         }
+
+        lua_pushglobaltable(L);
+        lua_pushnil(L);
+        while (lua_next(L,-2) != 0) {
+            std::string key = lua_tostring(L, -2);
+            if(key.find("fx_") != std::string::npos) {
+                // get the value of the key
+                lua_getglobal(L, key.c_str());
+                std::string value = lua_tostring(L, -1);
+                lua_pop(L, 1);
+
+                if(strcmp(m_Fields[key].value, value.c_str()) != 0) {
+                    strcpy(m_Fields[key].value, value.c_str());
+                } else {
+                    if(is_number(value)) {
+                        float num = std::stof(std::string(m_Fields[key].value));
+                        lua_pushnumber(L, num);
+                    } else {
+                        lua_pushstring(L, m_Fields[key].value);
+                    }
+
+                    lua_setglobal(L, key.c_str());
+                }
+            }
+            lua_pop(L,1);
+        }
+        lua_pop(L,1);
     }
 
     void m_LuaScript::Collision2D(GameObject *other) {
@@ -574,18 +675,31 @@ namespace ScriptEngine {
         lua_register(L, "UpdateComponent", Functions::UpdateComponent);
         lua_register(L, "HasComponent", Functions::HasComponent);
 
-        lua_register(L, "IsKeyPressed", Functions::IsKeyPressed);
-        lua_register(L, "IsKeyReleased", Functions::IsKeyReleased);
-        lua_register(L, "IsMouseButtonPressed", Functions::IsMouseButtonPressed);
-        lua_register(L, "IsMouseButtonReleased", Functions::IsMouseButtonReleased);
         lua_register(L, "FindGameObjectByName", Functions::FindGameObjectByName);
         lua_register(L, "FindGameObjectByTag", Functions::FindGameObjectByTag);
+        lua_register(L, "FindGameObjectsByName", Functions::FindGameObjectsByName);
+        lua_register(L, "FindGameObjectsByTag", Functions::FindGameObjectsByTag);
         lua_register(L, "InstantiatePrefab", Functions::InstantiatePrefab);
         lua_register(L, "InstantiateTransformPrefab", Functions::InstantiateTransformPrefab);
         lua_register(L, "PlayAudio", Functions::PlayAudio);
         lua_register(L, "StopAudio", Functions::StopAudio);
         lua_register(L, "PlayMusic", Functions::PlayMusic);
         lua_register(L, "StopMusic", Functions::StopMusic);
+        lua_register(L, "ToDegrees", Functions::ToDegrees);
+        lua_register(L, "ToRadians", Functions::ToRadians);
+
+        lua_newtable(L);
+        PushTableFunction(L, "IsKeyPressed", Functions::IsKeyPressed);
+        PushTableFunction(L, "IsKeyReleased", Functions::IsKeyReleased);
+        PushTableFunction(L, "IsMouseButtonPressed", Functions::IsMouseButtonPressed);
+        PushTableFunction(L, "IsMouseButtonReleased", Functions::IsMouseButtonReleased);
+        PushTableKey(L, "GetHorizontalAxis", &Functions::GetHorizontalAxis);
+        PushTableKey(L, "GetVerticalAxis", &Functions::GetVerticalAxis);
+        PushTableKey(L, "GetMouseXAxis", &Functions::GetMouseXAxis);
+        PushTableKey(L, "GetMouseYAxis", &Functions::GetMouseYAxis);
+        PushTableKey(L, "SetMouseHidden", &Functions::SetMouseHidden);
+        PushTableKey(L, "SetMousePosition", &Functions::SetMousePosition);
+        lua_setglobal(L, "Input");
 
         return L;
     }
@@ -619,6 +733,19 @@ namespace ScriptEngine {
                 PushTableKey(L, "scaleX", transform.scale.x);
                 PushTableKey(L, "scaleY", transform.scale.y);
                 PushTableKey(L, "scaleZ", transform.scale.z);
+
+                PushTableKey(L, "forwardX", transform.forward.x);
+                PushTableKey(L, "forwardY", transform.forward.y);
+                PushTableKey(L, "forwardZ", transform.forward.z);
+
+                PushTableKey(L, "upX", transform.up.x);
+                PushTableKey(L, "upY", transform.up.y);
+                PushTableKey(L, "upZ", transform.up.z);
+
+                PushTableKey(L, "rightX", transform.right.x);
+                PushTableKey(L, "rightY", transform.right.y);
+                PushTableKey(L, "rightZ", transform.right.z);
+
                 PushTableFunction(L, "LookAt", LookAt);
             }
             else if(type == "MeshRenderer") {
@@ -753,6 +880,15 @@ namespace ScriptEngine {
                 lua_newtable(L);
                 PushTableKey(L, "obj_id", m_Object->ID.c_str());
                 PushTableKey(L, "type", "CameraComponent");
+                // push an array key
+                lua_pushstring(L, "layers");
+                lua_newtable(L);
+                for(auto &layer : cam.camera->layers) {
+                    // string bruh
+                    lua_pushstring(L, layer.c_str());
+                    lua_rawseti(L, -2, layer.size());
+                }
+                lua_rawset(L, -3);
                 PushTableKey(L, "fov", cam.camera->cam_fov);
                 PushTableKey(L, "near", cam.camera->cam_near);
                 PushTableKey(L, "far", cam.camera->cam_far);
@@ -950,9 +1086,11 @@ namespace ScriptEngine {
                     PushTableKey(L, "tag", gameObject->tag.c_str());
                     PushTableFunction(L, "GetComponent", GetEntComponent);
                     PushTableFunction(L, "UpdateComponent", UpdateEntComponent);
-                    return 1;
+                    PushTableFunction(L, "SetActive", SetActive);
+                    PushTableKey(L, "active", gameObject->enabled);
                 }
             }
+            return 1;
         }
 
         int FindGameObjectByTag(lua_State *L) {
@@ -966,9 +1104,56 @@ namespace ScriptEngine {
                     PushTableKey(L, "tag", gameObject->tag.c_str());
                     PushTableFunction(L, "GetComponent", GetEntComponent);
                     PushTableFunction(L, "UpdateComponent", UpdateEntComponent);
-                    return 1;
+                    PushTableFunction(L, "SetActive", SetActive);
+                    PushTableKey(L, "active", gameObject->enabled);
                 }
             }
+
+            return 1;
+        }
+
+        int FindGameObjectsByName(lua_State *L) {
+            std::string name = (std::string)lua_tostring(L, 1);
+
+            lua_newtable(L);
+            int i = 1;
+            for(auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+                if(gameObject->name == name) {
+                    lua_newtable(L);
+                    PushTableKey(L, "obj_id", gameObject->ID.c_str());
+                    PushTableKey(L, "name", gameObject->name.c_str());
+                    PushTableKey(L, "tag", gameObject->tag.c_str());
+                    PushTableFunction(L, "GetComponent", GetEntComponent);
+                    PushTableFunction(L, "UpdateComponent", UpdateEntComponent);
+                    PushTableFunction(L, "SetActive", SetActive);
+                    PushTableKey(L, "active", gameObject->enabled);
+                    lua_rawseti(L, -2, i);
+                    i++;
+                }
+            }
+            return 1;
+        }
+
+        int FindGameObjectsByTag(lua_State *L) {
+            std::string tag = (std::string)lua_tostring(L, 1);
+
+            lua_newtable(L);
+            int i = 1;
+            for(auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+                if(gameObject->tag == tag) {
+                    lua_newtable(L);
+                    PushTableKey(L, "obj_id", gameObject->ID.c_str());
+                    PushTableKey(L, "name", gameObject->name.c_str());
+                    PushTableKey(L, "tag", gameObject->tag.c_str());
+                    PushTableFunction(L, "GetComponent", GetEntComponent);
+                    PushTableFunction(L, "UpdateComponent", UpdateEntComponent);
+                    PushTableFunction(L, "SetActive", SetActive);
+                    PushTableKey(L, "active", gameObject->enabled);
+                    lua_rawseti(L, -2, i);
+                    i++;
+                }
+            }
+            return 1;
         }
 
         int GetEntComponent(lua_State *L) {
@@ -1471,6 +1656,30 @@ namespace ScriptEngine {
             if(gameObject != nullptr) {
                 auto &cam = gameObject->GetComponent<CameraComponent>();
                 cam.camera->m_MouseMovement = true;
+            }
+
+            return 1;
+        }
+
+        int ToDegrees(lua_State *L) {
+            lua_pushnumber(L, glm::degrees(lua_tonumber(L, 1)));
+            return 1;
+        }
+
+        int ToRadians(lua_State *L) {
+            lua_pushnumber(L, glm::radians(lua_tonumber(L, 1)));
+            return 1;
+        }
+
+        int SetActive(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+            if(gameObject != nullptr) {
+                gameObject->SetActive(lua_toboolean(L, 2));
             }
 
             return 1;

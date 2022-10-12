@@ -5,23 +5,23 @@ if [ "$PLATFORM" = "windows" ]; then
     # if not, create it
     
     if [ -d dist/windows ]; then
-        echo "dist/windows exists"
+        rm -r dist/windows
+        mkdir dist/windows
     else
-        echo "dist/windows does not exist"
         mkdir dist/windows
     fi
     
     cp win_build.exe dist/windows/Static\ Engine.exe
     cp *.dll dist/windows/
-    cp assets dist/windows/assets
-    cp imgui.ini dist/windows/imgui.ini
-    cp shaders dist/windows/shaders
-    cp build dist/windows/build
+    cp -r assets dist/windows/assets
+    cp -r imgui.ini dist/windows/imgui.ini
+    cp -r shaders dist/windows/shaders
+    cp -r build dist/windows/build
 else 
     if [ -d dist/linux ]; then
-        echo "dist/linux exists"
+        rm -r dist/linux
+        mkdir dist/linux
     else
-        echo "dist/linux does not exist"
         mkdir dist/linux
     fi
 

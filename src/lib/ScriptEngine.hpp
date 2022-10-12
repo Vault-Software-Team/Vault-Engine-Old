@@ -2,6 +2,7 @@
 #include "../vendor/luajit-2.1/lua.hpp"
 #include <iostream>
 #include <string>
+#include <map>
 
 // #ifdef _WIN32
 // #ifdef BUILD_DLL
@@ -69,6 +70,9 @@ namespace ScriptEngine {
         // Camera Functions
         int MouseInput(lua_State *L);
 
+        // GameObject functions
+        int SetActive(lua_State *L);
+
         int Log(lua_State *L);
         int LogWarning(lua_State *L);
         int LogError(lua_State *L);
@@ -89,6 +93,8 @@ namespace ScriptEngine {
         int UpdateEntComponent(lua_State *L);
         int FindGameObjectByName(lua_State *L);
         int FindGameObjectByTag(lua_State *L);
+        int FindGameObjectsByName(lua_State *L);
+        int FindGameObjectsByTag(lua_State *L);
         int InstantiatePrefab(lua_State *L);
         int InstantiateTransformPrefab(lua_State *L);
         int PlayAudio(lua_State *L);
@@ -96,10 +102,18 @@ namespace ScriptEngine {
         int StopAudio(lua_State *L);
         int StopMusic(lua_State *L);
         int DisableResizing(lua_State *L);
+        int ToDegrees(lua_State *L);
+        int ToRadians(lua_State *L);
     }
+
+    struct m_FieldValue {
+        char value[1024];
+        bool updated = false;
+    };
 
     class m_LuaScript {
     public:
+        std::map<std::string, m_FieldValue> m_Fields;
         lua_State *L;
         int r;
         HyperAPI::Experimental::GameObject *m_GameObject;
@@ -110,7 +124,8 @@ namespace ScriptEngine {
             lua_close(L);
         }
         void Init();
-        void Update(); 
+        void Update();
+        void GetFields();
         void Collision2D(HyperAPI::Experimental::GameObject *other);  
         void CollisionExit2D(HyperAPI::Experimental::GameObject *other);
 

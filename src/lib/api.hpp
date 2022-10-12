@@ -17,7 +17,6 @@
 #include "../vendor/glm/gtx/quaternion.hpp"
 
 #define GLM_ENABLE_EXPERIMENTAL
-
 #include "../vendor/glm/gtx/matrix_decompose.hpp"
 #include "../vendor/glm/gtx/rotate_vector.hpp"
 #include "../vendor/glm/gtx/vector_angle.hpp"
@@ -48,6 +47,9 @@
 // bullet physics
 #include "../vendor/bullet/bullet/btBulletDynamicsCommon.h"
 #include "../vendor/bullet/bullet/BulletCollision/CollisionDispatch/btGhostObject.h"
+
+// networking
+#include "networking.h"
 
 #ifndef _WIN32
 
@@ -357,6 +359,7 @@ namespace HyperAPI {
         // glm::vec3 Position;
         // glm::vec3 Orientation = glm::vec3(0.0f, 0.0f, -1.0f);
         // glm::vec3 RotationValue = glm::vec3(0.0f, 0.0f, 0.0f);
+        std::vector<std::string> layers;
         bool EnttComp = false;
         bool m_MouseMovement = false;
         entt::entity entity = entt::null;
@@ -629,6 +632,7 @@ namespace HyperAPI {
                 if (vertex.m_BoneIDs[i] < 0) {
                     vertex.m_Weights[i] = weight;
                     vertex.m_BoneIDs[i] = boneID;
+
                     break;
                 }
             }
@@ -1012,26 +1016,20 @@ namespace HyperAPI {
             glm::vec3 rotation = glm::vec3(0, 0, 0);
             glm::vec3 scale = glm::vec3(1, 1, 1);
             // forward
-            glm::vec3 forward = glm::vec3(0, 0, 1);
+            glm::vec3 forward;
+            glm::vec3 up;
+            glm::vec3 right;
 
             void GUI() {
-                // make the treenode not transparent
                 ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
                 if (ImGui::TreeNode("Transform")) {
-//                    ImGui::DragFloat3("Position", &position.x, 0.1f);
-//                    ImGui::DragFloat3("Rotation", &rotation.x, 0.1f);
-//                    ImGui::DragFloat3("Scale", &scale.x, 0.1f);
-//
                     DrawVec3Control("Position", position);
                     rotation = glm::degrees(rotation);
                     DrawVec3Control("Rotation", rotation);
                     rotation = glm::radians(rotation);
-                    DrawVec3Control("Scale", scale);
-
-                    ImGui::NewLine();
-                    if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
-                        Scene::m_Registry.remove<Transform>(entity);
-                    }
+                    // move the scale up by a bit
+                    ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(), ImGui::GetCursorPosY() - 0.6f));
+                    DrawVec3Control("Scale", scale, 1);
 
                     ImGui::TreePop();
                 }
@@ -1039,6 +1037,12 @@ namespace HyperAPI {
             }
 
             void Update() {
+                const glm::mat4 inverted = glm::inverse(transform);
+                forward = normalize(glm::vec3(inverted[2]));
+
+                right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
+                up = glm::normalize(glm::cross(right, forward));
+
                 transform = glm::translate(glm::mat4(1.0f), position) *
                             glm::toMat4(glm::quat(rotation)) *
                             glm::scale(glm::mat4(1.0f), Vector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
@@ -1129,20 +1133,20 @@ namespace HyperAPI {
                 mesh = sp.m_Mesh;
             }
 
-            void GUI() {
+            void GUI() override {
                 if (ImGui::TreeNode("Spritesheet Renderer")) {
                     if (ImGui::TreeNode("Texture")) {
-                        if (material.diffuse != nullptr) {
-                            ImGui::ImageButton((void *) material.diffuse->ID, ImVec2(128, 128), ImVec2(0, 1),
+                        if (mesh->material.diffuse != nullptr) {
+                            ImGui::ImageButton((void *) mesh->material.diffuse->ID, ImVec2(128, 128), ImVec2(0, 1),
                                                ImVec2(1, 0));
                         } else {
                             ImGui::ImageButton((void *) 0, ImVec2(128, 128));
                         }
                         Scene::DropTargetMat(Scene::DRAG_SPRITE, mesh, nullptr);
-                        if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1) && material.diffuse != nullptr) {
-                            glDeleteTextures(1, &material.diffuse->ID);
-                            delete material.diffuse;
-                            material.diffuse = nullptr;
+                        if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1) && mesh->material.diffuse != nullptr) {
+                            glDeleteTextures(1, &mesh->material.diffuse->ID);
+                            delete mesh->material.diffuse;
+                            mesh->material.diffuse = nullptr;
                         }
 
                         ImGui::TreePop();
@@ -1151,20 +1155,6 @@ namespace HyperAPI {
                     DrawVec2Control("Sheet Size", spritesheetSize);
                     DrawVec2Control("Sprite Size", spriteSize);
                     DrawVec2Control("Sprite Offset", spriteOffset);
-
-                    if (ImGui::Button("Apply Changes")) {
-                        if (sp != nullptr) {
-                            delete sp;
-                            sp = nullptr;
-                        }
-
-                        sp = new Spritesheet("", material, spritesheetSize, spriteSize, spriteOffset);
-                        if (mesh != nullptr) {
-                            delete mesh;
-                            mesh = nullptr;
-                        }
-                        mesh = sp->m_Mesh;
-                    }
 
                     ImGui::NewLine();
                     if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
@@ -1176,7 +1166,21 @@ namespace HyperAPI {
             }
 
             void Update() {
+                if(mesh == nullptr) return;
 
+                for(auto &vertex : mesh->vertices) {
+                    int index = &vertex - &mesh->vertices[0];
+                    float xCoord = spriteOffset.x + spriteSize.x;
+                    float yCoord = (spritesheetSize.y - (spriteOffset.y + spriteSize.y)) + spriteSize.y;
+
+                    std::vector<Vector2> texCoords = {
+                            Vector2(spriteOffset.x / spritesheetSize.x, (spritesheetSize.y - (spriteOffset.y + spriteSize.y)) / spritesheetSize.y),
+                            Vector2(xCoord / spritesheetSize.x, (spritesheetSize.y - (spriteOffset.y + spriteSize.y)) / spritesheetSize.y),
+                            Vector2(xCoord / spritesheetSize.x, yCoord / spritesheetSize.y),
+                            Vector2(spriteOffset.x / spritesheetSize.x, yCoord / spritesheetSize.y)
+                    };
+                    vertex.texUV = texCoords[index];
+                }
             }
         };
 
@@ -1331,15 +1335,6 @@ namespace HyperAPI {
             char name[499] = "anim_name";
             std::string id = uuid::generate_uuid_v4();
             std::vector<SpriteRenderer> frames;
-            float delay = 0.1f;
-            float delay_counter = 0.0f;
-            bool loop = false;
-        };
-
-        struct m_SpritesheetAnimationData {
-            char name[499] = "anim_name";
-            std::string id = uuid::generate_uuid_v4();
-            std::vector<SpritesheetRenderer> frames;
             float delay = 0.1f;
             float delay_counter = 0.0f;
             bool loop = false;
@@ -1684,6 +1679,68 @@ namespace HyperAPI {
             }
         };
 
+        struct PathfindingAI : public BaseComponent {
+        private:
+            struct Node {
+                bool obstacle = false;
+                bool visited = false;
+                float globalGoal;
+                float localGoal;
+                int x;
+                int y;
+                std::vector<Node *> neighbors;
+                Node *parent;
+            };
+
+            Node *nodes = nullptr;
+            int mapWidth = 5, mapHeight = 5;
+
+            Cube *cube = new Cube(Vector4(1, 0, 0, 1));
+        public:
+            PathfindingAI() = default;
+
+            void GUI() {
+                if(ImGui::TreeNode("Pathfinding AI")) {
+                    ImGui::DragInt("Map Width", &mapWidth);
+                    ImGui::DragInt("Map Height", &mapHeight);
+
+                    ImGui::TreePop();
+                }
+            }
+
+            void CreateGrid() {
+                nodes = new Node[mapWidth * mapHeight];
+
+                for(int x = 0; x < mapWidth; x++) {
+                    for(int y = 0; y < mapHeight; y++) {
+                        nodes[y * mapWidth + x].x = x;
+                        nodes[y * mapWidth + x].y = y;
+                        nodes[y * mapWidth + x].obstacle = false;
+                        nodes[y * mapWidth + x].visited = false;
+                        nodes[y * mapWidth + x].parent = nullptr;
+                    }
+                }
+            }
+
+            void DeleteGrid() {
+                delete nodes;
+            }
+
+            void Update(Shader &shader, Camera &camera) {
+                float nodeSize = 1;
+                float nodeBorder = 0.2;
+
+                for(int x = 0; x < mapWidth; x++) {
+                    for(int y = 0; y < mapHeight; y++) {
+                        Transform trans;
+                        trans.position.x = x * nodeSize + nodeBorder;
+                        trans.position.y = y * nodeSize + nodeBorder;
+                        trans.Update();
+                    }
+                }
+            }
+        };
+
         struct Rigidbody2D : public BaseComponent {
             b2BodyType type = b2_staticBody;
             bool fixedRotation = false;
@@ -1774,6 +1831,7 @@ namespace HyperAPI {
 
         class GameObject : public ComponentEntity {
         public:
+            bool enabled = true;
             bool keyDown = false;
             std::string NODE_ID = uuid::generate_uuid_v4();
             std::string layer = "Default";
@@ -1782,6 +1840,10 @@ namespace HyperAPI {
             GameObject() {
                 entity = Scene::m_Registry.create();
                 ID = uuid::generate_uuid_v4();
+            }
+
+            void SetActive(bool active) {
+                enabled = active;
             }
 
             void Update() {
@@ -1840,7 +1902,14 @@ namespace HyperAPI {
                 for (auto &gameObject : Scene::m_GameObjects) {
                     if (gameObject->parentID == ID) {
                         hasChildren = true;
-                        item = ImGui::TreeNode(NODE_ID.c_str(), std::string(std::string(ICON_FA_CUBE) + " " + name).c_str());
+                        // if enabled is false make the text grey
+                        if (!gameObject->enabled) {
+                            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+                            item = ImGui::TreeNode(NODE_ID.c_str(), std::string(std::string(ICON_FA_CUBE) + " " + name).c_str());
+                            ImGui::PopStyleColor();
+                        } else {
+                            item = ImGui::TreeNode(NODE_ID.c_str(), std::string(std::string(ICON_FA_CUBE) + " " + name).c_str());
+                        }
                         break;
                     }
                 }
@@ -1848,7 +1917,13 @@ namespace HyperAPI {
                 if(!hasChildren) {
                     ImGui::PushID(NODE_ID.c_str());
                     ImGui::SetCursorPos( ImVec2(ImGui::GetCursorPos().x + 16, ImGui::GetCursorPos().y));
-                    item = ImGui::Selectable(std::string(std::string(ICON_FA_CUBE) + " " + name).c_str());
+                    if(!enabled) {
+                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+                        item = ImGui::Selectable(std::string(std::string(ICON_FA_CUBE) + " " + name).c_str());
+                        ImGui::PopStyleColor();
+                    } else {
+                        item = ImGui::Selectable(std::string(std::string(ICON_FA_CUBE) + " " + name).c_str());
+                    }
                     ImGui::PopID();
                 }
 
@@ -2002,8 +2077,8 @@ namespace HyperAPI {
                 bt_transform = new btTransform();
                 bt_transform->setIdentity();
                 bt_transform->setOrigin(btVector3(transform->position.x, transform->position.y, transform->position.z));
-                bt_transform->setRotation(btQuaternion(transform->rotation.x, transform->rotation.y, transform->rotation.z,
-                                                       1));
+                glm::quat q = transform->rotation;
+                bt_transform->setRotation(btQuaternion(q.x, q.y, q.z));
 
                 motionState = new btDefaultMotionState(*bt_transform);
 
@@ -2192,7 +2267,7 @@ namespace HyperAPI {
                 }
             }
 
-            void GUI() {
+            void GUI() override {
                 if (ImGui::TreeNode("Sprite Animation")) {
                     ImGui::InputText("Current Animation", currAnim, 499);
 
@@ -2261,8 +2336,6 @@ namespace HyperAPI {
             void Play() {
                 for (auto &animation : anims) {
                     if (std::string(animation.name) == std::string(currAnim)) {
-                        std::cout << Scene::currFrames[ID][std::string(animation.name)] << std::endl;
-                        // deltaTime stuff
                         Scene::currDelays[ID][std::string(animation.name)] += Timestep::deltaTime;
                         if (Scene::currDelays[ID][std::string(animation.name)] >= animation.delay) {
                             Scene::currFrames[ID][std::string(animation.name)] += 1;
@@ -2283,57 +2356,128 @@ namespace HyperAPI {
             }
         };
 
+        struct m_SpritesheetAnimationData {
+            struct Frame {
+                Vector2 size = Vector2(0.0f, 0.0f);
+                Vector2 offset = Vector2(0.0f, 0.0f);
+            };
+
+            char name[499] = "anim_name";
+            std::string id = uuid::generate_uuid_v4();
+            float delay = 0.1f;
+            float delay_counter = 0.0f;
+
+            std::vector<Frame> frames;
+
+            bool loop = false;
+        };
+
         std::vector<m_SpritesheetAnimationData>
         GetAnimationsFromXML(const char *texPath, float delay, Vector2 sheetSize, const std::string &xmlFile);
 
         struct c_SpritesheetAnimation : public BaseComponent {
-            Mesh *currMesh;
-            std::vector<m_SpritesheetAnimationData> anims;
+            Material mat{Vector4(1,1,1,1)};
+            Spritesheet sheet{"", mat, Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)};
+            Mesh *mesh;
             char currAnim[499] = "";
-            Texture *texture = new Texture("assets/PONGON.png", 0, "texture_diffuse");
-            Vector2 sheetSize;
+            std::vector<m_SpritesheetAnimationData> anims;
+            Vector2 spritesheetSize;
+            m_SpritesheetAnimationData::Frame currFrame;
 
             c_SpritesheetAnimation() {
-                currMesh = nullptr;
-                for (auto &gameObject : Scene::m_GameObjects) {
-                    if (gameObject->ID == ID) {
-                        std::map<std::string, int> m_CurrFrames;
-                        Scene::currFrames[gameObject->ID] = m_CurrFrames;
-
-                        std::map<std::string, float> m_CurrDelays;
-                        Scene::currDelays[gameObject->ID] = m_CurrDelays;
-                    }
-                }
+                mesh = sheet.m_Mesh;
             }
 
             void GUI() override {
-                if (ImGui::TreeNode("Spritesheet Animation")) {
-                    ImGui::InputText("Current Animation", currAnim, 499);
-
+                if (ImGui::TreeNode("Spritesheet Renderer")) {
                     if (ImGui::TreeNode("Texture")) {
-                        if (texture != nullptr) {
-                            ImGui::ImageButton((void *) texture->ID, ImVec2(128, 128), ImVec2(0, 1), ImVec2(1, 0));
+                        if (mesh->material.diffuse != nullptr) {
+                            ImGui::ImageButton((void *) mesh->material.diffuse->ID, ImVec2(128, 128), ImVec2(0, 1),
+                                               ImVec2(1, 0));
                         } else {
                             ImGui::ImageButton((void *) 0, ImVec2(128, 128));
                         }
-                        Scene::DropTargetMat(Scene::DRAG_SPRITE_NO_MESH, nullptr, texture);
-                        if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1) && texture != nullptr) {
-                            glDeleteTextures(1, &texture->ID);
-                            delete texture;
-                            texture = nullptr;
+                        Scene::DropTargetMat(Scene::DRAG_SPRITE, mesh, nullptr);
+                        if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1) && mesh->material.diffuse != nullptr) {
+                            glDeleteTextures(1, &mesh->material.diffuse->ID);
+                            delete mesh->material.diffuse;
+                            mesh->material.diffuse = nullptr;
                         }
 
                         ImGui::TreePop();
                     }
+                    ImGui::ColorEdit3("Color", &mesh->material.baseColor.x);
+                    DrawVec2Control("Sheet Size", spritesheetSize);
+                    ImGui::NewLine();
+                    ImGui::InputText("Current Animation", currAnim, 499);
 
-                    if (ImGui::TreeNode("XML Data")) {
-                        DrawVec2Control("Sheet Size", sheetSize);
+                    if(ImGui::TreeNode("Animations")) {
+                        for (auto &animation : anims) {
+                            int index = &animation - &anims[0];
 
-                        if (ImGui::Button(ICON_FA_FILE " Select XML")) {
-                            ImGuiFileDialog::Instance()->OpenDialog("SelectXML", "Select XML", ".xml", ".");
+                            if(ImGui::TreeNode(animation.name)) {
+                                ImGui::InputText("Name", animation.name, 499);
+                                ImGui::DragFloat("Delay", &animation.delay, 0.01f);
+                                ImGui::Checkbox("Loop", &animation.loop);
+
+                                if(ImGui::TreeNode("Frames")) {
+                                    for(auto &frame : animation.frames) {
+                                        int index = &frame - &animation.frames[0];
+                                        if(ImGui::TreeNode(std::to_string(index).c_str())) {
+                                            DrawVec2Control("Size", frame.size);
+                                            DrawVec2Control("Offset", frame.offset);
+                                            ImGui::NewLine();
+                                            if(ImGui::Button(ICON_FA_TRASH " Remove Frame")) {
+                                                animation.frames.erase(animation.frames.begin() + index);
+                                            }
+                                            ImGui::TreePop();
+                                        }
+                                    }
+                                    ImGui::TreePop();
+                                }
+                                ImGui::NewLine();
+
+                                if(ImGui::Button(ICON_FA_PLUS" New Frame")) {
+                                    m_SpritesheetAnimationData::Frame frame;
+                                    animation.frames.push_back(frame);
+                                }
+
+                                if(ImGui::Button(ICON_FA_TRASH " Remove Animation")) {
+                                    anims.erase(anims.begin() + index);
+                                }
+
+                                ImGui::TreePop();
+                            }
+
+                        }
+
+                        ImGui::NewLine();
+
+                        if(ImGui::Button(ICON_FA_PLUS " New Animation")) {
+                            m_SpritesheetAnimationData anim;
+                            anims.push_back(anim);
                         }
 
                         ImGui::TreePop();
+                    }
+                    if(ImGui::Button("Load XML File")) {
+                        ImGuiFileDialog::Instance()->OpenDialog("ChooseXML", "Choose XML File", ".xml", ".");
+                    }
+
+                    if (ImGuiFileDialog::Instance()->Display("ChooseXML")) {
+                        // action if OK
+                        if (ImGuiFileDialog::Instance()->IsOk()) {
+                            std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+                            // remove cwd from filePathName
+                            filePathName.erase(0, cwd.length() + 1);
+                            std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+
+                            anims = GetAnimationsFromXML("", 0.1, spritesheetSize, filePathName.c_str());
+
+                            HYPER_LOG(std::string("Loaded XML File: ") + filePathName);
+                        }
+
+                        ImGuiFileDialog::Instance()->Close();
                     }
 
                     ImGui::NewLine();
@@ -2343,54 +2487,48 @@ namespace HyperAPI {
 
                     ImGui::TreePop();
                 }
-
-                if (ImGuiFileDialog::Instance()->Display("SelectXML")) {
-                    // action if OK
-                    if (ImGuiFileDialog::Instance()->IsOk()) {
-                        std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
-                        // remove cwd from filePathName
-                        filePathName.erase(0, cwd.length() + 1);
-
-                        anims = GetAnimationsFromXML(texture->texPath.c_str(), 0.1f, sheetSize, filePathName);
-
-                        for (auto &animation : anims) {
-                            std::string name = animation.name;
-                            // delete last 4 characters
-                            name.erase(name.end() - 4, name.end());
-
-                            Scene::currFrames[ID][name] = 0;
-                            Scene::currDelays[ID][name] = animation.delay;
-                        }
-                    }
-
-                    ImGuiFileDialog::Instance()->Close();
-                }
             }
 
             void Play() {
                 for (auto &animation : anims) {
-                    std::string name = animation.name;
-                    // delete last 4 characters
-                    name.erase(name.end() - 4, name.end());
-                    if (name == std::string(currAnim)) {
-                        std::cout << Scene::currFrames[ID][name] << std::endl;
-                        // deltaTime stuff
-                        Scene::currDelays[ID][name] += Timestep::deltaTime;
-                        if (Scene::currDelays[ID][name] >= animation.delay) {
-                            Scene::currFrames[ID][name] += 1;
-                            if (Scene::currFrames[ID][name] >= animation.frames.size()) {
+                    if (std::string(animation.name) == std::string(currAnim)) {
+                        Scene::currDelays[ID][std::string(animation.name)] += Timestep::deltaTime;
+                        if (Scene::currDelays[ID][std::string(animation.name)] >= animation.delay) {
+                            Scene::currFrames[ID][std::string(animation.name)] += 1;
+                            if (Scene::currFrames[ID][std::string(animation.name)] >= animation.frames.size()) {
                                 if (animation.loop) {
-                                    Scene::currFrames[ID][name] = 0;
+                                    Scene::currFrames[ID][std::string(animation.name)] = 0;
                                 } else {
-                                    Scene::currFrames[ID][name] = animation.frames.size() - 1;
+                                    Scene::currFrames[ID][std::string(animation.name)] = animation.frames.size() - 1;
                                 }
                             }
-                            Scene::currDelays[ID][name] = 0.0f;
+                            currFrame = animation.frames[Scene::currFrames[ID][std::string(animation.name)]];
+                            Scene::currDelays[ID][std::string(animation.name)] = 0.0f;
                         }
-                        currMesh = animation.frames[Scene::currFrames[ID][name]].mesh;
-
-                        break;
                     }
+                }
+            }
+
+            void Update() {
+                for(auto &vertex : mesh->vertices) {
+                    m_SpritesheetAnimationData::Frame currFrame;
+                    for (auto &animation : anims) {
+                        if (std::string(animation.name) == std::string(currAnim)) {
+                            currFrame = animation.frames[Scene::currFrames[ID][std::string(animation.name)]];
+                            break;
+                        }
+                    }
+                    int index = &vertex - &mesh->vertices[0];
+                    float xCoord = currFrame.offset.x + currFrame.size.x;
+                    float yCoord = (spritesheetSize.y - (currFrame.offset.y + currFrame.size.y)) + currFrame.size.y;
+
+                    std::vector<Vector2> texCoords = {
+                            Vector2(currFrame.offset.x / spritesheetSize.x, (spritesheetSize.y - (currFrame.offset.y + currFrame.size.y)) / spritesheetSize.y),
+                            Vector2(xCoord / spritesheetSize.x, (spritesheetSize.y - (currFrame.offset.y + currFrame.size.y)) / spritesheetSize.y),
+                            Vector2(xCoord / spritesheetSize.x, yCoord / spritesheetSize.y),
+                            Vector2(currFrame.offset.x / spritesheetSize.x, yCoord / spritesheetSize.y)
+                    };
+                    vertex.texUV = texCoords[index];
                 }
             }
         };
@@ -2433,6 +2571,7 @@ namespace HyperAPI {
         struct CameraComponent : public BaseComponent {
             Camera *camera = nullptr;
             GameObject *m_GameObject = nullptr;
+            bool depthCamera = false;
 
             CameraComponent() = default;
 
@@ -2459,12 +2598,35 @@ namespace HyperAPI {
             void GUI() {
                 if (ImGui::TreeNode("Camera")) {
                     if (camera != nullptr) {
+                        // multiple selectable combo boxes for Scene::layers
+                        if (ImGui::BeginCombo("Layers", "Select Layers")) {
+                            for (auto &layer : Scene::layers) {
+                                bool isSelected = false;
+                                for(auto &camLayer : camera->layers) {
+                                    if(camLayer == layer.first) {
+                                        isSelected = true;
+                                        if(ImGui::Selectable(std::string(ICON_FA_CHECK + std::string(" ") + layer.first).c_str())) {
+                                            camera->layers.erase(std::remove(camera->layers.begin(), camera->layers.end(), layer.first), camera->layers.end());
+                                        }
+                                    }
+                                }
+
+                                if(!isSelected) {
+                                    if(ImGui::Selectable(layer.first.c_str())) {
+                                        camera->layers.push_back(layer.first);
+                                    }
+                                }
+                            }
+                            ImGui::EndCombo();
+                        }
+
                         ImGui::DragFloat("FOV", &camera->cam_fov, 0.01f);
                         ImGui::DragFloat("Near", &camera->cam_near, 0.01f);
                         ImGui::DragFloat("Far", &camera->cam_far, 0.01f);
 
                         ImGui::Checkbox("Main Camera", &camera->mainCamera);
                         ImGui::Checkbox("2D Mode", &camera->mode2D);
+                        ImGui::Checkbox("Depth Camera", &depthCamera);
 
                         if (Scene::mainCamera == camera) {
                             if (ImGui::Button(ICON_FA_CAMERA " Unselect as Scene Camera")) {
@@ -2519,20 +2681,37 @@ namespace HyperAPI {
                 }
             }
 
+            bool isTyping = false;
+
             void GUI() {
                 if (ImGui::TreeNode("Lua Scripts")) {
-                    if (ImGui::TreeNode("Scripts")) {
-                        for (int i = 0; i < scripts.size(); i++) {
-                            if (ImGui::TreeNode(std::string("Script " + std::to_string(i)).c_str())) {
-                                ImGui::Text("Path: %s", scripts[i].pathToScript.c_str());
-                                if (ImGui::Button(ICON_FA_TRASH " Delete")) {
-                                    scripts.erase(scripts.begin() + i);
-                                }
-                                ImGui::TreePop();
+                    for (int i = 0; i < scripts.size(); i++) {
+                        if (ImGui::TreeNode(scripts[i].pathToScript.c_str())) {
+                            if(!isRunning && !isTyping) {
+                                scripts[i].GetFields();
                             }
-                        }
+                            for(auto &field : scripts[i].m_Fields) {
+                                // inputtext but the label is on the left
+                                // remove first three characters from field.first
+                                std::string label = field.first;
+                                label.erase(label.begin(), label.begin() + 3);
+                                ImGui::Text("%s", label.c_str());
+                                ImGui::SameLine();
+                                ImGui::InputText(std::string("##" + field.first).c_str(), field.second.value, 1024);
+                                // check if inputtext is typing
+                                if(ImGui::IsItemActive()) {
+                                    isTyping = true;
+                                } else {
+                                    isTyping = false;
+                                }
 
-                        ImGui::TreePop();
+                            }
+                            ImGui::NewLine();
+                            if (ImGui::Button(ICON_FA_TRASH " Delete")) {
+                                scripts.erase(scripts.begin() + i);
+                            }
+                            ImGui::TreePop();
+                        }
                     }
 
                     if (ImGui::Button(ICON_FA_PLUS " Add Script")) {
@@ -2551,6 +2730,7 @@ namespace HyperAPI {
                             script.m_GameObject = m_GameObject;
                             script.ID = ID;
                             // script.Init();
+                            script.GetFields();
                             scripts.push_back(script);
 
                             HYPER_LOG(std::string("Added lua script: ") + filePathName);
@@ -2569,10 +2749,281 @@ namespace HyperAPI {
             }
         };
 
+        struct KeyPosition
+        {
+            glm::vec3 position;
+            float timeStamp;
+        };
+
+        struct KeyRotation
+        {
+            glm::quat orientation;
+            float timeStamp;
+        };
+
+        struct KeyScale
+        {
+            glm::vec3 scale;
+            float timeStamp;
+        };
+
+        class Bone
+        {
+        private:
+            std::vector<KeyPosition> m_Positions;
+            std::vector<KeyRotation> m_Rotations;
+            std::vector<KeyScale> m_Scales;
+            int m_NumPositions;
+            int m_NumRotations;
+            int m_NumScalings;
+
+            glm::mat4 m_LocalTransform;
+            std::string m_Name;
+            int m_ID;
+
+        public:
+            Bone(const std::string& name, int ID, const aiNodeAnim* channel)
+                    :
+                    m_Name(name),
+                    m_ID(ID),
+                    m_LocalTransform(1.0f)
+            {
+                m_NumPositions = channel->mNumPositionKeys;
+
+                for (int positionIndex = 0; positionIndex < m_NumPositions; ++positionIndex)
+                {
+                    aiVector3D aiPosition = channel->mPositionKeys[positionIndex].mValue;
+                    float timeStamp = channel->mPositionKeys[positionIndex].mTime;
+                    KeyPosition data;
+                    data.position = AssimpGLMHelpers::GetGLMVec(aiPosition);
+                    data.timeStamp = timeStamp;
+                    m_Positions.push_back(data);
+                }
+
+                m_NumRotations = channel->mNumRotationKeys;
+                for (int rotationIndex = 0; rotationIndex < m_NumRotations; ++rotationIndex)
+                {
+                    aiQuaternion aiOrientation = channel->mRotationKeys[rotationIndex].mValue;
+                    float timeStamp = channel->mRotationKeys[rotationIndex].mTime;
+                    KeyRotation data;
+                    data.orientation = AssimpGLMHelpers::GetGLMQuat(aiOrientation);
+                    data.timeStamp = timeStamp;
+                    m_Rotations.push_back(data);
+                }
+
+                m_NumScalings = channel->mNumScalingKeys;
+                for (int keyIndex = 0; keyIndex < m_NumScalings; ++keyIndex)
+                {
+                    aiVector3D scale = channel->mScalingKeys[keyIndex].mValue;
+                    float timeStamp = channel->mScalingKeys[keyIndex].mTime;
+                    KeyScale data;
+                    data.scale = AssimpGLMHelpers::GetGLMVec(scale);
+                    data.timeStamp = timeStamp;
+                    m_Scales.push_back(data);
+                }
+            }
+
+            /*interpolates  b/w positions,rotations & scaling keys based on the curren time of
+            the animation and prepares the local transformation matrix by combining all keys
+            tranformations*/
+            void Update(float animationTime)
+            {
+                glm::mat4 translation = InterpolatePosition(animationTime);
+                glm::mat4 rotation = InterpolateRotation(animationTime);
+                glm::mat4 scale = InterpolateScaling(animationTime);
+                m_LocalTransform = translation * rotation * scale;
+            }
+
+            glm::mat4 GetLocalTransform() { return m_LocalTransform; }
+            std::string GetBoneName() const { return m_Name; }
+            int GetBoneID() { return m_ID; }
+
+
+            /* Gets the current index on mKeyPositions to interpolate to based on
+            the current animation time*/
+            int GetPositionIndex(float animationTime)
+            {
+                for (int index = 0; index < m_NumPositions - 1; ++index)
+                {
+                    if (animationTime < m_Positions[index + 1].timeStamp)
+                        return index;
+                }
+                assert(0);
+            }
+
+            /* Gets the current index on mKeyRotations to interpolate to based on the
+            current animation time*/
+            int GetRotationIndex(float animationTime)
+            {
+                for (int index = 0; index < m_NumRotations - 1; ++index)
+                {
+                    if (animationTime < m_Rotations[index + 1].timeStamp)
+                        return index;
+                }
+                assert(0);
+            }
+
+            /* Gets the current index on mKeyScalings to interpolate to based on the
+            current animation time */
+            int GetScaleIndex(float animationTime)
+            {
+                for (int index = 0; index < m_NumScalings - 1; ++index)
+                {
+                    if (animationTime < m_Scales[index + 1].timeStamp)
+                        return index;
+                }
+                assert(0);
+            }
+
+        private:
+
+            /* Gets normalized value for Lerp & Slerp*/
+            float GetScaleFactor(float lastTimeStamp, float nextTimeStamp, float animationTime)
+            {
+                float scaleFactor = 0.0f;
+                float midWayLength = animationTime - lastTimeStamp;
+                float framesDiff = nextTimeStamp - lastTimeStamp;
+                scaleFactor = midWayLength / framesDiff;
+                return scaleFactor;
+            }
+
+            /*figures out which position keys to interpolate b/w and performs the interpolation
+            and returns the translation matrix*/
+            glm::mat4 InterpolatePosition(float animationTime)
+            {
+                if (1 == m_NumPositions)
+                    return glm::translate(glm::mat4(1.0f), m_Positions[0].position);
+
+                int p0Index = GetPositionIndex(animationTime);
+                int p1Index = p0Index + 1;
+                float scaleFactor = GetScaleFactor(m_Positions[p0Index].timeStamp,
+                                                   m_Positions[p1Index].timeStamp, animationTime);
+                glm::vec3 finalPosition = glm::mix(m_Positions[p0Index].position,
+                                                   m_Positions[p1Index].position, scaleFactor);
+                return glm::translate(glm::mat4(1.0f), finalPosition);
+            }
+
+            /*figures out which rotations keys to interpolate b/w and performs the interpolation
+            and returns the rotation matrix*/
+            glm::mat4 InterpolateRotation(float animationTime)
+            {
+                if (1 == m_NumRotations)
+                {
+                    auto rotation = glm::normalize(m_Rotations[0].orientation);
+                    return glm::toMat4(rotation);
+                }
+
+                int p0Index = GetRotationIndex(animationTime);
+                int p1Index = p0Index + 1;
+                float scaleFactor = GetScaleFactor(m_Rotations[p0Index].timeStamp,
+                                                   m_Rotations[p1Index].timeStamp, animationTime);
+                glm::quat finalRotation = glm::slerp(m_Rotations[p0Index].orientation,
+                                                     m_Rotations[p1Index].orientation, scaleFactor);
+                finalRotation = glm::normalize(finalRotation);
+                return glm::toMat4(finalRotation);
+            }
+
+            /*figures out which scaling keys to interpolate b/w and performs the interpolation
+            and returns the scale matrix*/
+            glm::mat4 InterpolateScaling(float animationTime)
+            {
+                if (1 == m_NumScalings)
+                    return glm::scale(glm::mat4(1.0f), m_Scales[0].scale);
+
+                int p0Index = GetScaleIndex(animationTime);
+                int p1Index = p0Index + 1;
+                float scaleFactor = GetScaleFactor(m_Scales[p0Index].timeStamp,
+                                                   m_Scales[p1Index].timeStamp, animationTime);
+                glm::vec3 finalScale = glm::mix(m_Scales[p0Index].scale, m_Scales[p1Index].scale
+                        , scaleFactor);
+                return glm::scale(glm::mat4(1.0f), finalScale);
+            }
+
+        };
+
         class Model {
         private:
             int currSlot = 0;
         public:
+            std::map<std::string, BoneInfo> m_BoneInfoMap;
+            std::vector<Experimental::GameObject*> bones;
+            int m_BoneCounter = 0;
+            auto &GetBoneInfoMap() {
+                return m_BoneInfoMap;
+            }
+
+            int &GetBoneCounter() {
+                return m_BoneCounter;
+            }
+
+            void SetVertexBoneDataToDefault(Vertex& vertex)
+            {
+                for (int i = 0; i < MAX_BONE_INFLUENCE; i++)
+                {
+                    vertex.m_BoneIDs[i] = -1;
+                    vertex.m_Weights[i] = 0.0f;
+                }
+            }
+            int bonesStuffIdkFuckThisShit = 0;
+            void SetVertexBoneData(Vertex& vertex, int boneID, float weight, const std::string &boneName)
+            {
+                for (int i = 0; i < MAX_BONE_INFLUENCE; ++i)
+                {
+                    if(vertex.m_BoneIDs[i] == -1)
+                    {
+                        vertex.m_BoneIDs[i] = boneID;
+                        vertex.m_Weights[i] = weight;
+                        return;
+                    }
+                }
+            }
+
+            void ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene)
+            {
+                for (int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
+                {
+                    int boneID = -1;
+                    std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
+                    if (m_BoneInfoMap.find(boneName) == m_BoneInfoMap.end())
+                    {
+                        BoneInfo newBoneInfo;
+                        newBoneInfo.id = m_BoneCounter;
+                        newBoneInfo.offset = AssimpGLMHelpers::ConvertMatrixToGLMFormat(
+                                mesh->mBones[boneIndex]->mOffsetMatrix);
+                        m_BoneInfoMap[boneName] = newBoneInfo;
+                        boneID = m_BoneCounter;
+
+                        Experimental::GameObject *bone = new Experimental::GameObject();
+                        bone->name = boneName;
+                        bone->parentID = mainGameObject->ID;
+                        bone->AddComponent<Transform>();
+                        auto &transform = bone->GetComponent<Transform>();
+                        glm::vec3 pos, rot, scal;
+                        DecomposeTransform(newBoneInfo.offset, pos, rot, scal);
+                        transform.position = pos;
+                        transform.rotation = rot;
+                        Scene::m_GameObjects.push_back(bone);
+                        bones.push_back(bone);
+
+                        m_BoneCounter++;
+                    }
+                    else
+                    {
+                        boneID = m_BoneInfoMap[boneName].id;
+                    }
+                    assert(boneID != -1);
+                    auto weights = mesh->mBones[boneIndex]->mWeights;
+                    int numWeights = mesh->mBones[boneIndex]->mNumWeights;
+
+                    for (int weightIndex = 0; weightIndex < numWeights; ++weightIndex)
+                    {
+                        int vertexID = weights[weightIndex].mVertexId;
+                        float weight = weights[weightIndex].mWeight;
+                        SetVertexBoneData(vertices[vertexID], boneID, weight, boneName);
+                    }
+                }
+            }
+
             GameObject *mainGameObject;
             std::vector<GameObject *> m_gameObjects;
             std::string directory;
@@ -2611,7 +3062,177 @@ namespace HyperAPI {
                 loadModel(path);
             }
 
-            void Draw(Shader &shader, Camera &camera);
+            void Draw(Shader &shader, Camera &camera, std::vector<glm::mat4> &transforms);
+        };
+
+        struct AssimpNodeData
+        {
+            glm::mat4 transformation;
+            std::string name;
+            int childrenCount;
+            std::vector<AssimpNodeData> children;
+        };
+
+        class Animation
+        {
+        public:
+            Animation() = default;
+
+            Animation(const std::string& animationPath, Model* model)
+            {
+                Assimp::Importer importer;
+                const aiScene* scene = importer.ReadFile(animationPath, aiProcess_Triangulate);
+                auto animation = scene->mAnimations[0];
+                m_Duration = animation->mDuration;
+                m_TicksPerSecond = animation->mTicksPerSecond;
+                ReadHeirarchyData(m_RootNode, scene->mRootNode);
+                ReadMissingBones(animation, *model);
+            }
+
+            ~Animation()
+            {
+            }
+
+            Bone* FindBone(const std::string& name)
+            {
+                auto iter = std::find_if(m_Bones.begin(), m_Bones.end(),
+                                         [&](const Bone& Bone)
+                                         {
+                                             return Bone.GetBoneName() == name;
+                                         }
+                );
+                if (iter == m_Bones.end()) return nullptr;
+                else return &(*iter);
+            }
+
+
+            inline float GetTicksPerSecond() { return m_TicksPerSecond; }
+
+            inline float GetDuration() { return m_Duration;}
+
+            inline const AssimpNodeData& GetRootNode() { return m_RootNode; }
+
+            inline const std::map<std::string,BoneInfo>& GetBoneIDMap()
+            {
+                return m_BoneInfoMap;
+            }
+
+        private:
+            void ReadMissingBones(const aiAnimation* animation, Model& model)
+            {
+                int size = animation->mNumChannels;
+
+                auto& boneInfoMap = model.GetBoneInfoMap();//getting m_BoneInfoMap from Model class
+                int& boneCount = model.GetBoneCounter(); //getting the m_BoneCounter from Model class
+
+                //reading channels(bones engaged in an animation and their keyframes)
+                for (int i = 0; i < size; i++)
+                {
+                    auto channel = animation->mChannels[i];
+                    std::string boneName = channel->mNodeName.data;
+
+                    if (boneInfoMap.find(boneName) == boneInfoMap.end())
+                    {
+                        boneInfoMap[boneName].id = boneCount;
+                        boneCount++;
+                    }
+                    m_Bones.push_back(Bone(channel->mNodeName.data,
+                                           boneInfoMap[channel->mNodeName.data].id, channel));
+                }
+
+                m_BoneInfoMap = boneInfoMap;
+            }
+
+            void ReadHeirarchyData(AssimpNodeData& dest, const aiNode* src)
+            {
+                assert(src);
+
+                dest.name = src->mName.data;
+                dest.transformation = AssimpGLMHelpers::ConvertMatrixToGLMFormat(src->mTransformation);
+                dest.childrenCount = src->mNumChildren;
+
+                for (int i = 0; i < src->mNumChildren; i++)
+                {
+                    AssimpNodeData newData;
+                    ReadHeirarchyData(newData, src->mChildren[i]);
+                    dest.children.push_back(newData);
+                }
+            }
+            float m_Duration;
+            int m_TicksPerSecond;
+            std::vector<Bone> m_Bones;
+            AssimpNodeData m_RootNode;
+            std::map<std::string, BoneInfo> m_BoneInfoMap;
+        };
+
+        class Animator
+        {
+        public:
+            Animator(Animation* animation)
+            {
+                m_CurrentTime = 0.0;
+                m_CurrentAnimation = animation;
+
+                m_FinalBoneMatrices.reserve(100);
+
+                for (int i = 0; i < 100; i++)
+                    m_FinalBoneMatrices.push_back(glm::mat4(1.0f));
+            }
+
+            void UpdateAnimation(float dt)
+            {
+                m_DeltaTime = dt;
+                if (m_CurrentAnimation)
+                {
+                    m_CurrentTime += m_CurrentAnimation->GetTicksPerSecond() * dt;
+                    m_CurrentTime = fmod(m_CurrentTime, m_CurrentAnimation->GetDuration());
+                    CalculateBoneTransform(&m_CurrentAnimation->GetRootNode(), glm::mat4(1.0f));
+                }
+            }
+
+            void PlayAnimation(Animation* pAnimation)
+            {
+                m_CurrentAnimation = pAnimation;
+                m_CurrentTime = 0.0f;
+            }
+
+            void CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform)
+            {
+                std::string nodeName = node->name;
+                glm::mat4 nodeTransform = node->transformation;
+
+                Bone* Bone = m_CurrentAnimation->FindBone(nodeName);
+
+                if (Bone)
+                {
+                    Bone->Update(m_CurrentTime);
+                    nodeTransform = Bone->GetLocalTransform();
+                }
+
+                glm::mat4 globalTransformation = parentTransform * nodeTransform;
+
+                auto boneInfoMap = m_CurrentAnimation->GetBoneIDMap();
+                if (boneInfoMap.find(nodeName) != boneInfoMap.end())
+                {
+                    int index = boneInfoMap[nodeName].id;
+                    glm::mat4 offset = boneInfoMap[nodeName].offset;
+                    m_FinalBoneMatrices[index] = globalTransformation * offset;
+                }
+
+                for (int i = 0; i < node->childrenCount; i++)
+                    CalculateBoneTransform(&node->children[i], globalTransformation);
+            }
+
+            std::vector<glm::mat4> GetFinalBoneMatrices()
+            {
+                return m_FinalBoneMatrices;
+            }
+
+        private:
+            std::vector<glm::mat4> m_FinalBoneMatrices;
+            Animation* m_CurrentAnimation;
+            float m_CurrentTime;
+            float m_DeltaTime;
         };
     }
 
@@ -2645,7 +3266,9 @@ void EndEndFrame(
         unsigned int S_postProcessingTexture,
         unsigned int S_postProcessingFBO,
         const int width,
-        const int height
+        const int height,
+        const int mouseX,
+        const int mouseY
 );
 
 void

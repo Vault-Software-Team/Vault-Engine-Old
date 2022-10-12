@@ -113,7 +113,9 @@ void EndEndFrame(
     unsigned int S_postProcessingTexture,
     unsigned int S_postProcessingFBO,
     const int width,
-    const int height
+    const int height,
+    const int mouseX,
+    const int mouseY
 ) {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postProcessingFBO);
@@ -538,7 +540,7 @@ namespace HyperAPI {
 
         if(!batched) {
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
@@ -750,8 +752,11 @@ namespace HyperAPI {
         }
 
         glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * vertices.size(), vertices.data());
         glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
         material.Unbind(shader);
     }
 
@@ -894,6 +899,9 @@ namespace HyperAPI {
 
             if(mode2D) {
                 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.1f, 5000.0f);
+                // scale does not work for 2D
+                // so zoom in a different way
+                projection = glm::scale(projection, glm::vec3(transform.scale.x, transform.scale.y, 1.0f));
             } else {
                 projection = glm::perspective(glm::radians(FOVdeg), aspect, nearPlane, farPlane);
             }
@@ -1138,10 +1146,10 @@ namespace HyperAPI {
 
                     glm::vec3 newOrientation = glm::rotate(transform.rotation, glm::radians(-rotX), glm::normalize(glm::cross(transform.rotation, Up)));
 
-                    // if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f))
-                    // {
-                    transform.rotation = newOrientation;
-                    // }
+                     if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f))
+                     {
+                        transform.rotation = newOrientation;
+                     }
 
                     transform.rotation = glm::rotate(transform.rotation, glm::radians(-rotY), Up);
 
@@ -1670,7 +1678,7 @@ namespace HyperAPI {
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
 
             if(ImGui::Button("X", buttonSize)) {
-                values.x = 0;
+                values.x = resetValue;
             }
             ImGui::PopStyleColor(3);
 
@@ -1684,7 +1692,7 @@ namespace HyperAPI {
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
 
             if(ImGui::Button("Y", buttonSize)) {
-                values.y = 0;
+                values.y = resetValue;
             }
             ImGui::PopStyleColor(3);
 
@@ -1697,7 +1705,7 @@ namespace HyperAPI {
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.2f, 0.35f, 0.9f, 1.0f});
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
             if(ImGui::Button("Z", buttonSize)) {
-                values.z = 0;
+                values.z = resetValue;
             }
             ImGui::PopStyleColor(3);
 
@@ -1730,7 +1738,7 @@ namespace HyperAPI {
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
 
             if(ImGui::Button("X", buttonSize)) {
-                values.x = 0;
+                values.x = resetValue;
             }
             ImGui::PopStyleColor(3);
 
@@ -1744,7 +1752,7 @@ namespace HyperAPI {
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
 
             if(ImGui::Button("Y", buttonSize)) {
-                values.y = 0;
+                values.y = resetValue;
             }
             ImGui::PopStyleColor(3);
 
@@ -1769,54 +1777,45 @@ namespace HyperAPI {
 
             std::string currAnimation = "";
             m_SpritesheetAnimationData animationData;
+            int animIndex = -1;
+            // animationData has a Frame, which has size and offset, size is width and height, offset is x and y
 
             while (subTexture) {
-                SpritesheetRenderer renderer;
-                strcpy(animationData.name, subTexture->Attribute("name"));
+                std::string name = subTexture->Attribute("name");
+                std::string x = subTexture->Attribute("x");
+                std::string y = subTexture->Attribute("y");
+                std::string width = subTexture->Attribute("width");
+                std::string height = subTexture->Attribute("height");
 
-                renderer.spritesheetSize = sheetSize;
-                renderer.spriteOffset = Vector2(subTexture->IntAttribute("x"), subTexture->IntAttribute("y"));
-                renderer.spriteSize = Vector2(subTexture->IntAttribute("width"), subTexture->IntAttribute("height"));
+                // remove last 4 digits???
+                std::string animationName = name.substr(0, name.size() - 4);
 
-                if(renderer.sp != nullptr) {
-                    delete renderer.sp;
-                    renderer.sp = nullptr;
+                if (currAnimation != animationName) {
+                    animations.push_back(animationData);
+
+                    currAnimation = animationName;
+                    animationData.loop = true;
+                    animationData = {};
+                    animIndex = animations.size() - 1;
+                    strcpy(animationData.name, currAnimation.c_str());
+                    animationData.delay = delay;
                 }
 
-                renderer.sp = new Spritesheet("", renderer.material, renderer.spritesheetSize, renderer.spriteSize, renderer.spriteOffset);
-                if(renderer.mesh != nullptr) {
-                    delete renderer.mesh;
-                    renderer.mesh = nullptr;
+                m_SpritesheetAnimationData::Frame frame;
+                frame.size = Vector2(std::stof(width), std::stof(height));
+                frame.offset = Vector2(std::stof(x), std::stof(y));
+                animationData.frames.push_back(frame);
+                if(animIndex != -1) {
+                    animations[animIndex] = animationData;
                 }
-                renderer.mesh = renderer.sp->m_Mesh;
-
-                animationData.frames.push_back(renderer);
 
                 subTexture = subTexture->NextSiblingElement("SubTexture");
-
-                std::string name = animationData.name;
-                name = name.substr(0, name.size() - 4);
-
-                if(name != currAnimation) {
-                    animations.push_back(animationData);
-                    currAnimation = name;
-                }
-            }
-
-            for(auto &anim : animations) {
-                std::cout << "Animation: " << anim.name << std::endl;
-
-                for(auto &frame : anim.frames) {
-                    std::cout << "Frame: " << frame.spriteOffset.x << ", " << frame.spriteOffset.y << " Size: " << frame.spriteSize.x << " " << frame.spriteSize.y << std::endl;
-                }
-
-                std::cout << std::endl;
             }
 
             return animations;
         }
 
-        void Model::Draw(Shader &shader, Camera &camera)
+        void Model::Draw(Shader &shader, Camera &camera, std::vector<glm::mat4> &transforms)
         {
             Transform &mainTransform = mainGameObject->GetComponent<Transform>();
             mainTransform.Update();
@@ -1878,6 +1877,7 @@ namespace HyperAPI {
             for(unsigned int i = 0; i < mesh->mNumVertices; i++)
             {
                 Vertex vertex;
+                SetVertexBoneDataToDefault(vertex);
                 vertex.position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
                 vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
                 if(mesh->mTextureCoords[0])
@@ -1890,6 +1890,7 @@ namespace HyperAPI {
                 }
                 vertices.push_back(vertex);
             }
+            ExtractBoneWeightForVertices(vertices, mesh, scene);
 
             //indices
             for(unsigned int i = 0; i < mesh->mNumFaces; i++)
@@ -2034,6 +2035,7 @@ namespace HyperAPI {
 namespace Hyper {
     void Application::Run(std::function<void(unsigned int&)> update, std::function<void(unsigned int &PPT, unsigned int &PPFBO)> gui, std::function<void(HyperAPI::Shader &)> shadowMapRender) {
         HYPER_LOG("Application started")
+
         float gamma = 2.2f;
         if(renderOnScreen) {
             glEnable(GL_FRAMEBUFFER_SRGB);
@@ -2076,11 +2078,26 @@ namespace Hyper {
         glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, bufferTexture, 0);
 
+        unsigned int entityTexture;
+        glGenTextures(1, &entityTexture);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, entityTexture);
+        // r32i
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, entityTexture, 0);
+
         unsigned int rbo;
         glGenRenderbuffers(1, &rbo);
         glBindRenderbuffer(GL_RENDERBUFFER, rbo);
         glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+        // render second color attachment which is an int
+        unsigned int attachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+        glDrawBuffers(2, attachments);
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
@@ -2209,6 +2226,7 @@ namespace Hyper {
                 glDeleteFramebuffers(1, &SFBO);
                 glDeleteFramebuffers(1, &S_PPFBO);
                 glDeleteTextures(1, &S_PPT);
+                glDeleteTextures(1, &entityTexture);
                 glDeleteTextures(1, &SbufferTexture);
 
                 // ----------
@@ -2235,10 +2253,22 @@ namespace Hyper {
                 glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, bufferTexture, 0);
 
+                glGenTextures(1, &entityTexture);
+                glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, entityTexture);
+                // r32i
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, nullptr);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, entityTexture, 0);
+
                 glGenRenderbuffers(1, &rbo);
                 glBindRenderbuffer(GL_RENDERBUFFER, rbo);
                 glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+                glDrawBuffers(2, attachments);
 
                 if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
                     std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
@@ -2255,6 +2285,15 @@ namespace Hyper {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postProcessingTexture, 0);
 
+                glGenTextures(1, &entityTexture);
+                glBindTexture(GL_TEXTURE_2D, entityTexture);
+                // integer texture
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER, GL_INT, NULL);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, entityTexture, 0);
                 // delete srbo sfbo sppfbo sppt
 
                 glGenFramebuffers(1, &SFBO);
@@ -2310,10 +2349,8 @@ namespace Hyper {
             update(depthMap);
 
             glClear(GL_DEPTH_BUFFER_BIT);
-
-            glClear(GL_DEPTH_BUFFER_BIT);
             if(!renderOnScreen) {
-                EndEndFrame(framebufferShader, *renderer, FBO, rectVAO, postProcessingTexture, postProcessingFBO, SFBO, S_PPT, S_PPFBO, width, height);
+                EndEndFrame(framebufferShader, *renderer, FBO, rectVAO, postProcessingTexture, postProcessingFBO, SFBO, S_PPT, S_PPFBO, width, height, sceneMouseX, sceneMouseY);
             }
             // else {
                 // EndFrame(framebufferShader, *renderer, FBO, rectVAO, postProcessingTexture, postProcessingFBO, width, height);

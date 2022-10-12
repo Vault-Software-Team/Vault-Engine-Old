@@ -133,6 +133,8 @@ bool ends_with(std::string const &value, std::string const &ending) {
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
 
+std::string m_originalName = "";
+char originalNameBuffer[50] = "";
 void DirIter(const std::string &path) {
     for (const auto &entry : fs::directory_iterator(path)) {
         if (fs::is_directory(entry)) {
@@ -141,10 +143,66 @@ void DirIter(const std::string &path) {
                 DirIter(entry.path().string());
                 ImGui::TreePop();
             }
-        } else {
+
+            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+                m_originalName = entry.path().string();
+                ImGui::OpenPopup("File Options");
+            }
+
+            // drop target
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("file")) {
+                    // fs::rename(file, newFile);move the file into the folder
+                    std::string file = (char *) payload->Data;
+                    file.erase(0, cwd.length() + 1);
+                    std::string newFile = entry.path().string() + "/" + file.substr(file.find_last_of("/") + 1);
+                    // remove last three characters from file and newFile
+//                    file.erase(file.end() - 3, file.end());
+//                    newFile.erase(newFile.end() - 3, newFile.end());
+                    try {
+                        fs::rename(file, newFile);
+                    } catch (const std::exception &e) {
+//                        std::cout << e.what() << std::endl;
+                    }
+                }
+                ImGui::EndDragDropTarget();
+            }
+
+            // make it draggable bruh
+            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+                dirPayloadData = entry.path().string();
+                ImGui::SetDragDropPayload("file", entry.path().string().c_str(), entry.path().string().size());
+                ImGui::Text(entry.path().filename().string().c_str());
+                ImGui::EndDragDropSource();
+            }
+        }
+        else {
             // offset for the arrow thing
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 25);
-            ImGui::Selectable((std::string(ICON_FA_FILE) + " " + entry.path().filename().string()).c_str());
+            if(ends_with(entry.path().string(), ".lua")) {
+                ImGui::Selectable((std::string(ICON_FA_CODE) + " " + entry.path().filename().string()).c_str());
+            } else if(ends_with(entry.path().string(), ".png") || ends_with(entry.path().string(), ".jpg") || ends_with(entry.path().string(), ".jpeg")) {
+                ImGui::Selectable((std::string(ICON_FA_IMAGE) + " " + entry.path().filename().string()).c_str());
+            } else if(ends_with(entry.path().string(), ".ogg") || ends_with(entry.path().string(), ".mp3") || ends_with(entry.path().string(), ".wav")) {
+                ImGui::Selectable((std::string(ICON_FA_FILE_AUDIO) + " " + entry.path().filename().string()).c_str());
+            } else if(ends_with(entry.path().string(), ".ttf") || ends_with(entry.path().string(), ".otf")) {
+                ImGui::Selectable((std::string(ICON_FA_FONT) + " " + entry.path().filename().string()).c_str());
+            } else if(ends_with(entry.path().string(), ".static")) {
+                ImGui::Selectable((std::string(ICON_FA_CUBES) + " " + entry.path().filename().string()).c_str());
+            } else if(ends_with(entry.path().string(), ".json")) {
+                ImGui::Selectable((std::string(ICON_FA_FILE_CODE) + " " + entry.path().filename().string()).c_str());
+            } else if(ends_with(entry.path().string(), ".prefab")) {
+                ImGui::Selectable((std::string(ICON_FA_CUBE) + " " + entry.path().filename().string()).c_str());
+            } else if(ends_with(entry.path().string(), ".material")) {
+                ImGui::Selectable((std::string(ICON_FA_PAINTBRUSH) + " " + entry.path().filename().string()).c_str());
+            } else {
+                ImGui::Selectable((std::string(ICON_FA_FILE) + " " + entry.path().filename().string()).c_str());
+            }
+            // on double click
+            if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1)) {
+                m_originalName = entry.path().string();
+                ImGui::OpenPopup("File Options");
+            }
             // make it draggable
 
             // disable it getting out of the window
@@ -156,6 +214,15 @@ void DirIter(const std::string &path) {
                 ImGui::EndDragDropSource();
             }
         }
+
+//        if(ImGui::BeginPopup("Rename File")) {
+//            ImGui::InputText("New Name", originalNameBuffer, 50);
+//            if(ImGui::Button("Rename")) {
+//                fs::rename(m_originalName, originalNameBuffer);
+//                ImGui::CloseCurrentPopup();
+//            }
+//            ImGui::EndPopup();
+//        }
     }
 }
 
@@ -304,6 +371,21 @@ void StartWorld() {
         joint.CreateJoint();
     }
 
+    auto pathfindingView = Scene::m_Registry.view<PathfindingAI>();
+
+    for(auto e : pathfindingView) {
+        GameObject *gameObject;
+        for (auto &go : Scene::m_GameObjects) {
+            if (go->entity == e) {
+                gameObject = go;
+                break;
+            }
+        }
+
+        auto &pathfinding = gameObject->GetComponent<PathfindingAI>();
+        pathfinding.CreateGrid();
+    }
+
     bulletPhysicsStarted = true;
 }
 
@@ -319,9 +401,7 @@ void DeleteWorld() {
             auto &fixedJoint = gameObject->GetComponent<FixedJoint3D>();
             fixedJoint.DeleteJoint();
         }
-    }
 
-    for (auto &gameObject : Scene::m_GameObjects) {
         if (gameObject->HasComponent<NativeScriptManager>()) {
             auto &script = gameObject->GetComponent<NativeScriptManager>();
             for (auto &script : script.m_StaticScripts) {
@@ -339,7 +419,10 @@ void DeleteWorld() {
             }
         }
 
-
+        if(gameObject->HasComponent<PathfindingAI>()) {
+            auto &component = gameObject->GetComponent<PathfindingAI>();
+            component.DeleteGrid();
+        }
     }
 
     BulletPhysicsWorld::Delete();
@@ -352,7 +435,8 @@ void ShortcutManager(bool &openConfig) {
                                                     ICON_FA_FLOPPY_DISK " Save Scene", ".static",
                                                     ".");
         } else {
-            Scene::SaveScene(Scene::currentScenePath);
+            json S_SJ;
+            Scene::SaveScene(Scene::currentScenePath, S_SJ);
         }
     }
 
@@ -392,86 +476,179 @@ void ShortcutManager(bool &openConfig) {
         if (Scene::m_Object->HasComponent<CameraComponent>()) {
             auto &comp = Scene::m_Object->GetComponent<CameraComponent>();
             Scene::m_Registry.emplace<CameraComponent>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<CameraComponent>();
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
 
         if (Scene::m_Object->HasComponent<MeshRenderer>()) {
             auto &comp = Scene::m_Object->GetComponent<MeshRenderer>();
             Scene::m_Registry.emplace<MeshRenderer>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<MeshRenderer>();
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
 
         if (Scene::m_Object->HasComponent<m_LuaScriptComponent>()) {
             auto &comp = Scene::m_Object->GetComponent<m_LuaScriptComponent>();
             Scene::m_Registry.emplace<m_LuaScriptComponent>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<m_LuaScriptComponent>();
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
 
         if (Scene::m_Object->HasComponent<c_PointLight>()) {
             auto &comp = Scene::m_Object->GetComponent<c_PointLight>();
             Scene::m_Registry.emplace<c_PointLight>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<c_PointLight>();
+            newComp.light = new PointLight(Scene::PointLights, Vector3(0,0,0), Vector4(1,1,1,1), 1);
+
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
 
         if (Scene::m_Object->HasComponent<c_Light2D>()) {
             auto &comp = Scene::m_Object->GetComponent<c_Light2D>();
             Scene::m_Registry.emplace<c_Light2D>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<c_Light2D>();
+            newComp.light = new Light2D(Scene::Lights2D, Vector3(0,0,0), Vector4(1,1,1,1), 1);
+
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
 
         if (Scene::m_Object->HasComponent<c_SpotLight>()) {
             auto &comp = Scene::m_Object->GetComponent<c_SpotLight>();
             Scene::m_Registry.emplace<c_SpotLight>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<c_SpotLight>();
+            newComp.light = new SpotLight(Scene::SpotLights, Vector3(0,0,0), Vector4(1,1,1,1));
+
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
 
         if (Scene::m_Object->HasComponent<c_DirectionalLight>()) {
             auto &comp = Scene::m_Object->GetComponent<c_DirectionalLight>();
             Scene::m_Registry.emplace<c_DirectionalLight>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<c_DirectionalLight>();
+            newComp.light = new DirectionalLight(Scene::DirLights, Vector3(0,0,0), Vector4(1,1,1,1));
+
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
 
         if (Scene::m_Object->HasComponent<SpriteRenderer>()) {
             auto &comp = Scene::m_Object->GetComponent<SpriteRenderer>();
             Scene::m_Registry.emplace<SpriteRenderer>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<SpriteRenderer>();
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
 
         if (Scene::m_Object->HasComponent<SpriteAnimation>()) {
             auto &comp = Scene::m_Object->GetComponent<SpriteAnimation>();
             Scene::m_Registry.emplace<SpriteAnimation>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<SpriteAnimation>();
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
 
         if (Scene::m_Object->HasComponent<c_SpritesheetAnimation>()) {
             auto &comp = Scene::m_Object->GetComponent<c_SpritesheetAnimation>();
             Scene::m_Registry.emplace<c_SpritesheetAnimation>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<c_SpritesheetAnimation>();
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
 
         if (Scene::m_Object->HasComponent<SpritesheetRenderer>()) {
             auto &comp = Scene::m_Object->GetComponent<SpritesheetRenderer>();
             Scene::m_Registry.emplace<SpritesheetRenderer>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<SpritesheetRenderer>();
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
 
         if (Scene::m_Object->HasComponent<BoxCollider2D>()) {
             auto &comp = Scene::m_Object->GetComponent<BoxCollider2D>();
             Scene::m_Registry.emplace<BoxCollider2D>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<BoxCollider2D>();
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
 
         if (Scene::m_Object->HasComponent<Rigidbody2D>()) {
             auto &comp = Scene::m_Object->GetComponent<Rigidbody2D>();
             Scene::m_Registry.emplace<Rigidbody2D>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<Rigidbody2D>();
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
 
         if (Scene::m_Object->HasComponent<Rigidbody3D>()) {
             auto &comp = Scene::m_Object->GetComponent<Rigidbody3D>();
             Scene::m_Registry.emplace<Rigidbody3D>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<Rigidbody3D>();
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
 
         if (Scene::m_Object->HasComponent<FixedJoint3D>()) {
             auto &comp = Scene::m_Object->GetComponent<FixedJoint3D>();
             Scene::m_Registry.emplace<FixedJoint3D>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<FixedJoint3D>();
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
 
         if (Scene::m_Object->HasComponent<BoxCollider3D>()) {
             auto &comp = Scene::m_Object->GetComponent<BoxCollider3D>();
             Scene::m_Registry.emplace<BoxCollider3D>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<BoxCollider3D>();
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
 
         if(Scene::m_Object->HasComponent<MeshCollider3D>()) {
             auto &comp = Scene::m_Object->GetComponent<MeshCollider3D>();
             Scene::m_Registry.emplace<MeshCollider3D>(gameObject->entity, comp);
+
+            auto &newComp = gameObject->GetComponent<MeshCollider3D>();
+            newComp.entity = gameObject->entity;
+            newComp.ID = gameObject->ID;
+            newComp.Init();
         }
         Scene::m_GameObjects.push_back(gameObject);
     }
@@ -673,7 +850,8 @@ int main() {
 
     InspectorMaterial m_InspectorMaterial;
 
-    Scene::LoadScene(config.mainScene);
+    json M_JS;
+    Scene::LoadScene(config.mainScene, M_JS);
 
 #ifdef GAME_BUILD
     if(Scene::mainCamera == nullptr) {
@@ -802,6 +980,8 @@ int main() {
 #endif
 
     Scene::SceneType sceneType = Scene::MAIN_SCENE;
+    nlohmann::json stateScene = nlohmann::json::array();
+
     std::function<void(unsigned int &PPT, unsigned int &PPFBO)> GUI_EXP =
             [&](unsigned int &PPT, unsigned int &PPFBO) {
 #ifdef GAME_BUILD
@@ -818,7 +998,8 @@ int main() {
                                                                         ICON_FA_FLOPPY_DISK " Save Scene", ".static",
                                                                         ".");
                             } else {
-                                Scene::SaveScene(Scene::currentScenePath);
+                                json S_SJ;
+                                Scene::SaveScene(Scene::currentScenePath, S_SJ);
                             }
                         }
 
@@ -986,6 +1167,8 @@ int main() {
                                         {"mainScene",    config.mainScene},
                                         {"width",        config.width},
                                         {"height",       config.height},
+                                        {"resizable",    config.resizable},
+                                        {"fullscreen_on_launch",   config.fullscreenOnLaunch},
                                         {"layers",       layerStarters}
                                 };
 
@@ -1169,7 +1352,8 @@ int main() {
                         filePathName.erase(0, cwd.length() + 1);
                         std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
 
-                        Scene::SaveScene(filePathName);
+                        json S_SJ;
+                        Scene::SaveScene(filePathName, S_SJ);
                     }
 
                     ImGuiFileDialog::Instance()->Close();
@@ -1273,95 +1457,14 @@ int main() {
                     ImGui::EndPopup();
                 }
 
-                if(ImGui::Begin(ICON_FA_GAMEPAD " Scene")) {
-                    sceneType = Scene::MAIN_SCENE;
-
-                    bool complete = Scene::DropTargetMat(Scene::DRAG_SCENE, nullptr, nullptr);
-                    if(Scene::LoadingScene) {
-                        Scene::m_Object = nullptr;
-                    }
-
-                    if(complete) {
-                        Scene::mainCamera = nullptr;
-                    }
-
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+                if(ImGui::Begin(ICON_FA_GAMEPAD " Scene", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
                     ImVec2 w_s = ImGui::GetWindowSize();
                     winSize = Vector2(w_s.x, w_s.y);
-                    // ImGui::SetWindowSize(ImVec2(w_s.x, w_s.y - 50));
-                    if (camera->mode2D) {
-                        if (ImGui::Button(ICON_FA_CAMERA " 3D View")) {
-                            camera->mode2D = false;
-                        }
-                    } else {
-                        if (ImGui::Button(ICON_FA_CAMERA " 2D View")) {
-                            camera->mode2D = true;
-                        }
-                    }
-                    // make them look like they are linked
-                    ImGui::SameLine();
+                    sceneType = Scene::MAIN_SCENE;
+                    bool complete = Scene::DropTargetMat(Scene::DRAG_SCENE, nullptr, nullptr);
 
-                    if(ImGui::Button(ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT)) {
-                        m_GuizmoMode = ImGuizmo::OPERATION::TRANSLATE;
-                    }
-                    ImGui::SameLine();
-
-                    if(ImGui::Button(ICON_FA_ARROWS_ROTATE)) {
-                        m_GuizmoMode = ImGuizmo::OPERATION::ROTATE;
-                    }
-
-                    ImGui::SameLine();
-                    if(ImGui::Button(ICON_FA_EXPAND)) {
-                        m_GuizmoMode = ImGuizmo::OPERATION::SCALE;
-                    }
-
-                    ImGui::SameLine();
-
-                    if (!HyperAPI::isRunning) {
-                        if (HyperAPI::isStopped) {
-                            ImGui::SetCursorPosX((ImGui::GetWindowSize().x / 2) - 25 / 2);
-                        } else {
-                            ImGui::SetCursorPosX((ImGui::GetWindowSize().x / 2) - 25 / 2 - (25 / 2));
-                        }
-
-                        if (ImGui::Button(ICON_FA_PLAY, ImVec2(25, 0))) {
-                            StartWorld();
-
-                            HyperAPI::isRunning = true;
-                            HyperAPI::isStopped = false;
-
-                            for (auto &camera : Scene::cameras) {
-                                if (camera->mainCamera) {
-                                    Scene::mainCamera = camera;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (!HyperAPI::isStopped) {
-                            // ImGui::SameLine();
-                            // if(ImGui::Button(ICON_FA_STOP, ImVec2(25, 0))) {
-                            //     HyperAPI::isRunning = false;
-                            //     HyperAPI::isStopped = true;
-                            //     Scene::mainCamera = camera;
-                            // }
-                        }
-                    } else {
-                        // move it more left
-                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x / 2) - 25 / 2 - (25 / 2));
-                        if (ImGui::Button(ICON_FA_PAUSE, ImVec2(25, 0))) {
-                            HyperAPI::isRunning = false;
-                            DeleteWorld();
-                            Scene::mainCamera = camera;
-                        }
-                        // ImGui::SameLine();
-                        // if(ImGui::Button(ICON_FA_STOP, ImVec2(25, 0))) {
-                        //     HyperAPI::isRunning = false;
-                        //     HyperAPI::isStopped = true;
-                        //     Scene::mainCamera = camera;
-                        // }
-                    }
-
-                    ImGui::BeginChild("View");
+                    //                    ImGui::BeginChild("View");
                     if(sceneType == Scene::MAIN_SCENE) {
                         mousePos = ImGui::GetMousePos();
                         windowPos = ImGui::GetWindowPos();
@@ -1383,23 +1486,36 @@ int main() {
                         glBindTexture(GL_TEXTURE_2D, PPT);
 
                         // check window hovered
-                        if (ImGui::IsWindowHovered() && ImGui::IsMouseDragging(0)) {
+
+//                        ImGui::SetCursorPos(ImVec2(0, 0));
+                        // set the layer to be behind the buttons, NOT FONT, I DO NOT WANT FONT SCALE CHANGED
+
+                        ImGui::Image((void *) PPT, ImVec2(w_s.x, w_s.y), ImVec2(0, 1), ImVec2(1, 0));
+                        if (ImGui::IsItemHovered() && ImGui::IsMouseDragging(0)) {
                             focusedOnScene = true;
                         } else if (!ImGui::IsMouseDragging(0)) {
                             focusedOnScene = false;
                         }
 
-                        if (ImGui::IsWindowHovered()) {
+                        if (ImGui::IsItemHovered()) {
                             hoveredScene = true;
                         } else if (!ImGui::IsMouseDragging(0)) {
                             hoveredScene = false;
                         }
-
-                        ImGui::Image((void *) PPT, ImVec2(w_s.x, w_s.y - 40), ImVec2(0, 1), ImVec2(1, 0));
                     }
 
                     auto[viewWidth, viewHeight] = ImGui::GetWindowSize();
                     auto[viewX, viewY] = ImGui::GetWindowPos();
+                    // m_Viewbounds is winPos
+                    auto[mouseX, mouseY] = ImGui::GetMousePos();
+                    mouseX -= viewX;
+                    mouseY -= viewY;
+                    mouseY = (int)viewHeight - mouseY;
+                    int m_mouseX = (int) mouseX;
+                    int m_mouseY = (int) mouseY;
+
+                    app.sceneMouseX = m_mouseX;
+                    app.sceneMouseY = m_mouseY;
 
                     auto *selectedObject = Scene::m_Object;
 
@@ -1455,6 +1571,7 @@ int main() {
 
                                             btRigidBody *body = (btRigidBody *) rigidbody.body;
                                             body->getWorldTransform().setOrigin(btVector3(translation.x, translation.y, translation.z));
+                                            body->getWorldTransform().setRotation(btQuaternion(rotation.x, rotation.y, rotation.z));
                                         }
                                     }
                                     break;
@@ -1490,15 +1607,173 @@ int main() {
                             }
                         }
                     }
+//                    ImGui::EndChild();
+
+                    if(Scene::LoadingScene) {
+                        Scene::m_Object = nullptr;
+                    }
+
+                    if(complete) {
+                        Scene::mainCamera = nullptr;
+                    }
+
+                    ImGui::SetCursorPosY(28);
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10);
+
+                    ImGui::PushStyleColor(ImGuiCol_ChildBg, (ImVec4) ImColor::HSV(0.0f, 0.0f, 0.0f, 0.6f));
+                    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 3.5f);
+                    ImGui::BeginChild("##Gizmo", ImVec2(97, 32));
+                    ImVec2 gizmoSize = ImGui::GetWindowSize();
+                    ImVec2 centerCalc = ImGui::GetCursorPos();
+                    centerCalc.x += gizmoSize.x / 2;
+                    centerCalc.y += gizmoSize.y / 2;
+
+                    float offset = 30;
+
+                    ImGui::SetCursorPos(ImVec2(centerCalc.x - 12 - offset, centerCalc.y - 12));
+                    if(ImGui::Button(ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT)) {
+                        m_GuizmoMode = ImGuizmo::OPERATION::TRANSLATE;
+                    }
+                    if (ImGui::IsItemHovered()) {
+                        focusedOnScene = false;
+                        hoveredScene = false;
+                    }
+                    ImGui::SameLine();
+                    ImGui::SetCursorPos(ImVec2(centerCalc.x - 12, centerCalc.y - 12));
+                    if(ImGui::Button(ICON_FA_ARROWS_ROTATE)) {
+                        m_GuizmoMode = ImGuizmo::OPERATION::ROTATE;
+                    }
+
+                    ImGui::SameLine();
+                    ImGui::SetCursorPos(ImVec2(centerCalc.x - 12 + offset, centerCalc.y - 12));
+                    if(ImGui::Button(ICON_FA_MAXIMIZE)) {
+                        m_GuizmoMode = ImGuizmo::OPERATION::SCALE;
+                    }
+                    if (ImGui::IsItemHovered()) {
+                        focusedOnScene = false;
+                        hoveredScene = false;
+                    }
                     ImGui::EndChild();
+                    ImGui::PopStyleColor();
+                    ImGui::PopStyleVar();
+
+                    ImGui::SameLine();
+
+                    if (!HyperAPI::isRunning) {
+                        ImGui::SetCursorPosX((HyperAPI::isStopped ? (ImGui::GetWindowSize().x / 2) - (32 / 2) : (ImGui::GetWindowSize().x / 2) - (32 / 2) - (32 / 2) - 5));
+                        ImGui::SetCursorPosY(28);
+
+                        ImVec4 buttonColor = ImGui::GetStyle().Colors[ImGuiCol_Button];
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(buttonColor.x, buttonColor.y, buttonColor.z, 0.7f));
+                        if (ImGui::Button(ICON_FA_PLAY, ImVec2(32, 32))) {
+                            stateScene = nlohmann::json::array();
+                            Scene::SaveScene("", stateScene);
+
+                            StartWorld();
+
+                            HyperAPI::isRunning = true;
+                            HyperAPI::isStopped = false;
+
+                            for (auto &camera : Scene::cameras) {
+                                if (camera->mainCamera) {
+                                    Scene::mainCamera = camera;
+                                    break;
+                                }
+                            }
+                        }
+                        ImGui::PopStyleColor();
+
+                        if (ImGui::IsItemHovered()) {
+                            focusedOnScene = false;
+                            hoveredScene = false;
+                        }
+                    }
+                    else if(!HyperAPI::isStopped) {
+                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x / 2) - (32 / 2) - (32 / 2) - 5);
+                        ImGui::SetCursorPosY(28);
+
+                        ImVec4 buttonColor = ImGui::GetStyle().Colors[ImGuiCol_Button];
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(buttonColor.x, buttonColor.y, buttonColor.z, 0.7f));
+                        if (ImGui::Button(ICON_FA_PAUSE, ImVec2(32, 32))) {
+                            HyperAPI::isRunning = false;
+                            DeleteWorld();
+
+                            Scene::mainCamera = camera;
+                        }
+                        ImGui::PopStyleColor();
+
+                        if (ImGui::IsItemHovered()) {
+                            focusedOnScene = false;
+                            hoveredScene = false;
+                        }
+                    }
+
+                    if(!HyperAPI::isStopped) {
+                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x / 2) - (32 / 2) + (32 / 2) + 5);
+                        ImGui::SetCursorPosY(28);
+
+                        ImVec4 buttonColor = ImGui::GetStyle().Colors[ImGuiCol_Button];
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(buttonColor.x, buttonColor.y, buttonColor.z, 0.7f));
+                        if (ImGui::Button(ICON_FA_STOP, ImVec2(32, 32))) {
+                            if(HyperAPI::isRunning) {
+                                DeleteWorld();
+                            }
+                            HyperAPI::isRunning = false;
+                            HyperAPI::isStopped = true;
+                            Scene::m_Object = nullptr;
+                            // nlohmann json to string
+                            std::string stateJSON = stateScene.dump(4);
+                            if(stateJSON != "[]") {
+                                Scene::LoadScene("", stateScene);
+                            }
+                            Scene::mainCamera = camera;
+                        }
+                        ImGui::PopStyleColor();
+
+                        if (ImGui::IsItemHovered()) {
+                            focusedOnScene = false;
+                            hoveredScene = false;
+                        }
+                    }
+
+                    ImGui::SameLine();
+
+                    if (camera->mode2D) {
+                        ImGui::SetCursorPosY(28);
+                        ImGui::SetCursorPosX(ImGui::GetWindowSize().x - 85 - 10);
+                        ImVec4 buttonColor = ImGui::GetStyle().Colors[ImGuiCol_Button];
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(buttonColor.x, buttonColor.y, buttonColor.z, 0.7f));
+                        if (ImGui::Button(ICON_FA_CAMERA " 3D View", ImVec2(85, 32))) {
+                            camera->mode2D = false;
+                        }
+                        ImGui::PopStyleColor();
+                        if (ImGui::IsItemHovered()) {
+                            focusedOnScene = false;
+                            hoveredScene = false;
+                        }
+                    } else {
+                        ImGui::SetCursorPosY(28);
+                        ImGui::SetCursorPosX(ImGui::GetWindowSize().x - 85 - 10);
+                        ImVec4 buttonColor = ImGui::GetStyle().Colors[ImGuiCol_Button];
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(buttonColor.x, buttonColor.y, buttonColor.z, 0.7f));
+                        if (ImGui::Button(ICON_FA_CAMERA " 2D View", ImVec2(85, 32))) {
+                            camera->mode2D = true;
+                        }
+                        ImGui::PopStyleColor();
+
+                        if (ImGui::IsItemHovered()) {
+                            focusedOnScene = false;
+                            hoveredScene = false;
+                        }
+                    }
 
                     ImGui::SetCursorPos(ImVec2(0, 0));
                     ImGui::Text("FPS: %d", fps);
                 }
                 ImGui::End();
+                ImGui::PopStyleVar();
 
                 if (ImGui::Begin(ICON_FA_CUBES " Hierarchy")) {
-                    // drop target for child objects
                     if (ImGui::BeginDragDropTarget()) {
                         if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("game_object")) {
                             for(auto &gameObject : Scene::m_GameObjects) {
@@ -1570,6 +1845,7 @@ int main() {
                         }
                         ImGui::InputText("Name", Scene::name, 500);
                         ImGui::InputText("Tag", Scene::tag, 500);
+                        ImGui::Checkbox("Active", &Scene::m_Object->enabled);
                         // layer items
                         std::vector<const char *> layerItems;
                         for (auto &layer : Scene::layers) {
@@ -1707,6 +1983,11 @@ int main() {
                             if (comp.hasGUI) comp.GUI();
                         }
 
+                        if(Scene::m_Object->HasComponent<PathfindingAI>()) {
+                            auto &comp = Scene::m_Object->GetComponent<PathfindingAI>();
+                            if (comp.hasGUI) comp.GUI();
+                        }
+
                         ImGui::Separator();
 
                         ImVec2 win_size = ImGui::GetWindowSize();
@@ -1812,6 +2093,11 @@ int main() {
                             }
                         }
 
+                        if (ImGui::Button("Path Finding AI", ImVec2(200, 0))) {
+                            Scene::m_Object->AddComponent<PathfindingAI>();
+                            ImGui::CloseCurrentPopup();
+                        }
+
                         ImGui::EndPopup();
                     }
 
@@ -1820,7 +2106,93 @@ int main() {
 
                 if (ImGui::Begin(ICON_FA_FOLDER " Assets", nullptr)) {
                     Scene::DropTargetMat(Scene::DRAG_GAMEOBJECT, nullptr, nullptr);
+                    // create new file
+                    if (ImGui::Button(ICON_FA_PLUS " New File", ImVec2(ImGui::GetWindowSize().x, 0))) {
+                        ImGui::OpenPopup("New File");
+                    }
+
+                    if (ImGui::BeginPopup("New File")) {
+                        if (ImGui::Button(ICON_FA_CODE" Lua Script", ImVec2(200, 0))) {
+                            fs::path p = fs::path("assets/New Script.lua");
+                            if (!fs::exists(p)) {
+                                std::ofstream file(p);
+                                file.close();
+                            }
+                            ImGui::CloseCurrentPopup();
+                        }
+
+                        // folder
+                        if (ImGui::Button(ICON_FA_FOLDER " Folder", ImVec2(200, 0))) {
+                            fs::create_directory("assets/dancing_vampire");
+                            ImGui::CloseCurrentPopup();
+                        }
+
+                        // file
+                        if (ImGui::Button(ICON_FA_FILE " File", ImVec2(200, 0))) {
+                            fs::path p = fs::path("assets/New File");
+                            if (!fs::exists(p)) {
+                                std::ofstream file(p);
+                                file.close();
+                            }
+                            ImGui::CloseCurrentPopup();
+                        }
+
+                        if (ImGui::Button(ICON_FA_FILE " Material", ImVec2(200, 0))) {
+                            fs::path p = fs::path("assets/New Material.material");
+                            if (!fs::exists(p)) {
+                                std::ofstream file(p);
+                                nlohmann::json j = {
+                                        {"diffuse",   "nullptr"},
+                                        {"specular",  "nullptr"},
+                                        {"normal",    "nullptr"},
+                                        {"roughness", 0},
+                                        {"metallic",  0},
+                                        {"baseColor", {
+                                                {"r", 1},
+                                                {"g", 1},
+                                                {"b", 1},
+                                                {"a", 1}
+                                            }
+                                        },
+                                        {"texUV", {
+                                                {"x", 0},
+                                                {"y", 0}
+                                            }
+                                        }
+                                };
+
+                                file << j.dump(4);
+                                file.close();
+                            }
+                            ImGui::CloseCurrentPopup();
+                        }
+
+                        ImGui::EndPopup();
+                    }
+
+                    ImGui::Separator();
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("file")) {
+                            std::string file = (char *) payload->Data;
+                            file.erase(0, cwd.length() + 1);
+                            std::string newFile = "assets/" + file.substr(file.find_last_of("/") + 1);
+                            try {
+                                fs::rename(file, newFile);
+                            } catch (const std::exception &e) {
+                                std::cout << e.what() << std::endl;
+                            }
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+
                     DirIter(cwd + std::string("/assets"));
+                    if(ImGui::BeginPopup("File Options")) {
+                        if(ImGui::Button("Delete", ImVec2(200, 0))) {
+                            fs::remove(m_originalName);
+                            ImGui::CloseCurrentPopup();
+                        }
+                        ImGui::EndPopup();
+                    }
                 }
                 ImGui::End();
 
@@ -1921,15 +2293,27 @@ int main() {
 
     bool calledOnce = false;
 
-    // batchShader.Bind();
-    // batchShader.SetUniform1i("textures[0]", 0);
-    // batchShader.SetUniform1i("textures[1]", 1);
-    // batchShader.SetUniform1i("cubeMap", 10);
+//    Experimental::Model model("assets/models/Rumba Dancing.fbx", false);
+//    Experimental::Animation dancingAnimation("assets/models/Rumba Dancing.fbx", &model);
+//    Animator animator(&dancingAnimation);
+
+    float deltaTime, lastFrame;
 
     app.Run([&](unsigned int &shadowMapTex) {
         if(Scene::LoadingScene) return;
+        float currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+//        animator.UpdateAnimation(deltaTime);
 
         if (HyperAPI::isRunning) {
+            for(auto &gameObject : Scene::m_GameObjects) {
+                if(!gameObject->HasComponent<PathfindingAI>()) continue;
+
+                auto &component = gameObject->GetComponent<PathfindingAI>();
+                component.Update(shader, *Scene::mainCamera);
+            }
+
             BulletPhysicsWorld::UpdatePhysics();
             BulletPhysicsWorld::CollisionCallback([&](const std::string &idA, const std::string &idB) {
                 auto *gameObjectA = f_GameObject::FindGameObjectByID(idA);
@@ -2042,8 +2426,8 @@ int main() {
 
             colors[ImGuiCol_DockingPreview] = ImVec4(1, 0.15, 0.15, 1);
 
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.5, 2.5));
-            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.5, 2.5));
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.5f);
         }
 
         calledOnce = true;
@@ -2143,6 +2527,8 @@ int main() {
 
         for (auto &gameObject : Scene::m_GameObjects) {
             if (!gameObject) continue;
+            if(!gameObject->enabled) continue;
+
             gameObject->Update();
 
             if (gameObject->HasComponent<Transform>()) {
@@ -2169,6 +2555,10 @@ int main() {
                 gameObject->GetComponent<c_DirectionalLight>().Update();
             }
 
+            if (gameObject->HasComponent<SpritesheetRenderer>()) {
+                gameObject->GetComponent<SpritesheetRenderer>().Update();
+            }
+
             if (gameObject->HasComponent<m_LuaScriptComponent>()) {
                 auto &script = gameObject->GetComponent<m_LuaScriptComponent>();
                 if (HyperAPI::isRunning) {
@@ -2185,12 +2575,20 @@ int main() {
         }
 
         for (auto &layer : Scene::layers) {
+            bool notInCameraLayer = true;
+            for(auto &camLayer : Scene::mainCamera->layers) {
+                if(Scene::mainCamera == camera) break;
+                if(camLayer == layer.first) {
+                    notInCameraLayer = false;
+                    break;
+                }
+            }
+            if(notInCameraLayer && Scene::mainCamera != camera) continue;
+
             for (auto &gameObject : Scene::m_GameObjects) {
+                if(!gameObject->enabled) continue;
                 if (gameObject->layer != layer.first) continue;
-
                 if (gameObject->HasComponent<MeshRenderer>()) {
-                    // if(gameObject->GetComponcent<MeshRenderer>().m_Model) continue;
-
                     auto meshRenderer = gameObject->GetComponent<MeshRenderer>();
                     auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
@@ -2210,13 +2608,13 @@ int main() {
                             glStencilMask(0xFF);
                         }
                         if (transform.parentTransform != nullptr) {
-                            transform.parentTransform->Update();
-                            meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera,
-                                                      transform.transform * transform.parentTransform->transform *
-                                                      extra);
-                        } else {
-                            meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera, transform.transform * extra);
+                            transform.position += transform.parentTransform->position;
+                            transform.rotation += transform.parentTransform->rotation;
+                            transform.scale *= transform.parentTransform->scale;
+                            transform.Update();
                         }
+
+                        meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera, transform.transform * extra);
                     }
                 }
 
@@ -2224,6 +2622,15 @@ int main() {
                     auto spriteRenderer = gameObject->GetComponent<SpriteRenderer>();
                     auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
+
+                    for(auto &go : Scene::m_GameObjects) {
+                        if(go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
+                            auto &parentTransform = go->GetComponent<Transform>();
+                            transform.position += parentTransform.position;
+                            transform.rotation += parentTransform.rotation;
+                            transform.scale *= parentTransform.scale;
+                        }
+                    }
 
                     spriteRenderer.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
                 }
@@ -2233,8 +2640,16 @@ int main() {
                     auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
 
-                    if (spritesheetRenderer.mesh != nullptr) {
+                    for(auto &go : Scene::m_GameObjects) {
+                        if(go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
+                            auto &parentTransform = go->GetComponent<Transform>();
+                            transform.position += parentTransform.position;
+                            transform.rotation += parentTransform.rotation;
+                            transform.scale *= parentTransform.scale;
+                        }
+                    }
 
+                    if (spritesheetRenderer.mesh != nullptr) {
                         spritesheetRenderer.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
                     }
                 }
@@ -2245,8 +2660,18 @@ int main() {
                     transform.Update();
 
                     spriteAnimation.Play();
+
+                    for(auto &go : Scene::m_GameObjects) {
+                        if(go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
+                            auto &parentTransform = go->GetComponent<Transform>();
+                            transform.position += parentTransform.position;
+                            transform.rotation += parentTransform.rotation;
+                            transform.scale *= parentTransform.scale;
+                        }
+                    }
+
                     if (spriteAnimation.currMesh != nullptr) {
-                        spriteAnimation.currMesh->Draw(shader, *Scene::mainCamera, transform.transform);
+                        spriteAnimation.currMesh->Draw(shader, *Scene::mainCamera);
                     }
                 }
 
@@ -2255,9 +2680,158 @@ int main() {
                     auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
 
+                    for(auto &go : Scene::m_GameObjects) {
+                        if(go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
+                            auto &parentTransform = go->GetComponent<Transform>();
+                            transform.position += parentTransform.position;
+                            transform.rotation += parentTransform.rotation;
+                            transform.scale *= parentTransform.scale;
+                        }
+                    }
+
                     spritesheetAnimation.Play();
-                    if (spritesheetAnimation.currMesh != nullptr) {
-                        spritesheetAnimation.currMesh->Draw(shader, *Scene::mainCamera, transform.transform);
+                    spritesheetAnimation.Update();
+                    if (spritesheetAnimation.mesh != nullptr) {
+                        spritesheetAnimation.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
+                    }
+                }
+            }
+        }
+
+        auto cameraView = Scene::m_Registry.view<CameraComponent>();
+        for (auto entity : cameraView) {
+            if(Scene::mainCamera == camera) break;
+            GameObject *gameObject = nullptr;
+            for(auto &go : Scene::m_GameObjects) {
+                if(go->entity == entity) {
+                    gameObject = go;
+                    break;
+                }
+            }
+            auto &camera = gameObject->GetComponent<CameraComponent>();
+
+            if(!camera.depthCamera) continue;
+            glClear(GL_DEPTH_BUFFER_BIT);
+
+            for (auto &layer : Scene::layers) {
+                bool notInCameraLayer = true;
+                for(auto &camLayer : camera.camera->layers) {
+                    if(camLayer == layer.first) {
+                        notInCameraLayer = false;
+                        break;
+                    }
+                }
+                if(notInCameraLayer) continue;
+
+                for (auto &gameObject : Scene::m_GameObjects) {
+                    if(!gameObject->enabled) continue;
+                    if (gameObject->layer != layer.first) continue;
+                    if (gameObject->HasComponent<MeshRenderer>()) {
+                        auto meshRenderer = gameObject->GetComponent<MeshRenderer>();
+                        auto transform = gameObject->GetComponent<Transform>();
+                        transform.Update();
+
+                        glm::mat4 extra = meshRenderer.extraMatrix;
+
+                        if (meshRenderer.m_Mesh != nullptr) {
+                            glBindTexture(GL_TEXTURE_2D, dirLightIcon_texture->ID);
+                            glActiveTexture(GL_TEXTURE13);
+
+                            shader.Bind();
+                            shader.SetUniformMat4("lightSpaceMatrix", Scene::projection);
+                            shader.SetUniform1i("shadowMap", 13);
+
+                            if(Scene::m_Object == gameObject) {
+                                glStencilFunc(GL_ALWAYS, 1, 0xFF);
+                                glStencilMask(0xFF);
+                            }
+                            if (transform.parentTransform != nullptr) {
+                                transform.position += transform.parentTransform->position;
+                                transform.rotation += transform.parentTransform->rotation;
+                                transform.scale *= transform.parentTransform->scale;
+                                transform.Update();
+                            }
+
+                            meshRenderer.m_Mesh->Draw(shader, *camera.camera, transform.transform * extra);
+                        }
+                    }
+
+                    if (gameObject->HasComponent<SpriteRenderer>()) {
+                        auto spriteRenderer = gameObject->GetComponent<SpriteRenderer>();
+                        auto transform = gameObject->GetComponent<Transform>();
+                        transform.Update();
+
+                        for(auto &go : Scene::m_GameObjects) {
+                            if(go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
+                                auto &parentTransform = go->GetComponent<Transform>();
+                                transform.position += parentTransform.position;
+                                transform.rotation += parentTransform.rotation;
+                                transform.scale *= parentTransform.scale;
+                            }
+                        }
+
+                        spriteRenderer.mesh->Draw(shader, *camera.camera, transform.transform);
+                    }
+
+                    if (gameObject->HasComponent<SpritesheetRenderer>()) {
+                        auto spritesheetRenderer = gameObject->GetComponent<SpritesheetRenderer>();
+                        auto transform = gameObject->GetComponent<Transform>();
+                        transform.Update();
+
+                        for(auto &go : Scene::m_GameObjects) {
+                            if(go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
+                                auto &parentTransform = go->GetComponent<Transform>();
+                                transform.position += parentTransform.position;
+                                transform.rotation += parentTransform.rotation;
+                                transform.scale *= parentTransform.scale;
+                            }
+                        }
+
+                        if (spritesheetRenderer.mesh != nullptr) {
+                            spritesheetRenderer.mesh->Draw(shader, *camera.camera, transform.transform);
+                        }
+                    }
+
+                    if (gameObject->HasComponent<SpriteAnimation>()) {
+                        auto spriteAnimation = gameObject->GetComponent<SpriteAnimation>();
+                        auto transform = gameObject->GetComponent<Transform>();
+                        transform.Update();
+
+                        spriteAnimation.Play();
+
+                        for(auto &go : Scene::m_GameObjects) {
+                            if(go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
+                                auto &parentTransform = go->GetComponent<Transform>();
+                                transform.position += parentTransform.position;
+                                transform.rotation += parentTransform.rotation;
+                                transform.scale *= parentTransform.scale;
+                            }
+                        }
+
+                        if (spriteAnimation.currMesh != nullptr) {
+                            spriteAnimation.currMesh->Draw(shader, *camera.camera, transform.transform);
+                        }
+                    }
+
+                    if (gameObject->HasComponent<c_SpritesheetAnimation>()) {
+                        auto spritesheetAnimation = gameObject->GetComponent<c_SpritesheetAnimation>();
+                        auto transform = gameObject->GetComponent<Transform>();
+                        transform.Update();
+
+                        for(auto &go : Scene::m_GameObjects) {
+                            if(go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
+                                auto &parentTransform = go->GetComponent<Transform>();
+                                transform.position += parentTransform.position;
+                                transform.rotation += parentTransform.rotation;
+                                transform.scale *= parentTransform.scale;
+                            }
+                        }
+
+                        spritesheetAnimation.Play();
+                        spritesheetAnimation.Update();
+                        if (spritesheetAnimation.mesh != nullptr) {
+                            spritesheetAnimation.mesh->Draw(shader, *camera.camera, transform.transform);
+                        }
                     }
                 }
             }
@@ -2266,6 +2840,7 @@ int main() {
         if(Scene::mainCamera != camera) return;
 
         for(auto &gameObject : Scene::m_GameObjects) {
+            if(!gameObject->enabled) continue;
             if(Scene::m_Object != gameObject) continue;
 
             if(gameObject->HasComponent<MeshRenderer>()) {
@@ -2282,13 +2857,13 @@ int main() {
                 outlineShader.Bind();
                 outlineShader.SetUniform1f("outlining", 0.08f);
                 if (transform.parentTransform != nullptr) {
-                    transform.parentTransform->Update();
-                    meshRenderer.m_Mesh->Draw(outlineShader, *Scene::mainCamera,
-                                              transform.transform * transform.parentTransform->transform *
-                                              extra);
-                } else {
-                    meshRenderer.m_Mesh->Draw(outlineShader, *Scene::mainCamera, transform.transform * extra);
+                    transform.position += transform.parentTransform->position;
+                    transform.rotation += transform.parentTransform->rotation;
+                    transform.scale *= transform.parentTransform->scale;
+                    transform.Update();
                 }
+
+                meshRenderer.m_Mesh->Draw(outlineShader, *Scene::mainCamera, transform.transform * extra);
 
                 glStencilMask(0xFF);
                 glStencilFunc(GL_ALWAYS, 0, 0xFF);
@@ -2311,6 +2886,7 @@ int main() {
         }
 
         for(auto &gameObject : Scene::m_GameObjects) {
+            if(!gameObject->enabled) continue;
             if(gameObject->HasComponent<c_DirectionalLight>()) {
                 for(auto &game_object : Scene::m_GameObjects) {
                     if(game_object->HasComponent<MeshRenderer>()) {
@@ -2536,7 +3112,7 @@ int main(int argc, char **argv) {
             colors[ImGuiCol_DockingPreview] = ImVec4(1, 0.15, 0.15, 1);
 
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.5, 2.5));
-            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.5f);
         }
 
         calledOnce = true;
