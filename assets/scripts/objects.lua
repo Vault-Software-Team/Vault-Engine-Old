@@ -3,5 +3,5 @@ end
 
 function OnUpdate()
     local objects = FindGameObjectsByTag("Default");
-    print(objects.size);
+    Error("Hmm");
 end

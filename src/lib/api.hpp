@@ -40,6 +40,7 @@
 #include "scene.hpp"
 #include "ScriptEngine.hpp"
 #include "InputEvents.hpp"
+#include "../vendor/ImGuiColorTextEdit/TextEditor.h"
 #include "scripts.hpp"
 #include "../vendor/SDL2/SDL_mixer.h"
 #include <random>

@@ -41,6 +41,13 @@ void GetTableArg(lua_State *L, const char *key, std::string &value) {
     lua_pop(L, 1);
 }
 
+void GetTableArg(lua_State *L, const char *key, const char *value) {
+    lua_pushstring(L, key);
+    lua_gettable(L, -2);
+    strcpy((char *)value, lua_tostring(L, -1));
+    lua_pop(L, 1);
+}
+
 void GetTableArg(lua_State *L, const char *key, float &value) {
     lua_pushstring(L, key);
     lua_gettable(L, -2);
@@ -132,7 +139,18 @@ void LuaUpdateComponentValues(lua_State *L, const std::string &type, GameObject 
         GetTableArg(L, "colorX", spriteRenderer.mesh->material.baseColor.x);
         GetTableArg(L, "colorY", spriteRenderer.mesh->material.baseColor.y);
         GetTableArg(L, "colorZ", spriteRenderer.mesh->material.baseColor.z);
-    }else if(type == "Rigidbody2D") {
+    }
+    else if(type == "SpriteAnimation") {
+        auto &spriteAnimation = ent->GetComponent<SpriteAnimation>();
+
+        GetTableArg(L, "currAnim", spriteAnimation.currAnim);
+    }
+    else if(type == "SpritesheetAnimation") {
+        auto &spritesheetAnimation = ent->GetComponent<c_SpritesheetAnimation>();
+
+        GetTableArg(L, "currAnim", spritesheetAnimation.currAnim);
+    }
+    else if(type == "Rigidbody2D") {
         auto &rigidbody = ent->GetComponent<Rigidbody2D>();
 
         GetTableArg(L, "gravityScale", rigidbody.gravityScale);
@@ -701,6 +719,10 @@ namespace ScriptEngine {
         PushTableKey(L, "SetMousePosition", &Functions::SetMousePosition);
         lua_setglobal(L, "Input");
 
+        lua_newtable(L);
+        PushTableFunction(L, "Lerp", &Functions::LerpFloat);
+        lua_setglobal(L, "Float");
+
         return L;
     }
 
@@ -1190,7 +1212,7 @@ namespace ScriptEngine {
                     PushTableKey(L, "scaleZ", transform.scale.z);
                 }
                 else if(type == "MeshRenderer") {
-                    MeshRenderer &meshRenderer = m_Object->GetComponent<MeshRenderer>();
+                    MeshRenderer &meshRenderer = gameObject->GetComponent<MeshRenderer>();
                     HyperAPI::Material &material = meshRenderer.m_Mesh->material;
 
                     lua_newtable(L);
@@ -1207,7 +1229,7 @@ namespace ScriptEngine {
                     PushTableKey(L, "uvY", material.texUVs.y);
                 }
                 else if(type == "DirectionalLight") {
-                    c_DirectionalLight &light = m_Object->GetComponent<c_DirectionalLight>();
+                    c_DirectionalLight &light = gameObject->GetComponent<c_DirectionalLight>();
 
                     lua_newtable(L);
                     PushTableKey(L, "obj_id", obj_id.c_str());
@@ -1217,7 +1239,7 @@ namespace ScriptEngine {
                     PushTableKey(L, "colorZ", light.color.z);
                 }
                 else if(type == "PointLight") {
-                    c_PointLight &light = m_Object->GetComponent<c_PointLight>();
+                    c_PointLight &light = gameObject->GetComponent<c_PointLight>();
 
                     lua_newtable(L);
                     PushTableKey(L, "obj_id", obj_id.c_str());
@@ -1228,7 +1250,7 @@ namespace ScriptEngine {
                     PushTableKey(L, "intensity", light.intensity);
                 }
                 else if(type == "SpotLight") {
-                    c_SpotLight &light = m_Object->GetComponent<c_SpotLight>();
+                    c_SpotLight &light = gameObject->GetComponent<c_SpotLight>();
 
                     lua_newtable(L);
                     PushTableKey(L, "obj_id", obj_id.c_str());
@@ -1238,7 +1260,7 @@ namespace ScriptEngine {
                     PushTableKey(L, "colorZ", light.color.z);
                 }
                 else if(type == "SpriteRenderer") {
-                    auto &spriteRenderer = m_Object->GetComponent<SpriteRenderer>();
+                    auto &spriteRenderer = gameObject->GetComponent<SpriteRenderer>();
 
                     lua_newtable(L);
                     PushTableKey(L, "obj_id", obj_id.c_str());
@@ -1247,8 +1269,24 @@ namespace ScriptEngine {
                     PushTableKey(L, "colorY", spriteRenderer.mesh->material.baseColor.y);
                     PushTableKey(L, "colorZ", spriteRenderer.mesh->material.baseColor.z);
                 }
+                else if(type == "SpriteAnimation") {
+                    auto &spriteAnimation = gameObject->GetComponent<SpriteAnimation>();
+
+                    lua_newtable(L);
+                    PushTableKey(L, "obj_id", obj_id.c_str());
+                    PushTableKey(L, "type", "SpriteAnimation");
+                    PushTableKey(L, "currAnim", spriteAnimation.currAnim);
+                }
+                else if(type == "SpritesheetAnimation") {
+                    auto &spritesheetAnimation = gameObject->GetComponent<c_SpritesheetAnimation>();
+
+                    lua_newtable(L);
+                    PushTableKey(L, "obj_id", obj_id.c_str());
+                    PushTableKey(L, "type", "SpritesheetAnimation");
+                    PushTableKey(L, "currAnim", spritesheetAnimation.currAnim);
+                }
                 else if(type == "Rigidbody2D") {
-                    auto &rigidbody = m_Object->GetComponent<Rigidbody2D>();
+                    auto &rigidbody = gameObject->GetComponent<Rigidbody2D>();
 
                     lua_newtable(L);
                     PushTableKey(L, "obj_id", obj_id.c_str());
@@ -1263,7 +1301,7 @@ namespace ScriptEngine {
                     PushTableFunction(L, "GetVelocity", GetVelocity);
                 }
                 else if(type == "BoxCollider2D") {
-                    auto &boxCollider = m_Object->GetComponent<BoxCollider2D>();
+                    auto &boxCollider = gameObject->GetComponent<BoxCollider2D>();
 
                     lua_newtable(L);
                     PushTableKey(L, "obj_id", obj_id.c_str());
@@ -1682,6 +1720,17 @@ namespace ScriptEngine {
                 gameObject->SetActive(lua_toboolean(L, 2));
             }
 
+            return 1;
+        }
+
+        int LerpFloat(lua_State *L) {
+            // get the 3 arguments
+            float a = lua_tonumber(L, 1);
+            float b = lua_tonumber(L, 2);
+            float t = lua_tonumber(L, 3);
+
+            float returnVal = Hyper::LerpFloat(a, b, t);
+            lua_pushnumber(L, returnVal);
             return 1;
         }
     }

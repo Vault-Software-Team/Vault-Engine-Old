@@ -135,6 +135,9 @@ bool ends_with(std::string const &value, std::string const &ending) {
 
 std::string m_originalName = "";
 char originalNameBuffer[50] = "";
+
+TextEditor editor;
+std::string currentFilePath = "";
 void DirIter(const std::string &path) {
     for (const auto &entry : fs::directory_iterator(path)) {
         if (fs::is_directory(entry)) {
@@ -144,10 +147,10 @@ void DirIter(const std::string &path) {
                 ImGui::TreePop();
             }
 
-            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-                m_originalName = entry.path().string();
-                ImGui::OpenPopup("File Options");
-            }
+//            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+//                m_originalName = entry.path().string();
+//                ImGui::OpenPopup("File Options");
+//            }
 
             // drop target
             if (ImGui::BeginDragDropTarget()) {
@@ -181,6 +184,12 @@ void DirIter(const std::string &path) {
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 25);
             if(ends_with(entry.path().string(), ".lua")) {
                 ImGui::Selectable((std::string(ICON_FA_CODE) + " " + entry.path().filename().string()).c_str());
+                if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+                    std::ifstream file(entry.path().string());
+                    std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+                    editor.SetText(str);
+                    currentFilePath = entry.path().string();
+                }
             } else if(ends_with(entry.path().string(), ".png") || ends_with(entry.path().string(), ".jpg") || ends_with(entry.path().string(), ".jpeg")) {
                 ImGui::Selectable((std::string(ICON_FA_IMAGE) + " " + entry.path().filename().string()).c_str());
             } else if(ends_with(entry.path().string(), ".ogg") || ends_with(entry.path().string(), ".mp3") || ends_with(entry.path().string(), ".wav")) {
@@ -198,11 +207,11 @@ void DirIter(const std::string &path) {
             } else {
                 ImGui::Selectable((std::string(ICON_FA_FILE) + " " + entry.path().filename().string()).c_str());
             }
-            // on double click
-            if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1)) {
-                m_originalName = entry.path().string();
-                ImGui::OpenPopup("File Options");
-            }
+            // on right click
+//            if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(1)) {
+//                m_originalName = entry.path().string();
+//                ImGui::OpenPopup("File Options");
+//            }
             // make it draggable
 
             // disable it getting out of the window
@@ -428,16 +437,24 @@ void DeleteWorld() {
     BulletPhysicsWorld::Delete();
 }
 
+bool editingText = false;
 void ShortcutManager(bool &openConfig) {
     if(ImGui::IsKeyDown(GLFW_KEY_LEFT_CONTROL) && ImGui::IsKeyPressed(GLFW_KEY_S) && !ImGui::IsKeyDown(GLFW_KEY_LEFT_SHIFT)){
-        if (Scene::currentScenePath == "") {
-            ImGuiFileDialog::Instance()->OpenDialog("SaveSceneDialog",
-                                                    ICON_FA_FLOPPY_DISK " Save Scene", ".static",
-                                                    ".");
-        } else {
-            json S_SJ;
-            Scene::SaveScene(Scene::currentScenePath, S_SJ);
+        if(!editingText) {
+            if (Scene::currentScenePath == "") {
+                ImGuiFileDialog::Instance()->OpenDialog("SaveSceneDialog",
+                                                        ICON_FA_FLOPPY_DISK " Save Scene", ".static",
+                                                        ".");
+            } else {
+                json S_SJ;
+                Scene::SaveScene(Scene::currentScenePath, S_SJ);
+            }
+        } else if(editingText) {
+            std::ofstream file(currentFilePath);
+            file << editor.GetText();
+            file.close();
         }
+
     }
 
     if(ImGui::IsKeyDown(GLFW_KEY_LEFT_CONTROL) && ImGui::IsKeyDown(GLFW_KEY_LEFT_SHIFT) && ImGui::IsKeyPressed(GLFW_KEY_S)){
@@ -795,13 +812,16 @@ int main() {
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
         io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-        io.Fonts->AddFontFromFileTTF("assets/fonts/OpenSans-Semibold.ttf", 18.f);
+        io.FontDefault = io.Fonts->AddFontFromFileTTF("assets/fonts/OpenSans-Semibold.ttf", 18.f);
         static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
         ImFontConfig icons_config;
         icons_config.MergeMode = true;
         icons_config.PixelSnapH = true;
         io.Fonts->AddFontFromFileTTF("assets/fonts/fa-solid-900.ttf", 16.0f, &icons_config, icons_ranges);
+
+        //set default font
     });
+    auto *fontCascadia = ImGui::GetIO().Fonts->AddFontFromFileTTF("assets/fonts/CascadiaMono.ttf", 16.0f);
 #endif
 
     Input::window = app.renderer->window;
@@ -981,6 +1001,53 @@ int main() {
 
     Scene::SceneType sceneType = Scene::MAIN_SCENE;
     nlohmann::json stateScene = nlohmann::json::array();
+
+    TextEditor::LanguageDefinition langDef = TextEditor::LanguageDefinition::Lua();
+    langDef.mName = "Lua";
+    langDef.mCommentStart = "--";
+    langDef.mCommentEnd = "";
+    langDef.mSingleLineComment = "--";
+    langDef.mCaseSensitive = true;
+    langDef.mAutoIndentation = true;
+    // set function
+    TextEditor::Identifier id;
+    id.mDeclaration = "Log";
+    langDef.mIdentifiers.insert(std::make_pair("Log", id));
+    id.mDeclaration = "Warning";
+    langDef.mIdentifiers.insert(std::make_pair("Warning", id));
+    id.mDeclaration = "Error";
+    langDef.mIdentifiers.insert(std::make_pair("Error", id));
+    id.mDeclaration = "GetComponent";
+    langDef.mIdentifiers.insert(std::make_pair("GetComponent", id));
+    id.mDeclaration = "UpdateComponent";
+    langDef.mIdentifiers.insert(std::make_pair("UpdateComponent", id));
+    id.mDeclaration = "HasComponent";
+    langDef.mIdentifiers.insert(std::make_pair("HasComponent", id));
+    id.mDeclaration = "FindGameObjectByName";
+    langDef.mIdentifiers.insert(std::make_pair("FindGameObjectByName", id));
+    id.mDeclaration = "FindGameObjectByTag";
+    langDef.mIdentifiers.insert(std::make_pair("FindGameObjectByTag", id));
+    id.mDeclaration = "FindGameObjectsByName";
+    langDef.mIdentifiers.insert(std::make_pair("FindGameObjectsByName", id));
+    id.mDeclaration = "FindGameObjectsByTag";
+    langDef.mIdentifiers.insert(std::make_pair("FindGameObjectsByTag", id));
+    id.mDeclaration = "PlayAudio";
+    langDef.mIdentifiers.insert(std::make_pair("PlayAudio", id));
+    id.mDeclaration = "StopAudio";
+    langDef.mIdentifiers.insert(std::make_pair("StopAudio", id));
+    id.mDeclaration = "PlayMusic";
+    langDef.mIdentifiers.insert(std::make_pair("PlayMusic", id));
+    id.mDeclaration = "StopMusic";
+    langDef.mIdentifiers.insert(std::make_pair("StopMusic", id));
+    id.mDeclaration = "ToDegrees";
+    langDef.mIdentifiers.insert(std::make_pair("ToDegrees", id));
+    id.mDeclaration = "ToRadians";
+    langDef.mIdentifiers.insert(std::make_pair("ToRadians", id));
+
+    editor.SetTabSize(4);
+    editor.SetLanguageDefinition(langDef);
+    editor.SetPalette(TextEditor::GetDarkPalette());
+    editor.SetShowWhitespaces(false);
 
     std::function<void(unsigned int &PPT, unsigned int &PPFBO)> GUI_EXP =
             [&](unsigned int &PPT, unsigned int &PPFBO) {
@@ -1457,6 +1524,19 @@ int main() {
                     ImGui::EndPopup();
                 }
 
+                if(ImGui::Begin(ICON_FA_CODE" Text Editor")) {
+                    if(ImGui::IsWindowHovered()) {
+                        editingText = true;
+                    }
+
+                    ImGui::PushFont(fontCascadia);
+                    editor.Render("Text Editor");
+                    ImGui::PopFont();
+                } else {
+                    editingText = false;
+                }
+                ImGui::End();
+
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
                 if(ImGui::Begin(ICON_FA_GAMEPAD " Scene", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
                     ImVec2 w_s = ImGui::GetWindowSize();
@@ -1666,9 +1746,10 @@ int main() {
                         ImVec4 buttonColor = ImGui::GetStyle().Colors[ImGuiCol_Button];
                         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(buttonColor.x, buttonColor.y, buttonColor.z, 0.7f));
                         if (ImGui::Button(ICON_FA_PLAY, ImVec2(32, 32))) {
-                            stateScene = nlohmann::json::array();
-                            Scene::SaveScene("", stateScene);
-
+                            if(HyperAPI::isStopped) {
+                                stateScene = nlohmann::json::array();
+                                Scene::SaveScene("", stateScene);
+                            }
                             StartWorld();
 
                             HyperAPI::isRunning = true;

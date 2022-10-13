@@ -104,6 +104,7 @@ namespace ScriptEngine {
         int DisableResizing(lua_State *L);
         int ToDegrees(lua_State *L);
         int ToRadians(lua_State *L);
+        int LerpFloat(lua_State *L);
     }
 
     struct m_FieldValue {

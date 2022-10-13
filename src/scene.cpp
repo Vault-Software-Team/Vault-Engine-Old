@@ -582,7 +582,8 @@ namespace HyperAPI {
         void LoadScene(const std::string &scenePath, nlohmann::json &StateScene) {
             LoadingScene = true;
 
-            currentScenePath = scenePath;
+            if(scenePath != "")
+                currentScenePath = scenePath;
             try {
                 for(auto &gameObject : m_GameObjects) {
                     if(gameObject->HasComponent<Experimental::MeshRenderer>()) {
@@ -796,6 +797,19 @@ namespace HyperAPI {
                             component["color"]["g"],
                             component["color"]["b"]
                         );
+                    }
+
+                    if(type == "Light2D") {
+                        gameObject->AddComponent<Experimental::c_Light2D>();
+                        auto &light = gameObject->GetComponent<Experimental::c_Light2D>();
+
+                        light.color = Vector3(
+                                component["color"]["r"],
+                                component["color"]["g"],
+                                component["color"]["b"]
+                        );
+
+                        light.range = component["range"];
                     }
 
                     if(type == "CameraComponent") {
@@ -1579,6 +1593,18 @@ namespace HyperAPI {
                     JSON[i]["components"][componentOffset]["color"]["r"] = light.color.x;
                     JSON[i]["components"][componentOffset]["color"]["g"] = light.color.y;
                     JSON[i]["components"][componentOffset]["color"]["b"] = light.color.z;
+
+                    componentOffset++;
+                }
+
+                if(gameObject->HasComponent<Experimental::c_Light2D>()) {
+                    auto &light = gameObject->GetComponent<Experimental::c_Light2D>();
+
+                    JSON[i]["components"][componentOffset]["type"] = "Light2D";
+                    JSON[i]["components"][componentOffset]["color"]["r"] = light.color.x;
+                    JSON[i]["components"][componentOffset]["color"]["g"] = light.color.y;
+                    JSON[i]["components"][componentOffset]["color"]["b"] = light.color.z;
+                    JSON[i]["components"][componentOffset]["range"] = light.range;
 
                     componentOffset++;
                 }
