@@ -106,6 +106,8 @@ namespace HyperAPI {
     extern std::string dirPayloadData;
     extern bool isRunning;
     extern bool isStopped;
+    extern glm::vec3 mousePosWorld, mousePosCamWorld;
+    extern float sceneMouseX, sceneMouseY;
 
     bool DecomposeTransform(const glm::mat4 &transform, glm::vec3 &translation, glm::vec3 &rotation, glm::vec3 &scale);
 
@@ -357,6 +359,7 @@ namespace HyperAPI {
     class Camera : public ComponentSystem {
     public:
         float cursorWinW, cursorWinH;
+//        glm::vec3 mousePosWorld, mousePosCamWorld;
         // glm::vec3 Position;
         // glm::vec3 Orientation = glm::vec3(0.0f, 0.0f, -1.0f);
         // glm::vec3 RotationValue = glm::vec3(0.0f, 0.0f, 0.0f);

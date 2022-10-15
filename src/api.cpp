@@ -165,6 +165,8 @@ namespace HyperAPI {
     std::string dirPayloadData = "";
     bool isRunning = false;
     bool isStopped = true;
+    glm::vec3 mousePosWorld, mousePosCamWorld;
+    float sceneMouseX, sceneMouseY;
 
     bool DecomposeTransform(const glm::mat4 &transform, glm::vec3 &translation, glm::vec3 &rotation, glm::vec3 &scale) {
         // From glm::decompose in matrix_decompose.inl
@@ -905,6 +907,28 @@ namespace HyperAPI {
             } else {
                 projection = glm::perspective(glm::radians(FOVdeg), aspect, nearPlane, farPlane);
             }
+//            int mouseX = Input::GetMouseX();
+//            int mouseY = -Input::GetMouseY();
+//
+//            glm::vec3 mouseWorld = glm::unProject(glm::vec3(mouseX * mouseSensitivity, mouseY * mouseSensitivity, 0.0f), view, projection, glm::vec4(0, 0, width, height));
+//            // its very slow
+//            // make it faster
+//            // STOP COUTING I
+//            mousePosWorld = mouseWorld;
+
+            // mouse coordinates in world space
+//            glm::vec4 mousePos = glm::inverse(projection) * glm::vec4(mouseX, mouseY, 0.0f, 1.0f);
+//            mousePos /= mousePos.w;
+//            mousePos = glm::inverse(view) * mousePos;
+//            mousePos /= mousePos.w;
+//
+//            mousePosWorld = glm::vec3(mousePos.x, mousePos.y, mousePos.z);
+//            mousePosWorld = glm::normalize(mousePosWorld);
+//
+//            glm::vec4 mousePosCam = glm::inverse(view) * glm::vec4(mouseX, mouseY, 0.0f, 1.0f);
+//            mousePosCam /= mousePosCam.w;
+//            mousePosCamWorld = glm::vec3(mousePosCam.x, mousePosCam.y, mousePosCam.z);
+//            mousePosCamWorld = glm::normalize(mousePosCamWorld);
 
             camMatrix = projection * view;
         } else {
@@ -924,6 +948,26 @@ namespace HyperAPI {
             } else {
                 projection = glm::perspective(glm::radians(FOVdeg), aspect, nearPlane, farPlane);
             }
+
+//            int mouseX = sceneMouseX;
+//            int mouseY = sceneMouseY;
+//
+//            float ndc_x = (2.0f * mouseX) / width - 1.0f;
+//            float ndc_y = 1.0f - (2.0f * mouseY) / height;
+//
+//            float focal_length = 1.0f / tanf(glm::radians(FOVdeg / 2.0f));
+//            float ar = width / height;
+//            Vector3 ray_view(ndc_x / focal_length, (ndc_y * ar) / focal_length, 1.0f);
+//
+//            Vector4 ray_ndc_4d(ndc_x, ndc_y, 1.0f, 1.0f);
+//            Vector4 ray_view_4d = glm::inverse(projection) * ray_ndc_4d;
+//
+//            if(Scene::m_Object != nullptr) {
+//                auto &m_Transform = Scene::m_Object->GetComponent<Experimental::Transform>();
+//                Vector4 view_space_intersect = Vector4(ray_view * transform.position.z, 1.0f);
+//                Vector4 point_world = glm::inverse(view) * view_space_intersect;
+//                m_Transform.position = Vector3(point_world.x, point_world.y, m_Transform.position.z);
+//            }
 
             camMatrix = projection * view;
         }
