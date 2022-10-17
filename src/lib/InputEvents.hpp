@@ -137,6 +137,25 @@
 
 #define KEY_LAST               KEY_MENU
 
+// controller keys
+#define KEY_CONTROLLER_A       GLFW_GAMEPAD_BUTTON_A
+#define KEY_CONTROLLER_B       GLFW_GAMEPAD_BUTTON_B
+#define KEY_CONTROLLER_Y       GLFW_GAMEPAD_BUTTON_Y
+#define KEY_CONTROLLER_X       GLFW_GAMEPAD_BUTTON_X
+#define KEY_CONTROLLER_L1      GLFW_GAMEPAD_BUTTON_LEFT_BUMPER
+#define KEY_CONTROLLER_R1      GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER
+// start, select
+#define KEY_CONTROLLER_START   GLFW_GAMEPAD_BUTTON_START
+#define KEY_CONTROLLER_SELECT  GLFW_GAMEPAD_BUTTON_BACK
+// L3, R3
+#define KEY_CONTROLLER_L3      GLFW_GAMEPAD_BUTTON_LEFT_THUMB
+#define KEY_CONTROLLER_R3      GLFW_GAMEPAD_BUTTON_RIGHT_THUMB
+// up, down, left, right
+#define KEY_CONTROLLER_UP     GLFW_GAMEPAD_BUTTON_DPAD_UP
+#define KEY_CONTROLLER_DOWN   GLFW_GAMEPAD_BUTTON_DPAD_DOWN
+#define KEY_CONTROLLER_LEFT   GLFW_GAMEPAD_BUTTON_DPAD_LEFT
+#define KEY_CONTROLLER_RIGHT  GLFW_GAMEPAD_BUTTON_DPAD_RIGHT
+
 namespace HyperAPI {
     namespace Input {
         extern GLFWwindow *window;
@@ -155,5 +174,21 @@ namespace HyperAPI {
         int GetMouseYAxis();
         bool SetMouseHidden(bool hidden);
         int SetMousePosition(float x, float y);
+
+        // controller input
+        namespace Controller {
+            extern int currentController;
+
+            void SetCurrentController(int controller);
+
+            float GetLeftAnalogX();
+            float GetLeftAnalogY();
+            float GetRightAnalogX();
+            float GetRightAnalogY();
+            float GetL2();
+            float GetR2();
+            bool IsButtonPressed(int button);
+            bool IsButtonReleased(int button);
+        }
     }
 }

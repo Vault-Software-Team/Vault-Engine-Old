@@ -34,6 +34,12 @@ void PushTableFunction(lua_State *L, const char *name, lua_CFunction func) {
     lua_settable(L, -3);
 }
 
+// shit naming but idc
+void PushTableTableFunction(lua_State *L, const char *name, lua_CFunction func) {
+    lua_pushstring(L, name);
+    lua_pushcfunction(L, func);
+}
+
 void GetTableArg(lua_State *L, const char *key, std::string &value) {
     lua_pushstring(L, key);
     lua_gettable(L, -2);
@@ -84,8 +90,147 @@ void LuaSetComponentValues(lua_State *L, const std::string &type, HyperAPI::Comp
     }
 }
 
+void LuaGetComponents(lua_State *L, GameObject *gameObject, const std::string &type) {
+    std::string obj_id = gameObject->ID;
+    if(type == "Transform") {
+        Transform &transform = gameObject->GetComponent<Transform>();
+
+        lua_newtable(L);
+        PushTableKey(L, "obj_id", obj_id.c_str());
+        PushTableKey(L, "type", "Transform");
+        PushTableKey(L, "positionX", transform.position.x);
+        PushTableKey(L, "positionY", transform.position.y);
+        PushTableKey(L, "positionZ", transform.position.z);
+
+        PushTableKey(L, "rotationX", transform.rotation.x);
+        PushTableKey(L, "rotationY", transform.rotation.y);
+        PushTableKey(L, "rotationZ", transform.rotation.z);
+
+        PushTableKey(L, "scaleX", transform.scale.x);
+        PushTableKey(L, "scaleY", transform.scale.y);
+        PushTableKey(L, "scaleZ", transform.scale.z);
+    }
+    else if(type == "MeshRenderer") {
+        MeshRenderer &meshRenderer = gameObject->GetComponent<MeshRenderer>();
+        HyperAPI::Material &material = meshRenderer.m_Mesh->material;
+
+        lua_newtable(L);
+        PushTableKey(L, "obj_id", obj_id.c_str());
+        PushTableKey(L, "type", "MeshRenderer");
+        PushTableKey(L, "colorX", material.baseColor.x);
+        PushTableKey(L, "colorY", material.baseColor.y);
+        PushTableKey(L, "colorZ", material.baseColor.z);
+
+        PushTableKey(L, "metallic", material.metallic);
+        PushTableKey(L, "roughness", material.roughness);
+
+        PushTableKey(L, "uvX", material.texUVs.x);
+        PushTableKey(L, "uvY", material.texUVs.y);
+    }
+    else if(type == "DirectionalLight") {
+        c_DirectionalLight &light = gameObject->GetComponent<c_DirectionalLight>();
+
+        lua_newtable(L);
+        PushTableKey(L, "obj_id", obj_id.c_str());
+        PushTableKey(L, "type", "DirectionalLight");
+        PushTableKey(L, "colorX", light.color.x);
+        PushTableKey(L, "colorY", light.color.y);
+        PushTableKey(L, "colorZ", light.color.z);
+    }
+    else if(type == "PointLight") {
+        c_PointLight &light = gameObject->GetComponent<c_PointLight>();
+
+        lua_newtable(L);
+        PushTableKey(L, "obj_id", obj_id.c_str());
+        PushTableKey(L, "type", "PointLight");
+        PushTableKey(L, "colorX", light.color.x);
+        PushTableKey(L, "colorY", light.color.y);
+        PushTableKey(L, "colorZ", light.color.z);
+        PushTableKey(L, "intensity", light.intensity);
+    }
+    else if(type == "SpotLight") {
+        c_SpotLight &light = gameObject->GetComponent<c_SpotLight>();
+
+        lua_newtable(L);
+        PushTableKey(L, "obj_id", obj_id.c_str());
+        PushTableKey(L, "type", "SpotLight");
+        PushTableKey(L, "colorX", light.color.x);
+        PushTableKey(L, "colorY", light.color.y);
+        PushTableKey(L, "colorZ", light.color.z);
+    }
+    else if(type == "SpriteRenderer") {
+        auto &spriteRenderer = gameObject->GetComponent<SpriteRenderer>();
+
+        lua_newtable(L);
+        PushTableKey(L, "obj_id", obj_id.c_str());
+        PushTableKey(L, "type", "SpriteRenderer");
+        PushTableKey(L, "colorX", spriteRenderer.mesh->material.baseColor.x);
+        PushTableKey(L, "colorY", spriteRenderer.mesh->material.baseColor.y);
+        PushTableKey(L, "colorZ", spriteRenderer.mesh->material.baseColor.z);
+    }
+    else if(type == "SpriteAnimation") {
+        auto &spriteAnimation = gameObject->GetComponent<SpriteAnimation>();
+
+        lua_newtable(L);
+        PushTableKey(L, "obj_id", obj_id.c_str());
+        PushTableKey(L, "type", "SpriteAnimation");
+        PushTableKey(L, "currAnim", spriteAnimation.currAnim);
+    }
+    else if(type == "SpritesheetAnimation") {
+        auto &spritesheetAnimation = gameObject->GetComponent<c_SpritesheetAnimation>();
+
+        lua_newtable(L);
+        PushTableKey(L, "obj_id", obj_id.c_str());
+        PushTableKey(L, "type", "SpritesheetAnimation");
+        PushTableKey(L, "currAnim", spritesheetAnimation.currAnim);
+    }
+    else if(type == "Rigidbody2D") {
+        auto &rigidbody = gameObject->GetComponent<Rigidbody2D>();
+
+        lua_newtable(L);
+        PushTableKey(L, "obj_id", obj_id.c_str());
+        PushTableKey(L, "type", "Rigidbody2D");
+        PushTableKey(L, "gravityScale", rigidbody.gravityScale);
+        PushTableKey(L, "fixedRotation", rigidbody.fixedRotation);
+        PushTableFunction(L, "SetVelocity", ScriptEngine::Functions::SetVelocity);
+        PushTableFunction(L, "SetAngularVelocity", ScriptEngine::Functions::SetAngularVelocity);
+        PushTableFunction(L, "SetPosition", ScriptEngine::Functions::SetPosition);
+        PushTableFunction(L, "Force", ScriptEngine::Functions::Force);
+        PushTableFunction(L, "Torque", ScriptEngine::Functions::Torque);
+        PushTableFunction(L, "GetVelocity", ScriptEngine::Functions::GetVelocity);
+    }
+    else if(type == "BoxCollider2D") {
+        auto &boxCollider = gameObject->GetComponent<BoxCollider2D>();
+
+        lua_newtable(L);
+        PushTableKey(L, "obj_id", obj_id.c_str());
+        PushTableKey(L, "type", "BoxCollider2D");
+        PushTableKey(L, "sizeX", boxCollider.size.x);
+        PushTableKey(L, "sizeY", boxCollider.size.y);
+        PushTableKey(L, "offsetX", boxCollider.offset.x);
+        PushTableKey(L, "offsetY", boxCollider.offset.y);
+        PushTableKey(L, "density", boxCollider.density);
+        PushTableKey(L, "friction", boxCollider.friction);
+        PushTableKey(L, "restitution", boxCollider.restitution);
+        PushTableKey(L, "restitutionThreshold", boxCollider.restitutionThreshold);
+    }
+    else if(type == "CameraComponent") {
+        auto &camera = gameObject->GetComponent<CameraComponent>();
+
+        lua_newtable(L);
+        PushTableKey(L, "obj_id", obj_id.c_str());
+        PushTableKey(L, "type", "CameraComponent");
+        PushTableKey(L, "fov", camera.camera->cam_fov);
+        PushTableKey(L, "near", camera.camera->cam_near);
+        PushTableKey(L, "far", camera.camera->cam_far);
+        PushTableKey(L, "mode2D", camera.camera->mode2D);
+        PushTableFunction(L, "MouseInput", ScriptEngine::Functions::MouseInput);
+        PushTableFunction(L, "ControllerInput", ScriptEngine::Functions::ControllerInput);
+    }
+}
+
 void LuaUpdateComponentValues(lua_State *L, const std::string &type, GameObject *ent) {
-    
+
     if(type == "Transform") {
         Transform &transform = ent->GetComponent<Transform>();
 
@@ -195,6 +340,7 @@ void LuaUpdateComponentValues(lua_State *L, const std::string &type, GameObject 
         GetTableArg(L, "fov", camera.camera->cam_fov);
         GetTableArg(L, "near", camera.camera->cam_near);
         GetTableArg(L, "far", camera.camera->cam_far);
+        GetTableArg(L, "mode2D", camera.camera->mode2D);
     }
 }
 
@@ -217,7 +363,7 @@ namespace ScriptEngine {
     }
 
     void LuaScript::Init() {
-        
+
         r = luaL_dofile(L, pathToScript.c_str());
 
         if(r == LUA_OK) {
@@ -250,6 +396,12 @@ namespace ScriptEngine {
     }
 
     void m_LuaScript::Init() {
+        std::string folder = pathToScript.substr(0, pathToScript.find_last_of("/\\"));
+        std::string luaPath = "LUA_PATH=" + folder + "/?.lua";
+        scriptName = pathToScript.substr(pathToScript.find_last_of("/\\") + 1);
+        scriptName = scriptName.substr(0, scriptName.find_last_of("."));
+        putenv((char*)luaPath.c_str());
+
         L = m_Init();
         r = luaL_dofile(L, pathToScript.c_str());
 
@@ -277,7 +429,10 @@ namespace ScriptEngine {
         lua_pop(L,1);
 
         if(r == LUA_OK) {
-            lua_getglobal(L, "OnStart");
+            // get the table
+            lua_getglobal(L, scriptName.c_str());
+            // get function OnStart
+            lua_getfield(L, -1, "OnStart");
             if(lua_isfunction(L, -1)) {
                 lua_pcall(L, 0, 0, 0);
             }
@@ -336,6 +491,7 @@ namespace ScriptEngine {
         lua_pushnumber(L, HyperAPI::Timestep::deltaTime);
         lua_settable(L, -3);
         lua_setglobal(L, "Timestep");
+        timer -= HyperAPI::Timestep::deltaTime;
 
         objID = ID;
         for(int i = 0; i < HyperAPI::Scene::m_GameObjects.size(); i++) {
@@ -345,9 +501,14 @@ namespace ScriptEngine {
         }
 
         if(r == LUA_OK) {
-            lua_getglobal(L, "OnUpdate");
-            if(lua_isfunction(L, -1)) {
-                lua_pcall(L, 0, 0, 0);
+            if(timer <= 0) {
+                lua_getglobal(L, scriptName.c_str());
+                lua_getfield(L, -1, "OnUpdate");
+                if(lua_isfunction(L, -1)) {
+                    lua_pcall(L, 0, 0, 0);
+                }
+
+                timer = timerStart;
             }
         } else {
             std::string error = lua_tostring(L, -1);
@@ -383,7 +544,8 @@ namespace ScriptEngine {
     }
 
     void m_LuaScript::Collision2D(GameObject *other) {
-        lua_getglobal(L, "Collision2D");
+        lua_getglobal(L, scriptName.c_str());
+        lua_getfield(L, -1, "OnCollision2D");
         if(lua_isfunction(L, -1)) {
             lua_newtable(L);
             PushTableKey(L, "obj_id", other->ID.c_str());
@@ -391,13 +553,14 @@ namespace ScriptEngine {
             PushTableKey(L, "tag", other->tag.c_str());
             PushTableFunction(L, "GetComponent", Functions::GetEntComponent);
             PushTableFunction(L, "UpdateComponent", Functions::UpdateEntComponent);
-            
+
             lua_pcall(L, 1, 0, 0);
         }
     }
 
     void m_LuaScript::CollisionExit2D(GameObject *other) {
-        lua_getglobal(L, "CollisionExit2D");
+        lua_getglobal(L, scriptName.c_str());
+        lua_getfield(L, -1, "CollisionExit2D");
         if(lua_isfunction(L, -1)) {
             lua_newtable(L);
             PushTableKey(L, "obj_id", other->ID.c_str());
@@ -405,13 +568,14 @@ namespace ScriptEngine {
             PushTableKey(L, "tag", other->tag.c_str());
             PushTableFunction(L, "GetComponent", Functions::GetEntComponent);
             PushTableFunction(L, "UpdateComponent", Functions::UpdateEntComponent);
-            
+
             lua_pcall(L, 1, 0, 0);
         }
     }
 
     void m_LuaScript::Collision3D(GameObject *other) {
-        lua_getglobal(L, "Collision3D");
+        lua_getglobal(L, scriptName.c_str());
+        lua_getfield(L, -1, "Collision3D");
         if(lua_isfunction(L, -1)) {
             lua_newtable(L);
             PushTableKey(L, "obj_id", other->ID.c_str());
@@ -425,7 +589,8 @@ namespace ScriptEngine {
     }
 
     void m_LuaScript::CollisionExit3D(GameObject *other) {
-        lua_getglobal(L, "CollisionExit3D");
+        lua_getglobal(L, scriptName.c_str());
+        lua_getfield(L, -1, "CollisionExit3D");
         if(lua_isfunction(L, -1)) {
             lua_newtable(L);
             PushTableKey(L, "obj_id", other->ID.c_str());
@@ -444,7 +609,7 @@ namespace ScriptEngine {
 
         {
             lua_pushnumber(L, -1);
-            lua_setglobal(L, "KEY_UNKNOWN");  
+            lua_setglobal(L, "KEY_UNKNOWN");
             lua_pushnumber(L, 32);
             lua_setglobal(L, "KEY_SPACE");
             lua_pushnumber(L, 39);
@@ -474,7 +639,7 @@ namespace ScriptEngine {
             lua_pushnumber(L, 55);
             lua_setglobal(L, "KEY_7");
             lua_pushnumber(L, 56);
-            lua_setglobal(L, "KEY_8");    
+            lua_setglobal(L, "KEY_8");
             lua_pushnumber(L, 57);
             lua_setglobal(L, "KEY_9");
             lua_pushnumber(L, 59);
@@ -482,55 +647,55 @@ namespace ScriptEngine {
             lua_pushnumber(L, 61);
             lua_setglobal(L, "KEY_EQUAL");
             lua_pushnumber(L, 65);
-            lua_setglobal(L, "KEY_A");                  
+            lua_setglobal(L, "KEY_A");
             lua_pushnumber(L, 66);
-            lua_setglobal(L, "KEY_B");                  
+            lua_setglobal(L, "KEY_B");
             lua_pushnumber(L, 67);
-            lua_setglobal(L, "KEY_C");                  
+            lua_setglobal(L, "KEY_C");
             lua_pushnumber(L, 68);
-            lua_setglobal(L, "KEY_D");                  
+            lua_setglobal(L, "KEY_D");
             lua_pushnumber(L, 69);
-            lua_setglobal(L, "KEY_E");                  
+            lua_setglobal(L, "KEY_E");
             lua_pushnumber(L, 70);
-            lua_setglobal(L, "KEY_F");                  
+            lua_setglobal(L, "KEY_F");
             lua_pushnumber(L, 71);
-            lua_setglobal(L, "KEY_G");                  
+            lua_setglobal(L, "KEY_G");
             lua_pushnumber(L, 72);
-            lua_setglobal(L, "KEY_H");                  
+            lua_setglobal(L, "KEY_H");
             lua_pushnumber(L, 73);
-            lua_setglobal(L, "KEY_I");                  
+            lua_setglobal(L, "KEY_I");
             lua_pushnumber(L, 74);
-            lua_setglobal(L, "KEY_J");                  
+            lua_setglobal(L, "KEY_J");
             lua_pushnumber(L, 75);
-            lua_setglobal(L, "KEY_K");                  
+            lua_setglobal(L, "KEY_K");
             lua_pushnumber(L, 76);
-            lua_setglobal(L, "KEY_L");                  
+            lua_setglobal(L, "KEY_L");
             lua_pushnumber(L, 77);
-            lua_setglobal(L, "KEY_M");                  
+            lua_setglobal(L, "KEY_M");
             lua_pushnumber(L, 78);
-            lua_setglobal(L, "KEY_N");                  
+            lua_setglobal(L, "KEY_N");
             lua_pushnumber(L, 79);
-            lua_setglobal(L, "KEY_O");                  
+            lua_setglobal(L, "KEY_O");
             lua_pushnumber(L, 80);
-            lua_setglobal(L, "KEY_P");                  
+            lua_setglobal(L, "KEY_P");
             lua_pushnumber(L, 81);
-            lua_setglobal(L, "KEY_Q");                  
+            lua_setglobal(L, "KEY_Q");
             lua_pushnumber(L, 82);
-            lua_setglobal(L, "KEY_R");                  
+            lua_setglobal(L, "KEY_R");
             lua_pushnumber(L, 83);
-            lua_setglobal(L, "KEY_S");                  
+            lua_setglobal(L, "KEY_S");
             lua_pushnumber(L, 84);
-            lua_setglobal(L, "KEY_T");                  
+            lua_setglobal(L, "KEY_T");
             lua_pushnumber(L, 85);
-            lua_setglobal(L, "KEY_U");                  
+            lua_setglobal(L, "KEY_U");
             lua_pushnumber(L, 86);
-            lua_setglobal(L, "KEY_V");                  
+            lua_setglobal(L, "KEY_V");
             lua_pushnumber(L, 87);
-            lua_setglobal(L, "KEY_W");                  
+            lua_setglobal(L, "KEY_W");
             lua_pushnumber(L, 88);
-            lua_setglobal(L, "KEY_X");                  
+            lua_setglobal(L, "KEY_X");
             lua_pushnumber(L, 89);
-            lua_setglobal(L, "KEY_Y");                  
+            lua_setglobal(L, "KEY_Y");
             lua_pushnumber(L, 90);lua_setglobal(L, "KEY_Z");
             lua_pushnumber(L, 91);
             lua_setglobal(L, "KEY_LEFT_BRACKET");
@@ -711,12 +876,26 @@ namespace ScriptEngine {
         PushTableFunction(L, "IsKeyReleased", Functions::IsKeyReleased);
         PushTableFunction(L, "IsMouseButtonPressed", Functions::IsMouseButtonPressed);
         PushTableFunction(L, "IsMouseButtonReleased", Functions::IsMouseButtonReleased);
-        PushTableKey(L, "GetHorizontalAxis", &Functions::GetHorizontalAxis);
-        PushTableKey(L, "GetVerticalAxis", &Functions::GetVerticalAxis);
-        PushTableKey(L, "GetMouseXAxis", &Functions::GetMouseXAxis);
-        PushTableKey(L, "GetMouseYAxis", &Functions::GetMouseYAxis);
-        PushTableKey(L, "SetMouseHidden", &Functions::SetMouseHidden);
-        PushTableKey(L, "SetMousePosition", &Functions::SetMousePosition);
+        PushTableFunction(L, "GetHorizontalAxis", Functions::GetHorizontalAxis);
+        PushTableFunction(L, "GetVerticalAxis", Functions::GetVerticalAxis);
+        PushTableFunction(L, "GetMouseXAxis", Functions::GetMouseXAxis);
+        PushTableFunction(L, "GetMouseYAxis", Functions::GetMouseYAxis);
+        PushTableFunction(L, "SetMouseHidden", Functions::SetMouseHidden);
+        PushTableFunction(L, "SetMousePosition", Functions::SetMousePosition);
+
+        // controller
+        lua_pushstring(L, "Controller");
+        lua_newtable(L);
+        PushTableFunction(L, "SetCurrentController", Functions::SetCurrentController);
+        PushTableFunction(L, "GetLeftAnalogX", Functions::GetLeftAnalogX);
+        PushTableFunction(L, "GetLeftAnalogY", Functions::GetLeftAnalogY);
+        PushTableFunction(L, "GetRightAnalogX", Functions::GetRightAnalogX);
+        PushTableFunction(L, "GetRightAnalogY", Functions::GetRightAnalogY);
+        PushTableFunction(L, "GetL2", Functions::GetL2);
+        PushTableFunction(L, "GetR2", Functions::GetR2);
+        PushTableFunction(L, "IsButtonPressed", Functions::IsButtonPressed);
+        PushTableFunction(L, "IsButtonReleased", Functions::IsButtonReleased);
+        lua_settable(L, -3);
         lua_setglobal(L, "Input");
 
         lua_newtable(L);
@@ -738,184 +917,7 @@ namespace ScriptEngine {
         int GetComponent(lua_State *L) {
             std::string type = (std::string)lua_tostring(L, 1);
             if(m_Object == nullptr) return 1;
-            if(type == "Transform") {
-                Transform &transform = m_Object->GetComponent<Transform>();
-
-                lua_newtable(L);
-                PushTableKey(L, "obj_id", m_Object->ID.c_str());
-                PushTableKey(L, "type", "Transform");
-                PushTableKey(L, "positionX", transform.position.x);
-                PushTableKey(L, "positionY", transform.position.y);
-                PushTableKey(L, "positionZ", transform.position.z);
-
-                PushTableKey(L, "rotationX", transform.rotation.x);
-                PushTableKey(L, "rotationY", transform.rotation.y);
-                PushTableKey(L, "rotationZ", transform.rotation.z);
-
-                PushTableKey(L, "scaleX", transform.scale.x);
-                PushTableKey(L, "scaleY", transform.scale.y);
-                PushTableKey(L, "scaleZ", transform.scale.z);
-
-                PushTableKey(L, "forwardX", transform.forward.x);
-                PushTableKey(L, "forwardY", transform.forward.y);
-                PushTableKey(L, "forwardZ", transform.forward.z);
-
-                PushTableKey(L, "upX", transform.up.x);
-                PushTableKey(L, "upY", transform.up.y);
-                PushTableKey(L, "upZ", transform.up.z);
-
-                PushTableKey(L, "rightX", transform.right.x);
-                PushTableKey(L, "rightY", transform.right.y);
-                PushTableKey(L, "rightZ", transform.right.z);
-
-                PushTableFunction(L, "LookAt", LookAt);
-            }
-            else if(type == "MeshRenderer") {
-                MeshRenderer &meshRenderer = m_Object->GetComponent<MeshRenderer>();
-                HyperAPI::Material &material = meshRenderer.m_Mesh->material;
-
-                lua_newtable(L);
-                PushTableKey(L, "obj_id", m_Object->ID.c_str());
-                PushTableKey(L, "type", "MeshRenderer");
-                PushTableKey(L, "colorX", material.baseColor.x);
-                PushTableKey(L, "colorY", material.baseColor.y);
-                PushTableKey(L, "colorZ", material.baseColor.z);
-
-                PushTableKey(L, "metallic", material.metallic);
-                PushTableKey(L, "roughness", material.roughness);
-
-                PushTableKey(L, "uvX", material.texUVs.x);
-                PushTableKey(L, "uvY", material.texUVs.y);
-            }
-            else if(type == "DirectionalLight") {
-                c_DirectionalLight &light = m_Object->GetComponent<c_DirectionalLight>();
-
-                lua_newtable(L);
-                PushTableKey(L, "obj_id", m_Object->ID.c_str());
-                PushTableKey(L, "type", "DirectionalLight");
-                PushTableKey(L, "colorX", light.color.x);
-                PushTableKey(L, "colorY", light.color.y);
-                PushTableKey(L, "colorZ", light.color.z);
-            }
-            else if(type == "PointLight") {
-                c_PointLight &light = m_Object->GetComponent<c_PointLight>();
-
-                lua_newtable(L);
-                PushTableKey(L, "obj_id", m_Object->ID.c_str());
-                PushTableKey(L, "type", "PointLight");
-                PushTableKey(L, "colorX", light.color.x);
-                PushTableKey(L, "colorY", light.color.y);
-                PushTableKey(L, "colorZ", light.color.z);
-                PushTableKey(L, "intensity", light.intensity);
-            }
-            else if(type == "SpotLight") {
-                c_SpotLight &light = m_Object->GetComponent<c_SpotLight>();
-
-                lua_newtable(L);
-                PushTableKey(L, "obj_id", m_Object->ID.c_str());
-                PushTableKey(L, "type", "SpotLight");
-                PushTableKey(L, "colorX", light.color.x);
-                PushTableKey(L, "colorY", light.color.y);
-                PushTableKey(L, "colorZ", light.color.z);
-            }
-            else if(type == "SpriteRenderer") {
-                auto &spriteRenderer = m_Object->GetComponent<SpriteRenderer>();
-
-                lua_newtable(L);
-                PushTableKey(L, "obj_id", m_Object->ID.c_str());
-                PushTableKey(L, "type", "SpriteRenderer");
-                PushTableKey(L, "colorX", spriteRenderer.mesh->material.baseColor.x);
-                PushTableKey(L, "colorY", spriteRenderer.mesh->material.baseColor.y);
-                PushTableKey(L, "colorZ", spriteRenderer.mesh->material.baseColor.z);
-            }
-            else if(type == "Rigidbody2D") {
-                auto &rigidbody = m_Object->GetComponent<Rigidbody2D>();
-
-                lua_newtable(L);
-                PushTableKey(L, "obj_id", m_Object->ID.c_str());
-                PushTableKey(L, "type", "Rigidbody2D");
-                PushTableKey(L, "gravityScale", rigidbody.gravityScale);
-                PushTableKey(L, "fixedRotation", rigidbody.fixedRotation);
-                PushTableFunction(L, "SetVelocity", SetVelocity);
-                PushTableFunction(L, "SetAngularVelocity", SetAngularVelocity);
-                PushTableFunction(L, "SetPosition", SetPosition);
-                PushTableFunction(L, "Force", Force);
-                PushTableFunction(L, "Torque", Torque);
-                PushTableFunction(L, "GetVelocity", GetVelocity);
-            }
-            else if(type == "BoxCollider2D") {
-                auto &boxCollider = m_Object->GetComponent<BoxCollider2D>();
-
-                lua_newtable(L);
-                PushTableKey(L, "obj_id", m_Object->ID.c_str());
-                PushTableKey(L, "type", "BoxCollider2D");
-                PushTableKey(L, "sizeX", boxCollider.size.x);
-                PushTableKey(L, "sizeY", boxCollider.size.y);
-                PushTableKey(L, "offsetX", boxCollider.offset.x);
-                PushTableKey(L, "offsetY", boxCollider.offset.y);
-                PushTableKey(L, "density", boxCollider.density);
-                PushTableKey(L, "friction", boxCollider.friction);
-                PushTableKey(L, "restitution", boxCollider.restitution);
-                PushTableKey(L, "restitutionThreshold", boxCollider.restitutionThreshold);
-            }
-            else if(type == "Rigidbody3D") {
-                auto &rigidbody = m_Object->GetComponent<Rigidbody3D>();
-
-                lua_newtable(L);
-                PushTableKey(L, "obj_id", m_Object->ID.c_str());
-                PushTableKey(L, "type", "Rigidbody3D");
-                PushTableKey(L, "mass", rigidbody.mass);
-                PushTableKey(L, "friction", rigidbody.friction);
-                PushTableKey(L, "trigger", rigidbody.trigger);
-                PushTableKey(L, "fixedRotation", rigidbody.fixedRotation);
-                PushTableFunction(L, "AddForce", AddForce3D);
-                PushTableFunction(L, "AddTorque", AddTorque3D);
-                PushTableFunction(L, "AddForceAtPosition", AddForceAtPosition3D);
-                PushTableFunction(L, "SetVelocity", SetVelocity3D);
-                PushTableFunction(L, "SetAngularVelocity", SetAngularVelocity3D);
-                PushTableFunction(L, "GetVelocity", GetVelocity3D);
-                PushTableFunction(L, "GetAngularVelocity", GetAngularVelocity3D);
-            }
-            else if(type == "BoxCollider3D") {
-                auto &collider = m_Object->GetComponent<BoxCollider3D>();
-
-                lua_newtable(L);
-                PushTableKey(L, "obj_id", m_Object->ID.c_str());
-                PushTableKey(L, "type", "BoxCollider3D");
-                PushTableKey(L, "sizeX", collider.size.x);
-                PushTableKey(L, "sizeY", collider.size.y);
-                PushTableKey(L, "sizeZ", collider.size.z);
-            }
-            else if(type == "MeshCollider3D") {
-                auto &collider = m_Object->GetComponent<MeshCollider3D>();
-
-                lua_newtable(L);
-                PushTableKey(L, "obj_id", m_Object->ID.c_str());
-                PushTableKey(L, "type", "BoxCollider3D");
-                PushTableKey(L, "sizeX", collider.size.x);
-                PushTableKey(L, "sizeY", collider.size.y);
-                PushTableKey(L, "sizeZ", collider.size.z);
-            }
-            else if(type == "CameraComponent") {
-                auto &cam = m_Object->GetComponent<CameraComponent>();
-
-                lua_newtable(L);
-                PushTableKey(L, "obj_id", m_Object->ID.c_str());
-                PushTableKey(L, "type", "CameraComponent");
-                // push an array key
-                lua_pushstring(L, "layers");
-                lua_newtable(L);
-                for(auto &layer : cam.camera->layers) {
-                    // string bruh
-                    lua_pushstring(L, layer.c_str());
-                    lua_rawseti(L, -2, layer.size());
-                }
-                lua_rawset(L, -3);
-                PushTableKey(L, "fov", cam.camera->cam_fov);
-                PushTableKey(L, "near", cam.camera->cam_near);
-                PushTableKey(L, "far", cam.camera->cam_far);
-                PushTableFunction(L, "MouseInput", MouseInput);
-            }
+            LuaGetComponents(L, m_Object, type);
 
             return 1;
         }
@@ -929,7 +931,7 @@ namespace ScriptEngine {
             } else {
                 lua_pushboolean(L, false);
             }
-            
+
             return 1;
         }
 
@@ -980,7 +982,7 @@ namespace ScriptEngine {
 
             return 1;
         }
-        
+
         int IsKeyReleased(lua_State *L) {
             int key = (int)lua_tointeger(L, 1);
             bool released = HyperAPI::Input::IsKeyReleased(key);
@@ -1193,133 +1195,12 @@ namespace ScriptEngine {
             }
 
             if(gameObject) {
-                if(type == "Transform") {
-                    Transform &transform = gameObject->GetComponent<Transform>();
-
-                    lua_newtable(L);
-                    PushTableKey(L, "obj_id", obj_id.c_str());
-                    PushTableKey(L, "type", "Transform");
-                    PushTableKey(L, "positionX", transform.position.x);
-                    PushTableKey(L, "positionY", transform.position.y);
-                    PushTableKey(L, "positionZ", transform.position.z);
-
-                    PushTableKey(L, "rotationX", transform.rotation.x);
-                    PushTableKey(L, "rotationY", transform.rotation.y);
-                    PushTableKey(L, "rotationZ", transform.rotation.z);
-
-                    PushTableKey(L, "scaleX", transform.scale.x);
-                    PushTableKey(L, "scaleY", transform.scale.y);
-                    PushTableKey(L, "scaleZ", transform.scale.z);
-                }
-                else if(type == "MeshRenderer") {
-                    MeshRenderer &meshRenderer = gameObject->GetComponent<MeshRenderer>();
-                    HyperAPI::Material &material = meshRenderer.m_Mesh->material;
-
-                    lua_newtable(L);
-                    PushTableKey(L, "obj_id", obj_id.c_str());
-                    PushTableKey(L, "type", "MeshRenderer");
-                    PushTableKey(L, "colorX", material.baseColor.x);
-                    PushTableKey(L, "colorY", material.baseColor.y);
-                    PushTableKey(L, "colorZ", material.baseColor.z);
-
-                    PushTableKey(L, "metallic", material.metallic);
-                    PushTableKey(L, "roughness", material.roughness);
-
-                    PushTableKey(L, "uvX", material.texUVs.x);
-                    PushTableKey(L, "uvY", material.texUVs.y);
-                }
-                else if(type == "DirectionalLight") {
-                    c_DirectionalLight &light = gameObject->GetComponent<c_DirectionalLight>();
-
-                    lua_newtable(L);
-                    PushTableKey(L, "obj_id", obj_id.c_str());
-                    PushTableKey(L, "type", "DirectionalLight");
-                    PushTableKey(L, "colorX", light.color.x);
-                    PushTableKey(L, "colorY", light.color.y);
-                    PushTableKey(L, "colorZ", light.color.z);
-                }
-                else if(type == "PointLight") {
-                    c_PointLight &light = gameObject->GetComponent<c_PointLight>();
-
-                    lua_newtable(L);
-                    PushTableKey(L, "obj_id", obj_id.c_str());
-                    PushTableKey(L, "type", "PointLight");
-                    PushTableKey(L, "colorX", light.color.x);
-                    PushTableKey(L, "colorY", light.color.y);
-                    PushTableKey(L, "colorZ", light.color.z);
-                    PushTableKey(L, "intensity", light.intensity);
-                }
-                else if(type == "SpotLight") {
-                    c_SpotLight &light = gameObject->GetComponent<c_SpotLight>();
-
-                    lua_newtable(L);
-                    PushTableKey(L, "obj_id", obj_id.c_str());
-                    PushTableKey(L, "type", "SpotLight");
-                    PushTableKey(L, "colorX", light.color.x);
-                    PushTableKey(L, "colorY", light.color.y);
-                    PushTableKey(L, "colorZ", light.color.z);
-                }
-                else if(type == "SpriteRenderer") {
-                    auto &spriteRenderer = gameObject->GetComponent<SpriteRenderer>();
-
-                    lua_newtable(L);
-                    PushTableKey(L, "obj_id", obj_id.c_str());
-                    PushTableKey(L, "type", "SpriteRenderer");
-                    PushTableKey(L, "colorX", spriteRenderer.mesh->material.baseColor.x);
-                    PushTableKey(L, "colorY", spriteRenderer.mesh->material.baseColor.y);
-                    PushTableKey(L, "colorZ", spriteRenderer.mesh->material.baseColor.z);
-                }
-                else if(type == "SpriteAnimation") {
-                    auto &spriteAnimation = gameObject->GetComponent<SpriteAnimation>();
-
-                    lua_newtable(L);
-                    PushTableKey(L, "obj_id", obj_id.c_str());
-                    PushTableKey(L, "type", "SpriteAnimation");
-                    PushTableKey(L, "currAnim", spriteAnimation.currAnim);
-                }
-                else if(type == "SpritesheetAnimation") {
-                    auto &spritesheetAnimation = gameObject->GetComponent<c_SpritesheetAnimation>();
-
-                    lua_newtable(L);
-                    PushTableKey(L, "obj_id", obj_id.c_str());
-                    PushTableKey(L, "type", "SpritesheetAnimation");
-                    PushTableKey(L, "currAnim", spritesheetAnimation.currAnim);
-                }
-                else if(type == "Rigidbody2D") {
-                    auto &rigidbody = gameObject->GetComponent<Rigidbody2D>();
-
-                    lua_newtable(L);
-                    PushTableKey(L, "obj_id", obj_id.c_str());
-                    PushTableKey(L, "type", "Rigidbody2D");
-                    PushTableKey(L, "gravityScale", rigidbody.gravityScale);
-                    PushTableKey(L, "fixedRotation", rigidbody.fixedRotation);
-                    PushTableFunction(L, "SetVelocity", SetVelocity);
-                    PushTableFunction(L, "SetAngularVelocity", SetAngularVelocity);
-                    PushTableFunction(L, "SetPosition", SetPosition);
-                    PushTableFunction(L, "Force", Force);
-                    PushTableFunction(L, "Torque", Torque);
-                    PushTableFunction(L, "GetVelocity", GetVelocity);
-                }
-                else if(type == "BoxCollider2D") {
-                    auto &boxCollider = gameObject->GetComponent<BoxCollider2D>();
-
-                    lua_newtable(L);
-                    PushTableKey(L, "obj_id", obj_id.c_str());
-                    PushTableKey(L, "type", "BoxCollider2D");
-                    PushTableKey(L, "sizeX", boxCollider.size.x);
-                    PushTableKey(L, "sizeY", boxCollider.size.y);
-                    PushTableKey(L, "offsetX", boxCollider.offset.x);
-                    PushTableKey(L, "offsetY", boxCollider.offset.y);
-                    PushTableKey(L, "density", boxCollider.density);
-                    PushTableKey(L, "friction", boxCollider.friction);
-                    PushTableKey(L, "restitution", boxCollider.restitution);
-                    PushTableKey(L, "restitutionThreshold", boxCollider.restitutionThreshold);
-                }
+                LuaGetComponents(L, gameObject, type);
             }
 
             return 1;
         }
-    
+
         int UpdateEntComponent(lua_State *L) {
             std::string type;
             GetTableArg(L, "type", type);
@@ -1448,7 +1329,7 @@ namespace ScriptEngine {
                         delete meshRenderer.m_Mesh->material.diffuse;
                     }
 
-                    meshRenderer.m_Mesh->material.diffuse = new HyperAPI::Texture(texturePath.c_str(), 0, "texture_diffuse");
+                    meshRenderer.m_Mesh->material.diffuse = new Texture(texturePath.c_str(), 0, "texture_diffuse");
                     break;
                 }
             }
@@ -1468,8 +1349,8 @@ namespace ScriptEngine {
                         glDeleteTextures(1, &meshRenderer.m_Mesh->material.specular->ID);
                         delete meshRenderer.m_Mesh->material.specular;
                     }
-                    
-                    meshRenderer.m_Mesh->material.specular = new HyperAPI::Texture(texturePath.c_str(), 0, "texture_specular");
+
+                    meshRenderer.m_Mesh->material.specular = new Texture(texturePath.c_str(), 0, "texture_specular");
                     break;
                 }
             }
@@ -1489,8 +1370,8 @@ namespace ScriptEngine {
                         glDeleteTextures(1, &meshRenderer.m_Mesh->material.normal->ID);
                         delete meshRenderer.m_Mesh->material.normal;
                     }
-                    
-                    meshRenderer.m_Mesh->material.normal = new HyperAPI::Texture(texturePath.c_str(), 0, "texture_normal");
+
+                    meshRenderer.m_Mesh->material.normal = new Texture(texturePath.c_str(), 0, "texture_normal");
                     break;
                 }
             }
@@ -1510,8 +1391,8 @@ namespace ScriptEngine {
                         glDeleteTextures(1, &spriteRenderer.mesh->material.diffuse->ID);
                         delete spriteRenderer.mesh->material.diffuse;
                     }
-                    
-                    spriteRenderer.mesh->material.diffuse = new HyperAPI::Texture(texturePath.c_str(), 0, "texture_diffuse");
+
+                    spriteRenderer.mesh->material.diffuse = new Texture(texturePath.c_str(), 0, "texture_diffuse");
                     break;
                 }
             }
@@ -1531,8 +1412,8 @@ namespace ScriptEngine {
                         glDeleteTextures(1, &spriteRenderer.mesh->material.diffuse->ID);
                         delete spriteRenderer.mesh->material.diffuse;
                     }
-                    
-                    spriteRenderer.mesh->material.diffuse = new HyperAPI::Texture(texturePath.c_str(), 0, "texture_diffuse");
+
+                    spriteRenderer.mesh->material.diffuse = new Texture(texturePath.c_str(), 0, "texture_diffuse");
                     break;
                 }
             }
@@ -1559,11 +1440,11 @@ namespace ScriptEngine {
             auto prefabPath = (std::string)lua_tostring(L, 1);
             Vector3 position = {lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4)};
             Vector3 rotation = {lua_tonumber(L, 5), lua_tonumber(L, 6), lua_tonumber(L, 7)};
-        
+
             GameObject *gameObject = HyperAPI::f_GameObject::InstantiatePrefab(prefabPath);
             gameObject->GetComponent<Transform>().position = position;
             gameObject->GetComponent<Transform>().rotation = rotation;
-           
+
             lua_newtable(L);
             PushTableKey(L, "obj_id", gameObject->ID.c_str());
             PushTableKey(L, "name", gameObject->name.c_str());
@@ -1579,7 +1460,7 @@ namespace ScriptEngine {
             std::string id = (std::string)lua_tostring(L, -1);
             lua_pop(L, 1);
 
-            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+            auto gameObject = f_GameObject::FindGameObjectByID(id);
 
             if(gameObject != nullptr) {
                 auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
@@ -1594,7 +1475,7 @@ namespace ScriptEngine {
             std::string id = (std::string)lua_tostring(L, -1);
             lua_pop(L, 1);
 
-            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+            auto gameObject = f_GameObject::FindGameObjectByID(id);
 
             if(gameObject != nullptr) {
                 auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
@@ -1608,7 +1489,7 @@ namespace ScriptEngine {
             std::string id = (std::string)lua_tostring(L, -1);
             lua_pop(L, 1);
 
-            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+            auto gameObject = f_GameObject::FindGameObjectByID(id);
 
             if(gameObject != nullptr) {
                 auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
@@ -1622,7 +1503,7 @@ namespace ScriptEngine {
             std::string id = (std::string)lua_tostring(L, -1);
             lua_pop(L, 1);
 
-            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+            auto gameObject = f_GameObject::FindGameObjectByID(id);
 
             if(gameObject != nullptr) {
                 auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
@@ -1636,7 +1517,7 @@ namespace ScriptEngine {
             std::string id = (std::string)lua_tostring(L, -1);
             lua_pop(L, 1);
 
-            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+            auto gameObject = f_GameObject::FindGameObjectByID(id);
 
             if(gameObject != nullptr) {
                 auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
@@ -1655,7 +1536,7 @@ namespace ScriptEngine {
             std::string id = (std::string)lua_tostring(L, -1);
             lua_pop(L, 1);
 
-            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+            auto gameObject = f_GameObject::FindGameObjectByID(id);
 
             if(gameObject != nullptr) {
                 auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
@@ -1674,7 +1555,7 @@ namespace ScriptEngine {
             std::string id = (std::string)lua_tostring(L, -1);
             lua_pop(L, 1);
 
-            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+            auto gameObject = f_GameObject::FindGameObjectByID(id);
 
             if(gameObject != nullptr) {
                 auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
@@ -1689,11 +1570,32 @@ namespace ScriptEngine {
             std::string id = (std::string)lua_tostring(L, -1);
             lua_pop(L, 1);
 
-            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+            // get argument
+            float sens = (float)lua_tonumber(L, 2);
+
+            auto gameObject = f_GameObject::FindGameObjectByID(id);
 
             if(gameObject != nullptr) {
                 auto &cam = gameObject->GetComponent<CameraComponent>();
                 cam.camera->m_MouseMovement = true;
+                cam.camera->sensitivity = sens;
+            }
+
+            return 1;
+        }
+
+        int ControllerInput(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            float sens = (float)lua_tonumber(L, 2);
+            auto gameObject = f_GameObject::FindGameObjectByID(id);
+
+            if(gameObject != nullptr) {
+                auto &cam = gameObject->GetComponent<CameraComponent>();
+                cam.camera->ControllerCameraMove(Input::window);
+                cam.camera->controllerSensitivity = sens;
             }
 
             return 1;
@@ -1714,7 +1616,7 @@ namespace ScriptEngine {
             std::string id = (std::string)lua_tostring(L, -1);
             lua_pop(L, 1);
 
-            auto *gameObject = f_GameObject::FindGameObjectByID(id);
+            auto gameObject = f_GameObject::FindGameObjectByID(id);
 
             if(gameObject != nullptr) {
                 gameObject->SetActive(lua_toboolean(L, 2));
@@ -1731,6 +1633,48 @@ namespace ScriptEngine {
 
             float returnVal = Hyper::LerpFloat(a, b, t);
             lua_pushnumber(L, returnVal);
+            return 1;
+        }
+
+        int SetCurrentController(lua_State *L) {
+            // get int
+            int controllerIndex = lua_tointeger(L, 1);
+            Input::Controller::SetCurrentController(controllerIndex);
+
+            return 1;
+        }
+        int GetLeftAnalogX(lua_State *L) {
+            lua_pushnumber(L, Input::Controller::GetLeftAnalogX());
+            return 1;
+        }
+        int GetLeftAnalogY(lua_State *L) {
+            lua_pushnumber(L, Input::Controller::GetLeftAnalogY());
+            return 1;
+        }
+        int GetRightAnalogX(lua_State *L) {
+            lua_pushnumber(L, Input::Controller::GetRightAnalogX());
+            return 1;
+        }
+        int GetRightAnalogY(lua_State *L) {
+            lua_pushnumber(L, Input::Controller::GetRightAnalogY());
+            return 1;
+        }
+        int GetL2(lua_State *L) {
+            lua_pushnumber(L, Input::Controller::GetL2());
+            return 1;
+        }
+        int GetR2(lua_State *L) {
+            lua_pushnumber(L, Input::Controller::GetR2());
+            return 1;
+        }
+        int IsButtonPressed(lua_State *L) {
+            int button = (int)lua_tonumber(L, 1);
+            lua_pushboolean(L, Input::Controller::IsButtonPressed(button));
+            return 1;
+        }
+        int IsButtonReleased(lua_State *L) {
+            int button = (int)lua_tonumber(L, 1);
+            lua_pushboolean(L, Input::Controller::IsButtonReleased(button));
             return 1;
         }
     }

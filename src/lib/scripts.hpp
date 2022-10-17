@@ -1,7 +1,7 @@
 #pragma once
 #include "scene.hpp"
 namespace HyperAPI
-{   
+{
     namespace Experimental {
         class GameObject;
     }
@@ -26,7 +26,7 @@ Add your class definitions here,
 DO NOT Forget to rebuild the api code!!!
 
 for example:
-class MyScript : public StaticScript 
+class MyScript : public StaticScript
 {
 public:
     // variables

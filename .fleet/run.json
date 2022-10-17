@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "type": "command",
+            "name": "Start Website",
+            "program": "npm",
+            "args": ["start"]
+        }
+    ]
+}

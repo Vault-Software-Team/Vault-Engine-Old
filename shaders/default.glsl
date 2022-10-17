@@ -180,9 +180,9 @@ vec4 pointLight(PointLight light) {
         float specularLight = 0.5;
         vec3 viewDirection = normalize(cameraPosition - currentPosition);
         vec3 reflectDir = reflect(-lightDir, normal);
-        
+
         vec3 halfwayVec = normalize(viewDirection + lightDir);
-        
+
         float specAmount = pow(max(dot(normal, halfwayVec), 0.0), 16);
         specular = specAmount * specularLight;
     }
@@ -223,9 +223,9 @@ vec4 directionalLight(DirectionalLight light) {
         float specularLight = 0.5;
         vec3 viewDirection = normalize(cameraPosition - currentPosition);
         vec3 reflectDir = reflect(-lightDir, normal);
-        
+
         vec3 halfwayVec = normalize(viewDirection + lightDir);
-        
+
         float specAmount = pow(max(dot(normal, halfwayVec), 0.0), 16);
         specular = specAmount * specularLight;
     }
@@ -252,7 +252,7 @@ vec4 directionalLight(DirectionalLight light) {
 vec4 spotLight(SpotLight light) {
     float outerCone = 0.9;
     float innerCone = 0.95;
-    
+
     float specular = 0;
     vec3 lightVec = light.lightPos - currentPosition;
 
@@ -264,9 +264,9 @@ vec4 spotLight(SpotLight light) {
         float specularLight = 0.5;
         vec3 viewDirection = normalize(cameraPosition - currentPosition);
         vec3 reflectDir = reflect(-lightDir, normal);
-        
+
         vec3 halfwayVec = normalize(viewDirection + lightDir);
-        
+
         float specAmount = pow(max(dot(normal, halfwayVec), 0.0), 16);
         specular = specAmount * specularLight;
     }
@@ -334,9 +334,12 @@ void main() {
     vec4 result = vec4(0);
 
     if(isTex == 1) {
-        result = mix(texture(texture_diffuse0, texCoords), reflectedColor, metallic) * baseColor * ambient;
+        vec4 tex = texture(texture_diffuse0, texCoords);
+        result = mix(tex, reflectedColor, metallic) * baseColor * ambient;
+        result.a = tex.a;
     } else {
         result = mix(baseColor, reflectedColor, metallic) * ambient;
+        result.a = baseColor.a;
     }
 
     // discard if the alpha is 0
@@ -369,5 +372,5 @@ void main() {
     entityId = 69;
     // FragColor = directionalLight(dirLights[0]);
 //     FragColor = result;
-    
+
 }

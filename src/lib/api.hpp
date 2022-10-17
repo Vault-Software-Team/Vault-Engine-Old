@@ -1,9 +1,12 @@
 #pragma once
+// print the file name and line number on every new
+// line of the output
 
 #include "../vendor/glad/include/glad/glad.h"
+
 #include "../vendor/GLFW/glfw3.h"
-#include <ImGuizmo/ImGuizmo.h>
-#include <ImGuizmo/ImSequencer.h>
+#include "../vendor/ImGuizmo/ImGuizmo.hpp"
+#include "../vendor/ImGuizmo/ImSequencer.h"
 #include <fstream>
 #include <iostream>
 #include "../vendor/discord-rpc/discord_rpc.h"
@@ -37,6 +40,8 @@
 #include "../vendor/box2d/box2d.h"
 #include "../vendor/assimp/postprocess.h"
 #include <any>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 #include "scene.hpp"
 #include "ScriptEngine.hpp"
 #include "InputEvents.hpp"
@@ -44,6 +49,8 @@
 #include "scripts.hpp"
 #include "../vendor/SDL2/SDL_mixer.h"
 #include <random>
+// shared_ptr
+#include <memory>
 
 // bullet physics
 #include "../vendor/bullet/bullet/btBulletDynamicsCommon.h"
@@ -181,10 +188,6 @@ namespace HyperAPI {
         }
     };
 
-    namespace Scene {
-        void DropTargetMat(DragType type, Mesh *currEntity);
-    }
-
     struct Component {
         bool IsPubliclyAddable = false;
     };
@@ -199,6 +202,7 @@ namespace HyperAPI {
         std::vector<std::any> Components;
 
         ComponentSystem() = default;
+        ~ComponentSystem() = default;
 
         void SetTag(const std::string &str) {
             Tag = str;
@@ -278,14 +282,6 @@ namespace HyperAPI {
         }
     };
 
-    struct Character {
-        unsigned int TextureID;  // ID handle of the glyph texture
-        glm::ivec2 Size;       // Size of glyph
-        glm::ivec2 Bearing;    // Offset from baseline to left/top of glyph
-        unsigned int Advance;    // Offset to advance to next glyph
-    };
-
-
     enum LOG_TYPE {
         LOG_INFO,
         LOG_WARNING,
@@ -358,6 +354,7 @@ namespace HyperAPI {
 
     class Camera : public ComponentSystem {
     public:
+        float controllerSensitivity = 1;
         float cursorWinW, cursorWinH;
 //        glm::vec3 mousePosWorld, mousePosCamWorld;
         // glm::vec3 Position;
@@ -395,7 +392,9 @@ namespace HyperAPI {
         void updateMatrix(float FOVdeg, float nearPlane, float farPlane, Vector2 winSize, Vector2 prespectiveSize = Vector2(-15, -15));
         void Matrix(Shader &shader, const char *uniform);
         void Inputs(GLFWwindow *window, Vector2 winPos);
+        void ControllerInput(GLFWwindow *window);
         void MouseMovement(Vector2 winPos);
+        void ControllerCameraMove(GLFWwindow *window);
     };
 
     class Texture {
@@ -409,6 +408,9 @@ namespace HyperAPI {
         const char *texStarterPath;
 
         Texture(const char *texturePath, unsigned int slot, const char *textureType);
+        ~Texture() {
+            glDeleteTextures(1, &ID);
+        }
 
         void Bind(unsigned int slot = -1);
 
@@ -549,9 +551,9 @@ namespace HyperAPI {
     public:
         std::vector<Texture> textures;
 
-        Texture *diffuse = nullptr;
-        Texture *specular = nullptr;
-        Texture *normal = nullptr;
+        Texture* diffuse = nullptr;
+        Texture* specular = nullptr;
+        Texture* normal = nullptr;
 
         Vector4 baseColor;
         float shininess;
@@ -563,17 +565,7 @@ namespace HyperAPI {
                  float metallic = 0, float roughness = 0);
 
         ~Material() {
-            if (diffuse != nullptr) {
-                delete diffuse;
-            }
-
-            if (specular != nullptr) {
-                delete specular;
-            }
-
-            if (normal != nullptr) {
-                delete normal;
-            }
+            textures.clear();
         }
 
         void Bind(Shader &shader);
@@ -670,7 +662,7 @@ namespace HyperAPI {
             }
         }
 
-        std::vector<Mesh *> meshes;
+        std::vector<Mesh*> meshes;
         std::string directory;
 
         bool texturesEnabled = true;
@@ -1006,8 +998,8 @@ namespace HyperAPI {
             bool hasGUI = true;
 
             virtual void Init() {}
-
             virtual void GUI() {}
+            virtual void DeleteComp() {}
         };
 
         void DrawVec3Control(const std::string &label, Vector3 &values, float resetValue = 0.0f, float columnWidth = 100.0f);
@@ -1092,7 +1084,13 @@ namespace HyperAPI {
                 };
 
                 Material material(Vector4(1, 1, 1, 1));
+                // new Mesh to shared_ptr
                 mesh = new Mesh(vertices, indices, material);
+            }
+            void DeleteComp() override {
+                if(mesh) {
+                    delete mesh;
+                }
             }
 
             void GUI() {
@@ -1124,7 +1122,7 @@ namespace HyperAPI {
         };
 
         struct SpritesheetRenderer : public BaseComponent {
-            Mesh *mesh = nullptr;
+            Mesh *mesh;
             Spritesheet *sp = nullptr;
             Vector2 spritesheetSize = Vector2(512, 512);
             Vector2 spriteSize = Vector2(32, 32);
@@ -1133,8 +1131,13 @@ namespace HyperAPI {
 
             SpritesheetRenderer() {
                 Spritesheet sp("", material, spritesheetSize, spriteSize, spriteOffset);
+                mesh = std::move(sp.m_Mesh);
+            }
 
-                mesh = sp.m_Mesh;
+            void DeleteComp() override {
+                if(mesh) {
+                    delete mesh;
+                }
             }
 
             void GUI() override {
@@ -1202,139 +1205,6 @@ namespace HyperAPI {
             static std::mt19937 s_Engine;
             static std::uniform_int_distribution<std::mt19937::result_type> s_Distribution;
         };
-
-        struct ParticleProps {
-            Vector3 position;
-            Vector3 velocity, velocityVariation;
-            Vector4 colorBegin, colorEnd;
-            float sizeBegin, sizeEnd, sizeVariation;
-            float lifeTime = 1.0f;
-        };
-
-        struct ParticleSystem : public BaseComponent {
-            struct Particle {
-                glm::vec3 position;
-                glm::vec3 velocity;
-                glm::vec4 color_begin, color_end;
-                float rotation = 0;
-                float size_begin, size_end;
-                float lifeTime = 1;
-                float lifeRemaining = 1;
-                bool active = false;
-            };
-
-            std::vector<Particle> particlePool;
-            unsigned int poolIndex = 999;
-            unsigned int quadVA = 0;
-
-            ParticleSystem() {
-                particlePool.resize(1000);
-            }
-
-            void GUI() {
-                if (ImGui::TreeNode("Particle System")) {
-                    ImGui::NewLine();
-                    if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
-                        Scene::m_Registry.remove<SpriteRenderer>(entity);
-                    }
-
-                    ImGui::TreePop();
-                }
-            }
-
-            void Update() {
-                for (auto &particle : particlePool) {
-                    if (particle.active) {
-                        // calculate delta time, there is no namespace as Time.
-                        float time = 0.016f;
-                        particle.lifeRemaining -= time;
-
-                        if (particle.lifeRemaining <= 0.0f) {
-                            particle.active = false;
-                            continue;
-                        }
-
-                        particle.position += particle.velocity * time;
-                        particle.color_begin.r += (particle.color_end.r - particle.color_begin.r) * time;
-                        particle.color_begin.g += (particle.color_end.g - particle.color_begin.g) * time;
-                        particle.color_begin.b += (particle.color_end.b - particle.color_begin.b) * time;
-                        particle.color_begin.a += (particle.color_end.a - particle.color_begin.a) * time;
-                        particle.size_begin += (particle.size_end - particle.size_begin) * time;
-                        particle.rotation += 0.01f * time;
-                    }
-                }
-            }
-
-            void Emit(const ParticleProps &props) {
-                Particle &particle = particlePool[poolIndex];
-                particle.active = true;
-                particle.position = props.position;
-                particle.rotation = Random::Float() * 2.0f * glm::pi<float>();
-
-                particle.velocity = props.velocity;
-                particle.velocity.x += props.velocityVariation.x * (Random::Float() - 0.5f);
-                particle.velocity.y += props.velocityVariation.y * (Random::Float() - 0.5f);
-
-                particle.color_begin = props.colorBegin;
-                particle.color_end = props.colorEnd;
-
-                particle.size_begin = props.sizeBegin;
-                particle.size_end = props.sizeEnd;
-                particle.size_begin += props.sizeVariation * (Random::Float() - 0.5f);
-                particle.size_end += props.sizeVariation * (Random::Float() - 0.5f);
-
-                particle.lifeRemaining = props.lifeTime;
-                particle.lifeTime = props.lifeTime;
-
-                poolIndex = --poolIndex % particlePool.size();
-            }
-
-            void Draw(Shader &shader, Camera *camera) {
-                if (!quadVA) {
-                    float vertices[] = {
-                            -0.5, -0.5, 0,
-                            0.5, -0.5, 0,
-                            0.5, 0.5, 0,
-                            -0.5, 0.5, 0
-                    };
-
-                    unsigned int quadVB;
-                    glGenVertexArrays(1, &quadVA);
-                    glGenBuffers(1, &quadVB);
-                    glBindVertexArray(quadVA);
-                    glBindBuffer(GL_ARRAY_BUFFER, quadVB);
-                    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-                    glEnableVertexAttribArray(0);
-                    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (const void *) 0);
-
-                    unsigned int indices[] = {
-                            0, 1, 2,
-                            2, 3, 0
-                    };
-
-                    unsigned int quadIB;
-                    glGenBuffers(1, &quadIB);
-                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIB);
-                    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-                    glBindVertexArray(0);
-                    glBindBuffer(GL_ARRAY_BUFFER, 0);
-                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-                }
-
-                shader.Bind();
-                shader.SetUniformMat4("u_ViewProjection", camera->view);
-
-                for (auto &particle : particlePool) {
-                    if (!particle.active) {
-                        continue;
-                    }
-                    float life = particle.lifeRemaining / particle.lifeTime;
-                }
-            };
-        };
-
         struct m_AnimationData {
             char name[499] = "anim_name";
             std::string id = uuid::generate_uuid_v4();
@@ -1342,10 +1212,12 @@ namespace HyperAPI {
             float delay = 0.1f;
             float delay_counter = 0.0f;
             bool loop = false;
+
+            m_AnimationData() = default;
         };
 
         struct MeshRenderer : public BaseComponent {
-            Mesh *m_Mesh = nullptr;
+            Mesh *m_Mesh;
             bool m_Model = false;
 
             glm::mat4 extraMatrix = glm::mat4(1.0f);
@@ -1353,6 +1225,11 @@ namespace HyperAPI {
             std::string meshType = "";
 
             MeshRenderer() = default;
+            void DeleteComp() override {
+                if(m_Mesh != nullptr) {
+                    delete m_Mesh;
+                }
+            }
 
             void GUI() override {
                 if (ImGui::TreeNode("Material")) {
@@ -1375,37 +1252,37 @@ namespace HyperAPI {
 
                                 if (ImGui::Button("Cube", ImVec2(200, 0))) {
                                     meshType = "Cube";
-                                    m_Mesh = Cube(Vector4(1, 1, 1, 1)).meshes[0];
+                                    m_Mesh = std::move(Cube(Vector4(1, 1, 1, 1)).meshes[0]);
                                     ImGui::CloseCurrentPopup();
                                 }
 
                                 if (ImGui::Button("Sphere", ImVec2(200, 0))) {
                                     meshType = "Sphere";
-                                    m_Mesh = Sphere(Vector4(1, 1, 1, 1)).meshes[0];
+                                    m_Mesh = std::move(Sphere(Vector4(1, 1, 1, 1)).meshes[0]);
                                     ImGui::CloseCurrentPopup();
                                 }
 
                                 if (ImGui::Button("Cone", ImVec2(200, 0))) {
                                     meshType = "Cone";
-                                    m_Mesh = Cone(Vector4(1, 1, 1, 1)).meshes[0];
+                                    m_Mesh = std::move(Cone(Vector4(1, 1, 1, 1)).meshes[0]);
                                     ImGui::CloseCurrentPopup();
                                 }
 
                                 if (ImGui::Button("Capsule", ImVec2(200, 0))) {
                                     meshType = "Capsule";
-                                    m_Mesh = Capsule(Vector4(1, 1, 1, 1)).meshes[0];
+                                    m_Mesh = std::move(Capsule(Vector4(1, 1, 1, 1)).meshes[0]);
                                     ImGui::CloseCurrentPopup();
                                 }
 
                                 if (ImGui::Button("Torus", ImVec2(200, 0))) {
                                     meshType = "Torus";
-                                    m_Mesh = Torus(Vector4(1, 1, 1, 1)).meshes[0];
+                                    m_Mesh = std::move(Torus(Vector4(1, 1, 1, 1)).meshes[0]);
                                     ImGui::CloseCurrentPopup();
                                 }
 
                                 if (ImGui::Button("Cylinder", ImVec2(200, 0))) {
                                     meshType = "Cylinder";
-                                    m_Mesh = Cylinder(Vector4(1, 1, 1, 1)).meshes[0];
+                                    m_Mesh = std::move(Cylinder(Vector4(1, 1, 1, 1)).meshes[0]);
                                     ImGui::CloseCurrentPopup();
                                 }
 
@@ -1429,17 +1306,14 @@ namespace HyperAPI {
                             matPath = "";
                             if (m_Mesh->material.diffuse != nullptr) {
                                 delete m_Mesh->material.diffuse;
-                                m_Mesh->material.diffuse = nullptr;
                             }
 
                             if (m_Mesh->material.specular != nullptr) {
                                 delete m_Mesh->material.specular;
-                                m_Mesh->material.specular = nullptr;
                             }
 
                             if (m_Mesh->material.normal != nullptr) {
                                 delete m_Mesh->material.normal;
-                                m_Mesh->material.normal = nullptr;
                             }
 
                             m_Mesh->material.roughness = 0.0f;
@@ -1509,22 +1383,7 @@ namespace HyperAPI {
 
                     ImGui::NewLine();
                     if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
-                        if (m_Mesh != nullptr) {
-                            if (m_Mesh->material.diffuse != nullptr) {
-                                delete m_Mesh->material.diffuse;
-                            }
-
-                            if (m_Mesh->material.specular != nullptr) {
-                                delete m_Mesh->material.specular;
-                            }
-
-                            if (m_Mesh->material.normal != nullptr) {
-                                delete m_Mesh->material.normal;
-                            }
-
-                            delete m_Mesh;
-                            m_Mesh = nullptr;
-                        }
+                        DeleteComp();
                         Scene::m_Registry.remove<MeshRenderer>(entity);
                     }
 
@@ -1542,6 +1401,10 @@ namespace HyperAPI {
 
             c_PointLight() {
                 // PointLights.push_back(this);
+            }
+
+            ~c_PointLight() {
+                 Scene::PointLights.erase(std::remove(Scene::PointLights.begin(), Scene::PointLights.end(), light), Scene::PointLights.end());
             }
 
             void GUI() {
@@ -1582,11 +1445,14 @@ namespace HyperAPI {
             Light2D *light = new Light2D(Scene::Lights2D, lightPos, Vector4(color, 1.0f), range);
 
             c_Light2D() = default;
+            ~c_Light2D() {
+                Scene::Lights2D.erase(std::remove(Scene::Lights2D.begin(), Scene::Lights2D.end(), light), Scene::Lights2D.end());
+            }
 
             void GUI() {
 
                 if (ImGui::TreeNode("2D Light")) {
-                    ImGui::ColorEdit3("Color", &color.x, 0.01f);
+                    ImGui::ColorEdit3("Color", &color.x, 0);
                     ImGui::DragFloat("Range", &range, 0.01f);
 
                     ImGui::NewLine();
@@ -1620,9 +1486,14 @@ namespace HyperAPI {
             Vector3 angle = Vector3(0.0f, -1.0f, 0.0f);
             SpotLight *light = new SpotLight(Scene::SpotLights, lightPos, color);
 
+            c_SpotLight() = default;
+            ~c_SpotLight() {
+                Scene::SpotLights.erase(std::remove(Scene::SpotLights.begin(), Scene::SpotLights.end(), light), Scene::SpotLights.end());
+            }
+
             void GUI() {
                 if (ImGui::TreeNode("Spot Light")) {
-                    ImGui::ColorEdit3("Color", &color.x, 0.01f);
+                    ImGui::ColorEdit3("Color", &color.x, 0);
 
                     ImGui::NewLine();
                     if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
@@ -1652,12 +1523,17 @@ namespace HyperAPI {
             float intensity = 1;
             DirectionalLight *light = new DirectionalLight(Scene::DirLights, lightPos, color);
 
+            c_DirectionalLight() = default;
+            ~c_DirectionalLight() {
+                Scene::DirLights.erase(std::remove(Scene::DirLights.begin(), Scene::DirLights.end(), light), Scene::DirLights.end());
+            }
+
             void GUI() {
                 auto &transform = Scene::m_Registry.get<Transform>(entity);
                 lightPos = transform.position;
 
                 if (ImGui::TreeNode("Directional Light")) {
-                    ImGui::ColorEdit3("Color", &color.x, 0.01f);
+                    ImGui::ColorEdit3("Color", &color.x, 0);
                     ImGui::DragFloat("Intensity", &intensity, 0.01f);
 
                     ImGui::NewLine();
@@ -1699,7 +1575,7 @@ namespace HyperAPI {
             Node *nodes = nullptr;
             int mapWidth = 5, mapHeight = 5;
 
-            Cube *cube = new Cube(Vector4(1, 0, 0, 1));
+            std::shared_ptr<Cube> cube = std::make_shared<Cube>(Vector4(1, 0, 0, 1));
         public:
             PathfindingAI() = default;
 
@@ -1886,7 +1762,16 @@ namespace HyperAPI {
                     delete GetComponent<c_SpotLight>().light;
                 }
 
+                if (HasComponent<c_Light2D>()) {
+                    Scene::Lights2D.erase(std::remove(Scene::Lights2D.begin(), Scene::Lights2D.end(),
+                                                        GetComponent<c_Light2D>().light),
+                                            Scene::Lights2D.end());
+                    delete GetComponent<c_Light2D>().light;
+                }
+
+                Scene::m_Registry.remove(entity);
                 Scene::m_Registry.destroy(entity);
+
                 Scene::m_GameObjects.erase(
                         std::remove(Scene::m_GameObjects.begin(), Scene::m_GameObjects.end(), this),
                         Scene::m_GameObjects.end());
@@ -1900,7 +1785,6 @@ namespace HyperAPI {
             }
 
             void GUI() {
-                // remove the expandable arrow IF theres nothing in the treenode
                 bool item;
                 bool hasChildren = false;
                 for (auto &gameObject : Scene::m_GameObjects) {
@@ -1965,8 +1849,8 @@ namespace HyperAPI {
                     ImGui::EndDragDropTarget();
                 }
 
-                if (Input::IsKeyPressed(KEY_DELETE) && Scene::m_Object == this && !keyDown) {
-                     DeleteGameObject();
+                if (Input::IsKeyPressed(KEY_DELETE) && Scene::m_Object->ID == ID && !keyDown) {
+                    DeleteGameObject();
                 } else if (!Input::IsKeyPressed(KEY_DELETE)) {
                     keyDown = false;
                 }
@@ -2021,7 +1905,7 @@ namespace HyperAPI {
 
             void CreateShape(MeshRenderer *renderer) {
                 if (renderer->m_Mesh) {
-                    auto *mesh = renderer->m_Mesh;
+                    auto mesh = renderer->m_Mesh;
 
                     shape = new btConvexHullShape();
                     for (auto &vertex : mesh->vertices) {
@@ -2053,7 +1937,7 @@ namespace HyperAPI {
             bool trigger = false;
             bool fixedRotation = false;
 
-            GameObject *gameObject = nullptr;
+            GameObject * gameObject;
             Transform *transform;
 
             btRigidBody *body = nullptr;
@@ -2184,8 +2068,8 @@ namespace HyperAPI {
         };
 
         struct FixedJoint3D : public BaseComponent {
-            GameObject *gameObject = nullptr;
-            GameObject *connectedGameObject = nullptr;
+            GameObject * gameObject = nullptr;
+            GameObject * connectedGameObject = nullptr;
             Transform *transform;
 
             btRigidBody *body = nullptr;
@@ -2271,6 +2155,22 @@ namespace HyperAPI {
                 }
             }
 
+            void DeleteComp() override {
+                for (auto &gameObject : Scene::m_GameObjects) {
+                    if (gameObject->ID == ID) {
+                        Scene::currFrames.erase(gameObject->ID);
+                        Scene::currDelays.erase(gameObject->ID);
+                    }
+                }
+
+                for (auto &anim : anims) {
+                    for(auto &frame : anim.frames) {
+                        if(frame.mesh) delete frame.mesh;
+                    }
+                    anim.frames.clear();
+                }
+            }
+
             void GUI() override {
                 if (ImGui::TreeNode("Sprite Animation")) {
                     ImGui::InputText("Current Animation", currAnim, 499);
@@ -2299,7 +2199,6 @@ namespace HyperAPI {
                                         frame.mesh->material.diffuse != nullptr) {
                                         glDeleteTextures(1, &frame.mesh->material.diffuse->ID);
                                         delete frame.mesh->material.diffuse;
-                                        frame.mesh->material.diffuse = nullptr;
                                     }
                                     ImGui::ColorEdit3("Color", &frame.mesh->material.baseColor.x);
 
@@ -2392,6 +2291,17 @@ namespace HyperAPI {
                 mesh = sheet.m_Mesh;
             }
 
+            void DeleteComp() override {
+                for (auto &anim : anims) {
+                    anim.frames.clear();
+                }
+                anims.clear();
+
+                if(mesh) {
+                    if (mesh) delete mesh;
+                }
+            }
+
             void GUI() override {
                 if (ImGui::TreeNode("Spritesheet Renderer")) {
                     if (ImGui::TreeNode("Texture")) {
@@ -2405,7 +2315,6 @@ namespace HyperAPI {
                         if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1) && mesh->material.diffuse != nullptr) {
                             glDeleteTextures(1, &mesh->material.diffuse->ID);
                             delete mesh->material.diffuse;
-                            mesh->material.diffuse = nullptr;
                         }
 
                         ImGui::TreePop();
@@ -2509,6 +2418,8 @@ namespace HyperAPI {
                             currFrame = animation.frames[Scene::currFrames[ID][std::string(animation.name)]];
                             Scene::currDelays[ID][std::string(animation.name)] = 0.0f;
                         }
+                    } else if(!animation.loop) {
+                        Scene::currFrames[ID][std::string(animation.name)] = 0;
                     }
                 }
             }
@@ -2538,10 +2449,15 @@ namespace HyperAPI {
         };
 
         struct NativeScriptManager : public BaseComponent {
-            std::vector<StaticScript *> m_StaticScripts;
-            GameObject *gameObject;
+            std::vector<StaticScript*> m_StaticScripts;
+            GameObject * gameObject;
 
             NativeScriptManager() = default;
+            ~NativeScriptManager() {
+                for (auto &script : m_StaticScripts) {
+                    delete script;
+                }
+            }
 
             void Init() {
                 for (auto &gameObject : Scene::m_GameObjects) {
@@ -2554,7 +2470,7 @@ namespace HyperAPI {
 
             template<typename T>
             void AddScript() {
-                m_StaticScripts.push_back(new T());
+                m_StaticScripts.push_back(std::make_shared<T>());
                 m_StaticScripts.back()->gameObject = gameObject;
                 HYPER_LOG(std::string("Added script: ") + typeid(T).name());
             }
@@ -2574,7 +2490,7 @@ namespace HyperAPI {
 
         struct CameraComponent : public BaseComponent {
             Camera *camera = nullptr;
-            GameObject *m_GameObject = nullptr;
+            GameObject * m_GameObject = nullptr;
             bool depthCamera = false;
 
             CameraComponent() = default;
@@ -2658,7 +2574,7 @@ namespace HyperAPI {
         };
 
         struct m_LuaScriptComponent : public BaseComponent {
-            GameObject *m_GameObject;
+            GameObject * m_GameObject;
             std::vector<ScriptEngine::m_LuaScript> scripts;
 
             m_LuaScriptComponent() {
@@ -2997,7 +2913,7 @@ namespace HyperAPI {
                         m_BoneInfoMap[boneName] = newBoneInfo;
                         boneID = m_BoneCounter;
 
-                        Experimental::GameObject *bone = new Experimental::GameObject();
+                        Experimental::GameObject* bone = new Experimental::GameObject();
                         bone->name = boneName;
                         bone->parentID = mainGameObject->ID;
                         bone->AddComponent<Transform>();
@@ -3028,8 +2944,8 @@ namespace HyperAPI {
                 }
             }
 
-            GameObject *mainGameObject;
-            std::vector<GameObject *> m_gameObjects;
+            GameObject * mainGameObject;
+            std::vector<GameObject * > m_gameObjects;
             std::string directory;
 
             bool texturesEnabled = true;
@@ -3043,11 +2959,11 @@ namespace HyperAPI {
 
             void processNode(aiNode *node, const aiScene *scene);
 
-            GameObject *processMesh(aiMesh *mesh, const aiScene *scene, const std::string &name);
+            GameObject * processMesh(aiMesh *mesh, const aiScene *scene, const std::string &name);
 
-            std::vector<Texture> textures_loaded;
+            std::vector<Texture*> textures_loaded;
 
-            std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type,
+            std::vector<Texture*> loadMaterialTextures(aiMaterial *mat, aiTextureType type,
                                                       std::string typeName);
 
             Model(char *path, bool AddTexture = false, Vector4 color = Vector4(1, 1, 1, 1)) {
@@ -3241,15 +3157,38 @@ namespace HyperAPI {
     }
 
     namespace f_GameObject {
-        Experimental::GameObject *FindGameObjectByName(const std::string &name);
-        Experimental::GameObject *FindGameObjectByTag(const std::string &tag);
-        Experimental::GameObject *FindGameObjectByID(const std::string &id);
-        Experimental::GameObject *InstantiatePrefab(const std::string &path);
+        Experimental::GameObject* FindGameObjectByName(const std::string &name);
+        Experimental::GameObject* FindGameObjectByTag(const std::string &tag);
+        Experimental::GameObject* FindGameObjectByID(const std::string &id);
+        Experimental::GameObject* InstantiatePrefab(const std::string &path);
 
-        Experimental::GameObject *
+        Experimental::GameObject*
         InstantiateTransformPrefab(const std::string &path, Vector3 position = Vector3(0, 0, 0),
                                    Vector3 rotation = Vector3(0, 0, 0));
-    };
+    }
+
+#ifndef _WIN32
+    namespace Text {
+        class Font {
+        public:
+            struct Character {
+                unsigned int TextureID;  // ID handle of the glyph texture
+                glm::ivec2   Size;       // Size of glyph
+                glm::ivec2   Bearing;    // Offset from baseline to left/top of glyph
+                unsigned int Advance;    // Offset to advance to next glyph
+            };
+            float scale;
+            unsigned int VAO, VBO;
+            std::map<char, Character> Characters;
+
+            FT_Library ft;
+            FT_Face face;
+
+            Font(const std::string &path, int size);
+            void Render(Shader &shader, Camera &camera, std::string text, Experimental::Transform &transform);
+        };
+    }
+#endif
 }
 
 extern float rectangleVert[];
@@ -3308,7 +3247,7 @@ namespace Hyper {
             // HyperAPI::AudioEngine::Init();
             // HYPER_LOG("Initialized Audio Engine");
 
-            //get vendor 
+            //get vendor
             vendor = (char *) glGetString(GL_VENDOR);
             srenderer = (char *) glGetString(GL_RENDERER);
             version = (char *) glGetString(GL_VERSION);

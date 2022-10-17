@@ -1,28 +1,28 @@
 #include "lib/api.hpp"
 #include "lib/scene.hpp"
 
-std::vector<HyperAPI::PointLight*> PointLights;
-std::vector<HyperAPI::SpotLight*> SpotLights;
-std::vector<HyperAPI::Light2D*> Lights2D;
-std::vector<HyperAPI::DirectionalLight*> DirLights;
-std::vector<HyperAPI::Mesh*> hyperEntities;
+std::vector<HyperAPI::PointLight *> PointLights;
+std::vector<HyperAPI::SpotLight *> SpotLights;
+std::vector<HyperAPI::Light2D *> Lights2D;
+std::vector<HyperAPI::DirectionalLight *> DirLights;
+std::vector<HyperAPI::Mesh *> hyperEntities;
 
 float rectangleVert[] = {
-    1, -1,  1, 0,
-    -1, -1,  0, 0,
-    -1, 1,  0, 1,
+        1, -1, 1, 0,
+        -1, -1, 0, 0,
+        -1, 1, 0, 1,
 
-    1, 1,  1, 1,
-    1, -1,  1, 0,
-    -1, 1,  0, 1,
+        1, 1, 1, 1,
+        1, -1, 1, 0,
+        -1, 1, 0, 1,
 };
 
 float rotation = 0.0f;
 double previousTime = glfwGetTime();
 
 namespace uuid {
-    std::random_device              rd;
-    std::mt19937                    gen(rd());
+    std::random_device rd;
+    std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(0, 15);
     std::uniform_int_distribution<> dis2(8, 11);
 
@@ -61,7 +61,7 @@ std::string get_file_contents(const char *file) {
     }
 
     std::string content, line;
-    while(getline(g_file, line)) {
+    while (getline(g_file, line)) {
         content += line + "\n";
     }
 
@@ -78,14 +78,15 @@ void NewFrame(unsigned int FBO, int width, int height) {
     glEnable(GL_DEPTH_TEST);
 }
 
-void EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height) {
+void EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO,
+              unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height) {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postProcessingFBO);
     glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_BLEND);
-    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     framebufferShader.Bind();
     framebufferShader.SetUniform1i("screenTexture", 15);
     glBindVertexArray(rectVAO);
@@ -95,27 +96,27 @@ void EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer,
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glDepthFunc(GL_LEQUAL);
-    if(renderer.wireframe) {
-        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    if (renderer.wireframe) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     } else {
-        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 }
 
 void EndEndFrame(
-    HyperAPI::Shader &framebufferShader,
-    HyperAPI::Renderer &renderer,
-    unsigned int FBO,
-    unsigned int rectVAO,
-    unsigned int postProcessingTexture,
-    unsigned int postProcessingFBO,
-    unsigned int S_FBO,
-    unsigned int S_postProcessingTexture,
-    unsigned int S_postProcessingFBO,
-    const int width,
-    const int height,
-    const int mouseX,
-    const int mouseY
+        HyperAPI::Shader &framebufferShader,
+        HyperAPI::Renderer &renderer,
+        unsigned int FBO,
+        unsigned int rectVAO,
+        unsigned int postProcessingTexture,
+        unsigned int postProcessingFBO,
+        unsigned int S_FBO,
+        unsigned int S_postProcessingTexture,
+        unsigned int S_postProcessingFBO,
+        const int width,
+        const int height,
+        const int mouseX,
+        const int mouseY
 ) {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postProcessingFBO);
@@ -124,7 +125,7 @@ void EndEndFrame(
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     NewFrame(S_FBO, width, height);
-    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     framebufferShader.Bind();
     framebufferShader.SetUniform1i("screenTexture", 15);
     glBindVertexArray(rectVAO);
@@ -136,17 +137,19 @@ void EndEndFrame(
     EndFrame(framebufferShader, renderer, S_FBO, rectVAO, S_postProcessingTexture, S_postProcessingFBO, width, height);
 
     glDepthFunc(GL_LEQUAL);
-    if(renderer.wireframe) {
-        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    if (renderer.wireframe) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     } else {
-        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
     glClearColor(pow(0.3f, 2.2f), pow(0.3f, 2.2f), pow(0.3f, 2.2f), 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void SC_EndFrame(HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height) {
+void
+SC_EndFrame(HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture,
+            unsigned int postProcessingFBO, const int width, const int height) {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postProcessingFBO);
     glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
@@ -154,8 +157,7 @@ void SC_EndFrame(HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int re
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-bool EndsWith(std::string const & value, std::string const & ending)
-{
+bool EndsWith(std::string const &value, std::string const &ending) {
     if (ending.size() > value.size()) return false;
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
@@ -252,7 +254,7 @@ namespace HyperAPI {
         void PlayMusic(const std::string &path, float volume, bool loop) {
             // generate chunk
             Mix_Music *music = Mix_LoadMUS(path.c_str());
-            if(music == NULL) {
+            if (music == NULL) {
                 HYPER_LOG("Failed to load music: " + path)
                 return;
             }
@@ -274,7 +276,7 @@ namespace HyperAPI {
         btDefaultCollisionConfiguration *collisionConfiguration;
         btCollisionDispatcher *dispatcher;
         btSequentialImpulseConstraintSolver *solver;
-        btAlignedObjectArray<btCollisionShape*> collisionShapes;
+        btAlignedObjectArray<btCollisionShape *> collisionShapes;
         btAlignedObjectArray<btRigidBody *> rigidBodies;
         btAlignedObjectArray<btPairCachingGhostObject *> ghostObjects;
         btAlignedObjectArray<btTypedConstraint *> constraints;
@@ -285,6 +287,7 @@ namespace HyperAPI {
             delete solver;
             delete dispatcher;
             delete collisionConfiguration;
+            delete broadphase;
         }
 
 
@@ -301,13 +304,13 @@ namespace HyperAPI {
             dynamicsWorld->stepSimulation(1.f / 60.f, 10);
         }
 
-        void CollisionCallback(std::function<void(const std::string&, const std::string&)> HandleEntities) {
+        void CollisionCallback(std::function<void(const std::string &, const std::string &)> HandleEntities) {
             int numManifolds = dynamicsWorld->getDispatcher()->getNumManifolds();
             // do collision callback on all rigid bodies
             for (int i = 0; i < numManifolds; i++) {
-                btPersistentManifold* contactManifold = dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
-                const auto *obA = static_cast<const btCollisionObject*>(contactManifold->getBody0());
-                const auto *obB = static_cast<const btCollisionObject*>(contactManifold->getBody1());
+                btPersistentManifold *contactManifold = dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
+                const auto *obA = static_cast<const btCollisionObject *>(contactManifold->getBody0());
+                const auto *obB = static_cast<const btCollisionObject *>(contactManifold->getBody1());
 
                 // get the entity names
                 auto *entityA = static_cast<std::string *>(obA->getUserPointer());
@@ -325,7 +328,8 @@ namespace HyperAPI {
         float currentFrame = 0;
     }
 
-    Renderer::Renderer(int width, int height, const char *title, Vector2 g_gravity, unsigned int samples, bool fullscreen, bool resizable, bool wireframe) {
+    Renderer::Renderer(int width, int height, const char *title, Vector2 g_gravity, unsigned int samples,
+                       bool fullscreen, bool resizable, bool wireframe) {
         this->samples = samples;
         this->wireframe = wireframe;
 
@@ -343,7 +347,7 @@ namespace HyperAPI {
         // core profile
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-        if(fullscreen) {
+        if (fullscreen) {
             // get monitor width and height
             const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
             window = glfwCreateWindow(mode->width, mode->height, title, glfwGetPrimaryMonitor(), NULL);
@@ -381,7 +385,7 @@ namespace HyperAPI {
         glEnable(GL_STENCIL_TEST);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-        if(wireframe) {
+        if (wireframe) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         } else {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -400,7 +404,7 @@ namespace HyperAPI {
     }
 
     Shader::Shader(const char *shaderPath) {
-        if(strcmp(shaderPath, "NULL_SHADER") == 0) {
+        if (strcmp(shaderPath, "NULL_SHADER") == 0) {
             return;
         }
 
@@ -413,19 +417,19 @@ namespace HyperAPI {
 
         std::string vertCode, fragCode, geometryCode, line;
         int type = -1;
-        while(getline(shaderFile, line)) {
-            if(line == "#shader vertex") {
+        while (getline(shaderFile, line)) {
+            if (line == "#shader vertex") {
                 type = 0;
-            } else if(line == "#shader fragment") {
+            } else if (line == "#shader fragment") {
                 type = 1;
-            } else if(line == "#shader geometry") {
+            } else if (line == "#shader geometry") {
                 type = 2;
             } else {
-                if(type == 0) {
+                if (type == 0) {
                     vertCode += line + "\n";
-                } else if(type == 1) {
+                } else if (type == 1) {
                     fragCode += line + "\n";
-                } else if(type == 2) {
+                } else if (type == 2) {
                     geometryCode += line + "\n";
                 }
             }
@@ -442,7 +446,7 @@ namespace HyperAPI {
         glShaderSource(vertShader, 1, &vertShaderCode, NULL);
         glCompileShader(vertShader);
         glGetShaderiv(vertShader, GL_COMPILE_STATUS, &success);
-        if(!success) {
+        if (!success) {
             glGetShaderInfoLog(vertShader, 512, NULL, infoLog);
             HYPER_LOG("Failed to compile Vertex Shader")
             std::cout << infoLog << std::endl;
@@ -452,7 +456,7 @@ namespace HyperAPI {
         glShaderSource(fragShader, 1, &fragShaderCode, NULL);
         glCompileShader(fragShader);
         glGetShaderiv(fragShader, GL_COMPILE_STATUS, &success);
-        if(!success) {
+        if (!success) {
             glGetShaderInfoLog(fragShader, 512, NULL, infoLog);
             HYPER_LOG("Failed to compile Fragment Shader")
             std::cout << infoLog << std::endl;
@@ -471,12 +475,12 @@ namespace HyperAPI {
         ID = glCreateProgram();
         glAttachShader(ID, vertShader);
         glAttachShader(ID, fragShader);
-        if(geometryCode != "") {
+        if (geometryCode != "") {
             // glAttachShader(ID, geometryShader);
         }
         glLinkProgram(ID);
         glGetProgramiv(ID, GL_LINK_STATUS, &success);
-        if(!success) {
+        if (!success) {
             glGetProgramInfoLog(ID, 512, NULL, infoLog);
             HYPER_LOG("Failed to link program")
             std::cout << infoLog << std::endl;
@@ -519,7 +523,8 @@ namespace HyperAPI {
         glUniformMatrix4fv(glGetUniformLocation(ID, name), 1, GL_FALSE, glm::value_ptr(value));
     }
 
-    Mesh::Mesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, Material &material, bool empty, bool batched) {
+    Mesh::Mesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, Material &material, bool empty,
+               bool batched) {
         this->vertices = vertices;
         this->indices = indices;
         this->material = material;
@@ -527,11 +532,11 @@ namespace HyperAPI {
         this->empty = empty;
 
         TransformComponent component;
-        component.position = Vector3(0,0,0);
-        component.scale = Vector3(1,1,1);
+        component.position = Vector3(0, 0, 0);
+        component.scale = Vector3(1, 1, 1);
         this->Components.push_back(component);
 
-        if(empty) {
+        if (empty) {
             return;
         }
 
@@ -540,33 +545,34 @@ namespace HyperAPI {
         glGenBuffers(1, &IBO);
         glBindVertexArray(VAO);
 
-        if(!batched) {
+        if (!batched) {
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(),
+                         GL_STATIC_DRAW);
 
             //coords
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) 0);
             glEnableVertexAttribArray(0);
 
             //color
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, color));
             glEnableVertexAttribArray(1);
 
             // normals
-            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, normal));
             glEnableVertexAttribArray(2);
 
             //texuv
-            glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texUV));
+            glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, texUV));
             glEnableVertexAttribArray(3);
 
-            glVertexAttribPointer(4, 4, GL_INT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_BoneIDs));
+            glVertexAttribPointer(4, 4, GL_INT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, m_BoneIDs));
             glEnableVertexAttribArray(4);
 
-            glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_Weights));
+            glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, m_Weights));
             glEnableVertexAttribArray(5);
 
             // glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(11 * sizeof(float)));
@@ -595,35 +601,36 @@ namespace HyperAPI {
             glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(),
+                         GL_STATIC_DRAW);
 
             //coords
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) 0);
             glEnableVertexAttribArray(0);
 
             //color
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
             glEnableVertexAttribArray(1);
 
             // normals
-            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(6 * sizeof(float)));
+            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (6 * sizeof(float)));
             glEnableVertexAttribArray(2);
 
             //texuv
-            glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(9 * sizeof(float)));
+            glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (9 * sizeof(float)));
             glEnableVertexAttribArray(3);
 
-            glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(11 * sizeof(float)));
+            glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (11 * sizeof(float)));
             glEnableVertexAttribArray(4);
 
             // add mat4
-            glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(12 * sizeof(float)));
+            glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (12 * sizeof(float)));
             glEnableVertexAttribArray(5);
-            glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(16 * sizeof(float)));
+            glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (16 * sizeof(float)));
             glEnableVertexAttribArray(6);
-            glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(20 * sizeof(float)));
+            glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (20 * sizeof(float)));
             glEnableVertexAttribArray(7);
-            glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(24 * sizeof(float)));
+            glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (24 * sizeof(float)));
             glEnableVertexAttribArray(8);
             //divisors
             glVertexAttribDivisor(5, 1);
@@ -640,24 +647,25 @@ namespace HyperAPI {
     }
 
     void Mesh::Draw(
-        Shader &shader,
-        Camera &camera,
-        glm::mat4 matrix,
-        glm::vec3 translation,
-        glm::quat rotation,
-        glm::vec3 scale
+            Shader &shader,
+            Camera &camera,
+            glm::mat4 matrix,
+            glm::vec3 translation,
+            glm::quat rotation,
+            glm::vec3 scale
     ) {
         material.Bind(shader);
         camera.Matrix(shader, "camera");
 
-        previousTime = (float)glfwGetTime();
-        if(camera.EnttComp) {
+        previousTime = (float) glfwGetTime();
+        if (camera.EnttComp) {
             auto &cameraTransform = Scene::m_Registry.get<Experimental::Transform>(camera.entity);
-            shader.SetUniform3f("cameraPosition", cameraTransform.position.x, cameraTransform.position.y, cameraTransform.position.z);
-        }
-        else {
+            shader.SetUniform3f("cameraPosition", cameraTransform.position.x, cameraTransform.position.y,
+                                cameraTransform.position.z);
+        } else {
             TransformComponent cameraTransform = camera.GetComponent<TransformComponent>();
-            shader.SetUniform3f("cameraPosition", cameraTransform.position.x, cameraTransform.position.y, cameraTransform.position.z);
+            shader.SetUniform3f("cameraPosition", cameraTransform.position.x, cameraTransform.position.y,
+                                cameraTransform.position.z);
         }
         shader.SetUniform1i("cubeMap", 20);
 
@@ -666,10 +674,11 @@ namespace HyperAPI {
         TransformComponent component = GetComponent<TransformComponent>();
 
         model = glm::translate(glm::mat4(1.0f), component.position) *
-        glm::rotate(glm::mat4(1.0f), glm::radians(component.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f)) *
-        glm::rotate(glm::mat4(1.0f), glm::radians(component.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f)) *
-        glm::rotate(glm::mat4(1.0f), glm::radians(component.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f)) *
-        glm::scale(glm::mat4(1.0f), Vector3(component.scale.x * 0.5, component.scale.y * 0.5, component.scale.z * 0.5));
+                glm::rotate(glm::mat4(1.0f), glm::radians(component.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f)) *
+                glm::rotate(glm::mat4(1.0f), glm::radians(component.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f)) *
+                glm::rotate(glm::mat4(1.0f), glm::radians(component.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f)) *
+                glm::scale(glm::mat4(1.0f),
+                           Vector3(component.scale.x * 0.5, component.scale.y * 0.5, component.scale.z * 0.5));
 
         model = matrix * model;
 
@@ -678,10 +687,13 @@ namespace HyperAPI {
         glm::mat4 sca = glm::mat4(1);
 
         component.transform = glm::translate(glm::mat4(1.0f), component.position) *
-        glm::rotate(glm::mat4(1.0f), glm::radians(component.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f)) *
-        glm::rotate(glm::mat4(1.0f), glm::radians(component.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f)) *
-        glm::rotate(glm::mat4(1.0f), glm::radians(component.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f)) *
-        glm::scale(glm::mat4(1.0f), component.scale) * matrix;
+                              glm::rotate(glm::mat4(1.0f), glm::radians(component.rotation.x),
+                                          glm::vec3(1.0f, 0.0f, 0.0f)) *
+                              glm::rotate(glm::mat4(1.0f), glm::radians(component.rotation.y),
+                                          glm::vec3(0.0f, 1.0f, 0.0f)) *
+                              glm::rotate(glm::mat4(1.0f), glm::radians(component.rotation.z),
+                                          glm::vec3(0.0f, 0.0f, 1.0f)) *
+                              glm::scale(glm::mat4(1.0f), component.scale) * matrix;
 
         model = component.transform;
         trans = glm::translate(trans, translation);
@@ -693,61 +705,79 @@ namespace HyperAPI {
         shader.SetUniformMat4("rotation", rot);
         shader.SetUniformMat4("scale", sca);
 
-        if(!camera.mode2D) {
-            for(int i = 0; i < Scene::PointLights.size(); i++) {
+        if (!camera.mode2D) {
+            for (int i = 0; i < Scene::PointLights.size(); i++) {
                 // Scene::PointLights[i]->scriptComponent.OnUpdate();
-                shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].lightPos").c_str(), Scene::PointLights[i]->lightPos.x, Scene::PointLights[i]->lightPos.y, Scene::PointLights[i]->lightPos.z);
-                shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].color").c_str(), Scene::PointLights[i]->color.x, Scene::PointLights[i]->color.y, Scene::PointLights[i]->color.z);
-                shader.SetUniform1f(("pointLights[" + std::to_string(i) + "].intensity").c_str(), Scene::PointLights[i]->intensity);
+                shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].lightPos").c_str(),
+                                    Scene::PointLights[i]->lightPos.x, Scene::PointLights[i]->lightPos.y,
+                                    Scene::PointLights[i]->lightPos.z);
+                shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].color").c_str(),
+                                    Scene::PointLights[i]->color.x, Scene::PointLights[i]->color.y,
+                                    Scene::PointLights[i]->color.z);
+                shader.SetUniform1f(("pointLights[" + std::to_string(i) + "].intensity").c_str(),
+                                    Scene::PointLights[i]->intensity);
             }
-            if(Scene::PointLights.size() == 0) {
-                for(int i = 0; i < 100; i++) {
-                    shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].lightPos").c_str(), 0,0,0);
-                    shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].color").c_str(), 0,0,0);
+            if (Scene::PointLights.size() == 0) {
+                for (int i = 0; i < 100; i++) {
+                    shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].lightPos").c_str(), 0, 0, 0);
+                    shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].color").c_str(), 0, 0, 0);
                     shader.SetUniform1f(("pointLights[" + std::to_string(i) + "].intensity").c_str(), 0);
                 }
             }
 
-            for(int i = 0; i < Scene::SpotLights.size(); i++) {
+            for (int i = 0; i < Scene::SpotLights.size(); i++) {
                 // Scene::SpotLights[i]->scriptComponent.OnUpdate();
-                shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].lightPos").c_str(), Scene::SpotLights[i]->lightPos.x, Scene::SpotLights[i]->lightPos.y, Scene::SpotLights[i]->lightPos.z);
-                shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].color").c_str(), Scene::SpotLights[i]->color.x, Scene::SpotLights[i]->color.y, Scene::SpotLights[i]->color.z);
+                shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].lightPos").c_str(),
+                                    Scene::SpotLights[i]->lightPos.x, Scene::SpotLights[i]->lightPos.y,
+                                    Scene::SpotLights[i]->lightPos.z);
+                shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].color").c_str(),
+                                    Scene::SpotLights[i]->color.x, Scene::SpotLights[i]->color.y,
+                                    Scene::SpotLights[i]->color.z);
                 // shader.SetUniform1f(("spotLights[" + std::to_string(i) + "].outerCone").c_str(), Scene::SpotLights[i]->outerCone);
                 // shader.SetUniform1f(("spotLights[" + std::to_string(i) + "].innerCone").c_str(), Scene::SpotLights[i]->innerCone);
-                shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].angle").c_str(), Scene::SpotLights[i]->angle.x, Scene::SpotLights[i]->angle.y, Scene::SpotLights[i]->angle.z);
+                shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].angle").c_str(),
+                                    Scene::SpotLights[i]->angle.x, Scene::SpotLights[i]->angle.y,
+                                    Scene::SpotLights[i]->angle.z);
             }
-            if(Scene::SpotLights.size() == 0) {
-                for(int i = 0; i < 100; i++) {
-                    shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].lightPos").c_str(), 0,0,0);
-                    shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].color").c_str(), 0,0,0);
+            if (Scene::SpotLights.size() == 0) {
+                for (int i = 0; i < 100; i++) {
+                    shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].lightPos").c_str(), 0, 0, 0);
+                    shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].color").c_str(), 0, 0, 0);
                     shader.SetUniform1f(("spotLights[" + std::to_string(i) + "].outerCone").c_str(), 0);
                     shader.SetUniform1f(("spotLights[" + std::to_string(i) + "].innerCone").c_str(), 0);
                 }
             }
 
-            for(int i = 0; i < Scene::DirLights.size(); i++) {
+            for (int i = 0; i < Scene::DirLights.size(); i++) {
                 // Scene::DirLights[i]->scriptComponent.OnUpdate();
-                shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].lightPos").c_str(), Scene::DirLights[i]->lightPos.x, Scene::DirLights[i]->lightPos.y, Scene::DirLights[i]->lightPos.z);
-                shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].color").c_str(), Scene::DirLights[i]->color.x, Scene::DirLights[i]->color.y, Scene::DirLights[i]->color.z);
-                shader.SetUniform1f(("dirLights[" + std::to_string(i) + "].intensity").c_str(), Scene::DirLights[i]->intensity);
+                shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].lightPos").c_str(),
+                                    Scene::DirLights[i]->lightPos.x, Scene::DirLights[i]->lightPos.y,
+                                    Scene::DirLights[i]->lightPos.z);
+                shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].color").c_str(),
+                                    Scene::DirLights[i]->color.x, Scene::DirLights[i]->color.y,
+                                    Scene::DirLights[i]->color.z);
+                shader.SetUniform1f(("dirLights[" + std::to_string(i) + "].intensity").c_str(),
+                                    Scene::DirLights[i]->intensity);
             }
-            if(Scene::DirLights.size() == 0) {
-                for(int i = 0; i < 100; i++) {
-                    shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].lightPos").c_str(), 0,0,0);
-                    shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].color").c_str(), 0,0,0);
+            if (Scene::DirLights.size() == 0) {
+                for (int i = 0; i < 100; i++) {
+                    shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].lightPos").c_str(), 0, 0, 0);
+                    shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].color").c_str(), 0, 0, 0);
                     shader.SetUniform1f(("dirLights[" + std::to_string(i) + "].intensity").c_str(), 0);
                 }
             }
         } else {
-            for(int i = 0; i < Scene::Lights2D.size(); i++) {
-                shader.SetUniform2f(("light2ds[" + std::to_string(i) + "].lightPos").c_str(), Scene::Lights2D[i]->lightPos.x, Scene::Lights2D[i]->lightPos.y);
-                shader.SetUniform3f(("light2ds[" + std::to_string(i) + "].color").c_str(), Scene::Lights2D[i]->color.x, Scene::Lights2D[i]->color.y, Scene::Lights2D[i]->color.z);
+            for (int i = 0; i < Scene::Lights2D.size(); i++) {
+                shader.SetUniform2f(("light2ds[" + std::to_string(i) + "].lightPos").c_str(),
+                                    Scene::Lights2D[i]->lightPos.x, Scene::Lights2D[i]->lightPos.y);
+                shader.SetUniform3f(("light2ds[" + std::to_string(i) + "].color").c_str(), Scene::Lights2D[i]->color.x,
+                                    Scene::Lights2D[i]->color.y, Scene::Lights2D[i]->color.z);
                 shader.SetUniform1f(("light2ds[" + std::to_string(i) + "].range").c_str(), Scene::Lights2D[i]->range);
             }
-            if(Scene::Lights2D.size() == 0) {
-                for(int i = 0; i < 100; i++) {
-                    shader.SetUniform2f(("light2ds[" + std::to_string(i) + "].lightPos").c_str(), 0,0);
-                    shader.SetUniform3f(("light2ds[" + std::to_string(i) + "].color").c_str(), 0,0,0);
+            if (Scene::Lights2D.size() == 0) {
+                for (int i = 0; i < 100; i++) {
+                    shader.SetUniform2f(("light2ds[" + std::to_string(i) + "].lightPos").c_str(), 0, 0);
+                    shader.SetUniform3f(("light2ds[" + std::to_string(i) + "].color").c_str(), 0, 0, 0);
                     shader.SetUniform1f(("light2ds[" + std::to_string(i) + "].range").c_str(), 0);
                 }
             }
@@ -781,59 +811,58 @@ namespace HyperAPI {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-        if(std::string(textureType) == "texture_normal") {
+        if (std::string(textureType) == "texture_normal") {
             glTexImage2D(
-                GL_TEXTURE_2D,
-                0,
-                GL_RGB,
-                width,
-                height,
-                0,
-                GL_RGBA,
-                GL_UNSIGNED_BYTE,
-                data
+                    GL_TEXTURE_2D,
+                    0,
+                    GL_RGB,
+                    width,
+                    height,
+                    0,
+                    GL_RGBA,
+                    GL_UNSIGNED_BYTE,
+                    data
             );
-        }
-        else if(nrChannels >= 4)
+        } else if (nrChannels >= 4)
             glTexImage2D(
-                GL_TEXTURE_2D,
-                0,
-                GL_SRGB_ALPHA,
-                width,
-                height,
-                0,
-                GL_RGBA,
-                GL_UNSIGNED_BYTE,
-                data
+                    GL_TEXTURE_2D,
+                    0,
+                    GL_SRGB_ALPHA,
+                    width,
+                    height,
+                    0,
+                    GL_RGBA,
+                    GL_UNSIGNED_BYTE,
+                    data
             );
-        else if(nrChannels == 3)
+        else if (nrChannels == 3)
             glTexImage2D(
-                GL_TEXTURE_2D,
-                0,
-                GL_SRGB,
-                width,
-                height,
-                0,
-                GL_RGB,
-                GL_UNSIGNED_BYTE,
-                data
+                    GL_TEXTURE_2D,
+                    0,
+                    GL_SRGB,
+                    width,
+                    height,
+                    0,
+                    GL_RGB,
+                    GL_UNSIGNED_BYTE,
+                    data
             );
-        else if(nrChannels == 1)
+        else if (nrChannels == 1)
             glTexImage2D(
-                GL_TEXTURE_2D,
-                0,
-                GL_SRGB,
-                width,
-                height,
-                0,
-                GL_RED,
-                GL_UNSIGNED_BYTE,
-                data
+                    GL_TEXTURE_2D,
+                    0,
+                    GL_SRGB,
+                    width,
+                    height,
+                    0,
+                    GL_RED,
+                    GL_UNSIGNED_BYTE,
+                    data
             );
         else
             return;
 
-            // throw std::invalid_argument("Texture format not supported");
+        // throw std::invalid_argument("Texture format not supported");
 
         glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -842,7 +871,7 @@ namespace HyperAPI {
     }
 
     void Texture::Bind(unsigned int slot) {
-        if(slot == -1) {
+        if (slot == -1) {
             glActiveTexture(GL_TEXTURE0 + this->slot);
             glBindTexture(GL_TEXTURE_2D, ID);
         } else {
@@ -855,21 +884,20 @@ namespace HyperAPI {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    Camera::Camera(bool mode2D, int width, int height, glm::vec3 position, entt::entity entity)
-    {
+    Camera::Camera(bool mode2D, int width, int height, glm::vec3 position, entt::entity entity) {
         Camera::width = width;
         Camera::height = height;
         Camera::mode2D = mode2D;
 
         this->entity = entity;
 
-        if(entity != entt::null) {
+        if (entity != entt::null) {
             EnttComp = true;
         } else {
             EnttComp = false;
         }
 
-        if(EnttComp) {
+        if (EnttComp) {
             // auto &transform = Scene::m_Registry.get<Experimental::Transform>(entity);
             // transform.position = position;
             // transform.rotation = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -881,13 +909,12 @@ namespace HyperAPI {
         }
     }
 
-    void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane, Vector2 winSize, Vector2 prespectiveSize)
-    {
+    void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane, Vector2 winSize, Vector2 prespectiveSize) {
         bool usePrespectiveSize = false;
-        if(prespectiveSize.x != -15)
+        if (prespectiveSize.x != -15)
             usePrespectiveSize = true;
 
-        if(EnttComp) {
+        if (EnttComp) {
             auto &transform = Scene::m_Registry.get<Experimental::Transform>(entity);
 
             view = glm::mat4(1.0f);
@@ -899,10 +926,13 @@ namespace HyperAPI {
             view = glm::lookAt(transform.position, transform.position + glm::degrees(transform.rotation), Up);
             float aspect = usePrespectiveSize ? prespectiveSize.x / prespectiveSize.y : width / height;
 
-            if(mode2D) {
+            if (mode2D) {
+                float target_width = 1280;
+                float target_height = 720;
+                float A = target_width / target_height;
+                float V = width / height;
+
                 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.1f, 5000.0f);
-                // scale does not work for 2D
-                // so zoom in a different way
                 projection = glm::scale(projection, glm::vec3(transform.scale.x, transform.scale.y, 1.0f));
             } else {
                 projection = glm::perspective(glm::radians(FOVdeg), aspect, nearPlane, farPlane);
@@ -943,7 +973,7 @@ namespace HyperAPI {
             view = glm::lookAt(transform.position, transform.position + transform.rotation, Up);
             float aspect = usePrespectiveSize ? prespectiveSize.x / prespectiveSize.y : width / height;
 
-            if(mode2D) {
+            if (mode2D) {
                 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.1f, 5000.0f);
             } else {
                 projection = glm::perspective(glm::radians(FOVdeg), aspect, nearPlane, farPlane);
@@ -974,23 +1004,51 @@ namespace HyperAPI {
 
     }
 
-    void Camera::Matrix(Shader& shader, const char* uniform) {
+    void Camera::Matrix(Shader &shader, const char *uniform) {
         glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(camMatrix));
     }
 
-    void Camera::MouseMovement(glm::vec2 winPos) {
+    void Camera::ControllerCameraMove(GLFWwindow *window) {
         if(!EnttComp) return;
 
         auto &transform = Scene::m_Registry.get<Experimental::Transform>(entity);
-        if(!mode2D) {
+
+        if (!mode2D) {
+            rotX = Input::Controller::GetRightAnalogY();
+            rotY = Input::Controller::GetRightAnalogX();
+
+            if(rotX < 0.1f && rotX > -0.2f) {
+                rotX = 0.0f;
+            }
+
+            if(rotY < 0.1f && rotY > -0.2f) {
+                rotY = 0.0f;
+            }
+
+            glm::vec3 newOrientation = glm::rotate(transform.rotation, glm::radians(-(rotX * controllerSensitivity)),
+                                                   glm::normalize(glm::cross(transform.rotation, Up)));
+
+            if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f))
+            {
+                transform.rotation = newOrientation;
+            }
+
+            transform.rotation = glm::rotate(transform.rotation, glm::radians(-(rotY * controllerSensitivity)), Up);
+
+        }
+    }
+
+    void Camera::MouseMovement(glm::vec2 winPos) {
+        if (!EnttComp) return;
+
+        auto &transform = Scene::m_Registry.get<Experimental::Transform>(entity);
+        if (!mode2D) {
             glfwSetInputMode(Input::window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 #ifndef GAME_BUILD
-            if (glfwGetMouseButton(Input::window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-            {
+            if (glfwGetMouseButton(Input::window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
                 glfwSetInputMode(Input::window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
-                if (firstClick)
-                {
+                if (firstClick) {
                     glfwSetCursorPos(Input::window, (width / 2), (height / 2));
                     firstClick = false;
                 }
@@ -999,22 +1057,21 @@ namespace HyperAPI {
                 double mouseY;
                 glfwGetCursorPos(Input::window, &mouseX, &mouseY);
 
-                rotX = sensitivity * (float)(mouseY - (height / 2)) / height;
-                rotY = sensitivity * (float)(mouseX - (width / 2)) / width;
+                rotX = sensitivity * (float) (mouseY - (height / 2)) / height;
+                rotY = sensitivity * (float) (mouseX - (width / 2)) / width;
 
-                glm::vec3 newOrientation = glm::rotate(transform.rotation, glm::radians(-rotX), glm::normalize(glm::cross(transform.rotation, Up)));
+                glm::vec3 newOrientation = glm::rotate(transform.rotation, glm::radians(-rotX),
+                                                       glm::normalize(glm::cross(transform.rotation, Up)));
 
-                // if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f))
-                // {
-                transform.rotation = newOrientation;
-                // }
+                if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f))
+                {
+                    transform.rotation = newOrientation;
+                }
 
                 transform.rotation = glm::rotate(transform.rotation, glm::radians(-rotY), Up);
 
                 glfwSetCursorPos(Input::window, (width / 2), (height / 2));
-            }
-            else if (glfwGetMouseButton(Input::window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
-            {
+            } else if (glfwGetMouseButton(Input::window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
                 glfwSetInputMode(Input::window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
                 // glfwSetCursorPos(window, winPos.x + (width / 2), winPos.y + (height / 2));
                 firstClick = true;
@@ -1043,59 +1100,47 @@ namespace HyperAPI {
         }
     }
 
-    void Camera::Inputs(GLFWwindow* window, Vector2 winPos)
-    {
-        if(EnttComp) {
+    void Camera::Inputs(GLFWwindow *window, Vector2 winPos) {
+        if (EnttComp) {
             auto &transform = Scene::m_Registry.get<Experimental::Transform>(entity);
-            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            {
-                if(!mode2D) {
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+                if (!mode2D) {
                     transform.position += speed * transform.rotation;
                 } else {
                     transform.position.y += speed;
                 }
             }
-            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            {
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
                 transform.position += speed * -glm::normalize(glm::cross(transform.rotation, Up));
             }
-            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            {
-                if(!mode2D) {
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+                if (!mode2D) {
                     transform.position += speed * -transform.rotation;
                 } else {
                     transform.position.y -= speed;
                 }
             }
-            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            {
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
                 transform.position += speed * glm::normalize(glm::cross(transform.rotation, Up));
             }
-            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-            {
+            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
                 transform.position += speed * Up;
             }
-            if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
-            {
+            if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
                 transform.position += speed * -Up;
             }
-            if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            {
+            if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
                 speed = 0.4f;
-            }
-            else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)
-            {
+            } else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE) {
                 speed = 0.1f;
             }
 
-            if(!mode2D) {
+            if (!mode2D) {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-                if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-                {
+                if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
                     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
-                    if (firstClick)
-                    {
+                    if (firstClick) {
                         glfwSetCursorPos(window, (width / 2), (height / 2));
                         firstClick = false;
                     }
@@ -1104,10 +1149,11 @@ namespace HyperAPI {
                     double mouseY;
                     glfwGetCursorPos(window, &mouseX, &mouseY);
 
-                    rotX = sensitivity * (float)(mouseY - (height / 2)) / height;
-                    rotY = sensitivity * (float)(mouseX - (width / 2)) / width;
+                    rotX = sensitivity * (float) (mouseY - (height / 2)) / height;
+                    rotY = sensitivity * (float) (mouseX - (width / 2)) / width;
 
-                    glm::vec3 newOrientation = glm::rotate(transform.rotation, glm::radians(-rotX), glm::normalize(glm::cross(transform.rotation, Up)));
+                    glm::vec3 newOrientation = glm::rotate(transform.rotation, glm::radians(-rotX),
+                                                           glm::normalize(glm::cross(transform.rotation, Up)));
 
                     // if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f))
                     // {
@@ -1117,66 +1163,54 @@ namespace HyperAPI {
                     transform.rotation = glm::rotate(transform.rotation, glm::radians(-rotY), Up);
 
                     glfwSetCursorPos(window, (width / 2), (height / 2));
-                }
-                else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
-                {
+                } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
                     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
                     // glfwSetCursorPos(window, winPos.x + (width / 2), winPos.y + (height / 2));
                     firstClick = true;
                 }
 
             }
-        } else {
+        }
+        else {
             auto transform = GetComponent<TransformComponent>();
-            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            {
-                if(!mode2D) {
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+                if (!mode2D) {
                     transform.position += speed * transform.rotation;
                 } else {
                     transform.position.y += speed;
                 }
             }
-            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            {
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
                 transform.position += speed * -glm::normalize(glm::cross(transform.rotation, Up));
             }
-            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            {
-                if(!mode2D) {
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+                if (!mode2D) {
                     transform.position += speed * -transform.rotation;
                 } else {
                     transform.position.y -= speed;
                 }
             }
-            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            {
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
                 transform.position += speed * glm::normalize(glm::cross(transform.rotation, Up));
             }
-            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-            {
+            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
                 transform.position += speed * Up;
             }
-            if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
-            {
+            if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
                 transform.position += speed * -Up;
             }
-            if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            {
+            if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
                 speed = 0.4f;
-            }
-            else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)
-            {
+            } else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE) {
                 speed = 0.1f;
             }
 
-            if(!mode2D) {
+            if (!mode2D) {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-                if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-                {
+                if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
                     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
-                    if (firstClick)
-                    {
+                    if (firstClick) {
                         glfwSetCursorPos(window, (width / 2), (height / 2));
                         firstClick = false;
                     }
@@ -1185,22 +1219,21 @@ namespace HyperAPI {
                     double mouseY;
                     glfwGetCursorPos(window, &mouseX, &mouseY);
 
-                    rotX = sensitivity * (float)(mouseY - (height / 2)) / height;
-                    rotY = sensitivity * (float)(mouseX - (width / 2)) / width;
+                    rotX = sensitivity * (float) (mouseY - (height / 2)) / height;
+                    rotY = sensitivity * (float) (mouseX - (width / 2)) / width;
+//                    std::cout << rotX << " " << rotY << std::endl;
 
-                    glm::vec3 newOrientation = glm::rotate(transform.rotation, glm::radians(-rotX), glm::normalize(glm::cross(transform.rotation, Up)));
+                    glm::vec3 newOrientation = glm::rotate(transform.rotation, glm::radians(-rotX),
+                                                           glm::normalize(glm::cross(transform.rotation, Up)));
 
-                     if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f))
-                     {
+                    if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f)) {
                         transform.rotation = newOrientation;
-                     }
+                    }
 
                     transform.rotation = glm::rotate(transform.rotation, glm::radians(-rotY), Up);
 
                     glfwSetCursorPos(window, (width / 2), (height / 2));
-                }
-                else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
-                {
+                } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
                     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
                     // glfwSetCursorPos(window, winPos.x + (width / 2), winPos.y + (height / 2));
                     firstClick = true;
@@ -1211,17 +1244,135 @@ namespace HyperAPI {
         }
     }
 
-    void Model::Draw(Shader &shader, Camera &camera)
-    {
+    void Camera::ControllerInput(GLFWwindow *window) {
+        if (EnttComp) {
+            auto &transform = Scene::m_Registry.get<Experimental::Transform>(entity);
+
+            if(Input::Controller::GetLeftAnalogY() < -0.1f) {
+                std::cout << Input::Controller::GetLeftAnalogY() << std::endl;
+                transform.position += -Input::Controller::GetLeftAnalogY() * transform.rotation;
+            } else if(Input::Controller::GetLeftAnalogY() > 0.1f) {
+                transform.position += Input::Controller::GetLeftAnalogY() * -transform.rotation;
+            }
+
+            if(Input::Controller::GetLeftAnalogX() > 0.1f) {
+                transform.position += Input::Controller::GetLeftAnalogX() * glm::normalize(glm::cross(transform.rotation, Up));
+            } else if(Input::Controller::GetLeftAnalogX() < -0.1f) {
+                transform.position += -Input::Controller::GetLeftAnalogX() * -glm::normalize(glm::cross(transform.rotation, Up));
+            }
+
+            if(Input::Controller::IsButtonPressed(KEY_CONTROLLER_L3)) {
+                transform.position += speed * Up;
+            } else if(Input::Controller::IsButtonPressed(KEY_CONTROLLER_R3)) {
+                transform.position += speed * -Up;
+            }
+
+            if (!mode2D) {
+                if (firstClick) {
+                    glfwSetCursorPos(window, (width / 2), (height / 2));
+                    firstClick = false;
+                }
+
+                double mouseX;
+                double mouseY;
+                glfwGetCursorPos(window, &mouseX, &mouseY);
+
+                rotX = Input::Controller::GetRightAnalogY();
+                rotY = Input::Controller::GetRightAnalogX();
+
+                if(rotX < 0.1f && rotX > -0.2f) {
+                    rotX = 0.0f;
+                }
+
+                if(rotY < 0.1f && rotY > -0.2f) {
+                    rotY = 0.0f;
+                }
+
+                glm::vec3 newOrientation = glm::rotate(transform.rotation, glm::radians(-rotX),
+                                                       glm::normalize(glm::cross(transform.rotation, Up)));
+
+                // if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f))
+                // {
+                transform.rotation = newOrientation;
+                // }
+
+                transform.rotation = glm::rotate(transform.rotation, glm::radians(-rotY), Up);
+
+            }
+        }
+        else {
+            auto transform = GetComponent<TransformComponent>();
+            // front
+            if(Input::Controller::GetLeftAnalogY() < -0.1f) {
+                std::cout << Input::Controller::GetLeftAnalogY() << std::endl;
+                transform.position += -Input::Controller::GetLeftAnalogY() * transform.rotation;
+            } else if(Input::Controller::GetLeftAnalogY() > 0.1f) {
+                transform.position += Input::Controller::GetLeftAnalogY() * -transform.rotation;
+            }
+
+            if(Input::Controller::GetLeftAnalogX() > 0.1f) {
+                transform.position += Input::Controller::GetLeftAnalogX() * glm::normalize(glm::cross(transform.rotation, Up));
+            } else if(Input::Controller::GetLeftAnalogX() < -0.1f) {
+                transform.position += -Input::Controller::GetLeftAnalogX() * -glm::normalize(glm::cross(transform.rotation, Up));
+            }
+
+            if(Input::Controller::IsButtonPressed(KEY_CONTROLLER_L3)) {
+                transform.position += speed * Up;
+            } else if(Input::Controller::IsButtonPressed(KEY_CONTROLLER_R3)) {
+                transform.position += speed * -Up;
+            }
+
+            if (!mode2D) {
+                if (firstClick) {
+                    glfwSetCursorPos(window, (width / 2), (height / 2));
+                    firstClick = false;
+                }
+
+                double mouseX;
+                double mouseY;
+                glfwGetCursorPos(window, &mouseX, &mouseY);
+
+                rotX = Input::Controller::GetRightAnalogY();
+                rotY = Input::Controller::GetRightAnalogX();
+
+                if(rotX < 0.1f && rotX > -0.1f) {
+                    rotX = 0.0f;
+                }
+
+                if(rotY < 0.1f && rotY > -0.1f) {
+                    rotY = 0.0f;
+                }
+//                    std::cout << rotX << " " << rotY << std::endl;
+
+                glm::vec3 newOrientation = glm::rotate(transform.rotation, glm::radians(-rotX),
+                                                       glm::normalize(glm::cross(transform.rotation, Up)));
+
+                if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f)) {
+                    transform.rotation = newOrientation;
+                }
+
+                transform.rotation = glm::rotate(transform.rotation, glm::radians(-rotY), Up);
+                UpdateComponent(transform);
+            }
+            UpdateComponent(transform);
+        }
+    }
+
+    void Model::Draw(Shader &shader, Camera &camera) {
         // scriptComponent.componentSystem = this;
         // scriptComponent.OnUpdate();
-        for(unsigned int i = 0; i < meshes.size(); i++) {
+        for (unsigned int i = 0; i < meshes.size(); i++) {
             TransformComponent modelTransform = GetComponent<TransformComponent>();
             modelTransform.transform = glm::translate(glm::mat4(1.0f), modelTransform.position) *
-                                       glm::rotate(glm::mat4(1.0f), glm::radians(modelTransform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f)) *
-                                       glm::rotate(glm::mat4(1.0f), glm::radians(modelTransform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f)) *
-                                       glm::rotate(glm::mat4(1.0f), glm::radians(modelTransform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f)) *
-                                       glm::scale(glm::mat4(1.0f), Vector3(modelTransform.scale.x * 0.5, modelTransform.scale.y * 0.5, modelTransform.scale.z * 0.5));
+                                       glm::rotate(glm::mat4(1.0f), glm::radians(modelTransform.rotation.x),
+                                                   glm::vec3(1.0f, 0.0f, 0.0f)) *
+                                       glm::rotate(glm::mat4(1.0f), glm::radians(modelTransform.rotation.y),
+                                                   glm::vec3(0.0f, 1.0f, 0.0f)) *
+                                       glm::rotate(glm::mat4(1.0f), glm::radians(modelTransform.rotation.z),
+                                                   glm::vec3(0.0f, 0.0f, 1.0f)) *
+                                       glm::scale(glm::mat4(1.0f),
+                                                  Vector3(modelTransform.scale.x * 0.5, modelTransform.scale.y * 0.5,
+                                                          modelTransform.scale.z * 0.5));
 
             UpdateComponent(modelTransform);
             meshes[i]->Draw(shader, camera, transform * modelTransform.transform);
@@ -1234,8 +1385,7 @@ namespace HyperAPI {
         Assimp::Importer import;
         const aiScene *scene = import.ReadFile(path, aiProcess_Triangulate);
 
-        if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
-        {
+        if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
             std::cout << "ERROR::ASSIMP::" << import.GetErrorString() << std::endl;
             return;
         }
@@ -1244,11 +1394,9 @@ namespace HyperAPI {
         processNode(scene->mRootNode, scene);
     }
 
-    void Model::processNode(aiNode *node, const aiScene *scene)
-    {
+    void Model::processNode(aiNode *node, const aiScene *scene) {
         // process all the node's meshes (if any)
-        for(unsigned int i = 0; i < node->mNumMeshes; i++)
-        {
+        for (unsigned int i = 0; i < node->mNumMeshes; i++) {
             aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
             // get name
             std::string name = mesh->mName.C_Str();
@@ -1256,47 +1404,52 @@ namespace HyperAPI {
             //get matricies
             aiMatrix4x4 aiTransform = node->mTransformation;
             transform = glm::mat4(1.0f);
-            transform[0][0] = aiTransform.a1; transform[1][0] = aiTransform.b1; transform[2][0] = aiTransform.c1; transform[3][0] = aiTransform.d1;
-            transform[0][1] = aiTransform.a2; transform[1][1] = aiTransform.b2; transform[2][1] = aiTransform.c2; transform[3][1] = aiTransform.d2;
-            transform[0][2] = aiTransform.a3; transform[1][2] = aiTransform.b3; transform[2][2] = aiTransform.c3; transform[3][2] = aiTransform.d3;
-            transform[0][3] = aiTransform.a4; transform[1][3] = aiTransform.b4; transform[2][3] = aiTransform.c4; transform[3][3] = aiTransform.d4;
+            transform[0][0] = aiTransform.a1;
+            transform[1][0] = aiTransform.b1;
+            transform[2][0] = aiTransform.c1;
+            transform[3][0] = aiTransform.d1;
+            transform[0][1] = aiTransform.a2;
+            transform[1][1] = aiTransform.b2;
+            transform[2][1] = aiTransform.c2;
+            transform[3][1] = aiTransform.d2;
+            transform[0][2] = aiTransform.a3;
+            transform[1][2] = aiTransform.b3;
+            transform[2][2] = aiTransform.c3;
+            transform[3][2] = aiTransform.d3;
+            transform[0][3] = aiTransform.a4;
+            transform[1][3] = aiTransform.b4;
+            transform[2][3] = aiTransform.c4;
+            transform[3][3] = aiTransform.d4;
 
             meshes.push_back(processMesh(mesh, scene, name));
         }
         // then do the same for each of its children
-        for(unsigned int i = 0; i < node->mNumChildren; i++)
-        {
+        for (unsigned int i = 0; i < node->mNumChildren; i++) {
             processNode(node->mChildren[i], scene);
         }
     }
 
-    Mesh *Model::processMesh(aiMesh *mesh, const aiScene *scene, const std::string &name)
-    {
+    Mesh *Model::processMesh(aiMesh *mesh, const aiScene *scene, const std::string &name) {
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
         std::vector<Texture> textures;
 
-        for(unsigned int i = 0; i < mesh->mNumVertices; i++)
-        {
+        for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
             Vertex vertex;
             vertex.position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
             vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
-            if(mesh->mTextureCoords[0])
-            {
+            if (mesh->mTextureCoords[0]) {
                 vertex.texUV = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
-            }
-            else
-            {
+            } else {
                 vertex.texUV = glm::vec2(0.0f, 0.0f);
             }
             vertices.push_back(vertex);
         }
 
         //indices
-        for(unsigned int i = 0; i < mesh->mNumFaces; i++)
-        {
+        for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
             aiFace face = mesh->mFaces[i];
-            for(unsigned int j = 0; j < face.mNumIndices; j++) {
+            for (unsigned int j = 0; j < face.mNumIndices; j++) {
                 indices.push_back(face.mIndices[j]);
             }
         }
@@ -1305,21 +1458,21 @@ namespace HyperAPI {
         Texture *specular = nullptr;
         Texture *normal = nullptr;
 
-        if(mesh->mMaterialIndex >= 0 && texturesEnabled)
-        {
+        if (mesh->mMaterialIndex >= 0 && texturesEnabled) {
             aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
             std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
             diffuse = &diffuseMaps[0];
             textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-            std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+            std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR,
+                                                                     "texture_specular");
             specular = &specularMaps[0];
             textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
         }
 
-        if(texturesEnabled) {
-            Material material(Color, textures);
-            material.diffuse = diffuse;
-            material.specular = specular;
+        if (texturesEnabled) {
+            Material material(Color);
+//            material.diffuse = diffuse;
+//            material.specular = specular;
 
             Mesh *ent = new Mesh(vertices, indices, material);
             ent->modelMesh = true;
@@ -1334,27 +1487,22 @@ namespace HyperAPI {
         }
     }
 
-    std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName)
-    {
+    std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName) {
         std::vector<Texture> textures;
-        for(unsigned int i = 0; i < mat->GetTextureCount(type); i++)
-        {
+        for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
             aiString str;
             mat->GetTexture(type, i, &str);
             bool skip = false;
             std::string texPath = directory + '/' + str.C_Str();
-            for(unsigned int j = 0; j < textures_loaded.size(); j++)
-            {
-                if(std::strcmp(textures_loaded[j].texStarterPath, texPath.c_str()) == 0)
-                {
+            for (unsigned int j = 0; j < textures_loaded.size(); j++) {
+                if (std::strcmp(textures_loaded[j].texStarterPath, texPath.c_str()) == 0) {
                     textures.push_back(textures_loaded[j]);
                     skip = true;
                     break;
                 }
             }
 
-            if(!skip)
-            {   // if texture hasn't been loaded already, load it
+            if (!skip) {   // if texture hasn't been loaded already, load it
                 std::string texPath = directory + '/' + str.C_Str();
                 Texture texture(texPath.c_str(), i, typeName.c_str());
                 textures.push_back(texture);
@@ -1365,7 +1513,8 @@ namespace HyperAPI {
         return textures;
     }
 
-    Skybox::Skybox(const std::string &right, const std::string &left, const std::string &top, const std::string &bottom, const std::string &front, const std::string &back) {
+    Skybox::Skybox(const std::string &right, const std::string &left, const std::string &top, const std::string &bottom,
+                   const std::string &front, const std::string &back) {
         shader = new Shader("shaders/skybox.glsl");
         facesCubemap.push_back(right);
         facesCubemap.push_back(left);
@@ -1377,39 +1526,39 @@ namespace HyperAPI {
         HYPER_LOG("Skybox created")
 
         float skyboxVertices[] =
-        {
-            -1.0f, -1.0f,  1.0f,
-            1.0f, -1.0f,  1.0f,
-            1.0f, -1.0f, -1.0f,
-            -1.0f, -1.0f, -1.0f,
-            -1.0f,  1.0f,  1.0f,
-            1.0f,  1.0f,  1.0f,
-            1.0f,  1.0f, -1.0f,
-            -1.0f,  1.0f, -1.0f
-        };
+                {
+                        -1.0f, -1.0f, 1.0f,
+                        1.0f, -1.0f, 1.0f,
+                        1.0f, -1.0f, -1.0f,
+                        -1.0f, -1.0f, -1.0f,
+                        -1.0f, 1.0f, 1.0f,
+                        1.0f, 1.0f, 1.0f,
+                        1.0f, 1.0f, -1.0f,
+                        -1.0f, 1.0f, -1.0f
+                };
 
 
         unsigned int skyboxIndices[] =
-        {
-            // Right
-            1, 2, 6,
-            6, 5, 1,
-            // Left
-            0, 4, 7,
-            7, 3, 0,
-            // Top
-            4, 5, 6,
-            6, 7, 4,
-            // Bottom
-            0, 3, 2,
-            2, 1, 0,
-            // Back
-            0, 1, 5,
-            5, 4, 0,
-            // Front
-            3, 7, 6,
-            6, 2, 3
-        };
+                {
+                        // Right
+                        1, 2, 6,
+                        6, 5, 1,
+                        // Left
+                        0, 4, 7,
+                        7, 3, 0,
+                        // Top
+                        4, 5, 6,
+                        6, 7, 4,
+                        // Bottom
+                        0, 3, 2,
+                        2, 1, 0,
+                        // Back
+                        0, 1, 5,
+                        5, 4, 0,
+                        // Front
+                        3, 7, 6,
+                        6, 2, 3
+                };
 
         glGenVertexArrays(1, &skyboxVAO);
         glGenBuffers(1, &skyboxVBO);
@@ -1419,7 +1568,7 @@ namespace HyperAPI {
         glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skyboxEBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(skyboxIndices), &skyboxIndices, GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) 0);
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
@@ -1433,22 +1582,22 @@ namespace HyperAPI {
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-        for(unsigned int i = 0; i < 6; i++) {
+        for (unsigned int i = 0; i < 6; i++) {
             int width, height, nrChannels;
 
-            unsigned char* data = stbi_load(facesCubemap[i].c_str(), &width, &height, &nrChannels, 0);
-            if(data) {
+            unsigned char *data = stbi_load(facesCubemap[i].c_str(), &width, &height, &nrChannels, 0);
+            if (data) {
                 stbi_set_flip_vertically_on_load(false);
                 glTexImage2D(
-                    GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                    0,
-                    GL_SRGB,
-                    width,
-                    height,
-                    0,
-                    GL_RGB,
-                    GL_UNSIGNED_BYTE,
-                    data
+                        GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                        0,
+                        GL_SRGB,
+                        width,
+                        height,
+                        0,
+                        GL_RGB,
+                        GL_UNSIGNED_BYTE,
+                        data
                 );
                 stbi_image_free(data);
             } else {
@@ -1467,15 +1616,16 @@ namespace HyperAPI {
         shader->Bind();
         glm::mat4 view = glm::mat4(1.0f);
         glm::mat4 projection = glm::mat4(1.0f);
-        if(camera.EnttComp) {
+        if (camera.EnttComp) {
             auto &transform = Scene::m_Registry.get<Experimental::Transform>(camera.entity);
-            view = glm::mat4(glm::mat3(glm::lookAt(transform.position, transform.position + transform.rotation, camera.Up)));
-            projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 5000.0f);
-        }
-        else {
+            view = glm::mat4(
+                    glm::mat3(glm::lookAt(transform.position, transform.position + transform.rotation, camera.Up)));
+            projection = glm::perspective(glm::radians(45.0f), (float) width / (float) height, 0.1f, 5000.0f);
+        } else {
             TransformComponent transform = camera.GetComponent<TransformComponent>();
-            view = glm::mat4(glm::mat3(glm::lookAt(transform.position, transform.position + transform.rotation, camera.Up)));
-            projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 5000.0f);
+            view = glm::mat4(
+                    glm::mat3(glm::lookAt(transform.position, transform.position + transform.rotation, camera.Up)));
+            projection = glm::perspective(glm::radians(45.0f), (float) width / (float) height, 0.1f, 5000.0f);
         }
 
         shader->SetUniformMat4("view", view);
@@ -1499,7 +1649,8 @@ namespace HyperAPI {
         glEnable(GL_DEPTH_TEST);
     }
 
-    void Renderer::Swap(Shader &framebufferShader, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture, unsigned int postProcessingFBO) {
+    void Renderer::Swap(Shader &framebufferShader, unsigned int FBO, unsigned int rectVAO,
+                        unsigned int postProcessingTexture, unsigned int postProcessingFBO) {
         glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postProcessingFBO);
         glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
@@ -1519,18 +1670,18 @@ namespace HyperAPI {
     Sprite::Sprite(const char *texPath) {
         // square vertex
         std::vector<Vertex> vertices = {
-            Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(1,1,1), glm::vec3(0, 1, 0), glm::vec2(0.0f, 0.0f)},
-            Vertex{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(1,1,1), glm::vec3(0, 1, 0), glm::vec2(1.0f, 0.0f)},
-            Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(1,1,1), glm::vec3(0, 1, 0), glm::vec2(1.0f, 1.0f)},
-            Vertex{glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(1,1,1), glm::vec3(0, 1, 0), glm::vec2(0.0f, 1.0f)}
+                Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(1, 1, 1), glm::vec3(0, 1, 0), glm::vec2(0.0f, 0.0f)},
+                Vertex{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(1, 1, 1), glm::vec3(0, 1, 0), glm::vec2(1.0f, 0.0f)},
+                Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(1, 1, 1), glm::vec3(0, 1, 0), glm::vec2(1.0f, 1.0f)},
+                Vertex{glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(1, 1, 1), glm::vec3(0, 1, 0), glm::vec2(0.0f, 1.0f)}
         };
 
         std::vector<unsigned int> indices = {
-            0, 1, 2,
-            0, 2, 3
+                0, 1, 2,
+                0, 2, 3
         };
 
-        Material material(Vector4(1,1,1,1), { Texture(texPath, 0, "texture_diffuse") });
+        Material material(Vector4(1, 1, 1, 1), {Texture(texPath, 0, "texture_diffuse")});
         m_Mesh = new Mesh(vertices, indices, material);
     }
 
@@ -1538,34 +1689,35 @@ namespace HyperAPI {
         m_Mesh->Draw(shader, camera, trans);
     }
 
-    Spritesheet::Spritesheet(const char *texPath, Material &mat, Vector2 sheetSize, Vector2 spriteSize, Vector2 spriteCoords) {
+    Spritesheet::Spritesheet(const char *texPath, Material &mat, Vector2 sheetSize, Vector2 spriteSize,
+                             Vector2 spriteCoords) {
         // square vertex
         float xCoord = spriteCoords.x + spriteSize.x;
         float yCoord = (sheetSize.y - (spriteCoords.y + spriteSize.y)) + spriteSize.y;
         std::vector<Vector2> texCoords = {
-            Vector2(spriteCoords.x / sheetSize.x, (sheetSize.y - (spriteCoords.y + spriteSize.y)) / sheetSize.y),
-            Vector2(xCoord / sheetSize.x, (sheetSize.y - (spriteCoords.y + spriteSize.y)) / sheetSize.y),
-            Vector2(xCoord / sheetSize.x, yCoord / sheetSize.y),
-            Vector2(spriteCoords.x / sheetSize.x, yCoord / sheetSize.y)
+                Vector2(spriteCoords.x / sheetSize.x, (sheetSize.y - (spriteCoords.y + spriteSize.y)) / sheetSize.y),
+                Vector2(xCoord / sheetSize.x, (sheetSize.y - (spriteCoords.y + spriteSize.y)) / sheetSize.y),
+                Vector2(xCoord / sheetSize.x, yCoord / sheetSize.y),
+                Vector2(spriteCoords.x / sheetSize.x, yCoord / sheetSize.y)
         };
 
         std::vector<Vertex> vertices = {
-            Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(1,1,1), glm::vec3(0, 1, 0),
-            texCoords[0]},
+                Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(1, 1, 1), glm::vec3(0, 1, 0),
+                       texCoords[0]},
 
-            Vertex{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(1,1,1), glm::vec3(0, 1, 0),
-            texCoords[1]},
+                Vertex{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(1, 1, 1), glm::vec3(0, 1, 0),
+                       texCoords[1]},
 
-            Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(1,1,1), glm::vec3(0, 1, 0),
-            texCoords[2]},
+                Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(1, 1, 1), glm::vec3(0, 1, 0),
+                       texCoords[2]},
 
-            Vertex{glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(1,1,1), glm::vec3(0, 1, 0),
-            texCoords[3]}
+                Vertex{glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(1, 1, 1), glm::vec3(0, 1, 0),
+                       texCoords[3]}
         };
 
         std::vector<unsigned int> indices = {
-            0, 1, 2,
-            0, 2, 3
+                0, 1, 2,
+                0, 2, 3
         };
 
         // Material material(Vector4(1,1,1,1), { Texture(texPath, 0, "texture_diffuse") });
@@ -1578,15 +1730,15 @@ namespace HyperAPI {
 
     Graphic::Graphic(Vector3 rgb) {
         std::vector<HyperAPI::Vertex> vertices = {
-            { glm::vec3(-0.5, -0.5, 0), glm::vec3(1,1,1), glm::vec3(0, 1, 0), glm::vec2(0, 0) },
-            { glm::vec3(-0.5, 0.5, 0), glm::vec3(1,1,1), glm::vec3(0, 1, 0), glm::vec2(0, 1) },
-            { glm::vec3(0.5, 0.5, 0), glm::vec3(1,1,1), glm::vec3(0, 1, 0), glm::vec2(1, 1) },
-            { glm::vec3(0.5, -0.5, 0), glm::vec3(1,1,1), glm::vec3(0, 1, 0), glm::vec2(1, 0) },
+                {glm::vec3(-0.5, -0.5, 0), glm::vec3(1, 1, 1), glm::vec3(0, 1, 0), glm::vec2(0, 0)},
+                {glm::vec3(-0.5, 0.5, 0),  glm::vec3(1, 1, 1), glm::vec3(0, 1, 0), glm::vec2(0, 1)},
+                {glm::vec3(0.5, 0.5, 0),   glm::vec3(1, 1, 1), glm::vec3(0, 1, 0), glm::vec2(1, 1)},
+                {glm::vec3(0.5, -0.5, 0),  glm::vec3(1, 1, 1), glm::vec3(0, 1, 0), glm::vec2(1, 0)},
         };
 
         std::vector<unsigned int> indices = {
-            0, 1, 2,
-            0, 2, 3
+                0, 1, 2,
+                0, 2, 3
         };
 
         Material material(Vector4(rgb, 1));
@@ -1598,21 +1750,23 @@ namespace HyperAPI {
     }
 
     Capsule::Capsule(Vector4 color) : Model("assets/models/default/capsule/capsule.obj", false, color) {}
+
     Cube::Cube(Vector4 color) : Model("assets/models/default/cube/cube.obj", false, color) {}
+
     Plane::Plane(Vector4 color) {
         std::vector<HyperAPI::Vertex> vertices =
-        {
-            {glm::vec3(-0.5, 0, 0.5), glm::vec3(0.3,0.3,0.3), glm::vec3(0,1,0), glm::vec2(0, 0)},
-            {glm::vec3(-0.5, 0, -0.5), glm::vec3(0.3,0.3,0.3), glm::vec3(0,1,0), glm::vec2(0, 1)},
-            {glm::vec3(0.5, 0, -0.5), glm::vec3(0.3,0.3,0.3), glm::vec3(0,1,0), glm::vec2(1, 1)},
-            {glm::vec3(0.5, 0, 0.5), glm::vec3(0.3,0.3,0.3), glm::vec3(0,1,0), glm::vec2(1, 0)}
-        };
+                {
+                        {glm::vec3(-0.5, 0, 0.5),  glm::vec3(0.3, 0.3, 0.3), glm::vec3(0, 1, 0), glm::vec2(0, 0)},
+                        {glm::vec3(-0.5, 0, -0.5), glm::vec3(0.3, 0.3, 0.3), glm::vec3(0, 1, 0), glm::vec2(0, 1)},
+                        {glm::vec3(0.5, 0, -0.5),  glm::vec3(0.3, 0.3, 0.3), glm::vec3(0, 1, 0), glm::vec2(1, 1)},
+                        {glm::vec3(0.5, 0, 0.5),   glm::vec3(0.3, 0.3, 0.3), glm::vec3(0, 1, 0), glm::vec2(1, 0)}
+                };
 
         std::vector<unsigned int> indices =
-        {
-            0, 1, 2,
-            0, 2, 3
-        };
+                {
+                        0, 1, 2,
+                        0, 2, 3
+                };
 
         this->color = color;
         Material material(color, {});
@@ -1624,28 +1778,32 @@ namespace HyperAPI {
     }
 
     Sphere::Sphere(Vector4 color) : Model("assets/models/default/sphere/sphere.obj", false, color) {}
+
     Cylinder::Cylinder(Vector4 color) : Model("assets/models/default/cylinder/cylinder.obj", false, color) {}
+
     Cone::Cone(Vector4 color) : Model("assets/models/default/cone/cone.obj", false, color) {}
+
     Torus::Torus(Vector4 color) : Model("assets/models/default/torus/torus.obj", false, color) {}
 
-    Material::Material(Vector4 baseColor, std::vector<Texture> textures, float shininess, float metallic, float roughness) {
+    Material::Material(Vector4 baseColor, std::vector<Texture> textures, float shininess, float metallic,
+                       float roughness) {
         this->baseColor = baseColor;
         this->shininess = shininess;
         this->metallic = metallic;
         this->textures = textures;
         this->roughness = roughness;
 
-        for(auto &tex : textures) {
-            if(std::string(tex.texType) == "texture_diffuse") {
+        for (auto &tex : textures) {
+            if (std::string(tex.texType) == "texture_diffuse") {
                 this->diffuse = &tex;
-            } else if(std::string(tex.texType) == "texture_specular") {
+            } else if (std::string(tex.texType) == "texture_specular") {
                 this->specular = &tex;
-            } else if(std::string(tex.texType) == "texture_normal") {
+            } else if (std::string(tex.texType) == "texture_normal") {
                 this->normal = &tex;
             }
         }
 
-        if(diffuse != nullptr) {
+        if (diffuse != nullptr) {
             std::cout << "Diffuse: " << diffuse->texType << std::endl;
         }
     }
@@ -1663,7 +1821,7 @@ namespace HyperAPI {
         shader.SetUniform1f("roughness", roughness);
         shader.SetUniform2f("texUvOffset", texUVs.x, texUVs.y);
 
-        if(diffuse != nullptr) {
+        if (diffuse != nullptr) {
             diffuse->Bind(0);
 
             shader.SetUniform1i("isTex", 1);
@@ -1672,14 +1830,14 @@ namespace HyperAPI {
             shader.SetUniform1i("isTex", 0);
         }
 
-        if(specular != nullptr) {
+        if (specular != nullptr) {
             specular->Bind(1);
             shader.SetUniform1i("texture_specular0", 1);
         } else {
             shader.SetUniform1i("texture_specular0", -1);
         }
 
-        if(normal != nullptr) {
+        if (normal != nullptr) {
             normal->Bind(2);
             shader.SetUniform1i("texture_normal0", 2);
             shader.SetUniform1i("hasNormalMap", 1);
@@ -1689,13 +1847,13 @@ namespace HyperAPI {
     }
 
     void Material::Unbind(Shader &shader) {
-        if(diffuse != nullptr)
+        if (diffuse != nullptr)
             diffuse->Unbind();
 
-        if(specular != nullptr)
+        if (specular != nullptr)
             specular->Unbind();
 
-        if(normal != nullptr)
+        if (normal != nullptr)
             normal->Unbind();
 
         shader.Unbind();
@@ -1721,7 +1879,7 @@ namespace HyperAPI {
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
 
-            if(ImGui::Button("X", buttonSize)) {
+            if (ImGui::Button("X", buttonSize)) {
                 values.x = resetValue;
             }
             ImGui::PopStyleColor(3);
@@ -1735,7 +1893,7 @@ namespace HyperAPI {
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
 
-            if(ImGui::Button("Y", buttonSize)) {
+            if (ImGui::Button("Y", buttonSize)) {
                 values.y = resetValue;
             }
             ImGui::PopStyleColor(3);
@@ -1748,7 +1906,7 @@ namespace HyperAPI {
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.2f, 0.35f, 0.9f, 1.0f});
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
-            if(ImGui::Button("Z", buttonSize)) {
+            if (ImGui::Button("Z", buttonSize)) {
                 values.z = resetValue;
             }
             ImGui::PopStyleColor(3);
@@ -1781,7 +1939,7 @@ namespace HyperAPI {
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
 
-            if(ImGui::Button("X", buttonSize)) {
+            if (ImGui::Button("X", buttonSize)) {
                 values.x = resetValue;
             }
             ImGui::PopStyleColor(3);
@@ -1795,7 +1953,7 @@ namespace HyperAPI {
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
 
-            if(ImGui::Button("Y", buttonSize)) {
+            if (ImGui::Button("Y", buttonSize)) {
                 values.y = resetValue;
             }
             ImGui::PopStyleColor(3);
@@ -1810,7 +1968,8 @@ namespace HyperAPI {
             ImGui::PopID();
         }
 
-        std::vector<m_SpritesheetAnimationData> GetAnimationsFromXML(const char *texPath, float delay, Vector2 sheetSize, const std::string &xmlFile) {
+        std::vector<m_SpritesheetAnimationData>
+        GetAnimationsFromXML(const char *texPath, float delay, Vector2 sheetSize, const std::string &xmlFile) {
             tinyxml2::XMLDocument doc;
             doc.LoadFile(xmlFile.c_str());
 
@@ -1849,7 +2008,7 @@ namespace HyperAPI {
                 frame.size = Vector2(std::stof(width), std::stof(height));
                 frame.offset = Vector2(std::stof(x), std::stof(y));
                 animationData.frames.push_back(frame);
-                if(animIndex != -1) {
+                if (animIndex != -1) {
                     animations[animIndex] = animationData;
                 }
 
@@ -1859,12 +2018,11 @@ namespace HyperAPI {
             return animations;
         }
 
-        void Model::Draw(Shader &shader, Camera &camera, std::vector<glm::mat4> &transforms)
-        {
+        void Model::Draw(Shader &shader, Camera &camera, std::vector<glm::mat4> &transforms) {
             Transform &mainTransform = mainGameObject->GetComponent<Transform>();
             mainTransform.Update();
 
-            for(unsigned int i = 0; i < m_gameObjects.size(); i++) {
+            for (unsigned int i = 0; i < m_gameObjects.size(); i++) {
                 MeshRenderer &meshRenderer = m_gameObjects[i]->GetComponent<MeshRenderer>();
                 meshRenderer.m_Mesh->Draw(shader, camera, mainTransform.transform);
             }
@@ -1874,8 +2032,7 @@ namespace HyperAPI {
             Assimp::Importer import;
             const aiScene *scene = import.ReadFile(path, aiProcess_Triangulate);
 
-            if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
-            {
+            if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
                 std::cout << "ERROR::ASSIMP::" << import.GetErrorString() << std::endl;
                 return;
             }
@@ -1884,11 +2041,9 @@ namespace HyperAPI {
             processNode(scene->mRootNode, scene);
         }
 
-        void Model::processNode(aiNode *node, const aiScene *scene)
-        {
+        void Model::processNode(aiNode *node, const aiScene *scene) {
             // process all the node's meshes (if any)
-            for(unsigned int i = 0; i < node->mNumMeshes; i++)
-            {
+            for (unsigned int i = 0; i < node->mNumMeshes; i++) {
                 aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
                 // get name
                 std::string name = mesh->mName.C_Str();
@@ -1896,40 +2051,46 @@ namespace HyperAPI {
                 //get matricies
                 aiMatrix4x4 aiTransform = node->mTransformation;
                 transform = glm::mat4(1.0f);
-                transform[0][0] = aiTransform.a1; transform[1][0] = aiTransform.b1; transform[2][0] = aiTransform.c1; transform[3][0] = aiTransform.d1;
-                transform[0][1] = aiTransform.a2; transform[1][1] = aiTransform.b2; transform[2][1] = aiTransform.c2; transform[3][1] = aiTransform.d2;
-                transform[0][2] = aiTransform.a3; transform[1][2] = aiTransform.b3; transform[2][2] = aiTransform.c3; transform[3][2] = aiTransform.d3;
-                transform[0][3] = aiTransform.a4; transform[1][3] = aiTransform.b4; transform[2][3] = aiTransform.c4; transform[3][3] = aiTransform.d4;
+                transform[0][0] = aiTransform.a1;
+                transform[1][0] = aiTransform.b1;
+                transform[2][0] = aiTransform.c1;
+                transform[3][0] = aiTransform.d1;
+                transform[0][1] = aiTransform.a2;
+                transform[1][1] = aiTransform.b2;
+                transform[2][1] = aiTransform.c2;
+                transform[3][1] = aiTransform.d2;
+                transform[0][2] = aiTransform.a3;
+                transform[1][2] = aiTransform.b3;
+                transform[2][2] = aiTransform.c3;
+                transform[3][2] = aiTransform.d3;
+                transform[0][3] = aiTransform.a4;
+                transform[1][3] = aiTransform.b4;
+                transform[2][3] = aiTransform.c4;
+                transform[3][3] = aiTransform.d4;
 
                 m_gameObjects.push_back(processMesh(mesh, scene, name));
                 auto &meshRenderer = m_gameObjects[i]->GetComponent<MeshRenderer>();
                 meshRenderer.extraMatrix = transform;
             }
             // then do the same for each of its children
-            for(unsigned int i = 0; i < node->mNumChildren; i++)
-            {
+            for (unsigned int i = 0; i < node->mNumChildren; i++) {
                 processNode(node->mChildren[i], scene);
             }
         }
 
-        GameObject *Model::processMesh(aiMesh *mesh, const aiScene *scene, const std::string &name)
-        {
+        GameObject *Model::processMesh(aiMesh *mesh, const aiScene *scene, const std::string &name) {
             std::vector<Vertex> vertices;
             std::vector<unsigned int> indices;
-            std::vector<Texture> textures;
+            std::vector<Texture *> textures;
 
-            for(unsigned int i = 0; i < mesh->mNumVertices; i++)
-            {
+            for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
                 Vertex vertex;
                 SetVertexBoneDataToDefault(vertex);
                 vertex.position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
                 vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
-                if(mesh->mTextureCoords[0])
-                {
+                if (mesh->mTextureCoords[0]) {
                     vertex.texUV = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
-                }
-                else
-                {
+                } else {
                     vertex.texUV = glm::vec2(0.0f, 0.0f);
                 }
                 vertices.push_back(vertex);
@@ -1937,10 +2098,9 @@ namespace HyperAPI {
             ExtractBoneWeightForVertices(vertices, mesh, scene);
 
             //indices
-            for(unsigned int i = 0; i < mesh->mNumFaces; i++)
-            {
+            for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
                 aiFace face = mesh->mFaces[i];
-                for(unsigned int j = 0; j < face.mNumIndices; j++) {
+                for (unsigned int j = 0; j < face.mNumIndices; j++) {
                     indices.push_back(face.mIndices[j]);
                 }
             }
@@ -1949,19 +2109,20 @@ namespace HyperAPI {
             Texture *specular = nullptr;
             Texture *normal = nullptr;
 
-            if(mesh->mMaterialIndex >= 0 && texturesEnabled)
-            {
+            if (mesh->mMaterialIndex >= 0 && texturesEnabled) {
                 aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-                std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
-                diffuse = &diffuseMaps[0];
+                std::vector<Texture *> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE,
+                                                                          "texture_diffuse");
+                diffuse = diffuseMaps[0];
                 textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-                std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
-                specular = &specularMaps[0];
+                std::vector<Texture *> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR,
+                                                                           "texture_specular");
+                specular = specularMaps[0];
                 textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
             }
 
-            if(texturesEnabled) {
-                Material material(Color, textures);
+            if (texturesEnabled) {
+                Material material(Color);
                 material.diffuse = diffuse;
                 material.specular = specular;
 
@@ -1979,7 +2140,7 @@ namespace HyperAPI {
 
                 return gameObject;
             } else {
-                Material material(Color, textures);
+                Material material(Color);
                 material.diffuse = diffuse;
                 material.specular = specular;
 
@@ -1999,29 +2160,24 @@ namespace HyperAPI {
             }
         }
 
-        std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName)
-        {
-            std::vector<Texture> textures;
-            for(unsigned int i = 0; i < mat->GetTextureCount(type); i++)
-            {
+        std::vector<Texture *> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName) {
+            std::vector<Texture *> textures;
+            for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
                 aiString str;
                 mat->GetTexture(type, i, &str);
                 bool skip = false;
                 std::string texPath = directory + '/' + str.C_Str();
-                for(unsigned int j = 0; j < textures_loaded.size(); j++)
-                {
-                    if(std::strcmp(textures_loaded[j].texStarterPath, texPath.c_str()) == 0)
-                    {
+                for (unsigned int j = 0; j < textures_loaded.size(); j++) {
+                    if (std::strcmp(textures_loaded[j]->texStarterPath, texPath.c_str()) == 0) {
                         textures.push_back(textures_loaded[j]);
                         skip = true;
                         break;
                     }
                 }
 
-                if(!skip)
-                {   // if texture hasn't been loaded already, load it
+                if (!skip) {   // if texture hasn't been loaded already, load it
                     std::string texPath = directory + '/' + str.C_Str();
-                    Texture texture(texPath.c_str(), i, typeName.c_str());
+                    Texture *texture = new Texture(texPath.c_str(), i, typeName.c_str());
                     textures.push_back(texture);
                     textures_loaded.push_back(texture); // add to loaded textures
                     currSlot++;
@@ -2033,8 +2189,8 @@ namespace HyperAPI {
 
     namespace f_GameObject {
         Experimental::GameObject *FindGameObjectByName(const std::string &name) {
-            for(auto &gameObject : Scene::m_GameObjects) {
-                if(gameObject->name == name) {
+            for (auto &gameObject : Scene::m_GameObjects) {
+                if (gameObject->name == name) {
                     return gameObject;
                 }
             }
@@ -2043,8 +2199,8 @@ namespace HyperAPI {
         }
 
         Experimental::GameObject *FindGameObjectByTag(const std::string &tag) {
-            for(auto &gameObject : Scene::m_GameObjects) {
-                if(gameObject->tag == tag) {
+            for (auto &gameObject : Scene::m_GameObjects) {
+                if (gameObject->tag == tag) {
                     return gameObject;
                 }
             }
@@ -2053,8 +2209,8 @@ namespace HyperAPI {
         }
 
         Experimental::GameObject *FindGameObjectByID(const std::string &id) {
-            for(auto &gameObject : Scene::m_GameObjects) {
-                if(gameObject->ID == id) {
+            for (auto &gameObject : Scene::m_GameObjects) {
+                if (gameObject->ID == id) {
                     return gameObject;
                 }
             }
@@ -2066,22 +2222,144 @@ namespace HyperAPI {
             return Scene::LoadPrefab(path);
         }
 
-        Experimental::GameObject *InstantiatePrefab(const std::string &path, Vector3 position = Vector3(0,0,0), Vector3 rotation = Vector3(0,0,0)) {
-            auto *gameObject = Scene::LoadPrefab(path);
+        Experimental::GameObject *InstantiatePrefab(const std::string &path, Vector3 position = Vector3(0, 0, 0),
+                                                    Vector3 rotation = Vector3(0, 0, 0)) {
+            auto gameObject = Scene::LoadPrefab(path);
             gameObject->GetComponent<Experimental::Transform>().position = position;
             gameObject->GetComponent<Experimental::Transform>().rotation = rotation;
 
             return gameObject;
         }
     }
+#ifndef _WIN32
+    namespace Text {
+        Font::Font(const std::string &path, int size) : scale(size) {
+            if (FT_Init_FreeType(&ft)) {
+                std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+            }
+
+            if (FT_New_Face(ft, path.c_str(), 0, &face)) {
+                std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
+            }
+
+            FT_Set_Pixel_Sizes(face, 0, size);
+
+            if (FT_Load_Char(face, 'X', FT_LOAD_RENDER)) {
+                std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+            }
+
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+            for (unsigned char c = 0; c < 128; c++) {
+                if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
+                    std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+                    continue;
+                }
+
+                unsigned int texture;
+                glGenTextures(1, &texture);
+                glBindTexture(GL_TEXTURE_2D, texture);
+                glTexImage2D(
+                        GL_TEXTURE_2D,
+                        0,
+                        GL_RED,
+                        face->glyph->bitmap.width,
+                        face->glyph->bitmap.rows,
+                        0,
+                        GL_RED,
+                        GL_UNSIGNED_BYTE,
+                        face->glyph->bitmap.buffer
+                );
+
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+                Character character = {
+                        texture,
+                        Vector2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+                        Vector2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+                        static_cast<unsigned int>(face->glyph->advance.x)
+                };
+
+                Characters.insert(std::pair<char, Character>(c, character));
+            }
+
+            FT_Done_Face(face);
+            FT_Done_FreeType(ft);
+
+            glGenVertexArrays(1, &VAO);
+            glGenBuffers(1, &VBO);
+            glBindVertexArray(VAO);
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
+        }
+
+        void Font::Render(Shader &shader, Camera &camera, std::string text, Experimental::Transform &transform) {
+
+            shader.Bind();
+            shader.SetUniform3f("textColor", 1.0f, 1.0f, 1.0f);
+            shader.SetUniformMat4("camera", camera.camMatrix);
+//            transform.Update();
+//            shader.SetUniformMat4("transform", transform.transform);
+
+            glActiveTexture(GL_TEXTURE0);
+
+            float x = 0;
+            float y = 0;
+
+            std::string::const_iterator c;
+            for (c = text.begin(); c != text.end(); c++) {
+                Character ch = Characters[*c];
+
+                float xpos = x + ch.Bearing.x * scale;
+                float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+
+                float w = ch.Size.x * 0.5;
+                float h = ch.Size.y * 0.5;
+                // update VBO for each character
+                float vertices[6][4] = {
+                        // square vertices, do not use xpos and ypos
+                        {0.0f, 0.0f, 0.0f, 0.0f},
+                        {0.0f, 1.0f, 0.0f, 1.0f},
+                        {1.0f, 1.0f, 1.0f, 1.0f},
+
+                        {0.0f, 0.0f, 0.0f, 0.0f},
+                        {1.0f, 1.0f, 1.0f, 1.0f},
+                        {1.0f, 0.0f, 1.0f, 0.0f}
+                };
+                // render glyph texture over quad
+                glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+                shader.SetUniform1i("text", 0);
+                // update content of VBO memory
+                glBindBuffer(GL_ARRAY_BUFFER, VBO);
+                glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                // render quad
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+                x += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
+            }
+            glBindVertexArray(0);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+    }
+#endif
 }
 
 namespace Hyper {
-    void Application::Run(std::function<void(unsigned int&)> update, std::function<void(unsigned int &PPT, unsigned int &PPFBO)> gui, std::function<void(HyperAPI::Shader &)> shadowMapRender) {
+    void Application::Run(std::function<void(unsigned int &)> update,
+                          std::function<void(unsigned int &PPT, unsigned int &PPFBO)> gui,
+                          std::function<void(HyperAPI::Shader &)> shadowMapRender) {
         HYPER_LOG("Application started")
 
         float gamma = 2.2f;
-        if(renderOnScreen) {
+        if (renderOnScreen) {
             glEnable(GL_FRAMEBUFFER_SRGB);
         }
 
@@ -2106,9 +2384,9 @@ namespace Hyper {
         glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, nullptr, GL_DYNAMIC_DRAW);
         // glBufferData(GL_ARRAY_BUFFER, sizeof(rectangleVert), &rectangleVert, GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) (2 * sizeof(float)));
 
         unsigned int FBO;
         glGenFramebuffers(1, &FBO);
@@ -2211,7 +2489,7 @@ namespace Hyper {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
@@ -2224,15 +2502,15 @@ namespace Hyper {
         glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
 
         glm::mat4 lightView = glm::lookAt(glm::vec3(-2, 4, -1),
-                                          glm::vec3( 0.0f, 0.0f,  0.0f),
-                                          glm::vec3( 0.0f, 1.0f,  0.0f));
+                                          glm::vec3(0.0f, 0.0f, 0.0f),
+                                          glm::vec3(0.0f, 1.0f, 0.0f));
 
         glm::mat4 lightSpaceMatrix = lightProjection * lightView;
         HyperAPI::Scene::projection = lightSpaceMatrix;
 
         HYPER_LOG("Renderer initialized")
 
-        while(!glfwWindowShouldClose(renderer->window)) {
+        while (!glfwWindowShouldClose(renderer->window)) {
             HyperAPI::Timestep::currentFrame = glfwGetTime();
             HyperAPI::Timestep::deltaTime = HyperAPI::Timestep::currentFrame - HyperAPI::Timestep::lastFrame;
             HyperAPI::Timestep::lastFrame = HyperAPI::Timestep::currentFrame;
@@ -2252,14 +2530,14 @@ namespace Hyper {
             glfwPollEvents();
             glfwGetWindowSize(renderer->window, &winWidth, &winHeight);
 
-            if(!renderOnScreen) {
+            if (!renderOnScreen) {
                 glDeleteFramebuffers(1, &FBO);
                 glDeleteTextures(1, &bufferTexture);
                 // check if rbo is needed
                 try {
                     glDeleteRenderbuffers(1, &rbo);
                 }
-                catch(...) {
+                catch (...) {
                     std::cout << "RBO not deleted" << std::endl;
                 }
                 // post processing delete them
@@ -2292,10 +2570,12 @@ namespace Hyper {
 
                 glGenTextures(1, &bufferTexture);
                 glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, bufferTexture);
-                glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, renderer->samples, GL_RGB16F, width, height, GL_TRUE);
+                glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, renderer->samples, GL_RGB16F, width, height,
+                                        GL_TRUE);
                 glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, bufferTexture, 0);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, bufferTexture,
+                                       0);
 
                 glGenTextures(1, &entityTexture);
                 glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, entityTexture);
@@ -2310,7 +2590,8 @@ namespace Hyper {
 
                 glGenRenderbuffers(1, &rbo);
                 glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-                glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
+                glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width,
+                                                 height);
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
                 glDrawBuffers(2, attachments);
 
@@ -2345,14 +2626,17 @@ namespace Hyper {
 
                 glGenTextures(1, &SbufferTexture);
                 glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, SbufferTexture);
-                glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, renderer->samples, GL_RGB16F, width, height, GL_TRUE);
+                glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, renderer->samples, GL_RGB16F, width, height,
+                                        GL_TRUE);
                 glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, SbufferTexture, 0);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, SbufferTexture,
+                                       0);
 
                 glGenRenderbuffers(1, &SRBO);
                 glBindRenderbuffer(GL_RENDERBUFFER, SRBO);
-                glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
+                glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width,
+                                                 height);
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, SRBO);
 
                 if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -2373,36 +2657,37 @@ namespace Hyper {
                 // make it so that the framebuffer keeps the size of 1280x720 no matter the window size
 
                 float rectangleVert[] = {
-                    1, -1,  1, 0,
-                    -1, -1,  0, 0,
-                    -1, 1,  0, 1,
+                        1, -1, 1, 0,
+                        -1, -1, 0, 0,
+                        -1, 1, 0, 1,
 
-                    1, 1,  1, 1,
-                    1, -1,  1, 0,
-                    -1, 1,  0, 1,
+                        1, 1, 1, 1,
+                        1, -1, 1, 0,
+                        -1, 1, 0, 1,
                 };
                 glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(rectangleVert), rectangleVert);
                 NewFrame(FBO, width, height);
+
             }
 
-            if(renderOnScreen) {
+            if (renderOnScreen) {
                 glfwGetWindowSize(renderer->window, &width, &height);
                 glViewport(0, 0, width, height);
             }
 
             update(depthMap);
-
             glClear(GL_DEPTH_BUFFER_BIT);
-            if(!renderOnScreen) {
-                EndEndFrame(framebufferShader, *renderer, FBO, rectVAO, postProcessingTexture, postProcessingFBO, SFBO, S_PPT, S_PPFBO, width, height, sceneMouseX, sceneMouseY);
+            if (!renderOnScreen) {
+                EndEndFrame(framebufferShader, *renderer, FBO, rectVAO, postProcessingTexture, postProcessingFBO, SFBO,
+                            S_PPT, S_PPFBO, width, height, sceneMouseX, sceneMouseY);
             }
             // else {
-                // EndFrame(framebufferShader, *renderer, FBO, rectVAO, postProcessingTexture, postProcessingFBO, width, height);
+            // EndFrame(framebufferShader, *renderer, FBO, rectVAO, postProcessingTexture, postProcessingFBO, width, height);
             // }
 
             // HyperGUI::FrameBufferTexture = postProcessingTexture;
             // im gui
-            if(!renderOnScreen) {
+            if (!renderOnScreen) {
                 ImGui_ImplOpenGL3_NewFrame();
                 ImGui_ImplGlfw_NewFrame();
                 ImGui::NewFrame();
@@ -2413,7 +2698,7 @@ namespace Hyper {
                 ImGui::Render();
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-                GLFWwindow* backup_current_context = glfwGetCurrentContext();
+                GLFWwindow *backup_current_context = glfwGetCurrentContext();
                 ImGui::UpdatePlatformWindows();
                 ImGui::RenderPlatformWindowsDefault();
                 glfwMakeContextCurrent(backup_current_context);

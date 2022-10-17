@@ -2,7 +2,6 @@
 #include "lib/api.hpp"
 
 namespace HyperAPI {
-
     namespace Input {
         GLFWwindow *window = nullptr;
         glm::vec3 winPos = glm::vec3(0.0f);
@@ -108,5 +107,93 @@ namespace HyperAPI {
             return 0;
         }
 
+    }
+
+    namespace Input::Controller {
+        int currentController;
+
+        void SetCurrentController(int controller) {
+            currentController = controller;
+        }
+
+        float GetLeftAnalogX() {
+            if(1 == glfwJoystickPresent(currentController)) {
+                int count;
+                const float *axes = glfwGetJoystickAxes(currentController, &count);
+                return axes[0];
+            }
+
+            return 0;
+        }
+
+        float GetLeftAnalogY() {
+            if(1 == glfwJoystickPresent(currentController)) {
+                int count;
+                const float *axes = glfwGetJoystickAxes(currentController, &count);
+                return axes[1];
+            }
+
+            return 0;
+        }
+        float GetRightAnalogX() {
+            if(1 == glfwJoystickPresent(currentController)) {
+                int count;
+                const float *axes = glfwGetJoystickAxes(currentController, &count);
+                return axes[3];
+            }
+
+            return 0;
+        }
+        float GetRightAnalogY() {
+            if(1 == glfwJoystickPresent(currentController)) {
+                int count;
+                const float *axes = glfwGetJoystickAxes(currentController, &count);
+                return axes[4];
+            }
+
+            return 0;
+        }
+        float GetL2() {
+            if(1 == glfwJoystickPresent(currentController)) {
+                int count;
+                const float *axes = glfwGetJoystickAxes(currentController, &count);
+                return axes[2];
+            }
+
+            return 0;
+        }
+        float GetR2() {
+            if(1 == glfwJoystickPresent(currentController)) {
+                int count;
+                const float *axes = glfwGetJoystickAxes(currentController, &count);
+                return axes[5];
+            }
+
+            return 0;
+        }
+        bool IsButtonPressed(int button) {
+            if(1 == glfwJoystickPresent(currentController)) {
+                int count;
+                const unsigned char *buttons = glfwGetJoystickButtons(currentController, &count);
+
+                if (buttons[button] == GLFW_PRESS) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        bool IsButtonReleased(int button) {
+            if(1 == glfwJoystickPresent(currentController)) {
+                int count;
+                const unsigned char *buttons = glfwGetJoystickButtons(currentController, &count);
+
+                if (buttons[button] == GLFW_RELEASE) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

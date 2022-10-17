@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <memory>
 
 // #ifdef _WIN32
 // #ifdef BUILD_DLL
@@ -11,7 +12,7 @@
 // #define   __declspec(dllimport)
 // #endif
 // #else
-// #define  
+// #define
 // #endif
 
 namespace HyperAPI {
@@ -29,8 +30,6 @@ namespace ScriptEngine {
     extern HyperAPI::ComponentSystem *m_EntityComp;
     extern HyperAPI::Experimental::GameObject *m_Object;
     extern std::string objID;
-    
-    lua_State* m_Init();
 
     namespace Functions {
         //  Rigidbody functions
@@ -69,6 +68,18 @@ namespace ScriptEngine {
 
         // Camera Functions
         int MouseInput(lua_State *L);
+        int ControllerInput(lua_State *L);
+
+        // Controller Functions
+        int SetCurrentController(lua_State *L);
+        int GetLeftAnalogX(lua_State *L);
+        int GetLeftAnalogY(lua_State *L);
+        int GetRightAnalogX(lua_State *L);
+        int GetRightAnalogY(lua_State *L);
+        int GetL2(lua_State *L);
+        int GetR2(lua_State *L);
+        int IsButtonPressed(lua_State *L);
+        int IsButtonReleased(lua_State *L);
 
         // GameObject functions
         int SetActive(lua_State *L);
@@ -107,6 +118,8 @@ namespace ScriptEngine {
         int LerpFloat(lua_State *L);
     }
 
+    lua_State* m_Init();
+
     struct m_FieldValue {
         char value[1024];
         bool updated = false;
@@ -119,6 +132,12 @@ namespace ScriptEngine {
         int r;
         HyperAPI::Experimental::GameObject *m_GameObject;
         std::string ID;
+        std::string scriptName;
+
+        // 1 / 60
+        float timerStart = 0.0166666667;
+        float timer = 0.0166666667;
+
         std::string pathToScript;
         m_LuaScript(const std::string &pathToScript);
         void Delete() {
@@ -127,7 +146,7 @@ namespace ScriptEngine {
         void Init();
         void Update();
         void GetFields();
-        void Collision2D(HyperAPI::Experimental::GameObject *other);  
+        void Collision2D(HyperAPI::Experimental::GameObject *other);
         void CollisionExit2D(HyperAPI::Experimental::GameObject *other);
 
         void Collision3D(HyperAPI::Experimental::GameObject *other);

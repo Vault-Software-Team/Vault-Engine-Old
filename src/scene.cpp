@@ -444,6 +444,7 @@ namespace HyperAPI {
                             JSON[i]["components"][componentOffset]["animations"][in]["frames"][fn]["color"]["r"] = frame.mesh->material.baseColor.x;
                             JSON[i]["components"][componentOffset]["animations"][in]["frames"][fn]["color"]["g"] = frame.mesh->material.baseColor.y;
                             JSON[i]["components"][componentOffset]["animations"][in]["frames"][fn]["color"]["b"] = frame.mesh->material.baseColor.z;
+                            JSON[i]["components"][componentOffset]["animations"][in]["frames"][fn]["color"]["a"] = frame.mesh->material.baseColor.w;
                         }
                     }
                 }
@@ -515,6 +516,7 @@ namespace HyperAPI {
                     JSON[i]["components"][componentOffset]["color"]["r"] = spritesheetRenderer.material.baseColor.x;
                     JSON[i]["components"][componentOffset]["color"]["g"] = spritesheetRenderer.material.baseColor.y;
                     JSON[i]["components"][componentOffset]["color"]["b"] = spritesheetRenderer.material.baseColor.z;
+                    JSON[i]["components"][componentOffset]["color"]["a"] = spritesheetRenderer.material.baseColor.w;
 
                     JSON[i]["components"][componentOffset]["spritesheetSize"] = {
                             {"x", spritesheetRenderer.spritesheetSize.x},
@@ -581,18 +583,107 @@ namespace HyperAPI {
 
         void LoadScene(const std::string &scenePath, nlohmann::json &StateScene) {
             LoadingScene = true;
-
             if(scenePath != "")
                 currentScenePath = scenePath;
+
             try {
                 for(auto &gameObject : m_GameObjects) {
-                    if(gameObject->HasComponent<Experimental::MeshRenderer>()) {
-                        auto &meshRenderer = gameObject->GetComponent<Experimental::MeshRenderer>();
-                        if(meshRenderer.m_Mesh != nullptr) {
-                            delete meshRenderer.m_Mesh;
-                        }
+                    if (gameObject->HasComponent<Experimental::Transform>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::Transform>();
+                        comp.DeleteComp();
                     }
 
+                    if (gameObject->HasComponent<Experimental::CameraComponent>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::CameraComponent>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::MeshRenderer>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::MeshRenderer>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::m_LuaScriptComponent>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::m_LuaScriptComponent>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::c_PointLight>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::c_PointLight>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::c_Light2D>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::c_Light2D>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::c_SpotLight>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::c_SpotLight>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::c_DirectionalLight>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::c_DirectionalLight>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::SpriteRenderer>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::SpriteRenderer>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::SpriteAnimation>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::SpriteAnimation>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::c_SpritesheetAnimation>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::c_SpritesheetAnimation>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::SpritesheetRenderer>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::SpritesheetRenderer>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::BoxCollider2D>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::BoxCollider2D>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::Rigidbody2D>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::Rigidbody2D>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::Rigidbody3D>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::Rigidbody3D>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::FixedJoint3D>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::FixedJoint3D>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::BoxCollider3D>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::BoxCollider3D>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::MeshCollider3D>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::MeshCollider3D>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::PathfindingAI>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::PathfindingAI>();
+                        comp.DeleteComp();
+                    }
+
+                    m_Registry.remove_all(gameObject->entity);
                     m_Registry.destroy(gameObject->entity);
                     delete gameObject;
                 }
@@ -687,7 +778,7 @@ namespace HyperAPI {
                         if(!meshConfig["custom"]) {
                             std::string meshType = meshConfig["mesh"];
                             meshRenderer.meshType = meshType;
-                            
+
                             if(meshType == "Plane") {
                                 meshRenderer.m_Mesh = Plane(Vector4(1,1,1,1)).m_Mesh;
                             }
@@ -717,7 +808,7 @@ namespace HyperAPI {
                                 const std::string diffuseTexture = JSON["diffuse"];
                                 const std::string specularTexture = JSON["specular"];
                                 const std::string normalTexture = JSON["normal"];
-                                    
+
                                 if(diffuseTexture != "nullptr") {
                                     if(meshRenderer.m_Mesh->material.diffuse != nullptr) {
                                         delete meshRenderer.m_Mesh->material.diffuse;
@@ -753,7 +844,7 @@ namespace HyperAPI {
                                 meshRenderer.m_Mesh->material.metallic = JSON["metallic"];
                                 meshRenderer.m_Mesh->material.texUVs = Vector2(JSON["texUV"]["x"], JSON["texUV"]["y"]);
 
-                                meshRenderer.matPath = component["material"]; 
+                                meshRenderer.matPath = component["material"];
                             }
                         }
                         else {
@@ -761,7 +852,7 @@ namespace HyperAPI {
                         }
 
                     }
-                
+
                     if(type == "DirectionalLight") {
                         gameObject->AddComponent<Experimental::c_DirectionalLight>();
                         auto &light = gameObject->GetComponent<Experimental::c_DirectionalLight>();
@@ -771,7 +862,7 @@ namespace HyperAPI {
                             component["color"]["g"],
                             component["color"]["b"]
                         );
-                        
+
                         light.intensity = component["intensity"];
                     }
 
@@ -784,7 +875,7 @@ namespace HyperAPI {
                             component["color"]["g"],
                             component["color"]["b"]
                         );
-                        
+
                         light.intensity = component["intensity"];
                     }
 
@@ -899,11 +990,17 @@ namespace HyperAPI {
                     if(type == "SpritesheetRenderer") {
                         gameObject->AddComponent<Experimental::SpritesheetRenderer>();
                         auto &spritesheetRenderer = gameObject->GetComponent<Experimental::SpritesheetRenderer>();
+
+                        float alpha = 1;
+                        if(component["color"].contains("a")) {
+                            alpha = component["a"];
+                        }
+
                         spritesheetRenderer.mesh->material.baseColor = Vector4(
                             component["color"]["r"],
                             component["color"]["g"],
                             component["color"]["b"],
-                            1
+                            alpha
                         );
 
                         spritesheetRenderer.spriteOffset = Vector2(
@@ -1001,6 +1098,20 @@ namespace HyperAPI {
                             component["spritesheetSize"]["y"]
                         );
 
+                        float alpha = 1;
+
+                        if(component.contains("color")) {
+                            if(component["color"].contains("a")) {
+                                alpha = component["color"]["a"];
+                            }
+                            spritesheetAnimation.mesh->material.baseColor = Vector4(
+                                    component["color"]["r"],
+                                    component["color"]["g"],
+                                    component["color"]["b"],
+                                    alpha
+                            );
+                        }
+
                         for(auto &animation : component["animations"]) {
                             Experimental::m_SpritesheetAnimationData animData;
                             strcpy(animData.name, animation["name"].get<std::string>().c_str());
@@ -1082,6 +1193,8 @@ namespace HyperAPI {
 
             }
 
+            file.close();
+
             LoadingScene = false;
             HYPER_LOG("Loaded scene: " + scenePath);
         }
@@ -1096,14 +1209,14 @@ namespace HyperAPI {
             for(int i = 0; i < JSON.size(); i++) {
                 Experimental::GameObject *gameObject = new Experimental::GameObject();
                 std::string name = JSON[i]["name"];
-                std::string ID = JSON[i]["ID"];
+                std::string oldID = JSON[i]["ID"];
+                std::string ID = gameObject->ID;
                 std::string parentID = JSON[i]["parentID"];
                 std::string tag = JSON[i]["tag"];
                 std::string layer = JSON[i]["layer"];
 
                 gameObject->name = name;
                 gameObject->tag = tag;
-                gameObject->ID = ID;
                 gameObject->parentID = parentID;
                 if(gameObject->parentID == "NO_PARENT") {
                     parentObject = gameObject;
@@ -1286,13 +1399,19 @@ namespace HyperAPI {
                         auto &spriteRenderer = gameObject->GetComponent<Experimental::SpriteRenderer>();
                         if(component["sprite"] != "") {
                             spriteRenderer.mesh->material.diffuse = new Texture(((std::string)component["sprite"]).c_str(), 0, "texture_diffuse");
-                            spriteRenderer.mesh->material.baseColor = Vector4(
-                                    component["color"]["r"],
-                                    component["color"]["g"],
-                                    component["color"]["b"],
-                                    1
-                            );
                         }
+
+                        float alpha = 1;
+                        if(component["color"].contains("a")) {
+                            alpha = component["a"];
+                        }
+
+                        spriteRenderer.mesh->material.baseColor = Vector4(
+                                component["color"]["r"],
+                                component["color"]["g"],
+                                component["color"]["b"],
+                                alpha
+                        );
                     }
 
                     if(type == "Rigidbody2D") {
@@ -1322,11 +1441,17 @@ namespace HyperAPI {
                     if(type == "SpritesheetRenderer") {
                         gameObject->AddComponent<Experimental::SpritesheetRenderer>();
                         auto &spritesheetRenderer = gameObject->GetComponent<Experimental::SpritesheetRenderer>();
+
+                        float alpha = 1;
+                        if(component["color"].contains("a")) {
+                            alpha = component["a"];
+                        }
+
                         spritesheetRenderer.mesh->material.baseColor = Vector4(
                                 component["color"]["r"],
                                 component["color"]["g"],
                                 component["color"]["b"],
-                                1
+                                alpha
                         );
 
                         spritesheetRenderer.spriteOffset = Vector2(
@@ -1424,6 +1549,18 @@ namespace HyperAPI {
                                 component["spritesheetSize"]["y"]
                         );
 
+                        float alpha = 1;
+                        if(component["color"].contains("a")) {
+                            alpha = component["a"];
+                        }
+
+                        spritesheetAnimation.mesh->material.baseColor = Vector4(
+                                component["color"]["r"],
+                                component["color"]["g"],
+                                component["color"]["b"],
+                                alpha
+                        );
+
                         for(auto &animation : component["animations"]) {
                             Experimental::m_SpritesheetAnimationData animData;
                             strcpy(animData.name, animation["name"].get<std::string>().c_str());
@@ -1496,7 +1633,6 @@ namespace HyperAPI {
                                 newEntity->m_gameObjects[a]->GetComponent<Experimental::Transform>().scale = transform.scale;
                             }
 
-                            delete m_GameObjects[j];
                             m_GameObjects.erase(m_GameObjects.begin() + j);
 
                             break;
@@ -1505,7 +1641,9 @@ namespace HyperAPI {
                 }
 
             }
-        
+
+            file.close();
+
             HYPER_LOG("Loaded Prefab: " + scenePath);
             return parentObject;
         }
@@ -1647,6 +1785,7 @@ namespace HyperAPI {
                     JSON[i]["components"][componentOffset]["color"]["r"] = spriteRenderer.mesh->material.baseColor.x;
                     JSON[i]["components"][componentOffset]["color"]["g"] = spriteRenderer.mesh->material.baseColor.y;
                     JSON[i]["components"][componentOffset]["color"]["b"] = spriteRenderer.mesh->material.baseColor.z;
+                    JSON[i]["components"][componentOffset]["color"]["a"] = spriteRenderer.mesh->material.baseColor.w;
 
                     componentOffset++;
                 }
@@ -1673,6 +1812,7 @@ namespace HyperAPI {
                             JSON[i]["components"][componentOffset]["animations"][in]["frames"][fn]["color"]["r"] = frame.mesh->material.baseColor.x;
                             JSON[i]["components"][componentOffset]["animations"][in]["frames"][fn]["color"]["g"] = frame.mesh->material.baseColor.y;
                             JSON[i]["components"][componentOffset]["animations"][in]["frames"][fn]["color"]["b"] = frame.mesh->material.baseColor.z;
+                            JSON[i]["components"][componentOffset]["animations"][in]["frames"][fn]["color"]["a"] = frame.mesh->material.baseColor.w;
                         }
                     }
                 }
@@ -1686,6 +1826,11 @@ namespace HyperAPI {
                     JSON[i]["components"][componentOffset]["spritesheetSize"]["x"] = spriteAnimation.spritesheetSize.x;
                     JSON[i]["components"][componentOffset]["spritesheetSize"]["y"] = spriteAnimation.spritesheetSize.y;
                     JSON[i]["components"][componentOffset]["texture"] = spriteAnimation.mesh->material.diffuse == nullptr ? "nullptr" : spriteAnimation.mesh->material.diffuse->texPath;
+
+                    JSON[i]["components"][componentOffset]["color"]["r"] = spriteAnimation.mesh->material.baseColor.x;
+                    JSON[i]["components"][componentOffset]["color"]["g"] = spriteAnimation.mesh->material.baseColor.y;
+                    JSON[i]["components"][componentOffset]["color"]["b"] = spriteAnimation.mesh->material.baseColor.z;
+                    JSON[i]["components"][componentOffset]["color"]["a"] = spriteAnimation.mesh->material.baseColor.w;
 
                     for(auto &anim : spriteAnimation.anims) {
                         int in = &anim - &spriteAnimation.anims[0];
