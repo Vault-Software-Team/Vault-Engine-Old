@@ -78,12 +78,8 @@ void NewFrame(unsigned int FBO, int width, int height) {
     glEnable(GL_DEPTH_TEST);
 }
 
-void EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO,
+void EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, unsigned int rectVAO,
               unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height) {
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postProcessingFBO);
-    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_BLEND);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -106,11 +102,9 @@ void EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer,
 void EndEndFrame(
         HyperAPI::Shader &framebufferShader,
         HyperAPI::Renderer &renderer,
-        unsigned int FBO,
         unsigned int rectVAO,
         unsigned int postProcessingTexture,
         unsigned int postProcessingFBO,
-        unsigned int S_FBO,
         unsigned int S_postProcessingTexture,
         unsigned int S_postProcessingFBO,
         const int width,
@@ -118,13 +112,9 @@ void EndEndFrame(
         const int mouseX,
         const int mouseY
 ) {
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postProcessingFBO);
-    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    NewFrame(S_FBO, width, height);
+    NewFrame(S_postProcessingFBO, width, height);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     framebufferShader.Bind();
     framebufferShader.SetUniform1i("screenTexture", 15);
@@ -134,7 +124,7 @@ void EndEndFrame(
     glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    EndFrame(framebufferShader, renderer, S_FBO, rectVAO, S_postProcessingTexture, S_postProcessingFBO, width, height);
+    EndFrame(framebufferShader, renderer, rectVAO, S_postProcessingTexture, S_postProcessingFBO, width, height);
 
     glDepthFunc(GL_LEQUAL);
     if (renderer.wireframe) {
@@ -507,6 +497,10 @@ namespace HyperAPI {
         glUniform1i(glGetUniformLocation(ID, name), value);
     }
 
+    void Shader::SetUniform1ui(const char *name, unsigned int value) {
+        glUniform1ui(glGetUniformLocation(ID, name), value);
+    }
+
     void Shader::SetUniform2f(const char *name, float value1, float value2) {
         glUniform2f(glGetUniformLocation(ID, name), value1, value2);
     }
@@ -668,6 +662,7 @@ namespace HyperAPI {
                                 cameraTransform.position.z);
         }
         shader.SetUniform1i("cubeMap", 20);
+        shader.SetUniform1ui("u_EntityID", enttId);
 
         // scriptComponent.OnUpdate();
 
@@ -1820,6 +1815,7 @@ namespace HyperAPI {
         shader.SetUniform1f("metallic", metallic);
         shader.SetUniform1f("roughness", roughness);
         shader.SetUniform2f("texUvOffset", texUVs.x, texUVs.y);
+        shader.SetUniform3f("u_BloomColor", bloomColor.x, bloomColor.y, bloomColor.z);
 
         if (diffuse != nullptr) {
             diffuse->Bind(0);
@@ -2353,6 +2349,8 @@ namespace HyperAPI {
 }
 
 namespace Hyper {
+    static Noesis::IView* _view;
+
     void Application::Run(std::function<void(unsigned int &)> update,
                           std::function<void(unsigned int &PPT, unsigned int &PPFBO)> gui,
                           std::function<void(HyperAPI::Shader &)> shadowMapRender) {
@@ -2364,11 +2362,11 @@ namespace Hyper {
         }
 
         HyperAPI::Shader shadowMapProgram("shaders/shadowMap.glsl");
-
         HyperAPI::Shader framebufferShader("shaders/framebuffer.glsl");
+        HyperAPI::Shader blurShader("shaders/blur.glsl");
+
         framebufferShader.Bind();
         framebufferShader.SetUniform1f("gamma", gamma);
-        framebufferShader.SetUniform1f("exposure", 0.1f);
         // HyperAPI::Shader shader("shaders/sprite.glsl");
         // shader.Bind();
         // shader.SetUniform1f("ambient", 0.5);
@@ -2388,42 +2386,6 @@ namespace Hyper {
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) (2 * sizeof(float)));
 
-        unsigned int FBO;
-        glGenFramebuffers(1, &FBO);
-        glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
-        unsigned int bufferTexture;
-        glGenTextures(1, &bufferTexture);
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, bufferTexture);
-        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, renderer->samples, GL_RGB16F, width, height, GL_TRUE);
-        glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, bufferTexture, 0);
-
-        unsigned int entityTexture;
-        glGenTextures(1, &entityTexture);
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, entityTexture);
-        // r32i
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, entityTexture, 0);
-
-        unsigned int rbo;
-        glGenRenderbuffers(1, &rbo);
-        glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-        // render second color attachment which is an int
-        unsigned int attachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
-        glDrawBuffers(2, attachments);
-
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-            std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-
         unsigned int postProcessingFBO;
         glGenFramebuffers(1, &postProcessingFBO);
         glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
@@ -2438,26 +2400,55 @@ namespace Hyper {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postProcessingTexture, 0);
 
-        unsigned int SFBO;
-        glGenFramebuffers(1, &SFBO);
-        glBindFramebuffer(GL_FRAMEBUFFER, SFBO);
+        unsigned int bloomTexture;
+        glGenTextures(1, &bloomTexture);
+        glBindTexture(GL_TEXTURE_2D, bloomTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, bloomTexture, 0);
 
-        unsigned int SbufferTexture;
-        glGenTextures(1, &SbufferTexture);
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, SbufferTexture);
-        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, renderer->samples, GL_RGB16F, width, height, GL_TRUE);
-        glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, SbufferTexture, 0);
+        // r32i entityTexture
+        unsigned int entityTexture;
+        glGenTextures(1, &entityTexture);
+        glBindTexture(GL_TEXTURE_2D, entityTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, entityTexture, 0);
 
-        unsigned int SRBO;
-        glGenRenderbuffers(1, &SRBO);
-        glBindRenderbuffer(GL_RENDERBUFFER, SRBO);
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, SRBO);
+        // rbo
+        unsigned int rbo;
+        glGenRenderbuffers(1, &rbo);
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-            std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+        unsigned int attachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+        glDrawBuffers(3, attachments);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        unsigned int pingpongFBO[2];
+        unsigned int pingpongBuffer[2];
+        glGenFramebuffers(2, pingpongFBO);
+        glGenTextures(2, pingpongBuffer);
+
+        for(unsigned int i = 0; i < 2; i++)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
+            glBindTexture(GL_TEXTURE_2D, pingpongBuffer[i]);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongBuffer[i], 0);
+        }
 
         unsigned int S_PPFBO;
         glGenFramebuffers(1, &S_PPFBO);
@@ -2473,9 +2464,29 @@ namespace Hyper {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, S_PPT, 0);
 
+        unsigned int SRBO;
+        glGenRenderbuffers(1, &SRBO);
+        glBindRenderbuffer(GL_RENDERBUFFER, SRBO);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, SRBO);
+
         float timeStep = 1.0f / 60.0f;
+        float near_plane = 1.0f, far_plane = 7.5f;
+        glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+
+        glm::mat4 lightView = glm::lookAt(glm::vec3(-2, 4, -1),
+                                          glm::vec3(0.0f, 0.0f, 0.0f),
+                                          glm::vec3(0.0f, 1.0f, 0.0f));
+
+        glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+        HyperAPI::Scene::projection = lightSpaceMatrix;
+
+        HYPER_LOG("Renderer initialized")
+        float timeSinceAppStart = 0.0f;
 
         unsigned int depthMapFBO;
+        glGenFramebuffers(1, &depthMapFBO);
+
         glGenFramebuffers(1, &depthMapFBO);
 
         const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
@@ -2498,25 +2509,21 @@ namespace Hyper {
         glReadBuffer(GL_NONE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        float near_plane = 1.0f, far_plane = 7.5f;
-        glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+        std::vector<HyperAPI::Experimental::GameObject*> mouseOverObjects;
 
-        glm::mat4 lightView = glm::lookAt(glm::vec3(-2, 4, -1),
-                                          glm::vec3(0.0f, 0.0f, 0.0f),
-                                          glm::vec3(0.0f, 1.0f, 0.0f));
-
-        glm::mat4 lightSpaceMatrix = lightProjection * lightView;
-        HyperAPI::Scene::projection = lightSpaceMatrix;
-
-        HYPER_LOG("Renderer initialized")
-
+        glEnable(GL_DEPTH_TEST);
         while (!glfwWindowShouldClose(renderer->window)) {
+            framebufferShader.Bind();
+            framebufferShader.SetUniform1f("exposure", exposure);
+
             HyperAPI::Timestep::currentFrame = glfwGetTime();
             HyperAPI::Timestep::deltaTime = HyperAPI::Timestep::currentFrame - HyperAPI::Timestep::lastFrame;
             HyperAPI::Timestep::lastFrame = HyperAPI::Timestep::currentFrame;
 
-            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-                std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+            timeSinceAppStart += HyperAPI::Timestep::deltaTime;
+
+            glfwPollEvents();
+            glfwGetWindowSize(renderer->window, &winWidth, &winHeight);
 
             glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
             glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
@@ -2524,79 +2531,22 @@ namespace Hyper {
             shadowMapProgram.Bind();
             shadowMapProgram.SetUniformMat4("lightSpaceMatrix", lightSpaceMatrix);
             shadowMapRender(shadowMapProgram);
-
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-            glfwPollEvents();
-            glfwGetWindowSize(renderer->window, &winWidth, &winHeight);
+            glClear(GL_DEPTH_BUFFER_BIT);
 
             if (!renderOnScreen) {
-                glDeleteFramebuffers(1, &FBO);
-                glDeleteTextures(1, &bufferTexture);
-                // check if rbo is needed
-                try {
-                    glDeleteRenderbuffers(1, &rbo);
-                }
-                catch (...) {
-                    std::cout << "RBO not deleted" << std::endl;
-                }
                 // post processing delete them
                 glDeleteFramebuffers(1, &postProcessingFBO);
                 glDeleteTextures(1, &postProcessingTexture);
 
-                glDeleteRenderbuffers(1, &SRBO);
-                glDeleteFramebuffers(1, &SFBO);
                 glDeleteFramebuffers(1, &S_PPFBO);
                 glDeleteTextures(1, &S_PPT);
+                glDeleteTextures(1, &bloomTexture);
+                glDeleteFramebuffers(2, pingpongFBO);
+                glDeleteTextures(2, pingpongBuffer);
+                glDeleteRenderbuffers(1, &SRBO);
+                glDeleteRenderbuffers(1, &rbo);
                 glDeleteTextures(1, &entityTexture);
-                glDeleteTextures(1, &SbufferTexture);
-
-                // ----------
-
-                // glGenFramebuffers(1, &mousePickFBO);
-                // glBindFramebuffer(GL_FRAMEBUFFER, mousePickFBO);
-
-                // glGenTextures(1, &mousePickTexture);
-                // glBindTexture(GL_TEXTURE_2D, mousePickTexture);
-                // glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER, GL_INT, NULL);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, mousePickTexture, 0);
-
-                glGenFramebuffers(1, &FBO);
-                glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
-                glGenTextures(1, &bufferTexture);
-                glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, bufferTexture);
-                glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, renderer->samples, GL_RGB16F, width, height,
-                                        GL_TRUE);
-                glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, bufferTexture,
-                                       0);
-
-                glGenTextures(1, &entityTexture);
-                glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, entityTexture);
-                // r32i
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, nullptr);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, entityTexture, 0);
-
-                glGenRenderbuffers(1, &rbo);
-                glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-                glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width,
-                                                 height);
-                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-                glDrawBuffers(2, attachments);
-
-                if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-                    std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
 
                 glGenFramebuffers(1, &postProcessingFBO);
                 glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
@@ -2610,37 +2560,48 @@ namespace Hyper {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postProcessingTexture, 0);
 
+                glGenTextures(1, &bloomTexture);
+                glBindTexture(GL_TEXTURE_2D, bloomTexture);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, bloomTexture, 0);
+
                 glGenTextures(1, &entityTexture);
                 glBindTexture(GL_TEXTURE_2D, entityTexture);
-                // integer texture
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER, GL_INT, NULL);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, nullptr);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, entityTexture, 0);
-                // delete srbo sfbo sppfbo sppt
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, entityTexture, 0);
 
-                glGenFramebuffers(1, &SFBO);
-                glBindFramebuffer(GL_FRAMEBUFFER, SFBO);
+                glDrawBuffers(3, attachments);
 
-                glGenTextures(1, &SbufferTexture);
-                glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, SbufferTexture);
-                glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, renderer->samples, GL_RGB16F, width, height,
-                                        GL_TRUE);
-                glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, SbufferTexture,
-                                       0);
+                glGenRenderbuffers(1, &rbo);
+                glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+                glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
+                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
-                glGenRenderbuffers(1, &SRBO);
-                glBindRenderbuffer(GL_RENDERBUFFER, SRBO);
-                glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width,
-                                                 height);
-                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, SRBO);
+                glBindFramebuffer(GL_FRAMEBUFFER, S_PPFBO);
 
-                if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-                    std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+                glGenFramebuffers(2, pingpongFBO);
+                glGenTextures(2, pingpongBuffer);
+
+                for(unsigned int i = 0; i < 2; i++)
+                {
+                    glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
+                    glBindTexture(GL_TEXTURE_2D, pingpongBuffer[i]);
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongBuffer[i], 0);
+                }
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
                 glGenFramebuffers(1, &S_PPFBO);
                 glBindFramebuffer(GL_FRAMEBUFFER, S_PPFBO);
@@ -2654,7 +2615,11 @@ namespace Hyper {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, S_PPT, 0);
                 glBindBuffer(GL_ARRAY_BUFFER, rectVBO);
-                // make it so that the framebuffer keeps the size of 1280x720 no matter the window size
+
+                glGenRenderbuffers(1, &SRBO);
+                glBindRenderbuffer(GL_RENDERBUFFER, SRBO);
+                glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
+                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, SRBO);
 
                 float rectangleVert[] = {
                         1, -1, 1, 0,
@@ -2666,7 +2631,7 @@ namespace Hyper {
                         -1, 1, 0, 1,
                 };
                 glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(rectangleVert), rectangleVert);
-                NewFrame(FBO, width, height);
+                NewFrame(postProcessingFBO, width, height);
 
             }
 
@@ -2675,25 +2640,125 @@ namespace Hyper {
                 glViewport(0, 0, width, height);
             }
 
-            update(depthMap);
+            update(S_PPT);
+            glReadBuffer(GL_COLOR_ATTACHMENT2);
+            unsigned int entityId;
+            glReadPixels(sceneMouseX, sceneMouseY, 1, 1, GL_RED_INTEGER, GL_UNSIGNED_INT, &entityId);
+
+            for(auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+                if(sceneMouseY < 0 || sceneMouseX < 0) {
+                    break;
+                }
+
+                using namespace HyperAPI::Experimental;
+
+                if(HyperAPI::isRunning) {
+                    for(auto &overObject : mouseOverObjects) {
+                        if(overObject->entity != (entt::entity)entityId) {
+                            if(overObject->HasComponent<NativeScriptManager>()) {
+                                auto &nativeManager = overObject->GetComponent<NativeScriptManager>();
+                                for(auto &script : nativeManager.m_StaticScripts) {
+                                    script->OnMouseExit();
+                                    mouseOverObjects.push_back(overObject);
+                                }
+
+                            }
+
+                            if(overObject->HasComponent<m_LuaScriptComponent>()) {
+                                auto &nativeManager = overObject->GetComponent<m_LuaScriptComponent>();
+                                for(auto &script : nativeManager.scripts) {
+                                    script.OnMouseExit();
+                                    mouseOverObjects.push_back(overObject);
+                                }
+                            }
+
+                            mouseOverObjects.erase(std::remove(mouseOverObjects.begin(), mouseOverObjects.end(), overObject), mouseOverObjects.end());
+                            break;
+                        }
+                    }
+                }
+
+                if(gameObject->entity == (entt::entity)entityId) {
+                    if(HyperAPI::isRunning) {
+                        if(gameObject->HasComponent<NativeScriptManager>()) {
+                            auto &nativeManager = gameObject->GetComponent<NativeScriptManager>();
+                            for(auto &script : nativeManager.m_StaticScripts) {
+                                script->OnMouseEnter();
+                            }
+                        }
+                        // if exists
+                        if(std::find(mouseOverObjects.begin(), mouseOverObjects.end(), gameObject) == mouseOverObjects.end()) {
+                            mouseOverObjects.push_back(gameObject);
+                        }
+
+                        if(gameObject->HasComponent<m_LuaScriptComponent>()) {
+                            auto &nativeManager = gameObject->GetComponent<m_LuaScriptComponent>();
+                            for(auto &script : nativeManager.scripts) {
+                                script.OnMouseEnter();
+                            }
+                        }
+                    }
+
+                    double mouseX, mouseY;
+                    glfwGetCursorPos(renderer->window, &mouseX, &mouseY);
+
+                    if(ImGui::IsMouseDoubleClicked(0) && !mouseClicked && !isGuzimoInUse) {
+                        HyperAPI::Scene::m_Object = gameObject;
+                        strncpy(HyperAPI::Scene::name, HyperAPI::Scene::m_Object->name.c_str(), 499);
+                        HyperAPI::Scene::name[499] = '\0';
+
+                        strncpy(HyperAPI::Scene::tag, HyperAPI::Scene::m_Object->tag.c_str(), 499);
+                        HyperAPI::Scene::tag[499] = '\0';
+
+                        strncpy(HyperAPI::Scene::layer, HyperAPI::Scene::m_Object->layer.c_str(), 32);
+                        HyperAPI::Scene::layer[31] = '\0';
+                        glfwSetCursorPos(renderer->window, mouseX, mouseY);
+
+                        mouseClicked = true;
+                    } else if (!ImGui::IsMouseDoubleClicked(0)) {
+                        mouseClicked = false;
+                    }
+                }
+            }
+
+            glClear(GL_DEPTH_BUFFER_BIT);
+
+            bool horizontal = true, first_iteration = true;
+            int amount = 10;
+            blurShader.Bind();
+
+            for(unsigned int i = 0; i < amount; i++) {
+                glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
+                blurShader.SetUniform1i("horizontal", horizontal);
+
+                if(first_iteration) {
+                    glBindTexture(GL_TEXTURE_2D, bloomTexture);
+                    first_iteration = false;
+                } else {
+                    glBindTexture(GL_TEXTURE_2D, pingpongBuffer[!horizontal]);
+                }
+
+                glBindVertexArray(rectVAO);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                horizontal = !horizontal;
+            }
+
             glClear(GL_DEPTH_BUFFER_BIT);
             if (!renderOnScreen) {
-                EndEndFrame(framebufferShader, *renderer, FBO, rectVAO, postProcessingTexture, postProcessingFBO, SFBO,
-                            S_PPT, S_PPFBO, width, height, sceneMouseX, sceneMouseY);
+                framebufferShader.Bind();
+                glActiveTexture(GL_TEXTURE16);
+                glBindTexture(GL_TEXTURE_2D, pingpongBuffer[!horizontal]);
+                framebufferShader.SetUniform1i("bloomTexture", 16);
+                EndEndFrame(framebufferShader, *renderer, rectVAO, postProcessingTexture, postProcessingFBO, S_PPT, S_PPFBO, width, height, sceneMouseX, sceneMouseY);
             }
-            // else {
-            // EndFrame(framebufferShader, *renderer, FBO, rectVAO, postProcessingTexture, postProcessingFBO, width, height);
-            // }
 
-            // HyperGUI::FrameBufferTexture = postProcessingTexture;
-            // im gui
             if (!renderOnScreen) {
                 ImGui_ImplOpenGL3_NewFrame();
                 ImGui_ImplGlfw_NewFrame();
                 ImGui::NewFrame();
                 ImGuizmo::BeginFrame();
 
-                gui(S_PPT, SFBO);
+                gui(S_PPT, S_PPFBO);
 
                 ImGui::Render();
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

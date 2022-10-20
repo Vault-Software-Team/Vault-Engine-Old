@@ -2,3 +2,4 @@
 -I./src/lib
 -I./src/vendor
 -I./src/vendor/bullet/bullet
+-I./src/vendor/NoesisGUI

@@ -683,6 +683,11 @@ namespace HyperAPI {
                         comp.DeleteComp();
                     }
 
+                    if (gameObject->HasComponent<Experimental::Bloom>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::Bloom>();
+                        comp.DeleteComp();
+                    }
+
                     m_Registry.remove_all(gameObject->entity);
                     m_Registry.destroy(gameObject->entity);
                     delete gameObject;
@@ -1135,6 +1140,16 @@ namespace HyperAPI {
 
                             spritesheetAnimation.anims.push_back(animData);
                         }
+                    }
+
+                    if(type == "Bloom") {
+                        auto &bloom = gameObject->AddComponent<Experimental::Bloom>();
+
+                        bloom.bloomColor = Vector3(
+                            component["bloomColor"]["x"],
+                            component["bloomColor"]["y"],
+                            component["bloomColor"]["z"]
+                        );
                     }
                 }
 //                if(parentID != "NO_PARENT") {
@@ -1947,6 +1962,16 @@ namespace HyperAPI {
                     };
 
                     componentOffset++;
+                }
+
+                if(gameObject->HasComponent<Experimental::Bloom>()) {
+                    auto &bloom = gameObject->GetComponent<Experimental::Bloom>();
+                    JSON[i]["components"][componentOffset]["type"] = "Bloom";
+                    JSON[i]["components"][componentOffset]["bloomColor"] = {
+                            {"x", bloom.bloomColor.x},
+                            {"y", bloom.bloomColor.y},
+                            {"z", bloom.bloomColor.z}
+                    };
                 }
             }
             

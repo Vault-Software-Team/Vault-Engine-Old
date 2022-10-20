@@ -1,12 +1,12 @@
 {
     "baseColor": {
-        "a": 1,
-        "b": 1.0,
+        "a": 1.0,
+        "b": 0.032258033752441406,
         "g": 1.0,
-        "r": 1.0
+        "r": 0.0
     },
     "diffuse": "nullptr",
-    "metallic": 0.9900000095367432,
+    "metallic": 0.10999999940395355,
     "normal": "nullptr",
     "roughness": 0.0,
     "specular": "nullptr",

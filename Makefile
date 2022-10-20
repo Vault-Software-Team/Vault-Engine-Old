@@ -10,11 +10,6 @@ sources += $(wildcard src/vendor/*/*/*/*.cpp)
 sources += $(wildcard src/vendor/*/*/*.c)
 sources += $(wildcard src/vendor/*/*/*/*.c)
 
-sources += $(wildcard mono/*/*.cpp)
-sources += $(wildcard mono/*/*/*.cpp)
-sources += $(wildcard mono/*/*/*/*.cpp)
-sources += $(wildcard mono/*/*/*.c)
-sources += $(wildcard mono/*/*/*/*.c)
 objects = $(sources:.cpp=.o)
 api = $(wildcard src/api.cpp)
 api += $(wildcard src/InputEvents.cpp)
@@ -30,11 +25,11 @@ api_obj = $(api:.cpp=.o)
 MONO_LIB=-I"$(cwd)/mono/include/mono-2.0" -D_REENTRANT  -L"$(cwd)/mono/lib" -lmono-2.0
 bullet_physics_linker_flags = -lBulletDynamics -lBulletCollision -lLinearMath
 bullet_physics_linker_flags_windows = -lBulletDynamics.dll -lBulletCollision.dll -lLinearMath.dll
-flags = -fno-stack-protector -std=c++20 -lstdc++fs -g -L"./lib" -lluajit-5.1 -I"./src/vendor" -I"./src/vendor/bullet/bullet" -lbacktrace -lfreetype -lGL -lbox2d -lGLU -lglfw -lm -lSDL2_mixer -lassimp -ltinyxml2 -lXrandr -lXi -lbox2d -lX11 -lXxf86vm -lpthread -ldl -lXinerama -lboost_stacktrace_basic -lXcursor -lGLEW -ldiscord-rpc $(bullet_physics_linker_flags)
-win_flags = -L"./win_libs" -I"./src/lib" -I"./src/vendor" -I"./src/vendor/bullet/bullet" -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype -lSDL2.dll -lSDL2_mixer.dll -ldiscord-rpc -ltinyxml2 $(bullet_physics_linker_flags_windows)
+flags = -fno-stack-protector -std=c++20 -lstdc++fs -g -L"./lib" -lluajit-5.1 -I"./src/vendor" -I"./src/vendor/bullet/bullet" -I"./src/vendor/NoesisGUI" -lNoesis -lbacktrace -lfreetype -lGL -lbox2d -lGLU -lglfw -lm -lSDL2_mixer -lassimp -ltinyxml2 -lXrandr -lXi -lbox2d -lX11 -lXxf86vm -lpthread -ldl -lXinerama -lboost_stacktrace_basic -lXcursor -lGLEW -ldiscord-rpc $(bullet_physics_linker_flags)
+win_flags = -L"./win_libs" -I"./src/lib" -I"./src/vendor/NoesisGUI" -I"./src/vendor" -I"./src/vendor/bullet/bullet" -lNoesis -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype -lSDL2.dll -lSDL2_mixer.dll -ldiscord-rpc -ltinyxml2 $(bullet_physics_linker_flags_windows)
 
 all:
-	g++ $(flags) $(sources) -o $(exec)
+	g++ $(sources) src/api.cpp -o $(exec) $(flags)
 
 eng:
 # set the .o files with objects variable
@@ -42,7 +37,10 @@ eng:
 	mv *.o src
 
 libs:
-	g++ -c $(sources) $(flags)
+	for i in $(sources); do \
+		j=$${i/.cpp/.o}; \
+		g++ -c $$i -o $$j $(flags); \
+	done
 
 scripts:
 # DO NOT COMPILE SCRIPTS THIS WAS JUST A TEST
@@ -92,7 +90,7 @@ win:
 win_game:
 	x86_64-w64-mingw32-g++ -static -g -std=c++20 $(sources) -DGAME_BUILD $(win_flags) -o $(exec_win_game)
 
-clean:	
+clean:
 	-rm src/*.o
 	-rm *.o
 

@@ -18,6 +18,8 @@ namespace HyperAPI
 
         virtual void Collision3D(Experimental::GameObject *other) {}
         virtual void CollisionExit3D(Experimental::GameObject *other) {}
+        virtual void OnMouseEnter() {}
+        virtual void OnMouseExit() {}
     };
 }
 

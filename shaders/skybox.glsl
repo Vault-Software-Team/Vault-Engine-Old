@@ -16,7 +16,7 @@ void main() {
 #shader fragment
 #version 330 core
 layout(location = 0) out vec4 FragColor;
-layout(location = 1) out int entityId;
+layout(location = 1) out vec4 BloomColor;
 
 in vec3 texCoords;
 
@@ -24,5 +24,12 @@ uniform samplerCube skybox;
 
 void main() {
     FragColor = texture(skybox, texCoords);
-    entityId = 555;
+
+    float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+
+    if (brightness > 0.05) {
+        BloomColor = FragColor;
+    } else {
+        BloomColor = vec4(0);
+    }
 }

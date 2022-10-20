@@ -82,7 +82,9 @@ void main() {
 #shader fragment
 #version 330 core
 layout(location = 0) out vec4 FragColor;
-layout(location = 1) out int entityId;
+layout(location = 1) out vec4 BloomColor;
+// entity data that is unsigned int
+layout(location = 2) out uint EntityID;
 
 in vec2 texCoords;
 in vec3 Color;
@@ -131,6 +133,7 @@ uniform sampler2D texture_diffuse0;
 uniform sampler2D texture_specular0;
 uniform sampler2D texture_normal0;
 uniform vec4 baseColor;
+uniform vec3 u_BloomColor;
 uniform float metallic;
 uniform float roughness;
 
@@ -320,6 +323,8 @@ vec4 light2d(Light2D light) {
 float near = 0.1;
 float far = 100.0;
 
+uniform uint u_EntityID;
+
 // vec4 fog() {
 //     float depth = logisticDepth(gl_FragCoord.z);
 //     return (directionalLight() * (1 - depth) + vec4(depth * vec3(0.85, 0.85, 0.90), 1));
@@ -332,13 +337,16 @@ void main() {
     }
 
     vec4 result = vec4(0);
+    vec4 noAmbient = vec4(0);
 
     if(isTex == 1) {
         vec4 tex = texture(texture_diffuse0, texCoords);
-        result = mix(tex, reflectedColor, metallic) * baseColor * ambient;
+        noAmbient = mix(tex, reflectedColor, metallic) * baseColor;
+        result = noAmbient * ambient;
         result.a = tex.a;
     } else {
-        result = mix(baseColor, reflectedColor, metallic) * ambient;
+        noAmbient = mix(baseColor, reflectedColor, metallic);
+        result = noAmbient * ambient;
         result.a = baseColor.a;
     }
 
@@ -367,10 +375,25 @@ void main() {
         }
     }
 
-//    FragColor = texture(shadowMap, texCoords);
-    FragColor = result;
-    entityId = 69;
-    // FragColor = directionalLight(dirLights[0]);
-//     FragColor = result;
+//    float brightness = dot(result.rgb, vec3(0.2126, 0.7152, 0.0722));
 
+    // if its too bright make it more white
+    BloomColor = vec4(u_BloomColor, 1);
+    if(u_BloomColor.r > 0 || u_BloomColor.g > 0 || u_BloomColor.b > 0) {
+        FragColor = result * 2;
+    } else {
+        FragColor = result;
+    }
+    //    if(brightness > 0.9) {
+    //        FragColor.rgb = mix(FragColor.rgb, vec3(1,1,1), 0.5);
+    //    } else {
+//    }
+//
+//    if(brightness > 0.05) {
+//        BloomColor = FragColor;
+//    } else {
+//        BloomColor = vec4(0);
+//    }
+
+    EntityID = u_EntityID;
 }

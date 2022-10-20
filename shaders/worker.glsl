@@ -51,7 +51,7 @@ void main() {
 #shader fragment
 #version 330 core
 layout(location = 0) out vec4 FragColor;
-layout(location = 1) out int EntityID;
+layout(location = 2) out uint EntityID;
 
 in vec2 texCoords;
 in vec3 Color;
@@ -102,6 +102,7 @@ uniform sampler2D texture_normal0;
 uniform vec4 baseColor;
 uniform float metallic;
 uniform float roughness;
+uniform uint u_EntityID;
 
 //texture setters
 uniform int hasNormalMap;
@@ -309,7 +310,7 @@ void main() {
     }
 
     FragColor = result;
-    EntityID = 50;
+    EntityID = u_EntityID;
     // FragColor = directionalLight(dirLights[0]);
     // FragColor = result;
 

@@ -135,8 +135,11 @@ namespace ScriptEngine {
         std::string scriptName;
 
         // 1 / 60
-        float timerStart = 0.0166666667;
-        float timer = 0.0166666667;
+        double fpsLimit = 1.0 / 60.0;
+        double lastUpdateTime = 0;
+        double lastFrameTime = 0;
+        float timerStart = 0.00606060606; // 0.0166666667;
+        float timer = 0.00606060606; //0.0166666667;
 
         std::string pathToScript;
         m_LuaScript(const std::string &pathToScript);
@@ -151,6 +154,8 @@ namespace ScriptEngine {
 
         void Collision3D(HyperAPI::Experimental::GameObject *other);
         void CollisionExit3D(HyperAPI::Experimental::GameObject *other);
+        void OnMouseEnter();
+        void OnMouseExit();
     };
 
     class LuaScript {

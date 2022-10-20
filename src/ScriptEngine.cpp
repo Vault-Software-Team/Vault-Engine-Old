@@ -363,7 +363,6 @@ namespace ScriptEngine {
     }
 
     void LuaScript::Init() {
-
         r = luaL_dofile(L, pathToScript.c_str());
 
         if(r == LUA_OK) {
@@ -493,6 +492,11 @@ namespace ScriptEngine {
         lua_setglobal(L, "Timestep");
         timer -= HyperAPI::Timestep::deltaTime;
 
+        double now = glfwGetTime();
+        double deltaTime = now - lastUpdateTime;
+
+        lastUpdateTime = now;
+
         objID = ID;
         for(int i = 0; i < HyperAPI::Scene::m_GameObjects.size(); i++) {
             if(HyperAPI::Scene::m_GameObjects[i]->ID == objID) {
@@ -501,7 +505,8 @@ namespace ScriptEngine {
         }
 
         if(r == LUA_OK) {
-            if(timer <= 0) {
+            if((now - HyperAPI::Timestep::deltaTime) >= fpsLimit) {
+                lastFrameTime = now;
                 lua_getglobal(L, scriptName.c_str());
                 lua_getfield(L, -1, "OnUpdate");
                 if(lua_isfunction(L, -1)) {
@@ -600,6 +605,22 @@ namespace ScriptEngine {
             PushTableFunction(L, "UpdateComponent", Functions::UpdateEntComponent);
 
             lua_pcall(L, 1, 0, 0);
+        }
+    }
+
+    void m_LuaScript::OnMouseEnter() {
+        lua_getglobal(L, scriptName.c_str());
+        lua_getfield(L, -1, "OnMouseEnter");
+        if(lua_isfunction(L, -1)) {
+            lua_pcall(L, 0, 0, 0);
+        }
+    }
+
+    void m_LuaScript::OnMouseExit() {
+        lua_getglobal(L, scriptName.c_str());
+        lua_getfield(L, -1, "OnMouseExit");
+        if(lua_isfunction(L, -1)) {
+            lua_pcall(L, 0, 0, 0);
         }
     }
 
@@ -1090,7 +1111,11 @@ namespace ScriptEngine {
             return 1;
         }
         int GetVelocity(lua_State *L) {
-            auto &rigidbody = m_Object->GetComponent<Rigidbody2D>();
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto &rigidbody = f_GameObject::FindGameObjectByID(id)->GetComponent<Rigidbody2D>();
 
             lua_newtable(L);
             PushTableKey(L, "x", ((b2Body*)rigidbody.body)->GetLinearVelocity().x);

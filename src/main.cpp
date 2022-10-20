@@ -109,6 +109,7 @@ struct Config {
     char name[50];
     std::string mainScene;
     float ambientLight;
+    float exposure;
     bool resizable;
     bool fullscreenOnLaunch;
     int width, height;
@@ -123,10 +124,12 @@ struct AddComponentList {
     };
 };
 
+char newName[256];
 Config config = {
-        "Static Engine",
+        "Vault Engine",
         "assets/scenes/main.static",
-        0.2
+        0.2,
+
 };
 
 AddComponentList AddComponentConfig;
@@ -149,9 +152,37 @@ bool SortEntries(fs::directory_entry a, fs::directory_entry b) {
     return a.path().filename().string() < b.path().filename().string();
 }
 
+fs::path relative(fs::path p, fs::path base)
+{
+    // 1. convert p and base to absolute paths
+    p = fs::absolute(p);
+    base = fs::absolute(base);
+
+    // 2. find first mismatch and shared root path
+    auto mismatched = std::mismatch(p.begin(), p.end(), base.begin(), base.end());
+
+    // 3. if no mismatch return "."
+    if (mismatched.first == p.end() && mismatched.second == base.end())
+        return ".";
+
+    auto it_p = mismatched.first;
+    auto it_base = mismatched.second;
+
+    fs::path ret;
+
+    // 4. iterate abase to the shared root and append "../"
+    for (; it_base != base.end(); ++it_base)  ret /= "..";
+
+    // 5. iterate from the shared root to the p and append its parts
+    for (; it_p != p.end(); ++it_p) ret /= *it_p;
+
+    return ret;
+}
+
+fs::path currentDirectory = fs::path("assets");
 void DirIter(const std::string &path) {
     // alphabetical sort
-    auto iter = fs::directory_iterator(path);
+    auto iter = fs::directory_iterator(currentDirectory);
     std::vector<fs::directory_entry> entries;
     for (auto &p: iter) {
         entries.push_back(p);
@@ -160,6 +191,7 @@ void DirIter(const std::string &path) {
 
     std::vector<fs::directory_entry> folders;
     std::vector<fs::directory_entry> files;
+    std::vector<fs::directory_entry> paths;
 
     for (auto &p: entries) {
         if (fs::is_directory(p)) {
@@ -168,86 +200,200 @@ void DirIter(const std::string &path) {
             files.push_back(p);
         }
     }
+    std::sort(files.begin(), files.end(), SortEntries);
 
-    for (const auto &entry : folders) {
-        bool item = ImGui::TreeNodeEx(
-                (std::string(ICON_FA_FOLDER) + " " + entry.path().filename().string()).c_str(),
-                ImGuiTreeNodeFlags_SpanAvailWidth);
-        if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(1)) {
-            m_originalName = entry.path().string();
-            ImGui::OpenPopup("File Options");
+    folders.insert(folders.end(), files.begin(), files.end());
+
+    // test
+
+    float padding = 16;
+    float buttonSize = 100;
+    float cellSize = buttonSize + padding;
+
+    float width = ImGui::GetContentRegionAvail().x;
+    int count = (int) (width / cellSize);
+
+    if(count == 0) count = 5;
+
+    ImGui::Columns(count, 0, false);
+
+    // select second fa-solid-900 font that is twice big
+    ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[2]);
+    for(const auto &entry : folders) {
+        std::string path = entry.path().string();
+        fs::path relativePath = relative(entry.path(), currentDirectory);
+
+        if(fs::is_directory(entry)) {
+            // move the button text down
+            // itme spacing
+            ImVec2 cursorPos = ImGui::GetCursorPos();
+            // grey color
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+            bool item = ImGui::Button(std::string("##" + relativePath.filename().string()).c_str(), ImVec2(buttonSize, buttonSize));
+            ImGui::PopStyleColor(3);
+
+            ImGui::SetCursorPos(ImVec2(cursorPos.x, cursorPos.y + 25));
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+            ImGui::Button(ICON_FA_FOLDER, ImVec2(buttonSize, buttonSize - 25));
+
+            if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(1)) {
+                m_originalName = path;
+                strcpy(newName, entry.path().filename().string().c_str());
+                ImGui::OpenPopup("File Options");
+            }
+
+            ImGui::PopStyleColor();
+            ImGui::Text(relativePath.string().c_str());
+
+            if(item) {
+                currentDirectory /= entry.path().filename();
+            }
         }
+        else {
+            ImVec2 cursorPos = ImGui::GetCursorPos();
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+            bool item = ImGui::Button(std::string("##" + relativePath.filename().string()).c_str(), ImVec2(buttonSize, buttonSize));
 
-        if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("file")) {
-                // fs::rename(file, newFile);move the file into the folder
-                std::string file = (char *) payload->Data;
-                file.erase(0, cwd.length() + 1);
-                std::string newFile = entry.path().string() + "/" + file.substr(file.find_last_of("/") + 1);
-                try {
-                    fs::rename(file, newFile);
-                } catch (const std::exception &e) {
+            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+                HyperAPI::dirPayloadData = fs::absolute(entry.path().string());
+                ImGui::SetDragDropPayload("file", dirPayloadData.c_str(), strlen(dirPayloadData.c_str()));
+                ImGui::Text(entry.path().filename().string().c_str());
+                ImGui::EndDragDropSource();
+            }
+
+            ImGui::PopStyleColor(3);
+
+            ImGui::SetCursorPos(ImVec2(cursorPos.x, cursorPos.y + 30));
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+            if (ends_with(entry.path().string(), ".lua")) {
+                ImGui::Button(ICON_FA_CODE, ImVec2(buttonSize, buttonSize - 30));
+                if (item) {
+                    std::ifstream file(entry.path().string());
+                    std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+                    editor.SetText(str);
+                    currentFilePath = entry.path().string();
                 }
+            } else if (ends_with(entry.path().string(), ".png") || ends_with(entry.path().string(), ".jpg") ||
+                       ends_with(entry.path().string(), ".jpeg")) {
+                ImGui::Button(ICON_FA_IMAGE, ImVec2(buttonSize, buttonSize - 30));
+            } else if (ends_with(entry.path().string(), ".ogg") || ends_with(entry.path().string(), ".mp3") ||
+                       ends_with(entry.path().string(), ".wav")) {
+                ImGui::Button(ICON_FA_FILE_AUDIO, ImVec2(buttonSize, buttonSize - 30));
+            } else if (ends_with(entry.path().string(), ".ttf") || ends_with(entry.path().string(), ".otf")) {
+                ImGui::Button(ICON_FA_FONT, ImVec2(buttonSize, buttonSize - 30));
+            } else if (ends_with(entry.path().string(), ".static")) {
+                ImGui::Button(ICON_FA_CUBES, ImVec2(buttonSize, buttonSize - 30));
+            } else if (ends_with(entry.path().string(), ".json")) {
+                ImGui::Button(ICON_FA_FILE_CODE, ImVec2(buttonSize, buttonSize - 30));
+            } else if (ends_with(entry.path().string(), ".prefab")) {
+                ImGui::Button(ICON_FA_CUBE, ImVec2(buttonSize, buttonSize - 30));
+            } else if (ends_with(entry.path().string(), ".material")) {
+                ImGui::Button(ICON_FA_PAINTBRUSH, ImVec2(buttonSize, buttonSize - 30));
+            } else {
+                ImGui::Button(ICON_FA_FILE, ImVec2(buttonSize, buttonSize - 30));
             }
-            ImGui::EndDragDropTarget();
-        }
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-            dirPayloadData = entry.path().string();
-            ImGui::SetDragDropPayload("file", entry.path().string().c_str(), entry.path().string().size());
-            ImGui::Text(entry.path().filename().string().c_str());
-            ImGui::EndDragDropSource();
+
+            if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(1)) {
+                m_originalName = path;
+                strcpy(newName, entry.path().filename().string().c_str());
+                ImGui::OpenPopup("File Options");
+            }
+
+            ImGui::PopStyleColor();
+            ImGui::Text(relativePath.string().c_str());
+
+            if(item) {
+
+            }
         }
 
-        if (item) {
-            DirIter(entry.path().string());
-            ImGui::TreePop();
-        }
+        ImGui::NextColumn();
     }
-    for (const auto &entry : files) {
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 25);
-        if (ends_with(entry.path().string(), ".lua")) {
-            ImGui::Selectable((std::string(ICON_FA_CODE) + " " + entry.path().filename().string()).c_str());
-            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-                std::ifstream file(entry.path().string());
-                std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-                editor.SetText(str);
-                currentFilePath = entry.path().string();
-            }
-        } else if (ends_with(entry.path().string(), ".png") || ends_with(entry.path().string(), ".jpg") ||
-                   ends_with(entry.path().string(), ".jpeg")) {
-            ImGui::Selectable((std::string(ICON_FA_IMAGE) + " " + entry.path().filename().string()).c_str());
-        } else if (ends_with(entry.path().string(), ".ogg") || ends_with(entry.path().string(), ".mp3") ||
-                   ends_with(entry.path().string(), ".wav")) {
-            ImGui::Selectable((std::string(ICON_FA_FILE_AUDIO) + " " + entry.path().filename().string()).c_str());
-        } else if (ends_with(entry.path().string(), ".ttf") || ends_with(entry.path().string(), ".otf")) {
-            ImGui::Selectable((std::string(ICON_FA_FONT) + " " + entry.path().filename().string()).c_str());
-        } else if (ends_with(entry.path().string(), ".static")) {
-            ImGui::Selectable((std::string(ICON_FA_CUBES) + " " + entry.path().filename().string()).c_str());
-        } else if (ends_with(entry.path().string(), ".json")) {
-            ImGui::Selectable((std::string(ICON_FA_FILE_CODE) + " " + entry.path().filename().string()).c_str());
-        } else if (ends_with(entry.path().string(), ".prefab")) {
-            ImGui::Selectable((std::string(ICON_FA_CUBE) + " " + entry.path().filename().string()).c_str());
-        } else if (ends_with(entry.path().string(), ".material")) {
-            ImGui::Selectable((std::string(ICON_FA_PAINTBRUSH) + " " + entry.path().filename().string()).c_str());
-        } else {
-            ImGui::Selectable((std::string(ICON_FA_FILE) + " " + entry.path().filename().string()).c_str());
-        }
-        // on right click
-        if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(1)) {
-            m_originalName = entry.path().string();
-            ImGui::OpenPopup("File Options");
-        }
-        // make it draggable
+    ImGui::PopFont();
+    ImGui::Columns(1);
 
-        // disable it getting out of the window
-        ImGui::SetItemAllowOverlap();
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-            dirPayloadData = entry.path().string();
-            ImGui::SetDragDropPayload("file", dirPayloadData.c_str(), strlen(dirPayloadData.c_str()));
-            ImGui::Text(entry.path().filename().string().c_str());
-            ImGui::EndDragDropSource();
-        }
-    }
+//    return;
+//
+//    for (const auto &entry : folders) {
+//        bool item = ImGui::TreeNodeEx(
+//                (std::string(ICON_FA_FOLDER) + " " + entry.path().filename().string()).c_str(),
+//                ImGuiTreeNodeFlags_SpanAvailWidth);
+//        if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(1)) {
+//            m_originalName = entry.path().string();
+//            ImGui::OpenPopup("File Options");
+//        }
+//
+//        if (ImGui::BeginDragDropTarget()) {
+//            if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("file")) {
+//                // fs::rename(file, newFile);move the file into the folder
+//                std::string file = (char *) payload->Data;
+//                file.erase(0, cwd.length() + 1);
+//                std::string newFile = entry.path().string() + "/" + file.substr(file.find_last_of("/") + 1);
+//                try {
+//                    fs::rename(file, newFile);
+//                } catch (const std::exception &e) {
+//                }
+//            }
+//            ImGui::EndDragDropTarget();
+//        }
+//        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+//            dirPayloadData = entry.path().string();
+//            ImGui::SetDragDropPayload("file", entry.path().string().c_str(), entry.path().string().size());
+//            ImGui::Text(entry.path().filename().string().c_str());
+//            ImGui::EndDragDropSource();
+//        }
+//
+//        if (item) {
+//            DirIter(entry.path().string());
+//            ImGui::TreePop();
+//        }
+//    }
+//    for (const auto &entry : files) {
+//        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 25);
+//        if (ends_with(entry.path().string(), ".lua")) {
+//            ImGui::Selectable((std::string(ICON_FA_CODE) + " " + entry.path().filename().string()).c_str());
+//            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+//                std::ifstream file(entry.path().string());
+//                std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+//                editor.SetText(str);
+//                currentFilePath = entry.path().string();
+//            }
+//        } else if (ends_with(entry.path().string(), ".png") || ends_with(entry.path().string(), ".jpg") ||
+//                   ends_with(entry.path().string(), ".jpeg")) {
+//            ImGui::Selectable((std::string(ICON_FA_IMAGE) + " " + entry.path().filename().string()).c_str());
+//        } else if (ends_with(entry.path().string(), ".ogg") || ends_with(entry.path().string(), ".mp3") ||
+//                   ends_with(entry.path().string(), ".wav")) {
+//            ImGui::Selectable((std::string(ICON_FA_FILE_AUDIO) + " " + entry.path().filename().string()).c_str());
+//        } else if (ends_with(entry.path().string(), ".ttf") || ends_with(entry.path().string(), ".otf")) {
+//            ImGui::Selectable((std::string(ICON_FA_FONT) + " " + entry.path().filename().string()).c_str());
+//        } else if (ends_with(entry.path().string(), ".static")) {
+//            ImGui::Selectable((std::string(ICON_FA_CUBES) + " " + entry.path().filename().string()).c_str());
+//        } else if (ends_with(entry.path().string(), ".json")) {
+//            ImGui::Selectable((std::string(ICON_FA_FILE_CODE) + " " + entry.path().filename().string()).c_str());
+//        } else if (ends_with(entry.path().string(), ".prefab")) {
+//            ImGui::Selectable((std::string(ICON_FA_CUBE) + " " + entry.path().filename().string()).c_str());
+//        } else if (ends_with(entry.path().string(), ".material")) {
+//            ImGui::Selectable((std::string(ICON_FA_PAINTBRUSH) + " " + entry.path().filename().string()).c_str());
+//        } else {
+//            ImGui::Selectable((std::string(ICON_FA_FILE) + " " + entry.path().filename().string()).c_str());
+//        }
+//
+//        if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(1)) {
+//            m_originalName = entry.path().string();
+//            ImGui::OpenPopup("File Options");
+//        }
+//
+//        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+//            dirPayloadData = entry.path().string();
+//            ImGui::SetDragDropPayload("file", dirPayloadData.c_str(), strlen(dirPayloadData.c_str()));
+//            ImGui::Text(entry.path().filename().string().c_str());
+//            ImGui::EndDragDropSource();
+//        }
+//    }
 }
 
 void ApplyMaterial(nlohmann::json JSON, Material &material, int i) {
@@ -772,6 +918,7 @@ int main() {
         config.height = JSON["height"];
         strcpy(config.name, ((std::string) JSON["name"]).c_str());
         config.ambientLight = JSON["ambientLight"];
+        config.exposure = JSON.contains("exposure") ? (float)JSON["exposure"] : 1.0f;
         config.mainScene = JSON["mainScene"];
         config.resizable = JSON["resizable"];
         config.fullscreenOnLaunch = JSON["fullscreen_on_launch"];
@@ -784,6 +931,7 @@ int main() {
         nlohmann::json j = {
                 {"name",                 config.name},
                 {"ambientLight",         config.ambientLight},
+                {"exposure",             config.exposure},
                 {"mainScene",            config.mainScene},
                 {"width",                config.width},
                 {"height",               config.height},
@@ -820,7 +968,7 @@ int main() {
 
     app.renderOnScreen = true;
 #else
-    Hyper::Application app(1280, 720, "Static Engine", false, true, false, [&]() {
+    Hyper::Application app(1280, 720, "Vault Engine", false, true, false, [&]() {
         // get io
         auto &io = ImGui::GetIO();
         io.ConfigWindowsMoveFromTitleBarOnly = true;
@@ -841,6 +989,13 @@ int main() {
         //set default font
     });
     auto *fontCascadia = ImGui::GetIO().Fonts->AddFontFromFileTTF("assets/fonts/CascadiaMono.ttf", 16.0f);
+
+    ImGui::GetIO().Fonts->AddFontFromFileTTF("assets/fonts/OpenSans-Semibold.ttf", 18.f);
+    static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+    ImFontConfig icons_config;
+    icons_config.MergeMode = true;
+    icons_config.PixelSnapH = true;
+    ImGui::GetIO().Fonts->AddFontFromFileTTF("assets/fonts/fa-solid-900.ttf", 55.0f, &icons_config, icons_ranges);
 #endif
 
     Input::window = app.renderer->window;
@@ -876,7 +1031,7 @@ int main() {
 
     bool openConfig = false;
     bool openDetails = false;
-    bool openInspector = false;
+    bool openInspector = true;
     bool openLayers = false;
     char layerName[32] = "New Layer";
 
@@ -1243,6 +1398,7 @@ int main() {
                                 nlohmann::json j = {
                                         {"name",                 config.name},
                                         {"ambientLight",         config.ambientLight},
+                                        {"exposure",             config.exposure},
                                         {"mainScene",            config.mainScene},
                                         {"width",                config.width},
                                         {"height",               config.height},
@@ -1415,7 +1571,7 @@ int main() {
                         }
 
                         if (inspectorType == InspecType::None) {
-                            ImGui::Text("To inspect an object, drag it into the inspector window's title bar.");
+                            ImGui::TextWrapped("To inspect an object, drag it into the inspector window's title bar.");
                         }
                         if (ImGui::Button("Close")) {
                             inspectorType = InspecType::None;
@@ -1461,6 +1617,7 @@ int main() {
 #endif
                     ImGui::InputText("Game Name", config.name, 500);
                     ImGui::DragFloat("Ambient Lightning", &config.ambientLight, 0.01f, 0, 1);
+                    ImGui::DragFloat("Exposure", &config.exposure, 0.01f, 0);
                     ImGui::Checkbox("Fullscreen On Launch", &config.fullscreenOnLaunch);
                     ImGui::Checkbox("Resizable", &config.resizable);
                     ImGui::DragInt("Width", &config.width, 1, 0, 1920);
@@ -1480,6 +1637,7 @@ int main() {
                         nlohmann::json j = {
                                 {"name",                 config.name},
                                 {"ambientLight",         config.ambientLight},
+                                {"exposure",             config.exposure},
                                 {"mainScene",            config.mainScene},
                                 {"resizable",            config.resizable},
                                 {"fullscreen_on_launch", config.fullscreenOnLaunch},
@@ -1568,7 +1726,6 @@ int main() {
                         mousePos.x -= windowPos.x;
                         mousePos.y -= windowPos.y;
                         mousePos.y = windowSize.y - mousePos.y;
-                        // std::cout << mx << " " << mousePos.y << std::endl;
                         app.sceneMouseX = mousePos.x;
                         app.sceneMouseY = mousePos.y;
 
@@ -1580,11 +1737,6 @@ int main() {
 
                         glActiveTexture(GL_TEXTURE15);
                         glBindTexture(GL_TEXTURE_2D, PPT);
-
-                        // check window hovered
-
-                        //                        ImGui::SetCursorPos(ImVec2(0, 0));
-                        // set the layer to be behind the buttons, NOT FONT, I DO NOT WANT FONT SCALE CHANGED
 
                         ImGui::Image((void *) PPT, ImVec2(w_s.x, w_s.y), ImVec2(0, 1), ImVec2(1, 0));
                         if (ImGui::IsItemHovered() && ImGui::IsMouseDragging(0)) {
@@ -2093,6 +2245,11 @@ int main() {
                             if (comp.hasGUI) comp.GUI();
                         }
 
+                        if (Scene::m_Object->HasComponent<Bloom>()) {
+                            auto &comp = Scene::m_Object->GetComponent<Bloom>();
+                            if (comp.hasGUI) comp.GUI();
+                        }
+
                         if (Scene::m_Object->HasComponent<PathfindingAI>()) {
                             auto &comp = Scene::m_Object->GetComponent<PathfindingAI>();
                             if (comp.hasGUI) comp.GUI();
@@ -2203,6 +2360,11 @@ int main() {
                             }
                         }
 
+                        if (ImGui::Button("Bloom", ImVec2(200, 0))) {
+                            Scene::m_Object->AddComponent<Bloom>();
+                            ImGui::CloseCurrentPopup();
+                        }
+
                         if (ImGui::Button("Path Finding AI", ImVec2(200, 0))) {
                             Scene::m_Object->AddComponent<PathfindingAI>();
                             ImGui::CloseCurrentPopup();
@@ -2217,15 +2379,23 @@ int main() {
                 if (ImGui::Begin(ICON_FA_FOLDER " Assets", nullptr)) {
                     Scene::DropTargetMat(Scene::DRAG_GAMEOBJECT, nullptr);
                     // create new file
-                    if (ImGui::Button(ICON_FA_PLUS " New File", ImVec2(ImGui::GetWindowSize().x, 0))) {
-                        ImGui::OpenPopup("New File");
-                    }
 
                     if (ImGui::BeginPopup("New File")) {
                         if (ImGui::Button(ICON_FA_CODE" Lua Script", ImVec2(200, 0))) {
-                            fs::path p = fs::path("assets/New Script.lua");
+#ifdef _WIN32
+                            fs::path p = fs::path(currentDirectory.string() + "\\New Script.lua");
+#else
+                            fs::path p = fs::path(currentDirectory.string() + "/new_script.lua");
+#endif
+
                             if (!fs::exists(p)) {
                                 std::ofstream file(p);
+                                file << "new_script = {}\n\n";
+                                file << "function new_script:OnStart()\n";
+                                file << "end\n\n";
+                                file << "function new_script:OnUpdate()\n";
+                                file << "end";
+
                                 file.close();
                             }
                             ImGui::CloseCurrentPopup();
@@ -2233,13 +2403,25 @@ int main() {
 
                         // folder
                         if (ImGui::Button(ICON_FA_FOLDER " Folder", ImVec2(200, 0))) {
-                            fs::create_directory("assets/dancing_vampire");
+#ifdef _WIN32
+                            fs::path p = fs::path(currentDirectory.string() + "\\New Folder");
+#else
+                            fs::path p = fs::path(currentDirectory.string() + "/New Folder");
+#endif
+
+                            if (!fs::exists(p)) {
+                                fs::create_directory(p);
+                            }
                             ImGui::CloseCurrentPopup();
                         }
 
                         // file
                         if (ImGui::Button(ICON_FA_FILE " File", ImVec2(200, 0))) {
-                            fs::path p = fs::path("assets/New File");
+#ifdef _WIN32
+                            fs::path p = fs::path(currentDirectory.string() + "\\New File");
+#else
+                            fs::path p = fs::path(currentDirectory.string() + "/New File");
+#endif
                             if (!fs::exists(p)) {
                                 std::ofstream file(p);
                                 file.close();
@@ -2248,7 +2430,12 @@ int main() {
                         }
 
                         if (ImGui::Button(ICON_FA_FILE " Material", ImVec2(200, 0))) {
-                            fs::path p = fs::path("assets/New Material.material");
+#ifdef _WIN32
+                            fs::path p = fs::path(currentDirectory.string() + "/New Material.material");
+#else
+                            fs::path p = fs::path(currentDirectory.string() + "/New Material.material");
+#endif
+
                             if (!fs::exists(p)) {
                                 std::ofstream file(p);
                                 nlohmann::json j = {
@@ -2280,6 +2467,18 @@ int main() {
                         ImGui::EndPopup();
                     }
 
+                    if(currentDirectory != fs::path("assets")) {
+                        if(ImGui::Button(ICON_FA_ARROW_LEFT)) {
+                            currentDirectory = currentDirectory.parent_path();
+                        }
+
+                        ImGui::SameLine();
+                    }
+
+                    if (ImGui::Button(ICON_FA_PLUS " New File", ImVec2(0, 0))) {
+                        ImGui::OpenPopup("New File");
+                    }
+
                     ImGui::Separator();
                     if (ImGui::BeginDragDropTarget()) {
                         if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("file")) {
@@ -2297,15 +2496,41 @@ int main() {
 
                     DirIter(cwd + std::string("/assets"));
                     if (ImGui::BeginPopup("File Options")) {
-                        if (ImGui::Button("Delete", ImVec2(200, 0))) {
-                            fs::remove(m_originalName);
-                            ImGui::CloseCurrentPopup();
+                        static bool renameWindow = false;
+                        if(!renameWindow) {
+                            if (ImGui::Button("Rename", ImVec2(200, 0))) {
+                                renameWindow = true;
+                            }
+
+                            if (ImGui::Button("Delete", ImVec2(200, 0))) {
+                                fs::remove(m_originalName);
+                                ImGui::CloseCurrentPopup();
+                            }
+                        } else {
+                            ImGui::InputText("New Name", newName, 256);
+
+                            if (ImGui::Button("Rename")) {
+#ifdef _WIN32
+                                fs::path p = fs::path(m_originalName);
+                                fs::path newP = fs::path(m_originalName.substr(0, m_originalName.find_last_of("/")) + "\\" + newName);
+                                fs::rename(p, newP);
+#else
+                                fs::path p = fs::path(m_originalName);
+                                fs::path newP = fs::path(
+                                        m_originalName.substr(0, m_originalName.find_last_of("/")) + "/" + newName);
+                                fs::rename(p, newP);
+#endif
+                                renameWindow = false;
+                                ImGui::CloseCurrentPopup();
+                            }
                         }
+
                         ImGui::EndPopup();
                     }
                 }
                 ImGui::End();
 
+                // scroll to the bottom
                 if (ImGui::Begin(ICON_FA_TERMINAL " Console")) {
                     if (ImGui::Button(ICON_FA_TRASH " Clear")) {
                         Scene::logs.clear();
@@ -2313,10 +2538,16 @@ int main() {
 
                     ImGui::Separator();
 
+                    ImGui::BeginChild("Logs");
+
                     for (auto &log : Scene::logs) {
                         log.GUI();
                     }
+                    if(HyperAPI::isRunning) {
+                        ImGui::SetScrollHereY(0.999f);
+                    }
 
+                    ImGui::EndChild();
                 }
                 ImGui::End();
 
@@ -2395,6 +2626,9 @@ int main() {
 
     app.Run([&](unsigned int &shadowMapTex) {
         if (Scene::LoadingScene) return;
+        app.exposure = config.exposure;
+        app.isGuzimoInUse = usingImGuizmo;
+
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
@@ -2505,16 +2739,18 @@ int main() {
 
         Input::winSize = Vector3(app.width, app.height, 0);
 
-        if (hoveredScene && !usingImGuizmo && camera->mode2D && Scene::mainCamera == camera) {
+        if (hoveredScene && ImGui::IsMouseDragging(0) && !usingImGuizmo && camera->mode2D && Scene::mainCamera == camera) {
             auto transform = camera->GetComponent<TransformComponent>();
             transform.rotation = glm::vec3(0.0f, 0.0f, -1.0f);
-            camera->Inputs(app.renderer->window, winPos);
-            camera->UpdateComponent(transform);
         }
-        if (hoveredScene && !usingImGuizmo && Scene::mainCamera == camera) {
+
+        if (hoveredScene && ImGui::IsMouseDragging(0) && !usingImGuizmo && Scene::mainCamera == camera) {
             camera->Inputs(app.renderer->window, winPos);
-//            camera->ControllerInput(app.renderer->window);
+            camera->moving = true;
+        } else {
+            camera->moving = false;
         }
+
         winSize = Vector2(app.width, app.height);
 
         for (auto &camera : Scene::cameras) {
@@ -2629,6 +2865,14 @@ int main() {
                 gameObject->GetComponent<SpritesheetRenderer>().Update();
             }
 
+            if (gameObject->HasComponent<SpriteRenderer>()) {
+                gameObject->GetComponent<SpriteRenderer>().Update();
+            }
+
+            if (gameObject->HasComponent<MeshRenderer>()) {
+                gameObject->GetComponent<MeshRenderer>().Update();
+            }
+
             if (gameObject->HasComponent<m_LuaScriptComponent>()) {
                 auto &script = gameObject->GetComponent<m_LuaScriptComponent>();
                 if (HyperAPI::isRunning) {
@@ -2646,7 +2890,6 @@ int main() {
 
 //        font.Render(textShader, *camera, "Hello World!", fontTransform);
 
-
         for (auto &layer : Scene::layers) {
             bool notInCameraLayer = true;
             for (auto &camLayer : Scene::mainCamera->layers) {
@@ -2662,6 +2905,12 @@ int main() {
                 if (!gameObject->enabled) continue;
                 if (gameObject->layer != layer.first) continue;
                 if (gameObject->HasComponent<MeshRenderer>()) {
+                    for(unsigned int i = 0; i < 32; i++) {
+                        // unbind all texture
+                        glActiveTexture(GL_TEXTURE0 + i);
+                        glBindTexture(GL_TEXTURE_2D, 0);
+                    }
+
                     auto meshRenderer = gameObject->GetComponent<MeshRenderer>();
                     auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
@@ -2684,11 +2933,18 @@ int main() {
                             transform.Update();
                         }
 
+                        meshRenderer.m_Mesh->enttId = (unsigned int)gameObject->entity;
                         meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera, transform.transform * extra);
                     }
                 }
 
                 if (gameObject->HasComponent<SpriteRenderer>()) {
+                    for(unsigned int i = 0; i < 32; i++) {
+                        // unbind all texture
+                        glActiveTexture(GL_TEXTURE0 + i);
+                        glBindTexture(GL_TEXTURE_2D, 0);
+                    }
+
                     auto spriteRenderer = gameObject->GetComponent<SpriteRenderer>();
                     auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
@@ -2702,11 +2958,17 @@ int main() {
                         }
                     }
 
+                    spriteRenderer.mesh->enttId = (unsigned int)gameObject->entity;
                     spriteRenderer.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
-                    glDisable(GL_BLEND);
                 }
 
                 if (gameObject->HasComponent<SpritesheetRenderer>()) {
+                    for(unsigned int i = 0; i < 32; i++) {
+                        // unbind all texture
+                        glActiveTexture(GL_TEXTURE0 + i);
+                        glBindTexture(GL_TEXTURE_2D, 0);
+                    }
+
                     auto spritesheetRenderer = gameObject->GetComponent<SpritesheetRenderer>();
                     auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
@@ -2721,12 +2983,18 @@ int main() {
                     }
 
                     if (spritesheetRenderer.mesh != nullptr) {
+                        spritesheetRenderer.mesh->enttId = (unsigned int)gameObject->entity;
                         spritesheetRenderer.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
-                        glDisable(GL_BLEND);
                     }
                 }
 
                 if (gameObject->HasComponent<SpriteAnimation>()) {
+                    for(unsigned int i = 0; i < 32; i++) {
+                        // unbind all texture
+                        glActiveTexture(GL_TEXTURE0 + i);
+                        glBindTexture(GL_TEXTURE_2D, 0);
+                    }
+
                     auto spriteAnimation = gameObject->GetComponent<SpriteAnimation>();
                     auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
@@ -2743,12 +3011,19 @@ int main() {
                     }
 
                     if (spriteAnimation.currMesh != nullptr) {
+                        spriteAnimation.currMesh->enttId = (unsigned int)gameObject->entity;
                         spriteAnimation.currMesh->Draw(shader, *Scene::mainCamera);
                         glDisable(GL_BLEND);
                     }
                 }
 
                 if (gameObject->HasComponent<c_SpritesheetAnimation>()) {
+                    for(unsigned int i = 0; i < 32; i++) {
+                        // unbind all texture
+                        glActiveTexture(GL_TEXTURE0 + i);
+                        glBindTexture(GL_TEXTURE_2D, 0);
+                    }
+
                     auto spritesheetAnimation = gameObject->GetComponent<c_SpritesheetAnimation>();
                     auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
@@ -2765,11 +3040,18 @@ int main() {
                     spritesheetAnimation.Play();
                     spritesheetAnimation.Update();
                     if (spritesheetAnimation.mesh != nullptr) {
+                        spritesheetAnimation.mesh->enttId = (unsigned int)gameObject->entity;
                         spritesheetAnimation.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
                         glDisable(GL_BLEND);
                     }
                 }
             }
+        }
+
+        for(unsigned int i = 0; i < 32; i++) {
+            // unbind all texture
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, 0);
         }
 
         auto cameraView = Scene::m_Registry.view<CameraComponent>();
@@ -2942,42 +3224,22 @@ int main() {
             }
         }
 
-        glClear(GL_DEPTH_BUFFER_BIT);
-        if (drawBoxCollider2D) {
-            glDepthFunc(GL_LEQUAL);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, bc2dPos) *
-                    glm::scale(model, glm::vec3(bc2dScale.x / 2, bc2dScale.y / 2, 1.0f)) *
-                    glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-            mesh_BoxCollider2D.Draw(workerShader, *camera, model);
-
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
+//        glClear(GL_DEPTH_BUFFER_BIT);
+//        if (drawBoxCollider2D) {
+//            glDepthFunc(GL_LEQUAL);
+//            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//
+//            glm::mat4 model = glm::mat4(1.0f);
+//            model = glm::translate(model, bc2dPos) *
+//                    glm::scale(model, glm::vec3(bc2dScale.x / 2, bc2dScale.y / 2, 1.0f)) *
+//                    glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+////            mesh_BoxCollider2D.Draw(workerShader, *camera, model);
+//
+//            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//        }
 
         for (auto &gameObject : Scene::m_GameObjects) {
             if (!gameObject->enabled) continue;
-            if (gameObject->HasComponent<c_DirectionalLight>()) {
-                for (auto &game_object : Scene::m_GameObjects) {
-                    if (game_object->HasComponent<MeshRenderer>()) {
-                        auto &meshRenderer = game_object->GetComponent<MeshRenderer>();
-                        if (meshRenderer.m_Mesh)
-                            meshRenderer.m_Mesh->material.Unbind(shader);
-                    }
-                }
-
-                auto &transform = gameObject->GetComponent<Transform>();
-                Transform t = transform;
-                t.scale = glm::vec3(-1.5f, 1.5f, 1.5f);
-
-                auto camTransform = camera->GetComponent<TransformComponent>();
-                t.LookAt(camTransform.position);
-                t.Update();
-
-                glDepthFunc(GL_LEQUAL);
-                dirLightIconMesh.Draw(workerShader, *camera, t.transform);
-            }
 
             if (gameObject->HasComponent<c_DirectionalLight>()) {
                 for (auto &game_object : Scene::m_GameObjects) {
@@ -2997,6 +3259,7 @@ int main() {
                 t.Update();
 
                 glDepthFunc(GL_LEQUAL);
+                dirLightIconMesh.enttId = (unsigned int)gameObject->entity;
                 dirLightIconMesh.Draw(workerShader, *camera, t.transform);
             }
 
@@ -3018,6 +3281,7 @@ int main() {
                 t.Update();
 
                 glDepthFunc(GL_LEQUAL);
+                pointLightIconMesh.enttId = (unsigned int)gameObject->entity;
                 pointLightIconMesh.Draw(workerShader, *camera, t.transform);
             }
 
@@ -3039,6 +3303,7 @@ int main() {
                 t.Update();
 
                 glDepthFunc(GL_LEQUAL);
+                spotLightIconMesh.enttId = (unsigned int)gameObject->entity;
                 spotLightIconMesh.Draw(workerShader, *camera, t.transform);
             }
 
@@ -3060,6 +3325,7 @@ int main() {
                 t.Update();
 
                 glDepthFunc(GL_LEQUAL);
+                cameraIconMesh.enttId = (unsigned int)gameObject->entity;
                 cameraIconMesh.Draw(workerShader, *camera, t.transform);
             }
         }

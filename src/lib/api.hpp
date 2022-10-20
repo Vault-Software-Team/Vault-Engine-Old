@@ -1,24 +1,20 @@
 #pragma once
-// print the file name and line number on every new
-// line of the output
 
+// Vendor Includes
+#include <NoesisGUI/NoesisPCH.h>
+#include <NoesisGUI/NsRender/GLFactory.h>
 #include "../vendor/glad/include/glad/glad.h"
-
 #include "../vendor/GLFW/glfw3.h"
-#include "../vendor/ImGuizmo/ImGuizmo.hpp"
+#include "ImGuizmo/ImGuizmo.h"
 #include "../vendor/ImGuizmo/ImSequencer.h"
-#include <fstream>
-#include <iostream>
 #include "../vendor/discord-rpc/discord_rpc.h"
 #include "../vendor/stb_image/stb_image.h"
-// #include "../vendor/stb_image/stb_image.h"
 #include "../vendor/glm/glm.hpp"
 #include "../vendor/tinyxml/tinyxml2.h"
 #include "../vendor/glm/gtc/matrix_transform.hpp"
 #include "../vendor/glm/gtc/type_ptr.hpp"
 #include "../vendor/glm/ext.hpp"
 #include "../vendor/glm/gtx/quaternion.hpp"
-
 #define GLM_ENABLE_EXPERIMENTAL
 #include "../vendor/glm/gtx/matrix_decompose.hpp"
 #include "../vendor/glm/gtx/rotate_vector.hpp"
@@ -28,35 +24,35 @@
 #include "../vendor/imgui/imgui_internal.h"
 #include "../vendor/imgui/imgui_impl_glfw.h"
 #include "../vendor/imgui/imgui_impl_opengl3.h"
+#include <ft2build.h>
+#include FT_FREETYPE_H
 #include "../vendor/icons/icons.h"
 #include "../vendor/entt/entt.hpp"
 #include "../vendor/ImGuiFileDialog/ImGuiFileDialog.h"
-#include <vector>
-#include <functional>
-#include <experimental/filesystem>
 #include "../vendor/assimp/Importer.hpp"
 #include "../vendor/assimp/scene.h"
-//import glm helpers
 #include "../vendor/box2d/box2d.h"
 #include "../vendor/assimp/postprocess.h"
-#include <any>
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include "scene.hpp"
-#include "ScriptEngine.hpp"
-#include "InputEvents.hpp"
 #include "../vendor/ImGuiColorTextEdit/TextEditor.h"
-#include "scripts.hpp"
 #include "../vendor/SDL2/SDL_mixer.h"
-#include <random>
-// shared_ptr
-#include <memory>
-
-// bullet physics
 #include "../vendor/bullet/bullet/btBulletDynamicsCommon.h"
 #include "../vendor/bullet/bullet/BulletCollision/CollisionDispatch/btGhostObject.h"
 
-// networking
+// C++ Libraries
+#include <vector>
+#include <functional>
+#include <experimental/filesystem>
+#include <any>
+#include <fstream>
+#include <iostream>
+#include <random>
+#include <memory>
+
+// Header Files
+#include "scene.hpp"
+#include "ScriptEngine.hpp"
+#include "InputEvents.hpp"
+#include "scripts.hpp"
 #include "networking.h"
 
 #ifndef _WIN32
@@ -344,6 +340,8 @@ namespace HyperAPI {
         void SetUniform4f(const char *name, float v0, float v1, float v2, float v3);
 
         void SetUniformMat4(const char *name, glm::mat4 value);
+        // uint
+        void SetUniform1ui(const char *name, unsigned int value);
     };
 
     struct CameraPosDec {
@@ -363,6 +361,7 @@ namespace HyperAPI {
         std::vector<std::string> layers;
         bool EnttComp = false;
         bool m_MouseMovement = false;
+        bool moving = false;
         entt::entity entity = entt::null;
 
         glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -559,6 +558,7 @@ namespace HyperAPI {
         float shininess;
         float metallic;
         float roughness;
+        Vector3 bloomColor = Vector3(0,0,0);
         Vector2 texUVs = Vector2(0, 0);
 
         Material(Vector4 baseColor = Vector4(1, 1, 1, 1), std::vector<Texture> textures = {}, float shininess = 0,
@@ -594,6 +594,8 @@ namespace HyperAPI {
 
         Mesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, Material &material, bool empty = false,
              bool batched = false);
+
+        unsigned int enttId;
 
         void Draw(
                 Shader &shader,
@@ -1005,6 +1007,24 @@ namespace HyperAPI {
         void DrawVec3Control(const std::string &label, Vector3 &values, float resetValue = 0.0f, float columnWidth = 100.0f);
         void DrawVec2Control(const std::string &label, Vector2 &values, float resetValue = 0.0f, float columnWidth = 100.0f);
 
+        struct Bloom : public BaseComponent {
+            Vector3 bloomColor;
+
+            Bloom() = default;
+
+            void GUI() override {
+                if(ImGui::TreeNode("Bloom")) {
+                    ImGui::ColorEdit3("Bloom Color", &bloomColor.x);
+
+                    ImGui::NewLine();
+                    if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::m_Registry.remove<Bloom>(entity);
+                    }
+                    ImGui::TreePop();
+                }
+            }
+        };
+
         struct Transform : public BaseComponent {
             Transform *parentTransform = nullptr;
             glm::mat4 transform = glm::mat4(1.0f);
@@ -1093,7 +1113,7 @@ namespace HyperAPI {
                 }
             }
 
-            void GUI() {
+            void GUI() override {
                 if (ImGui::TreeNode("Sprite Renderer")) {
                     if (ImGui::TreeNode("Texture")) {
                         if (mesh->material.diffuse != nullptr) {
@@ -1117,7 +1137,12 @@ namespace HyperAPI {
             }
 
             void Update() {
-
+                if(Scene::m_Registry.has<Bloom>(entity)) {
+                    auto &bloom = Scene::m_Registry.get<Bloom>(entity);
+                    mesh->material.bloomColor = bloom.bloomColor;
+                } else {
+                    mesh->material.bloomColor = Vector3(0,0,0);
+                }
             }
         };
 
@@ -1174,6 +1199,13 @@ namespace HyperAPI {
 
             void Update() {
                 if(mesh == nullptr) return;
+
+                if(Scene::m_Registry.has<Bloom>(entity)) {
+                    auto &bloom = Scene::m_Registry.get<Bloom>(entity);
+                    mesh->material.bloomColor = bloom.bloomColor;
+                } else {
+                    mesh->material.bloomColor = Vector3(0,0,0);
+                }
 
                 for(auto &vertex : mesh->vertices) {
                     int index = &vertex - &mesh->vertices[0];
@@ -1388,6 +1420,15 @@ namespace HyperAPI {
                     }
 
                     ImGui::TreePop();
+                }
+            }
+
+            void Update() {
+                if(Scene::m_Registry.has<Bloom>(entity)) {
+                    auto &bloom = Scene::m_Registry.get<Bloom>(entity);
+                    m_Mesh->material.bloomColor = bloom.bloomColor;
+                } else {
+                    m_Mesh->material.bloomColor = Vector3(0,0,0);
                 }
             }
         };
@@ -1769,6 +1810,8 @@ namespace HyperAPI {
                     delete GetComponent<c_Light2D>().light;
                 }
 
+                Scene::m_Object = nullptr;
+
                 Scene::m_Registry.remove(entity);
                 Scene::m_Registry.destroy(entity);
 
@@ -1849,7 +1892,7 @@ namespace HyperAPI {
                     ImGui::EndDragDropTarget();
                 }
 
-                if (Input::IsKeyPressed(KEY_DELETE) && Scene::m_Object->ID == ID && !keyDown) {
+                if (Input::IsKeyPressed(KEY_DELETE) && Scene::m_Object == this && !keyDown) {
                     DeleteGameObject();
                 } else if (!Input::IsKeyPressed(KEY_DELETE)) {
                     keyDown = false;
@@ -2425,6 +2468,13 @@ namespace HyperAPI {
             }
 
             void Update() {
+                if(Scene::m_Registry.has<Bloom>(entity)) {
+                    auto &bloom = Scene::m_Registry.get<Bloom>(entity);
+                    mesh->material.bloomColor = bloom.bloomColor;
+                } else {
+                    mesh->material.bloomColor = Vector3(0,0,0);
+                }
+
                 for(auto &vertex : mesh->vertices) {
                     m_SpritesheetAnimationData::Frame currFrame;
                     for (auto &animation : anims) {
@@ -3195,17 +3245,15 @@ extern float rectangleVert[];
 
 void NewFrame(unsigned int FBO, int width, int height);
 
-void EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO,
+void EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, unsigned int rectVAO,
               unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height);
 
 void EndEndFrame(
         HyperAPI::Shader &framebufferShader,
         HyperAPI::Renderer &renderer,
-        unsigned int FBO,
         unsigned int rectVAO,
         unsigned int postProcessingTexture,
         unsigned int postProcessingFBO,
-        unsigned int S_FBO,
         unsigned int S_postProcessingTexture,
         unsigned int S_postProcessingFBO,
         const int width,
@@ -3221,12 +3269,15 @@ SC_EndFrame(HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO
 namespace Hyper {
     class Application {
     public:
+        bool isGuzimoInUse = false;
+        bool mouseClicked = false;
         int sceneMouseX, sceneMouseY;
 
         bool renderOnScreen = false;
         int winWidth, winHeight;
         int width;
         int height;
+        float exposure = 1;
 
         std::string vendor, srenderer, version;
 
