@@ -54,10 +54,10 @@
 ### **Linux**
 
 ```bash
-git clone https://github.com/koki10190/Static-Engine.git
-cd Static-Engine
+git clone https://github.com/koki10190/Vault-Engine.git
+cd Vault-Engine
 make linux
-./Static\ Engine.sh
+./Vault\ Engine.sh
 ```
 
 ### **Windows**
@@ -65,8 +65,8 @@ make linux
 First! Go to Makefile and change x86_64-w64-mingw32-g++ to the g++ version you have installed (MUST HAVE MINGW INSTALLED FOR THIS AND MINGW MAKE, you do not have to change this if you are on linux and want to compile it for windows, you just need to install x86_64-w64-mingw32)
 
 ```bash
-git clone https://github.com/koki10190/Static-Engine.git
-cd Static-Engine
+git clone https://github.com/koki10190/Vault-Engine.git
+cd Vault-Engine
 make win
 ./win_build.exe
 ```
