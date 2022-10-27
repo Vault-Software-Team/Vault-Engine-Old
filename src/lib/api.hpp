@@ -1,8 +1,6 @@
 #pragma once
 
 // Vendor Includes
-#include <NoesisGUI/NoesisPCH.h>
-#include <NoesisGUI/NsRender/GLFactory.h>
 #include "../vendor/glad/include/glad/glad.h"
 #include "../vendor/GLFW/glfw3.h"
 #include "ImGuizmo/ImGuizmo.h"
@@ -15,6 +13,7 @@
 #include "../vendor/glm/gtc/type_ptr.hpp"
 #include "../vendor/glm/ext.hpp"
 #include "../vendor/glm/gtx/quaternion.hpp"
+#include "nativeScripts.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include "../vendor/glm/gtx/matrix_decompose.hpp"
 #include "../vendor/glm/gtx/rotate_vector.hpp"
@@ -80,7 +79,7 @@
 #define CYAN SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 11)
 #define GREY SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 8)
 #define RESET SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7)
-#define HYPER_LOG(x) RED; std::cout << "[STATIC] - "; RESET; std::cout << x << std::endl;
+#define HYPER_LOG(x) RED; std::cout << "[VAULT] - "; RESET; std::cout << x << std::endl;
 #else
 #define RED "\033[0;31m"
 #define GREEN "\033[0;32m"
@@ -90,7 +89,7 @@
 #define CYAN "\033[0;36m"
 #define WHITE "\033[0;37m"
 #define RESET "\033[0m"
-#define HYPER_LOG(x) std::cout << RED "[STATIC] - " RESET << x << std::endl;
+#define HYPER_LOG(x) std::cout << RED "[VAULT] - " RESET << x << std::endl;
 #endif
 
 using json = nlohmann::json;
@@ -111,6 +110,18 @@ namespace HyperAPI {
     extern bool isStopped;
     extern glm::vec3 mousePosWorld, mousePosCamWorld;
     extern float sceneMouseX, sceneMouseY;
+
+    struct Config {
+        char name[50];
+        std::string mainScene;
+        float ambientLight;
+        float exposure;
+        bool resizable;
+        bool fullscreenOnLaunch;
+        int width, height;
+    };
+
+    extern Config config;
 
     bool DecomposeTransform(const glm::mat4 &transform, glm::vec3 &translation, glm::vec3 &rotation, glm::vec3 &scale);
 
@@ -408,6 +419,7 @@ namespace HyperAPI {
 
         Texture(const char *texturePath, unsigned int slot, const char *textureType);
         ~Texture() {
+            HYPER_LOG("Texture " + texPath + " deleted");
             glDeleteTextures(1, &ID);
         }
 
@@ -428,8 +440,8 @@ namespace HyperAPI {
         glm::vec2 texUV = glm::vec2(0.0f, 0.0f);
         int m_BoneIDs[MAX_BONE_INFLUENCE] = {-1};
         float m_Weights[MAX_BONE_INFLUENCE] = {0.0f};
-        // float texID = -1;
-        // glm::mat4 model = glm::mat4(1.0f);
+        glm::vec3 tangent = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 bitangent = glm::vec3(0.0f, 0.0f, 0.0f);
     };
 
     struct Vertex_Batch {
@@ -553,6 +565,7 @@ namespace HyperAPI {
         Texture* diffuse = nullptr;
         Texture* specular = nullptr;
         Texture* normal = nullptr;
+        Texture* height = nullptr;
 
         Vector4 baseColor;
         float shininess;
@@ -566,6 +579,26 @@ namespace HyperAPI {
 
         ~Material() {
             textures.clear();
+
+            if(diffuse != nullptr) {
+                glDeleteTextures(1, &diffuse->ID);
+                delete diffuse;
+            }
+
+            if(specular != nullptr) {
+                glDeleteTextures(1, &specular->ID);
+                delete specular;
+            }
+
+            if(normal != nullptr) {
+                glDeleteTextures(1, &normal->ID);
+                delete normal;
+            }
+
+            if(height != nullptr) {
+                glDeleteTextures(1, &height->ID);
+                delete height;
+            }
         }
 
         void Bind(Shader &shader);
@@ -594,6 +627,16 @@ namespace HyperAPI {
 
         Mesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, Material &material, bool empty = false,
              bool batched = false);
+
+        ~Mesh() {
+            vertices.clear();
+            indices.clear();
+            textures.clear();
+
+            glDeleteBuffers(1, &VBO);
+            glDeleteBuffers(1, &IBO);
+            glDeleteVertexArrays(1, &VAO);
+        }
 
         unsigned int enttId;
 
@@ -949,8 +992,9 @@ namespace HyperAPI {
             std::string name = "GameObject";
             std::string ID;
             std::string tag = "Untagged";
+            bool prefab = false;
 
-            entt::entity entity;
+            entt::entity entity = Scene::m_Registry.create();
 
             ComponentEntity() = default;
 
@@ -980,12 +1024,11 @@ namespace HyperAPI {
 
             template<typename T>
             bool HasComponent() {
-                // check if entity is valid
-                if (Scene::m_Registry.valid(entity)) {
+                if(Scene::m_Registry.valid(entity)) {
                     return Scene::m_Registry.has<T>(entity);
-                } else {
-                    return false;
                 }
+
+                return false;
             }
 
             template<typename T>
@@ -1132,6 +1175,12 @@ namespace HyperAPI {
                         ImGui::TreePop();
                     }
                     ImGui::ColorEdit3("Color", &mesh->material.baseColor.x);
+
+                    ImGui::NewLine();
+                    if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::m_Registry.remove<SpriteRenderer>(entity);
+                    }
+
                     ImGui::TreePop();
                 }
             }
@@ -1190,7 +1239,7 @@ namespace HyperAPI {
 
                     ImGui::NewLine();
                     if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
-                        Scene::m_Registry.remove<SpriteRenderer>(entity);
+                        Scene::m_Registry.remove<SpritesheetRenderer>(entity);
                     }
 
                     ImGui::TreePop();
@@ -1264,7 +1313,7 @@ namespace HyperAPI {
             }
 
             void GUI() override {
-                if (ImGui::TreeNode("Material")) {
+                if (ImGui::TreeNode("Mesh Renderer")) {
                     if (!m_Model) {
                         // mesh selection
                         if (ImGui::TreeNode("Mesh")) {
@@ -1368,6 +1417,10 @@ namespace HyperAPI {
                             const std::string diffuseTexture = JSON["diffuse"];
                             const std::string specularTexture = JSON["specular"];
                             const std::string normalTexture = JSON["normal"];
+                            std::string heightTexture = "nullptr";
+                            if(JSON.contains("height")) {
+                                heightTexture = JSON["height"];
+                            }
 
                             if (diffuseTexture != "nullptr") {
                                 if (m_Mesh->material.diffuse != nullptr) {
@@ -1391,6 +1444,14 @@ namespace HyperAPI {
                                 }
 
                                 m_Mesh->material.normal = new Texture(normalTexture.c_str(), 2, "texture_normal");
+                            }
+
+                            if (heightTexture != "nullptr") {
+                                if (m_Mesh->material.height != nullptr) {
+                                    delete m_Mesh->material.height;
+                                }
+
+                                m_Mesh->material.height = new Texture(heightTexture.c_str(), 2, "texture_normal");
                             }
 
                             m_Mesh->material.baseColor = Vector4(
@@ -1424,11 +1485,108 @@ namespace HyperAPI {
             }
 
             void Update() {
-                if(Scene::m_Registry.has<Bloom>(entity)) {
-                    auto &bloom = Scene::m_Registry.get<Bloom>(entity);
-                    m_Mesh->material.bloomColor = bloom.bloomColor;
-                } else {
-                    m_Mesh->material.bloomColor = Vector3(0,0,0);
+                if(std::experimental::filesystem::exists(matPath) && matPath != "" && m_Mesh != nullptr) {
+                    std::ifstream file(matPath);
+                    nlohmann::json JSON = nlohmann::json::parse(file);
+
+                    const std::string diffuseTexture = JSON["diffuse"];
+                    const std::string specularTexture = JSON["specular"];
+                    const std::string normalTexture = JSON["normal"];
+                    std::string heightTexture = "nullptr";
+                    if(JSON.contains("height")) {
+                        heightTexture = JSON["height"];
+                    }
+
+                    if (diffuseTexture != "nullptr") {
+                        if (m_Mesh->material.diffuse != nullptr) {
+                            if (m_Mesh->material.diffuse->texPath != diffuseTexture) {
+                                delete m_Mesh->material.diffuse;
+                                m_Mesh->material.diffuse = new Texture(diffuseTexture.c_str(), 0,
+                                                                       "texture_diffuse");
+                            }
+                        } else {
+                            m_Mesh->material.diffuse = new Texture(diffuseTexture.c_str(), 0, "texture_diffuse");
+                        }
+                    } else {
+                        if (m_Mesh->material.diffuse != nullptr) {
+                            delete m_Mesh->material.diffuse;
+                            m_Mesh->material.diffuse = nullptr;
+                        }
+                    }
+
+                    if (specularTexture != "nullptr") {
+                        if (m_Mesh->material.specular != nullptr) {
+                            if (m_Mesh->material.specular->texPath != specularTexture) {
+                                delete m_Mesh->material.specular;
+                                m_Mesh->material.specular = new Texture(specularTexture.c_str(), 1,
+                                                                        "texture_specular");
+                            }
+                        } else {
+                            m_Mesh->material.specular = new Texture(specularTexture.c_str(), 1, "texture_specular");
+                        }
+                    } else {
+                        if (m_Mesh->material.specular != nullptr) {
+                            delete m_Mesh->material.specular;
+                            m_Mesh->material.specular = nullptr;
+                        }
+                    }
+
+                    if (normalTexture != "nullptr") {
+                        if (m_Mesh->material.normal != nullptr) {
+                            if (m_Mesh->material.normal->texPath != normalTexture) {
+                                delete m_Mesh->material.normal;
+                                m_Mesh->material.normal = new Texture(normalTexture.c_str(), 2, "texture_normal");
+                            }
+                        } else {
+                            m_Mesh->material.normal = new Texture(normalTexture.c_str(), 2, "texture_normal");
+                        }
+                    } else {
+                        if (m_Mesh->material.normal != nullptr) {
+                            delete m_Mesh->material.normal;
+                            m_Mesh->material.normal = nullptr;
+                        }
+                    }
+
+//                    if (heightTexture != "nullptr") {
+//                        if (m_Mesh->material.height != nullptr) {
+//                            if (m_Mesh->material.height->texPath != heightTexture) {
+//                                delete m_Mesh->material.height;
+//                                m_Mesh->material.height = new Texture(heightTexture.c_str(), 3, "texture_height");
+//                            }
+//                        } else {
+//                            m_Mesh->material.height = new Texture(heightTexture.c_str(), 3, "texture_height");
+//                        }
+//                    } else {
+//                        if (m_Mesh->material.height != nullptr) {
+//                            delete m_Mesh->material.height;
+//                            m_Mesh->material.height = nullptr;
+//                        }
+//                    }
+
+                    m_Mesh->material.baseColor = Vector4(
+                            JSON["baseColor"]["r"],
+                            JSON["baseColor"]["g"],
+                            JSON["baseColor"]["b"],
+                            JSON["baseColor"]["a"]
+                    );
+
+                    m_Mesh->material.roughness = JSON["roughness"];
+                    m_Mesh->material.metallic = JSON["metallic"];
+                    m_Mesh->material.texUVs = Vector2(JSON["texUV"]["x"], JSON["texUV"]["y"]);
+
+                    file.close();
+
+                    if(Scene::m_Registry.has<Bloom>(entity)) {
+                        auto &bloom = Scene::m_Registry.get<Bloom>(entity);
+                        m_Mesh->material.bloomColor = bloom.bloomColor;
+                    } else {
+                        m_Mesh->material.bloomColor = Vector3(0,0,0);
+                    }
+                } else if(m_Mesh != nullptr) {
+                    m_Mesh->material.diffuse = nullptr;
+                    m_Mesh->material.specular = nullptr;
+                    m_Mesh->material.normal = nullptr;
+                    m_Mesh->material.height = nullptr;
                 }
             }
         };
@@ -1444,9 +1602,9 @@ namespace HyperAPI {
                 // PointLights.push_back(this);
             }
 
-            ~c_PointLight() {
-                 Scene::PointLights.erase(std::remove(Scene::PointLights.begin(), Scene::PointLights.end(), light), Scene::PointLights.end());
-            }
+//            ~c_PointLight() {
+//                 Scene::PointLights.erase(std::remove(Scene::PointLights.begin(), Scene::PointLights.end(), light), Scene::PointLights.end());
+//            }
 
             void GUI() {
 
@@ -1486,9 +1644,9 @@ namespace HyperAPI {
             Light2D *light = new Light2D(Scene::Lights2D, lightPos, Vector4(color, 1.0f), range);
 
             c_Light2D() = default;
-            ~c_Light2D() {
-                Scene::Lights2D.erase(std::remove(Scene::Lights2D.begin(), Scene::Lights2D.end(), light), Scene::Lights2D.end());
-            }
+//            ~c_Light2D() {
+//                Scene::Lights2D.erase(std::remove(Scene::Lights2D.begin(), Scene::Lights2D.end(), light), Scene::Lights2D.end());
+//            }
 
             void GUI() {
 
@@ -1528,9 +1686,17 @@ namespace HyperAPI {
             SpotLight *light = new SpotLight(Scene::SpotLights, lightPos, color);
 
             c_SpotLight() = default;
-            ~c_SpotLight() {
-                Scene::SpotLights.erase(std::remove(Scene::SpotLights.begin(), Scene::SpotLights.end(), light), Scene::SpotLights.end());
+            void Init() override {
+                if(Scene::m_Registry.has<Transform>(entity)) {
+                    auto &transform = Scene::m_Registry.get<Transform>(entity);
+                    if(transform.rotation.y == 0) {
+                        transform.rotation.y = glm::radians(-1.0f);
+                    }
+                }
             }
+//            ~c_SpotLight() {
+//                Scene::SpotLights.erase(std::remove(Scene::SpotLights.begin(), Scene::SpotLights.end(), light), Scene::SpotLights.end());
+//            }
 
             void GUI() {
                 if (ImGui::TreeNode("Spot Light")) {
@@ -1554,7 +1720,7 @@ namespace HyperAPI {
 
                 light->lightPos = lightPos;
                 light->color = color;
-                light->angle = angle;
+                light->angle = glm::degrees(angle);
             }
         };
 
@@ -1565,9 +1731,9 @@ namespace HyperAPI {
             DirectionalLight *light = new DirectionalLight(Scene::DirLights, lightPos, color);
 
             c_DirectionalLight() = default;
-            ~c_DirectionalLight() {
-                Scene::DirLights.erase(std::remove(Scene::DirLights.begin(), Scene::DirLights.end(), light), Scene::DirLights.end());
-            }
+//            ~c_DirectionalLight() {
+//                Scene::DirLights.erase(std::remove(Scene::DirLights.begin(), Scene::DirLights.end(), light), Scene::DirLights.end());
+//            }
 
             void GUI() {
                 auto &transform = Scene::m_Registry.get<Transform>(entity);
@@ -1759,7 +1925,6 @@ namespace HyperAPI {
             char layerData[32] = "Default";
 
             GameObject() {
-                entity = Scene::m_Registry.create();
                 ID = uuid::generate_uuid_v4();
             }
 
@@ -2000,6 +2165,12 @@ namespace HyperAPI {
 
                         break;
                     }
+                }
+            }
+
+            void MoveForward(float speed, const Vector3 &rotation) {
+                if(body) {
+                    AddForce(speed * rotation);
                 }
             }
 
@@ -2272,7 +2443,7 @@ namespace HyperAPI {
 
                     ImGui::NewLine();
                     if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
-                        Scene::m_Registry.remove<SpriteRenderer>(entity);
+                        Scene::m_Registry.remove<SpriteAnimation>(entity);
                     }
 
                     ImGui::TreePop();
@@ -2346,7 +2517,7 @@ namespace HyperAPI {
             }
 
             void GUI() override {
-                if (ImGui::TreeNode("Spritesheet Renderer")) {
+                if (ImGui::TreeNode("Spritesheet Animation")) {
                     if (ImGui::TreeNode("Texture")) {
                         if (mesh->material.diffuse != nullptr) {
                             ImGui::ImageButton((void *) mesh->material.diffuse->ID, ImVec2(128, 128), ImVec2(0, 1),
@@ -2438,7 +2609,7 @@ namespace HyperAPI {
 
                     ImGui::NewLine();
                     if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
-                        Scene::m_Registry.remove<SpriteRenderer>(entity);
+                        Scene::m_Registry.remove<c_SpritesheetAnimation>(entity);
                     }
 
                     ImGui::TreePop();
@@ -3204,6 +3375,11 @@ namespace HyperAPI {
             float m_CurrentTime;
             float m_DeltaTime;
         };
+
+        extern bool bulletPhysicsStarted;
+        extern nlohmann::json stateScene;
+        void StartWorld(b2ContactListener *listener);
+        void DeleteWorld();
     }
 
     namespace f_GameObject {

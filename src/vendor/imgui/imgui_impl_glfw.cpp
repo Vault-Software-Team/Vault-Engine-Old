@@ -316,8 +316,20 @@ void ImGui_ImplGlfw_MouseButtonCallback(GLFWwindow* window, int button, int acti
         io.AddMouseButtonEvent(button, action == GLFW_PRESS);
 }
 
+struct ScrollData {
+    double x = 0;
+    double y = 0;
+    bool called = false;
+    ScrollData() = default;
+};
+
 void ImGui_ImplGlfw_ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
+    ScrollData *data = static_cast<ScrollData*>(glfwGetWindowUserPointer(window));
+    data->x = xoffset;
+    data->y = yoffset;
+    data->called = true;
+
     ImGui_ImplGlfw_Data* bd = ImGui_ImplGlfw_GetBackendData();
     if (bd->PrevUserCallbackScroll != NULL && window == bd->Window)
         bd->PrevUserCallbackScroll(window, xoffset, yoffset);

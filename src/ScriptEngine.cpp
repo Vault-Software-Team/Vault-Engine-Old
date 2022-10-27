@@ -227,10 +227,55 @@ void LuaGetComponents(lua_State *L, GameObject *gameObject, const std::string &t
         PushTableFunction(L, "MouseInput", ScriptEngine::Functions::MouseInput);
         PushTableFunction(L, "ControllerInput", ScriptEngine::Functions::ControllerInput);
     }
+    else if(type == "Bloom") {
+        auto &bloom = gameObject->GetComponent<Bloom>();
+
+        lua_newtable(L);
+        PushTableKey(L, "obj_id", obj_id.c_str());
+        PushTableKey(L, "type", "Bloom");
+        PushTableKey(L, "colorX", bloom.bloomColor.x);
+        PushTableKey(L, "colorY", bloom.bloomColor.y);
+        PushTableKey(L, "colorZ", bloom.bloomColor.z);
+    }
+    else if(type == "Rigidbody3D") {
+        auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
+
+        lua_newtable(L);
+        PushTableKey(L, "obj_id", obj_id.c_str());
+        PushTableKey(L, "type", "Rigidbody3D");
+        PushTableKey(L, "fixedRotation", rigidbody.fixedRotation);
+        PushTableFunction(L, "SetVelocity", ScriptEngine::Functions::SetVelocity3D);
+        PushTableFunction(L, "SetAngularVelocity", ScriptEngine::Functions::SetAngularVelocity3D);
+        PushTableFunction(L, "AddForce", ScriptEngine::Functions::AddForce3D);
+        PushTableFunction(L, "AddTorque", ScriptEngine::Functions::AddTorque3D);
+        PushTableFunction(L, "GetVelocity", ScriptEngine::Functions::GetVelocity3D);
+        PushTableFunction(L, "GetAngularVelocity", ScriptEngine::Functions::GetAngularVelocity3D);
+        PushTableFunction(L, "AddForceAtPosition", ScriptEngine::Functions::AddForceAtPosition3D);
+        PushTableFunction(L, "MoveByRotation", ScriptEngine::Functions::MoveByRotation3D);
+    }
+    else if(type == "BoxCollider3D") {
+        auto &boxCollider = gameObject->GetComponent<BoxCollider3D>();
+
+        lua_newtable(L);
+        PushTableKey(L, "obj_id", obj_id.c_str());
+        PushTableKey(L, "type", "BoxCollider3D");
+        PushTableKey(L, "sizeX", boxCollider.size.x);
+        PushTableKey(L, "sizeY", boxCollider.size.y);
+        PushTableKey(L, "sizeZ", boxCollider.size.z);
+    }
+    else if(type == "MeshCollider3D") {
+        auto &meshCollider = gameObject->GetComponent<MeshCollider3D>();
+
+        lua_newtable(L);
+        PushTableKey(L, "obj_id", obj_id.c_str());
+        PushTableKey(L, "type", "MeshCollider3D");
+        PushTableKey(L, "sizeX", meshCollider.size.x);
+        PushTableKey(L, "sizeY", meshCollider.size.y);
+        PushTableKey(L, "sizeZ", meshCollider.size.z);
+    }
 }
 
 void LuaUpdateComponentValues(lua_State *L, const std::string &type, GameObject *ent) {
-
     if(type == "Transform") {
         Transform &transform = ent->GetComponent<Transform>();
 
@@ -342,6 +387,13 @@ void LuaUpdateComponentValues(lua_State *L, const std::string &type, GameObject 
         GetTableArg(L, "far", camera.camera->cam_far);
         GetTableArg(L, "mode2D", camera.camera->mode2D);
     }
+    else if(type == "Bloom") {
+        auto &bloom = ent->GetComponent<Bloom>();
+
+        GetTableArg(L, "colorX", bloom.bloomColor.x);
+        GetTableArg(L, "colorY", bloom.bloomColor.y);
+        GetTableArg(L, "colorZ", bloom.bloomColor.z);
+    }
 }
 
 bool is_number(const std::string& s)
@@ -381,9 +433,11 @@ namespace ScriptEngine {
 
         if(r == LUA_OK) {
             lua_getglobal(L, "OnUpdate");
+            // do not crash the program if theres any error
             if(lua_isfunction(L, -1)) {
                 lua_pcall(L, 0, 0, 0);
             }
+
         } else {
             std::string error = lua_tostring(L, -1);
             std::cout << error << std::endl;
@@ -404,6 +458,16 @@ namespace ScriptEngine {
         L = m_Init();
         r = luaL_dofile(L, pathToScript.c_str());
 
+        lua_newtable(L);
+        lua_pushstring(L, "Ambient");
+        lua_pushnumber(L, config.ambientLight);
+        lua_settable(L, -3);
+
+        lua_pushstring(L, "Exposure");
+        lua_pushnumber(L, config.exposure);
+        lua_settable(L, -3);
+        lua_setglobal(L, "Vault");
+
         lua_pushglobaltable(L);
         lua_pushnil(L);
         while (lua_next(L,-2) != 0) {
@@ -414,7 +478,7 @@ namespace ScriptEngine {
                 std::string value = lua_tostring(L, -1);
                 lua_pop(L, 1);
 
-                if(is_number(value)) {
+                if(is_number(m_Fields[key].value)) {
                     float num = std::stof(std::string(m_Fields[key].value));
                     lua_pushnumber(L, num);
                 } else {
@@ -492,6 +556,16 @@ namespace ScriptEngine {
         lua_setglobal(L, "Timestep");
         timer -= HyperAPI::Timestep::deltaTime;
 
+        lua_newtable(L);
+        lua_pushstring(L, "Ambient");
+        lua_pushnumber(L, config.ambientLight);
+        lua_settable(L, -3);
+
+        lua_pushstring(L, "Exposure");
+        lua_pushnumber(L, config.exposure);
+        lua_settable(L, -3);
+        lua_setglobal(L, "Vault");
+
         double now = glfwGetTime();
         double deltaTime = now - lastUpdateTime;
 
@@ -504,21 +578,47 @@ namespace ScriptEngine {
             }
         }
 
-        if(r == LUA_OK) {
-            if((now - HyperAPI::Timestep::deltaTime) >= fpsLimit) {
-                lastFrameTime = now;
-                lua_getglobal(L, scriptName.c_str());
-                lua_getfield(L, -1, "OnUpdate");
-                if(lua_isfunction(L, -1)) {
-                    lua_pcall(L, 0, 0, 0);
-                }
+        try {
+            if(r == LUA_OK) {
+                if((now - HyperAPI::Timestep::deltaTime) >= fpsLimit) {
+                    lastFrameTime = now;
+                    lua_getglobal(L, scriptName.c_str());
+                    lua_getfield(L, -1, "OnUpdate");
+                    if(lua_isfunction(L, -1)) {
+                        if(lua_pcall(L, 0, 0, 0) != LUA_OK) {
+                            if(lua_isstring(L, -1)) {
+                                std::string error = lua_tostring(L, -1);
+                                Log log(error, LOG_ERROR);
+                            }
+                        }
+                    }
 
-                timer = timerStart;
+                    lua_settop(L, 0);
+                    lua_pop(L, 1);
+
+                    timer = timerStart;
+                }
+            } else {
+                if(lua_isstring(L, -1)) {
+                    std::string error = lua_tostring(L, -1);
+                    Log log(error, LOG_ERROR);
+                    HyperAPI::isRunning = false;
+                    HyperAPI::isStopped = true;
+                }
             }
-        } else {
-            std::string error = lua_tostring(L, -1);
-            std::cout << error << std::endl;
         }
+        catch(std::exception &e) {
+            std::cout << e.what() << std::endl;
+        }
+
+        lua_getglobal(L, "Vault");
+        lua_getfield(L, -1, "Ambient");
+        config.ambientLight = lua_tonumber(L, -1);
+        lua_pop(L, 1);
+
+        lua_getfield(L, -1, "Exposure");
+        config.exposure = lua_tonumber(L, -1);
+        lua_pop(L, 1);
 
         lua_pushglobaltable(L);
         lua_pushnil(L);
@@ -552,14 +652,31 @@ namespace ScriptEngine {
         lua_getglobal(L, scriptName.c_str());
         lua_getfield(L, -1, "OnCollision2D");
         if(lua_isfunction(L, -1)) {
-            lua_newtable(L);
-            PushTableKey(L, "obj_id", other->ID.c_str());
-            PushTableKey(L, "name", other->name.c_str());
-            PushTableKey(L, "tag", other->tag.c_str());
-            PushTableFunction(L, "GetComponent", Functions::GetEntComponent);
-            PushTableFunction(L, "UpdateComponent", Functions::UpdateEntComponent);
+            // pop global table
+            lua_pop(L, 1);
 
-            lua_pcall(L, 1, 0, 0);
+            lua_newtable(L);
+            lua_pushstring(L, "name");
+            lua_pushstring(L, other->name.c_str());
+            lua_settable(L, -3);
+            lua_pushstring(L, "tag");
+            lua_pushstring(L, other->tag.c_str());
+            lua_settable(L, -3);
+            lua_pushstring(L, "name");
+            lua_pushstring(L, other->name.c_str());
+            lua_settable(L, -3);
+            lua_pushstring(L, "GetComponent");
+            lua_pushcfunction(L, Functions::GetEntComponent);
+            lua_settable(L, -3);
+            lua_pushstring(L, "UpdateComponent");
+            lua_pushcfunction(L, Functions::UpdateEntComponent);
+            lua_settable(L, -3);
+            lua_setglobal(L, "collidedWith");
+
+            lua_getglobal(L, scriptName.c_str());
+            lua_getfield(L, -1, "OnCollision2D");
+            lua_pcall(L, 0, 0, 0);
+            lua_pop(L, 1);
         }
     }
 
@@ -884,6 +1001,7 @@ namespace ScriptEngine {
         lua_register(L, "FindGameObjectsByName", Functions::FindGameObjectsByName);
         lua_register(L, "FindGameObjectsByTag", Functions::FindGameObjectsByTag);
         lua_register(L, "InstantiatePrefab", Functions::InstantiatePrefab);
+        lua_register(L, "LoadScene", Functions::LoadScene);
         lua_register(L, "InstantiateTransformPrefab", Functions::InstantiateTransformPrefab);
         lua_register(L, "PlayAudio", Functions::PlayAudio);
         lua_register(L, "StopAudio", Functions::StopAudio);
@@ -1072,28 +1190,52 @@ namespace ScriptEngine {
         }
 
         int SetVelocity(lua_State *L) {
-            float x = (float)lua_tonumber(L, 1);
-            float y = (float)lua_tonumber(L, 2);
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto *m_Object = f_GameObject::FindGameObjectByID(id);
+
+            float x = (float)lua_tonumber(L, 2);
+            float y = (float)lua_tonumber(L, 3);
             m_Object->GetComponent<Rigidbody2D>().SetVelocity(x, y);
 
             return 1;
         }
 
         int SetAngularVelocity(lua_State *L) {
-            float angularVelocity = (float)lua_tonumber(L, 1);
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto *m_Object = f_GameObject::FindGameObjectByID(id);
+
+            float angularVelocity = (float)lua_tonumber(L, 2);
             m_Object->GetComponent<Rigidbody2D>().SetAngularVelocity(angularVelocity);
 
             return 1;
         }
         int SetPosition(lua_State *L) {
-            float x = (float)lua_tonumber(L, 1);
-            float y = (float)lua_tonumber(L, 2);
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto *m_Object = f_GameObject::FindGameObjectByID(id);
+
+            float x = (float)lua_tonumber(L, 2);
+            float y = (float)lua_tonumber(L, 3);
             m_Object->GetComponent<Rigidbody2D>().SetPosition(x, y);
 
             return 1;
         }
 
         int Force(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto *m_Object = f_GameObject::FindGameObjectByID(id);
+
             lua_getfield(L, 1, "gravityScale");
             float gravityScale = (float)lua_tonumber(L, -1);
             lua_pop(L, 1);
@@ -1105,7 +1247,13 @@ namespace ScriptEngine {
             return 1;
         }
         int Torque(lua_State *L) {
-            float torque = (float)lua_tonumber(L, 1);
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto *m_Object = f_GameObject::FindGameObjectByID(id);
+
+            float torque = (float)lua_tonumber(L, 2);
             m_Object->GetComponent<Rigidbody2D>().Torque(torque);
 
             return 1;
@@ -1446,18 +1594,15 @@ namespace ScriptEngine {
 
         int InstantiatePrefab(lua_State *L) {
             auto prefabPath = (std::string)lua_tostring(L, 1);
-            HYPER_LOG("TEST TEST")
             HyperAPI::Scene::LoadPrefab(prefabPath);
-            HYPER_LOG("TEST TEST")
-            // GameObject *gameObject = HyperAPI::f_GameObject::InstantiatePrefab(prefabPath);
+            GameObject *gameObject = HyperAPI::Scene::LoadPrefab(prefabPath);
 
-
-            // lua_newtable(L);
-            // PushTableKey(L, "obj_id", gameObject->ID.c_str());
-            // PushTableKey(L, "name", gameObject->name.c_str());
-            // PushTableKey(L, "tag", gameObject->tag.c_str());
-            // PushTableFunction(L, "GetComponent", GetEntComponent);
-            // PushTableFunction(L, "UpdateComponent", UpdateEntComponent);
+            lua_newtable(L);
+            PushTableKey(L, "obj_id", gameObject->ID.c_str());
+            PushTableKey(L, "name", gameObject->name.c_str());
+            PushTableKey(L, "tag", gameObject->tag.c_str());
+            PushTableFunction(L, "GetComponent", GetEntComponent);
+            PushTableFunction(L, "UpdateComponent", UpdateEntComponent);
             return 1;
         }
 
@@ -1518,7 +1663,7 @@ namespace ScriptEngine {
 
             if(gameObject != nullptr) {
                 auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
-                rigidbody.AddForce({lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4)});
+                rigidbody.AddForce({(float)lua_tonumber(L, 2), (float)lua_tonumber(L, 3), (float)lua_tonumber(L, 4)});
             }
 
             return 1;
@@ -1700,6 +1845,28 @@ namespace ScriptEngine {
         int IsButtonReleased(lua_State *L) {
             int button = (int)lua_tonumber(L, 1);
             lua_pushboolean(L, Input::Controller::IsButtonReleased(button));
+            return 1;
+        }
+        int LoadScene(lua_State *L) {
+            std::string sceneName = (std::string)lua_tostring(L, 1);
+            nlohmann::json j;
+            HyperAPI::isRunning = false;
+            Scene::LoadScene(sceneName, j);
+            HyperAPI::isRunning = true;
+            return 1;
+        }
+        int MoveByRotation3D(lua_State *L) {
+            lua_getfield(L, 1, "obj_id");
+            std::string id = (std::string)lua_tostring(L, -1);
+            lua_pop(L, 1);
+
+            auto gameObject = f_GameObject::FindGameObjectByID(id);
+
+            if(gameObject != nullptr) {
+                auto &rb = gameObject->GetComponent<Rigidbody3D>();
+                rb.MoveForward(lua_tonumber(L, 2), {lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5)});
+            }
+
             return 1;
         }
     }

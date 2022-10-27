@@ -11,7 +11,8 @@ if [ "$PLATFORM" = "windows" ]; then
         mkdir dist/windows
     fi
     
-    cp win_build.exe dist/windows/Vault\ Engine.exe
+    cp win_build.exe dist/windows/win_build.exe
+    cp win_proj.exe dist/windows/Vault\ Engine.exe
     cp *.dll dist/windows/
     cp -r assets dist/windows/assets
     cp -r imgui.ini dist/windows/imgui.ini
@@ -27,6 +28,7 @@ else
 
     cp -r lib dist/linux/lib
     cp -r build.out dist/linux/build.out
+    cp -r build_proj.out dist/linux/build_proj.out
     cp -r Vault\ Engine.sh dist/linux/Vault\ Engine
 
     cp -r assets dist/linux/assets

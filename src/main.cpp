@@ -105,16 +105,6 @@ public:
 
 CollisionListener *listener = new CollisionListener();
 
-struct Config {
-    char name[50];
-    std::string mainScene;
-    float ambientLight;
-    float exposure;
-    bool resizable;
-    bool fullscreenOnLaunch;
-    int width, height;
-};
-
 struct AddComponentList {
     int selected = 0;
     int length = 1;
@@ -125,12 +115,6 @@ struct AddComponentList {
 };
 
 char newName[256];
-Config config = {
-        "Vault Engine",
-        "assets/scenes/main.static",
-        0.2,
-
-};
 
 AddComponentList AddComponentConfig;
 
@@ -179,6 +163,7 @@ fs::path relative(fs::path p, fs::path base)
     return ret;
 }
 
+#ifndef PROJECT_MENU
 fs::path currentDirectory = fs::path("assets");
 void DirIter(const std::string &path) {
     // alphabetical sort
@@ -259,7 +244,7 @@ void DirIter(const std::string &path) {
             bool item = ImGui::Button(std::string("##" + relativePath.filename().string()).c_str(), ImVec2(buttonSize, buttonSize));
 
             if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-                HyperAPI::dirPayloadData = fs::absolute(entry.path().string());
+                HyperAPI::dirPayloadData = fs::absolute(entry.path()).string();
                 ImGui::SetDragDropPayload("file", dirPayloadData.c_str(), strlen(dirPayloadData.c_str()));
                 ImGui::Text(entry.path().filename().string().c_str());
                 ImGui::EndDragDropSource();
@@ -285,7 +270,7 @@ void DirIter(const std::string &path) {
                 ImGui::Button(ICON_FA_FILE_AUDIO, ImVec2(buttonSize, buttonSize - 30));
             } else if (ends_with(entry.path().string(), ".ttf") || ends_with(entry.path().string(), ".otf")) {
                 ImGui::Button(ICON_FA_FONT, ImVec2(buttonSize, buttonSize - 30));
-            } else if (ends_with(entry.path().string(), ".static")) {
+            } else if (ends_with(entry.path().string(), ".vault")) {
                 ImGui::Button(ICON_FA_CUBES, ImVec2(buttonSize, buttonSize - 30));
             } else if (ends_with(entry.path().string(), ".json")) {
                 ImGui::Button(ICON_FA_FILE_CODE, ImVec2(buttonSize, buttonSize - 30));
@@ -370,7 +355,7 @@ void DirIter(const std::string &path) {
 //            ImGui::Selectable((std::string(ICON_FA_FILE_AUDIO) + " " + entry.path().filename().string()).c_str());
 //        } else if (ends_with(entry.path().string(), ".ttf") || ends_with(entry.path().string(), ".otf")) {
 //            ImGui::Selectable((std::string(ICON_FA_FONT) + " " + entry.path().filename().string()).c_str());
-//        } else if (ends_with(entry.path().string(), ".static")) {
+//        } else if (ends_with(entry.path().string(), ".vault")) {
 //            ImGui::Selectable((std::string(ICON_FA_CUBES) + " " + entry.path().filename().string()).c_str());
 //        } else if (ends_with(entry.path().string(), ".json")) {
 //            ImGui::Selectable((std::string(ICON_FA_FILE_CODE) + " " + entry.path().filename().string()).c_str());
@@ -435,169 +420,12 @@ struct InspectorMaterial {
     std::string diffuse = "None";
     std::string specular = "None";
     std::string normal = "None";
+    std::string height = "None";
     float metallic = 0;
     float roughness = 0;
     Vector4 baseColor = Vector4(1, 1, 1, 1);
     Vector2 texUVs = Vector2(0, 0);
 };
-
-bool bulletPhysicsStarted = false;
-
-void StartWorld() {
-    InitScripts();
-
-    for (auto &gameObject : Scene::m_GameObjects) {
-        if (gameObject->HasComponent<m_LuaScriptComponent>()) {
-            gameObject->GetComponent<m_LuaScriptComponent>().Start();
-        }
-
-        if (gameObject->HasComponent<NativeScriptManager>()) {
-            gameObject->GetComponent<NativeScriptManager>().Start();
-        }
-    }
-
-    Scene::world = new b2World({0.0, -5.8f});
-    Scene::world->SetContactListener(listener);
-    auto view = Scene::m_Registry.view<Rigidbody2D>();
-    auto view3D = Scene::m_Registry.view<Rigidbody3D>();
-
-    for (auto e : view) {
-        GameObject *gameObject;
-        for (auto &go : Scene::m_GameObjects) {
-            if (go->entity == e) {
-                gameObject = go;
-                break;
-            }
-        }
-
-        auto &transform = gameObject->GetComponent<Transform>();
-        auto &rb2d = gameObject->GetComponent<Rigidbody2D>();
-
-        b2BodyDef bodyDef;
-        bodyDef.userData.pointer = reinterpret_cast<uintptr_t>(&gameObject);
-        bodyDef.type = rb2d.type;
-        bodyDef.position.Set(transform.position.x, transform.position.y);
-        bodyDef.angle = glm::radians(transform.rotation.z);
-        bodyDef.gravityScale = rb2d.gravityScale;
-
-        b2Body *body = Scene::world->CreateBody(&bodyDef);
-        body->SetFixedRotation(rb2d.fixedRotation);
-        rb2d.body = body;
-
-        if (gameObject->HasComponent<BoxCollider2D>()) {
-            auto &boxCollider2D = gameObject->GetComponent<BoxCollider2D>();
-            b2PolygonShape shape;
-            shape.SetAsBox((((boxCollider2D.size.x) / 2) - 0.02) / 2, (((boxCollider2D.size.y) / 2) - 0.02) / 2);
-
-            b2FixtureDef fixtureDef;
-            fixtureDef.isSensor = boxCollider2D.trigger;
-            fixtureDef.shape = &shape;
-            fixtureDef.density = boxCollider2D.density;
-            fixtureDef.friction = boxCollider2D.friction;
-            fixtureDef.restitution = boxCollider2D.restitution;
-            fixtureDef.restitutionThreshold = boxCollider2D.restitutionThreshold;
-            boxCollider2D.fixture = body->CreateFixture(&fixtureDef);
-        }
-    }
-
-    BulletPhysicsWorld::Init();
-
-    for (auto e : view3D) {
-        GameObject *gameObject;
-        for (auto &go : Scene::m_GameObjects) {
-            if (go->entity == e) {
-                gameObject = go;
-                break;
-            }
-        }
-
-        auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
-        rigidbody.transform = &gameObject->GetComponent<Transform>();
-
-        if (gameObject->HasComponent<BoxCollider3D>()) {
-            auto &collider = gameObject->GetComponent<BoxCollider3D>();
-            collider.CreateShape();
-            rigidbody.CreateBody(collider.shape);
-        }
-
-        if (gameObject->HasComponent<MeshCollider3D>()) {
-            auto &collider = gameObject->GetComponent<MeshCollider3D>();
-            collider.CreateShape(&gameObject->GetComponent<MeshRenderer>());
-            rigidbody.CreateBody(collider.shape);
-        }
-    }
-
-    auto jointView = Scene::m_Registry.view<FixedJoint3D>();
-
-    for (auto e : jointView) {
-        GameObject *gameObject;
-        for (auto &go : Scene::m_GameObjects) {
-            if (go->entity == e) {
-                gameObject = go;
-                break;
-            }
-        }
-
-        auto &joint = gameObject->GetComponent<FixedJoint3D>();
-        joint.CreateJoint();
-    }
-
-    auto pathfindingView = Scene::m_Registry.view<PathfindingAI>();
-
-    for (auto e : pathfindingView) {
-        GameObject *gameObject;
-        for (auto &go : Scene::m_GameObjects) {
-            if (go->entity == e) {
-                gameObject = go;
-                break;
-            }
-        }
-
-        auto &pathfinding = gameObject->GetComponent<PathfindingAI>();
-        pathfinding.CreateGrid();
-    }
-
-    bulletPhysicsStarted = true;
-}
-
-void DeleteWorld() {
-    bulletPhysicsStarted = false;
-
-    // halt
-    Mix_HaltChannel(-1);
-    Mix_HaltMusic();
-
-    for (auto &gameObject : Scene::m_GameObjects) {
-        if (gameObject->HasComponent<FixedJoint3D>()) {
-            auto &fixedJoint = gameObject->GetComponent<FixedJoint3D>();
-            fixedJoint.DeleteJoint();
-        }
-
-        if (gameObject->HasComponent<NativeScriptManager>()) {
-            auto &script = gameObject->GetComponent<NativeScriptManager>();
-            for (auto &script : script.m_StaticScripts) {
-                delete script;
-            }
-
-            gameObject->RemoveComponent<NativeScriptManager>();
-        }
-
-        if (gameObject->HasComponent<Rigidbody3D>()) {
-            auto &component = gameObject->GetComponent<Rigidbody3D>();
-            component.DeleteBody();
-            if (component.ref) {
-                delete component.ref;
-            }
-        }
-
-        if (gameObject->HasComponent<PathfindingAI>()) {
-            auto &component = gameObject->GetComponent<PathfindingAI>();
-            component.DeleteGrid();
-        }
-    }
-
-    BulletPhysicsWorld::Delete();
-}
 
 bool editingText = false;
 
@@ -607,7 +435,7 @@ void ShortcutManager(bool &openConfig) {
         if (!editingText) {
             if (Scene::currentScenePath == "") {
                 ImGuiFileDialog::Instance()->OpenDialog("SaveSceneDialog",
-                                                        ICON_FA_FLOPPY_DISK " Save Scene", ".static",
+                                                        ICON_FA_FLOPPY_DISK " Save Scene", ".vault",
                                                         ".");
             } else {
                 nlohmann::json S_SJ;
@@ -624,7 +452,7 @@ void ShortcutManager(bool &openConfig) {
     if (ImGui::IsKeyDown(GLFW_KEY_LEFT_CONTROL) && ImGui::IsKeyDown(GLFW_KEY_LEFT_SHIFT) &&
         ImGui::IsKeyPressed(GLFW_KEY_S)) {
         ImGuiFileDialog::Instance()->OpenDialog("SaveSceneDialog",
-                                                ICON_FA_FLOPPY_DISK " Save Scene", ".static", ".");
+                                                ICON_FA_FLOPPY_DISK " Save Scene", ".vault", ".");
     }
 
     if (ImGui::IsKeyDown(GLFW_KEY_LEFT_CONTROL) && ImGui::IsKeyDown(GLFW_KEY_LEFT_SHIFT) &&
@@ -646,194 +474,10 @@ void ShortcutManager(bool &openConfig) {
     if (ImGui::IsKeyDown(GLFW_KEY_LEFT_CONTROL) && ImGui::IsKeyPressed(GLFW_KEY_D)) {
         // copy Scene::m_Object entt entity into a new one
         if (Scene::m_Object == nullptr) return;
-        auto *gameObject = new GameObject();
-        gameObject->name = Scene::m_Object->name + " (Copy)";
-        gameObject->layer = Scene::m_Object->layer;
-        gameObject->tag = Scene::m_Object->tag;
-
-        if (Scene::m_Object->HasComponent<Transform>()) {
-            auto &comp = Scene::m_Object->GetComponent<Transform>();
-            Scene::m_Registry.emplace<Transform>(gameObject->entity, comp);
-        }
-
-        if (Scene::m_Object->HasComponent<CameraComponent>()) {
-            auto &comp = Scene::m_Object->GetComponent<CameraComponent>();
-            Scene::m_Registry.emplace<CameraComponent>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<CameraComponent>();
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-
-        if (Scene::m_Object->HasComponent<MeshRenderer>()) {
-            auto &comp = Scene::m_Object->GetComponent<MeshRenderer>();
-            Scene::m_Registry.emplace<MeshRenderer>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<MeshRenderer>();
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-
-        if (Scene::m_Object->HasComponent<m_LuaScriptComponent>()) {
-            auto &comp = Scene::m_Object->GetComponent<m_LuaScriptComponent>();
-            Scene::m_Registry.emplace<m_LuaScriptComponent>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<m_LuaScriptComponent>();
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-
-        if (Scene::m_Object->HasComponent<c_PointLight>()) {
-            auto &comp = Scene::m_Object->GetComponent<c_PointLight>();
-            Scene::m_Registry.emplace<c_PointLight>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<c_PointLight>();
-            newComp.light = new PointLight(Scene::PointLights, Vector3(0, 0, 0), Vector4(1, 1, 1, 1), 1);
-
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-
-        if (Scene::m_Object->HasComponent<c_Light2D>()) {
-            auto &comp = Scene::m_Object->GetComponent<c_Light2D>();
-            Scene::m_Registry.emplace<c_Light2D>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<c_Light2D>();
-            newComp.light = new Light2D(Scene::Lights2D, Vector3(0, 0, 0), Vector4(1, 1, 1, 1), 1);
-
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-
-        if (Scene::m_Object->HasComponent<c_SpotLight>()) {
-            auto &comp = Scene::m_Object->GetComponent<c_SpotLight>();
-            Scene::m_Registry.emplace<c_SpotLight>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<c_SpotLight>();
-            newComp.light = new SpotLight(Scene::SpotLights, Vector3(0, 0, 0), Vector4(1, 1, 1, 1));
-
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-
-        if (Scene::m_Object->HasComponent<c_DirectionalLight>()) {
-            auto &comp = Scene::m_Object->GetComponent<c_DirectionalLight>();
-            Scene::m_Registry.emplace<c_DirectionalLight>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<c_DirectionalLight>();
-            newComp.light = new DirectionalLight(Scene::DirLights, Vector3(0, 0, 0), Vector4(1, 1, 1, 1));
-
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-
-        if (Scene::m_Object->HasComponent<SpriteRenderer>()) {
-            auto &comp = Scene::m_Object->GetComponent<SpriteRenderer>();
-            Scene::m_Registry.emplace<SpriteRenderer>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<SpriteRenderer>();
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-
-        if (Scene::m_Object->HasComponent<SpriteAnimation>()) {
-            auto &comp = Scene::m_Object->GetComponent<SpriteAnimation>();
-            Scene::m_Registry.emplace<SpriteAnimation>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<SpriteAnimation>();
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-
-        if (Scene::m_Object->HasComponent<c_SpritesheetAnimation>()) {
-            auto &comp = Scene::m_Object->GetComponent<c_SpritesheetAnimation>();
-            Scene::m_Registry.emplace<c_SpritesheetAnimation>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<c_SpritesheetAnimation>();
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-
-        if (Scene::m_Object->HasComponent<SpritesheetRenderer>()) {
-            auto &comp = Scene::m_Object->GetComponent<SpritesheetRenderer>();
-            Scene::m_Registry.emplace<SpritesheetRenderer>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<SpritesheetRenderer>();
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-
-        if (Scene::m_Object->HasComponent<BoxCollider2D>()) {
-            auto &comp = Scene::m_Object->GetComponent<BoxCollider2D>();
-            Scene::m_Registry.emplace<BoxCollider2D>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<BoxCollider2D>();
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-
-        if (Scene::m_Object->HasComponent<Rigidbody2D>()) {
-            auto &comp = Scene::m_Object->GetComponent<Rigidbody2D>();
-            Scene::m_Registry.emplace<Rigidbody2D>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<Rigidbody2D>();
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-
-        if (Scene::m_Object->HasComponent<Rigidbody3D>()) {
-            auto &comp = Scene::m_Object->GetComponent<Rigidbody3D>();
-            Scene::m_Registry.emplace<Rigidbody3D>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<Rigidbody3D>();
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-
-        if (Scene::m_Object->HasComponent<FixedJoint3D>()) {
-            auto &comp = Scene::m_Object->GetComponent<FixedJoint3D>();
-            Scene::m_Registry.emplace<FixedJoint3D>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<FixedJoint3D>();
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-
-        if (Scene::m_Object->HasComponent<BoxCollider3D>()) {
-            auto &comp = Scene::m_Object->GetComponent<BoxCollider3D>();
-            Scene::m_Registry.emplace<BoxCollider3D>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<BoxCollider3D>();
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-
-        if (Scene::m_Object->HasComponent<MeshCollider3D>()) {
-            auto &comp = Scene::m_Object->GetComponent<MeshCollider3D>();
-            Scene::m_Registry.emplace<MeshCollider3D>(gameObject->entity, comp);
-
-            auto &newComp = gameObject->GetComponent<MeshCollider3D>();
-            newComp.entity = gameObject->entity;
-            newComp.ID = gameObject->ID;
-            newComp.Init();
-        }
-        Scene::m_GameObjects.push_back(gameObject);
+        nlohmann::json JSON;
+        Scene::SaveJSONPrefab(JSON, Scene::m_Object);
+        Scene::LoadJSONPrefab(JSON);
+        JSON.clear();
     }
 }
 
@@ -864,7 +508,22 @@ void UpdatePresence(
 
 #endif
 
-int main() {
+
+int main(int argc, char **argv) {
+    if(argc > 1) {
+#ifdef _WIN32
+        std::string path = argv[1];
+        _chdir(argv[1]);
+#else
+        chdir(argv[1]);
+#endif
+
+        // cwd
+        char cwd[1024];
+        getcwd(cwd, sizeof(cwd));
+        std::cout << "Current working dir: " << cwd << std::endl;
+    }
+
 #ifndef _WIN32 || GAME_BUILD
     DiscordEventHandlers handlers;
     memset(&handlers, 0, sizeof(handlers));
@@ -1166,13 +825,12 @@ int main() {
 #endif
 
 #ifdef GAME_BUILD
-    StartWorld();
+    StartWorld(listener);
     HyperAPI::isRunning = true;
     HyperAPI::isStopped = false;
 #endif
 
     Scene::SceneType sceneType = Scene::MAIN_SCENE;
-    nlohmann::json stateScene = nlohmann::json::array();
 
     TextEditor::LanguageDefinition langDef = TextEditor::LanguageDefinition::Lua();
     langDef.mName = "Lua";
@@ -1230,7 +888,7 @@ int main() {
                         if (ImGui::MenuItem("Save Scene", "CTRL+S")) {
                             if (Scene::currentScenePath == "") {
                                 ImGuiFileDialog::Instance()->OpenDialog("SaveSceneDialog",
-                                                                        ICON_FA_FLOPPY_DISK " Save Scene", ".static",
+                                                                        ICON_FA_FLOPPY_DISK " Save Scene", ".vault",
                                                                         ".");
                             } else {
                                 json S_SJ;
@@ -1240,7 +898,7 @@ int main() {
 
                         if (ImGui::MenuItem("Save Scene As", "CTRL+SHIFT+S")) {
                             ImGuiFileDialog::Instance()->OpenDialog("SaveSceneDialog",
-                                                                    ICON_FA_FLOPPY_DISK " Save Scene", ".static", ".");
+                                                                    ICON_FA_FLOPPY_DISK " Save Scene", ".vault", ".");
                         }
 
                         if (ImGui::MenuItem("Config", "CTRL+SHIFT+C")) {
@@ -1431,6 +1089,8 @@ int main() {
                 }
 
                 if (openInspector) {
+                    static std::string matPath;
+
                     if (ImGui::Begin(ICON_FA_MAGNIFYING_GLASS " Inspector")) {
                         if (ImGui::BeginDragDropTarget()) {
                             if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("file")) {
@@ -1442,6 +1102,7 @@ int main() {
                                         ) {
                                     inspectorType = InspecType::Material;
                                     std::ifstream file(dirPayloadData);
+                                    matPath = dirPayloadData;
                                     nlohmann::json JSON = nlohmann::json::parse(file);
 
                                     m_InspectorMaterial.diffuse =
@@ -1449,8 +1110,16 @@ int main() {
                                     m_InspectorMaterial.specular =
                                             JSON["specular"] == "nullptr" ? "None" : JSON["specular"];
                                     m_InspectorMaterial.normal = JSON["normal"] == "nullptr" ? "None" : JSON["normal"];
+                                    if(JSON.contains("height")) {
+                                        m_InspectorMaterial.height = JSON["height"] == "nullptr" ? "None" : JSON["height"];
+                                    }
                                     m_InspectorMaterial.roughness = JSON["roughness"];
                                     m_InspectorMaterial.metallic = JSON["metallic"];
+                                    m_InspectorMaterial.texUVs.x = JSON["texUV"]["x"];
+                                    m_InspectorMaterial.texUVs.y = JSON["texUV"]["y"];
+                                    m_InspectorMaterial.baseColor.x = JSON["baseColor"]["r"];
+                                    m_InspectorMaterial.baseColor.y = JSON["baseColor"]["g"];
+                                    m_InspectorMaterial.baseColor.z = JSON["baseColor"]["b"];
 
                                     file.close();
                                 }
@@ -1515,15 +1184,59 @@ int main() {
                                     ImGui::TreePop();
                                 }
 
+//                                if (ImGui::TreeNode("Height")) {
+//                                    if (ImGui::BeginDragDropTarget()) {
+//                                        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("file")) {
+//                                            dirPayloadData.erase(0, cwd.length() + 1);
+//                                            m_InspectorMaterial.height = dirPayloadData;
+//                                        }
+//
+//                                        ImGui::EndDragDropTarget();
+//                                    }
+//
+//                                    ImGui::Text(m_InspectorMaterial.height.c_str());
+//                                    if (ImGui::Button(ICON_FA_TRASH" Remove Texture")) {
+//                                        m_InspectorMaterial.height = "None";
+//                                    }
+//
+//                                    ImGui::TreePop();
+//                                }
+
                                 ImGui::DragFloat2("UV Scale", &m_InspectorMaterial.texUVs.x, 0.01f);
                                 ImGui::DragFloat("Roughness", &m_InspectorMaterial.roughness, 0.01f, 0.0f, 1.0f);
                                 ImGui::DragFloat("Metallic", &m_InspectorMaterial.metallic, 0.01f, 0.0f, 1.0f);
                                 ImGui::ColorEdit3("Color", &m_InspectorMaterial.baseColor.x);
 
                                 if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save Material")) {
-                                    ImGuiFileDialog::Instance()->OpenDialog("SaveMaterialDialog",
-                                                                            ICON_FA_FLOPPY_DISK " Save Material",
-                                                                            ".material", ".");
+                                    std::ofstream file(matPath);
+                                    nlohmann::json j = {
+                                            {"diffuse",   m_InspectorMaterial.diffuse == "None" ? "nullptr"
+                                                                                                : m_InspectorMaterial.diffuse},
+                                            {"specular",  m_InspectorMaterial.specular == "None" ? "nullptr"
+                                                                                                 : m_InspectorMaterial.specular},
+                                            {"normal",    m_InspectorMaterial.normal == "None" ? "nullptr"
+                                                                                               : m_InspectorMaterial.normal},
+                                            {"height",    m_InspectorMaterial.height == "None" ? "nullptr" : m_InspectorMaterial.height},
+                                            {"roughness", m_InspectorMaterial.roughness},
+                                            {"metallic",  m_InspectorMaterial.metallic},
+                                            {"baseColor", {
+                                                                  {"r", m_InspectorMaterial.baseColor.x},
+                                                                  {"g", m_InspectorMaterial.baseColor.y},
+                                                                  {"b", m_InspectorMaterial.baseColor.z},
+                                                                  {"a", m_InspectorMaterial.baseColor.w},
+                                                          }
+                                            },
+                                            {"texUV",     {
+                                                                  {"x", m_InspectorMaterial.texUVs.x},
+                                                                  {"y", m_InspectorMaterial.texUVs.y}
+                                                          }
+                                            }
+                                    };
+
+                                    file << j.dump(4);
+//                                    ImGuiFileDialog::Instance()->OpenDialog("SaveMaterialDialog",
+//                                                                            ICON_FA_FLOPPY_DISK " Save Material",
+//                                                                            ".material", ".");
                                 }
                                 ImGui::NewLine();
 
@@ -1623,7 +1336,7 @@ int main() {
                     ImGui::DragInt("Width", &config.width, 1, 0, 1920);
                     ImGui::DragInt("Height", &config.height, 1, 0, 1080);
                     if (ImGui::Button("Main Scene", ImVec2(500, 0))) {
-                        ImGuiFileDialog::Instance()->OpenDialog("ChooseMainScene", "Choose Main Scene", ".static", ".");
+                        ImGuiFileDialog::Instance()->OpenDialog("ChooseMainScene", "Choose Main Scene", ".vault", ".");
 #ifndef _WIN32 || GAME_BUILD
                         UpdatePresence(
                                 "In Editor",
@@ -1713,10 +1426,10 @@ int main() {
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
                 if (ImGui::Begin(ICON_FA_GAMEPAD " Scene", nullptr,
                                  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+                    bool complete = Scene::DropTargetMat(Scene::DRAG_SCENE, nullptr, nullptr);
                     ImVec2 w_s = ImGui::GetWindowSize();
                     winSize = Vector2(w_s.x, w_s.y);
                     sceneType = Scene::MAIN_SCENE;
-                    bool complete = Scene::DropTargetMat(Scene::DRAG_SCENE, nullptr, nullptr);
 
                     //                    ImGui::BeginChild("View");
                     if (sceneType == Scene::MAIN_SCENE) {
@@ -1818,6 +1531,7 @@ int main() {
 
                                         if (selectedObject->HasComponent<Rigidbody3D>()) {
                                             auto &rigidbody = selectedObject->GetComponent<Rigidbody3D>();
+
 
                                             btRigidBody *body = (btRigidBody *) rigidbody.body;
                                             body->getWorldTransform().setOrigin(
@@ -1926,7 +1640,7 @@ int main() {
                                 stateScene = nlohmann::json::array();
                                 Scene::SaveScene("", stateScene);
                             }
-                            StartWorld();
+                            StartWorld(listener);
 
                             HyperAPI::isRunning = true;
                             HyperAPI::isStopped = false;
@@ -2053,7 +1767,7 @@ int main() {
                     Scene::DropTargetMat(Scene::DRAG_MODEL, nullptr, nullptr);
                     ImVec2 win_size = ImGui::GetWindowSize();
 
-                    if (ImGui::Button(ICON_FA_PLUS " Add GameObject", ImVec2(win_size.x, 0))) {
+                    if (ImGui::Button(ICON_FA_PLUS " Add GameObject", ImVec2(win_size.x - 15, 25))) {
                         GameObject *go = new GameObject();
                         go->AddComponent<Transform>();
                         Scene::m_GameObjects.push_back(go);
@@ -2090,8 +1804,8 @@ int main() {
 
 
                     }
-                    ImGui::End();
                 }
+                ImGui::End();
                 if (ImGui::Begin(ICON_FA_SHARE_NODES " Components")) {
                     if (Scene::m_Object != nullptr && !Scene::LoadingScene) {
                         if (ImGui::IsWindowFocused()) {
@@ -2259,7 +1973,7 @@ int main() {
 
                         ImVec2 win_size = ImGui::GetWindowSize();
                         if (!HyperAPI::isRunning) {
-                            if (ImGui::Button(ICON_FA_PLUS " Add Component", ImVec2(win_size.x, 0))) {
+                            if (ImGui::Button(ICON_FA_PLUS " Add Component", ImVec2(win_size.x - 15, 0))) {
                                 ImGui::OpenPopup("Add Component");
                             }
                         }
@@ -2512,7 +2226,7 @@ int main() {
                             if (ImGui::Button("Rename")) {
 #ifdef _WIN32
                                 fs::path p = fs::path(m_originalName);
-                                fs::path newP = fs::path(m_originalName.substr(0, m_originalName.find_last_of("/")) + "\\" + newName);
+                                fs::path newP = fs::path(m_originalName.substr(0, m_originalName.find_last_of("\\")) + "\\" + newName);
                                 fs::rename(p, newP);
 #else
                                 fs::path p = fs::path(m_originalName);
@@ -2623,6 +2337,16 @@ int main() {
 
 //    Text::Font font("assets/fonts/OpenSans-Bold.ttf", 48);
     Transform fontTransform;
+    struct ScrollData {
+        double x = 0;
+        double y = 0;
+        bool called = false;
+        ScrollData() = default;
+    };
+    ScrollData *scrollData = new ScrollData();
+    glfwSetWindowUserPointer(app.renderer->window, scrollData);
+
+    float wheel = 0;
 
     app.Run([&](unsigned int &shadowMapTex) {
         if (Scene::LoadingScene) return;
@@ -2739,9 +2463,33 @@ int main() {
 
         Input::winSize = Vector3(app.width, app.height, 0);
 
-        if (hoveredScene && ImGui::IsMouseDragging(0) && !usingImGuizmo && camera->mode2D && Scene::mainCamera == camera) {
+        if (hoveredScene && !usingImGuizmo && camera->mode2D && Scene::mainCamera == camera) {
+            camera->Inputs(app.renderer->window, winPos);
             auto transform = camera->GetComponent<TransformComponent>();
             transform.rotation = glm::vec3(0.0f, 0.0f, -1.0f);
+
+            if(scrollData->called) {
+                if(scrollData->y < 0) {
+                    transform.scale.x -= 0.1f;
+                    transform.scale.y -= 0.1f;
+                } else {
+                    transform.scale.x += 0.1f;
+                    transform.scale.y += 0.1f;
+                }
+
+                if(transform.scale.x < 0) {
+                    transform.scale.x = 0.01;
+                    transform.scale.y = 0.01;
+                }
+
+                scrollData->called = false;
+                scrollData->x = 0;
+                scrollData->y = 0;
+            }
+
+            camera->UpdateComponent(transform);
+
+            // scroll wheel
         }
 
         if (hoveredScene && ImGui::IsMouseDragging(0) && !usingImGuizmo && Scene::mainCamera == camera) {
@@ -2805,6 +2553,34 @@ int main() {
                 auto &transform = m_GameObject->GetComponent<Transform>();
                 auto &rigidbody = m_GameObject->GetComponent<Rigidbody2D>();
 
+                if(rigidbody.body == nullptr) {
+                    b2BodyDef bodyDef;
+                    bodyDef.userData.pointer = reinterpret_cast<uintptr_t>(m_GameObject);
+                    bodyDef.type = rigidbody.type;
+                    bodyDef.position.Set(transform.position.x, transform.position.y);
+                    bodyDef.angle = glm::radians(transform.rotation.z);
+                    bodyDef.gravityScale = rigidbody.gravityScale;
+
+                    b2Body *body = Scene::world->CreateBody(&bodyDef);
+                    body->SetFixedRotation(rigidbody.fixedRotation);
+                    rigidbody.body = body;
+
+                    if (m_GameObject->HasComponent<BoxCollider2D>()) {
+                        auto &boxCollider2D = m_GameObject->GetComponent<BoxCollider2D>();
+                        b2PolygonShape shape;
+                        shape.SetAsBox((((boxCollider2D.size.x) / 2) - 0.02) / 2, (((boxCollider2D.size.y) / 2) - 0.02) / 2);
+
+                        b2FixtureDef fixtureDef;
+                        fixtureDef.isSensor = boxCollider2D.trigger;
+                        fixtureDef.shape = &shape;
+                        fixtureDef.density = boxCollider2D.density;
+                        fixtureDef.friction = boxCollider2D.friction;
+                        fixtureDef.restitution = boxCollider2D.restitution;
+                        fixtureDef.restitutionThreshold = boxCollider2D.restitutionThreshold;
+                        boxCollider2D.fixture = body->CreateFixture(&fixtureDef);
+                    }
+                }
+
                 b2Body *body = (b2Body *) rigidbody.body;
                 const auto &position = body->GetPosition();
                 transform.position.x = position.x;
@@ -2826,6 +2602,23 @@ int main() {
                 }
 
                 auto &rigidbody = m_GameObject->GetComponent<Rigidbody3D>();
+                if(rigidbody.body == nullptr) {
+                    auto &rigidbody = m_GameObject->GetComponent<Rigidbody3D>();
+                    rigidbody.transform = &m_GameObject->GetComponent<Transform>();
+
+                    if (m_GameObject->HasComponent<BoxCollider3D>()) {
+                        auto &collider = m_GameObject->GetComponent<BoxCollider3D>();
+                        collider.CreateShape();
+                        rigidbody.CreateBody(collider.shape);
+                    }
+
+                    if (m_GameObject->HasComponent<MeshCollider3D>()) {
+                        auto &collider = m_GameObject->GetComponent<MeshCollider3D>();
+                        collider.CreateShape(&m_GameObject->GetComponent<MeshRenderer>());
+                        rigidbody.CreateBody(collider.shape);
+                    }
+                }
+
                 rigidbody.transform = &m_GameObject->GetComponent<Transform>();
                 rigidbody.Update();
             }
@@ -2834,6 +2627,7 @@ int main() {
         for (auto &gameObject : Scene::m_GameObjects) {
             if (!gameObject) continue;
             if (!gameObject->enabled) continue;
+            if(gameObject->prefab) continue;
 
             gameObject->Update();
 
@@ -2890,6 +2684,10 @@ int main() {
 
 //        font.Render(textShader, *camera, "Hello World!", fontTransform);
 
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glFrontFace(GL_CCW);
+
         for (auto &layer : Scene::layers) {
             bool notInCameraLayer = true;
             for (auto &camLayer : Scene::mainCamera->layers) {
@@ -2934,7 +2732,16 @@ int main() {
                         }
 
                         meshRenderer.m_Mesh->enttId = (unsigned int)gameObject->entity;
-                        meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera, transform.transform * extra);
+                        glActiveTexture(GL_TEXTURE20);
+                        glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
+
+                        if(meshRenderer.meshType == "Plane") {
+                            glDisable(GL_CULL_FACE);
+                            meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera, transform.transform * extra);
+                            glEnable(GL_CULL_FACE);
+                        } else {
+                            meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera, transform.transform * extra);
+                        }
                     }
                 }
 
@@ -2958,8 +2765,13 @@ int main() {
                         }
                     }
 
+                    glActiveTexture(GL_TEXTURE20);
+                    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
+
                     spriteRenderer.mesh->enttId = (unsigned int)gameObject->entity;
+                    glDisable(GL_CULL_FACE);
                     spriteRenderer.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
+                    glEnable(GL_CULL_FACE);
                 }
 
                 if (gameObject->HasComponent<SpritesheetRenderer>()) {
@@ -2982,10 +2794,16 @@ int main() {
                         }
                     }
 
+                    glActiveTexture(GL_TEXTURE20);
+                    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
+
+                    // disable face culling
+                    glDisable(GL_CULL_FACE);
                     if (spritesheetRenderer.mesh != nullptr) {
                         spritesheetRenderer.mesh->enttId = (unsigned int)gameObject->entity;
                         spritesheetRenderer.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
                     }
+                    glEnable(GL_CULL_FACE);
                 }
 
                 if (gameObject->HasComponent<SpriteAnimation>()) {
@@ -3039,14 +2857,21 @@ int main() {
 
                     spritesheetAnimation.Play();
                     spritesheetAnimation.Update();
+
+                    glActiveTexture(GL_TEXTURE20);
+                    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
+
+                    glDisable(GL_CULL_FACE);
                     if (spritesheetAnimation.mesh != nullptr) {
                         spritesheetAnimation.mesh->enttId = (unsigned int)gameObject->entity;
                         spritesheetAnimation.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
                         glDisable(GL_BLEND);
                     }
+                    glEnable(GL_CULL_FACE);
                 }
             }
         }
+        glDisable(GL_CULL_FACE);
 
         for(unsigned int i = 0; i < 32; i++) {
             // unbind all texture
@@ -3252,7 +3077,7 @@ int main() {
 
                 auto &transform = gameObject->GetComponent<Transform>();
                 Transform t = transform;
-                t.scale = glm::vec3(-1.5f, 1.5f, 1.5f);
+                t.scale = glm::vec3(-0.5f, 0.5f, 0.5f);
 
                 auto camTransform = camera->GetComponent<TransformComponent>();
                 t.LookAt(camTransform.position);
@@ -3274,7 +3099,7 @@ int main() {
 
                 auto &transform = gameObject->GetComponent<Transform>();
                 Transform t = transform;
-                t.scale = glm::vec3(-1.5f, 1.5f, 1.5f);
+                t.scale = glm::vec3(-0.5f, 0.5f, 0.5f);
 
                 auto camTransform = camera->GetComponent<TransformComponent>();
                 t.LookAt(camTransform.position);
@@ -3296,7 +3121,7 @@ int main() {
 
                 auto &transform = gameObject->GetComponent<Transform>();
                 Transform t = transform;
-                t.scale = glm::vec3(-1.5f, 1.5f, 1.5f);
+                t.scale = glm::vec3(-0.5f, 0.5f, 0.5f);
 
                 auto camTransform = camera->GetComponent<TransformComponent>();
                 t.LookAt(camTransform.position);
@@ -3318,7 +3143,7 @@ int main() {
 
                 auto &transform = gameObject->GetComponent<Transform>();
                 Transform t = transform;
-                t.scale = glm::vec3(-1.5f, 1.5f, 1.5f);
+                t.scale = glm::vec3(-0.5f, 0.5f, 0.5f);
 
                 auto camTransform = camera->GetComponent<TransformComponent>();
                 t.LookAt(camTransform.position);
@@ -3333,9 +3158,307 @@ int main() {
     }, GUI_EXP, [&](Shader &m_shadowMapShader) {
     });
 
+    free(scrollData);
+    exit(0);
+
 #ifndef _WIN32 || GAME_BUILD
     Discord_Shutdown();
 #endif
 
     return 0;
 }
+#else
+fs::path path;
+int selected = -1;
+
+void DisplayProject(GLFWwindow *window, const std::string &name, const std::string &path, int index) {
+    selected = index;
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.05f, 0.055f, 0.051f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.07f, 0.075f, 0.071f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.105f, 0.11f, 1.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.03f, 0.5f));
+    ImGui::SetCursorPosX(25);
+    if(ImGui::Button(std::string(name + "\n" + path).c_str(), ImVec2(ImGui::GetWindowWidth() - 50, 70))) {
+#ifdef _WIN32
+        // open build.exe
+        // get cwd
+        char cwd[1024];
+        _getcwd(cwd, sizeof(cwd));
+        std::string s_Cwd = cwd;
+
+        std::cout << s_Cwd + "\\win_build.exe \"" + path + "\"" << std::endl;
+        std::thread t([&]() {
+            system((".\\win_build.exe \"" + path + "\"").c_str());
+        });
+
+        t.detach();
+#else
+        char cwd[1024];
+        getcwd(cwd, sizeof(cwd));
+        std::string s_Cwd = cwd;
+
+        std::thread t([&]() {
+            system(std::string("./build.out \"" + path + "\"").c_str());
+        });
+        t.detach();
+#endif
+    }
+
+    if(ImGui::IsItemHovered() && ImGui::IsMouseClicked(1)) {
+        ImGui::OpenPopup("Project Options");
+    }
+
+    ImGui::PopStyleColor(3);
+    ImGui::PopStyleVar();
+
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
+}
+
+int main() {
+    Hyper::Application app(1280, 720, "Vault Engine", false, true, false, [&]() {
+        // get io
+        auto &io = ImGui::GetIO();
+        io.ConfigWindowsMoveFromTitleBarOnly = true;
+        // io.Fonts->AddFontDefault();
+        ImGui::StyleColorsDark();
+
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+//        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+        io.FontDefault = io.Fonts->AddFontFromFileTTF("assets/fonts/OpenSans-Semibold.ttf", 20.f);
+        static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
+        ImFontConfig icons_config;
+        icons_config.MergeMode = true;
+        icons_config.PixelSnapH = true;
+        io.Fonts->AddFontFromFileTTF("assets/fonts/fa-solid-900.ttf", 20.0f, &icons_config, icons_ranges);
+    });
+
+    GLFWimage images[1];
+    images[0].pixels = stbi_load("build/ProjectIcon.png", &images[0].width, &images[0].height, 0, 4);
+    glfwSetWindowIcon(app.renderer->window, 1, images);
+
+    auto &colors = ImGui::GetStyle().Colors;
+    colors[ImGuiCol_WindowBg] = ImVec4(0.12f, 0.125f, 0.121f, 1.0f);
+
+    colors[ImGuiCol_Header] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+    colors[ImGuiCol_HeaderHovered] = ImVec4(0.3f, 0.305f, 0.3f, 1.0f);
+    colors[ImGuiCol_HeaderActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+
+    colors[ImGuiCol_Button] = ImVec4(0.6f, 0.2f, 0.2f, 1.0f);
+    colors[ImGuiCol_ButtonHovered] = ImVec4(1, 0.205f, 0.2f, 1.0f);
+    colors[ImGuiCol_ButtonActive] = ImVec4(1, 0.305f, 0.3f, 1.0f);
+
+    colors[ImGuiCol_FrameBg] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.3, 0.305f, 0.3f, 1.0f);
+    colors[ImGuiCol_FrameBgActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+
+    colors[ImGuiCol_Tab] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+    colors[ImGuiCol_TabHovered] = ImVec4(0.3f, 0.305f, 0.3f, 1.0f);
+    colors[ImGuiCol_TabActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+    colors[ImGuiCol_TabUnfocused] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+    colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+
+    colors[ImGuiCol_TitleBg] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
+    colors[ImGuiCol_TitleBgActive] = ImVec4(0.25f, 0.255f, 0.25f, 1.0f);
+    colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
+
+    colors[ImGuiCol_ResizeGrip] = ImVec4(1, 0.15, 0.15, 1);
+    colors[ImGuiCol_ResizeGripActive] = ImVec4(1, 0.30, 0.30, 1);
+    colors[ImGuiCol_ResizeGripHovered] = ImVec4(1, 0.20, 0.20, 1);
+    colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1, 0.15, 0.15, 1);
+
+    colors[ImGuiCol_DockingPreview] = ImVec4(1, 0.15, 0.15, 1);
+
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeFile, "", ImVec4(1, 1, 1, 1.0f), ICON_FA_FILE);
+    ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir, "", ImVec4(1, 1, 1, 1.0f), ICON_FA_FOLDER);
+
+    ImGui::GetStyle().ScrollbarSize = 10.0f;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.5, 2.5));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.5f);
+
+    struct Project {
+        std::string name;
+        std::string path;
+    };
+
+#ifdef _WIN32
+    auto *logo = new Texture("build\\logo2.png", 0, "texture_diffuse");
+    path = std::string(getenv("APPDATA"));
+    path = path.parent_path() / "Roaming" / "Vault Engine";
+    if (!fs::exists(path)) {
+        fs::create_directories(path);
+
+        std::ofstream fout(path / "projects.json");
+        fout << "[]";
+        fout.close();
+    }
+#else
+    auto *logo = new Texture("build/logo2.png", 0, "texture_diffuse");
+    // get HOME env
+    fs::path home(getenv("HOME"));
+    // create path
+    path = home / ".vault_engine";
+    if (!fs::exists(path))
+        fs::create_directories(path);
+
+    if(!fs::exists(path / "projects.json")) {
+        std::ofstream fout(path / "projects.json");
+        fout << "[]";
+        fout.close();
+    }
+#endif
+
+    std::vector<Project> projects;
+    nlohmann::json j_Projects = nlohmann::json::parse(std::fstream(path / "projects.json"));
+    for (auto &project : j_Projects) {
+        projects.push_back({project["name"], project["path"]});
+    }
+
+    std::function<void(unsigned int&, unsigned int&)> GUI = [&](unsigned int &one, unsigned int &two){
+        // dock it to the left
+        glfwGetWindowSize(app.renderer->window, &app.width, &app.height);
+
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(ImVec2(app.width / 1.5, app.height));
+        // flags
+        ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar;
+        // padding
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(25, 25));
+        if(ImGui::Begin(ICON_FA_LAYER_GROUP " Projects", nullptr, flags)) {
+            if (ImGui::BeginChild("##icon stuff", ImVec2(0, 150))) {
+                ImGui::Image((void *) logo->ID, ImVec2(150, 150), ImVec2(0, 1), ImVec2(1, 0));
+                ImGui::EndChild();
+            }
+            ImGui::NewLine();
+
+            if(ImGui::BeginPopup("Project Options")) {
+                if(ImGui::Button("Delete Project")) {
+                    // delete project
+                    std::ifstream fin(path / "projects.json");
+                    nlohmann::json j = nlohmann::json::parse(fin);
+                    projects.erase(projects.begin() + selected);
+                    j.erase(j.begin() + selected);
+
+                    std::ofstream fout(path / "projects.json");
+                    fout << j.dump(4);
+                    fout.close();
+
+                    selected = -1;
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::EndPopup();
+            }
+
+            for(auto &project : projects) {
+                DisplayProject(app.renderer->window, project.name, project.path, &project - &projects[0]);
+            }
+        }
+        ImGui::End();
+        ImGui::PopStyleVar();
+
+        // set the next window right next to the first one
+        ImGui::SetNextWindowPos(ImVec2(app.width / 1.5, 0));
+        ImGui::SetNextWindowSize(ImVec2(app.width - (app.width / 1.5), app.height));
+        // flags
+        ImGuiWindowFlags flags2 = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar;
+        if(ImGui::Begin(ICON_FA_LAYER_GROUP " Other", nullptr, flags2)) {
+            ImVec2 windowSize = ImGui::GetWindowSize();
+
+            float offset = 25;
+
+            ImGui::SetCursorPosX((offset + 2) / 2);
+            if(ImGui::Button("New Project", ImVec2(windowSize.x - offset, 60))) {
+                ImGui::OpenPopup("Create New Project");
+            }
+
+            static char name[256];
+            if(ImGui::BeginPopup("Create New Project")) {
+                ImGui::InputText("Project Name", name, 256);
+
+                if(ImGui::Button("Create Project")) {
+                    ImGuiFileDialog::Instance()->OpenDialog("NewProject", ICON_FA_FOLDER " Choose where to create this project ..", NULL, ".");
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::EndPopup();
+            }
+
+            if (ImGuiFileDialog::Instance()->Display("NewProject")) {
+                // action if OK
+                if (ImGuiFileDialog::Instance()->IsOk()) {
+                    std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+                    std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+
+                    std::ofstream projFile(filePath + "/settings.vault.project");
+
+                    nlohmann::json data;
+                    data["name"] = name;
+                    data["path"] = filePathName;
+
+                    std::ifstream fout(path / "projects.json");
+                    nlohmann::json globalProjects = nlohmann::json::parse(fout);
+                    fout.close();
+
+                    std::ofstream fout2(path / "projects.json");
+                    globalProjects.push_back(data);
+
+                    fout2 << globalProjects.dump(4);
+                    fout2.close();
+
+                    projFile << data.dump(4) << std::endl;
+                    projFile.close();
+
+                    projects.push_back({name, filePathName});
+                    fs::path projectPath = filePathName;
+
+                    // copy assets, shaders, build and imgui.ini to the project
+                    fs::copy(fs::absolute("assets"), projectPath / "assets", fs::copy_options::recursive);
+                    fs::copy(fs::absolute("shaders"), projectPath / "shaders", fs::copy_options::recursive);
+                    fs::copy(fs::absolute("build"), projectPath / "build", fs::copy_options::recursive);
+                    fs::copy_file(fs::absolute("imgui.ini"), projectPath / "imgui.ini", fs::copy_options::recursive);
+                }
+
+                ImGuiFileDialog::Instance()->Close();
+            }
+
+            ImGui::SetCursorPosX((offset + 2) / 2);
+            if(ImGui::Button("Open Project", ImVec2(windowSize.x - offset, 60))) {
+                ImGuiFileDialog::Instance()->OpenDialog("OpenProject", ICON_FA_FOLDER " Choose a project to open ..", NULL, ".");
+            }
+
+            if (ImGuiFileDialog::Instance()->Display("OpenProject")) {
+                // action if OK
+                if (ImGuiFileDialog::Instance()->IsOk()) {
+                    std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+                    std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+
+                    if(fs::exists(fs::path(filePathName) / "settings.vault.project")) {
+                        std::ifstream projFile(filePathName + "/settings.vault.project");
+                        nlohmann::json data = nlohmann::json::parse(projFile);
+                        projFile.close();
+
+                        std::ifstream fout(path / "projects.json");
+                        nlohmann::json globalProjects = nlohmann::json::parse(fout);
+                        fout.close();
+
+                        globalProjects.push_back(data);
+                        std::ofstream fout2(path / "projects.json");
+                        fout2 << globalProjects.dump(4);
+                        fout2.close();
+
+                        projects.push_back({data["name"], data["path"]});
+                    }
+                }
+
+                ImGuiFileDialog::Instance()->Close();
+            }
+        }
+        ImGui::End();
+    };
+
+    app.Run([](unsigned int &shadowMap){}, GUI, [](Shader &shader){});
+}
+#endif

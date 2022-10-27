@@ -77,9 +77,14 @@ namespace HyperAPI {
         extern std::map<std::string, std::map<std::string, int>> currFrames;
         extern std::map<std::string, std::map<std::string, float>> currDelays;
         extern std::string currentScenePath;
+        void SaveComponents(nlohmann::json &JSON, Experimental::GameObject *gameObject, const int i, int &componentOffset);
+
         void LoadScene(const std::string &scenePath, nlohmann::json &StateScene);
         Experimental::GameObject* LoadPrefab(const std::string &scenePath);
+        Experimental::GameObject* LoadJSONPrefab(const nlohmann::json &JSON);
         void SavePrefab(const std::string &path, Experimental::GameObject* gameObject);
+        void SaveJSONPrefab(nlohmann::json &JSON, Experimental::GameObject* gameObject);
+
         void SaveScene(const std::string &path, nlohmann::json &StateScene);
 
         bool DropTargetMat(DragType type, Mesh *currEntity, Texture *otherData = nullptr);

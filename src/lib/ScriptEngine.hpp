@@ -65,6 +65,7 @@ namespace ScriptEngine {
         int GetVelocity3D(lua_State *L);
         int GetAngularVelocity3D(lua_State *L);
         int AddForceAtPosition3D(lua_State *L);
+        int MoveByRotation3D(lua_State *L);
 
         // Camera Functions
         int MouseInput(lua_State *L);
@@ -80,6 +81,9 @@ namespace ScriptEngine {
         int GetR2(lua_State *L);
         int IsButtonPressed(lua_State *L);
         int IsButtonReleased(lua_State *L);
+
+        // Scene Functions
+        int LoadScene(lua_State *L);
 
         // GameObject functions
         int SetActive(lua_State *L);

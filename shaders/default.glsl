@@ -6,13 +6,15 @@ layout(location = 2) in vec3 aNormal;
 layout(location = 3) in vec2 g_texCoords;
 layout(location = 4) in ivec4 boneIds;
 layout(location = 5) in vec4 weights;
+layout(location = 6) in vec3 tangent;
+layout(location = 7) in vec3 bitangent;
 
-out vec2 texCoords;
-out vec3 Color;
-out vec3 Normal;
-out vec3 currentPosition;
-out vec3 reflectedVector;
-out vec4 fragPosLight;
+//out vec2 texCoords;
+//out vec3 Color;
+//out vec3 Normal;
+//out vec3 currentPosition;
+//out vec3 reflectedVector;
+//out vec4 fragPosLight;
 
 uniform mat4 camera;
 uniform mat4 translation;
@@ -23,12 +25,25 @@ uniform mat4 lightSpaceMatrix;
 uniform vec3 cameraPosition;
 uniform vec2 texUvOffset;
 
+out DATA {
+    vec2 texCoords;
+    vec3 Color;
+    vec3 Normal;
+    vec3 currentPosition;
+    vec3 reflectedVector;
+    vec4 fragPosLight;
+    mat4 projection;
+    mat4 model;
+    vec3 T;
+    vec3 B;
+    vec3 N;
+} data_out;
+
 const int MAX_BONES = 100;
 const int MAX_BONE_INFLUENCE = 4;
 uniform mat4 finalBonesMatrices[MAX_BONES];
 
 void main() {
-
     vec4 totalPosition = vec4(0);
 
     for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
@@ -53,9 +68,10 @@ void main() {
     }
 
     vec4 worldPosition = model * translation * rotation * scale * totalPosition;
-    currentPosition = vec3(model * translation * rotation * scale * totalPosition);
-    gl_Position = camera * vec4(currentPosition, 1.0);
-
+    data_out.currentPosition = vec3(model * translation * rotation * scale * totalPosition);
+    data_out.projection = camera;
+    gl_Position = vec4(data_out.currentPosition, 1.0);
+    data_out.model = model * translation * rotation * scale;
 
     vec2 finalCoords = g_texCoords;
 
@@ -67,20 +83,29 @@ void main() {
         finalCoords.y = finalCoords.y + texUvOffset.y;
     }
 
-    texCoords = finalCoords;
-    Color = color;
+    data_out.texCoords = finalCoords;
+    data_out.Color = color;
     // make normal apply rotation
-    Normal = mat3(transpose(inverse(model))) * aNormal;
+    data_out.Normal = mat3(transpose(inverse(model))) * aNormal;
     // Normal = aNormal;
 
-    fragPosLight = lightSpaceMatrix * vec4(currentPosition, 1.0);
+    data_out.fragPosLight = lightSpaceMatrix * vec4(data_out.currentPosition, 1.0);
 
     vec3 viewVector = normalize(worldPosition.xyz - cameraPosition);
-    reflectedVector = reflect(viewVector, Normal);
+    data_out.reflectedVector = reflect(viewVector, data_out.Normal);
+
+    vec3 T   = normalize(mat3(model) * tangent);
+    vec3 B   = normalize(mat3(model) * bitangent);
+    vec3 N   = normalize(mat3(model) * data_out.Normal);
+
+    data_out.T = T;
+    data_out.B = B;
+    data_out.N = N;
 }
 
 #shader fragment
 #version 330 core
+
 layout(location = 0) out vec4 FragColor;
 layout(location = 1) out vec4 BloomColor;
 // entity data that is unsigned int
@@ -92,6 +117,7 @@ in vec3 Normal;
 in vec3 currentPosition;
 in vec3 reflectedVector;
 in vec4 fragPosLight;
+in mat3 m_TBN;
 
 struct PointLight {
     vec3 lightPos;
@@ -132,6 +158,7 @@ uniform vec3 cameraPosition;
 uniform sampler2D texture_diffuse0;
 uniform sampler2D texture_specular0;
 uniform sampler2D texture_normal0;
+uniform sampler2D texture_height0;
 uniform vec4 baseColor;
 uniform vec3 u_BloomColor;
 uniform float metallic;
@@ -139,14 +166,13 @@ uniform float roughness;
 
 //texture setters
 uniform int hasNormalMap;
+uniform int hasHeightMap;
 
 //global textures
 uniform sampler2D shadowMap;
 
 vec4 reflectedColor = texture(cubeMap, reflectedVector);
-
 float specularTexture = texture(texture_specular0, texCoords).r;
-
 
 float ShadowCalculation(vec4 fragPosLightSpace)
 {
@@ -160,28 +186,47 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
     // shadow without bias
-     float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
+    float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
 
     return shadow;
 }
 
 vec4 pointLight(PointLight light) {
     float specular = 0;
-    vec3 lightVec = light.lightPos - currentPosition;
 
-    vec3 normal = normalize(Normal);
+    vec3 lightVec = light.lightPos - currentPosition;
+    if(hasNormalMap == 1) {
+        lightVec = (m_TBN * light.lightPos) - (m_TBN * currentPosition);
+    } else {
+        lightVec = light.lightPos - currentPosition;
+    }
+
+    vec3 normal;
+    if(isTex == 1 && hasNormalMap == 1) {
+        vec4 normalTex = texture(texture_normal0, texCoords);
+        normal = normalize(normalTex.rgb * 2.0 - 1.0);
+    } else {
+        normal = normalize(Normal);
+    }
+
     vec3 lightDir = normalize(lightVec);
     float diffuse = max(dot(normal, lightDir), 0.0);
 
-	float dist = length(lightVec);
-	float a = 1.0;
-	float b = 0.04;
-	float inten = 1.0f / (a * dist * dist + b * dist + 1.0f);
+    float dist = length(lightVec);
+    float a = 1.00;
+    float b = 0.04;
+    float inten = 1.0f / (a * dist * dist + b * dist + 1.0f);
     inten *= light.intensity;
 
     if(diffuse != 0.0f) {
         float specularLight = 0.5;
-        vec3 viewDirection = normalize(cameraPosition - currentPosition);
+        vec3 viewDirection;
+        if(hasNormalMap == 1) {
+            viewDirection = normalize((m_TBN * cameraPosition) - (m_TBN * currentPosition));
+        } else {
+            viewDirection = normalize(cameraPosition - currentPosition);
+        }
+
         vec3 reflectDir = reflect(-lightDir, normal);
 
         vec3 halfwayVec = normalize(viewDirection + lightDir);
@@ -192,7 +237,7 @@ vec4 pointLight(PointLight light) {
 
     float _smoothness = 1 - roughness;
 
-	if(_smoothness == 0.0) {
+    if(_smoothness == 0.0) {
         specular = 0.0;
     }
 
@@ -207,16 +252,50 @@ vec4 pointLight(PointLight light) {
 }
 
 vec4 directionalLight(DirectionalLight light) {
-    // float ambient = 0.4;
+    vec3 lightDir = normalize(light.lightPos);
+    vec3 viewDirection = normalize(cameraPosition - currentPosition);
+    vec2 UVs = texCoords;
+
+    if(hasNormalMap == 1) {
+        viewDirection = normalize((m_TBN * cameraPosition) - (m_TBN * currentPosition));
+    } else {
+        viewDirection = normalize(cameraPosition - currentPosition);
+    }
+
+    if(hasHeightMap == 1 && hasNormalMap == 1) {
+        float heightScale = 0.05;
+        const float minLayers = 8;
+        const float maxLayers = 64;
+        float numLayers = mix(minLayers, maxLayers, abs(dot(vec3(0,0,1), viewDirection)));
+        float layerDepth = 1 / numLayers;
+        float currentLayerDepth = 0.0;
+
+        vec2 S = viewDirection.xy / viewDirection.z * heightScale;
+        vec2 deltaUVs = S / numLayers;
+
+        float currentDepthMapValue = 1 - texture(texture_height0, UVs).r;
+
+        while(currentLayerDepth < currentDepthMapValue) {
+            UVs -= deltaUVs;
+            currentDepthMapValue = 1 - texture(texture_height0, UVs).r;
+            currentLayerDepth += layerDepth;
+        }
+
+        vec2 prevTexCoords = UVs + deltaUVs;
+        float afterDepth = currentDepthMapValue - currentLayerDepth;
+        float beforeDepth = 1 - texture(texture_height0, prevTexCoords).r - currentLayerDepth + layerDepth;
+        float weight = afterDepth / (afterDepth - beforeDepth);
+        UVs = prevTexCoords * weight + UVs * (1 - weight);
+    }
 
     vec3 normal;
     if(isTex == 1 && hasNormalMap == 1) {
-        normal = normalize(Normal);
-        // normal = normalize(texture(texture_normal0, texCoords).rgb * 2.0 - 1.0);
+        vec4 normalTex = texture(texture_normal0, UVs);
+        normal = normalize(normalTex.rgb * 2.0 - 1.0);
     } else {
         normal = normalize(Normal);
     }
-    vec3 lightDir = normalize(light.lightPos);
+
     float diffuse = max(dot(normal, lightDir), 0.0);
 
     float specular = 0;
@@ -224,7 +303,6 @@ vec4 directionalLight(DirectionalLight light) {
 
     if(diffuse != 0.0f) {
         float specularLight = 0.5;
-        vec3 viewDirection = normalize(cameraPosition - currentPosition);
         vec3 reflectDir = reflect(-lightDir, normal);
 
         vec3 halfwayVec = normalize(viewDirection + lightDir);
@@ -245,8 +323,8 @@ vec4 directionalLight(DirectionalLight light) {
     specular = specular * _smoothness;
     float shadowAdder = 1.0;
 
-	if(isTex == 1) {
-        return (mix(texture(texture_diffuse0, texCoords), reflectedColor, metallic) * baseColor * vec4(light.color, 1) * ((diffuse ) * shadowAdder) + specularTexture * (((specular * shadowAdder) * vec4(light.color, 1)) * light.intensity));
+    if(isTex == 1) {
+        return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * baseColor * vec4(light.color, 1) * ((diffuse ) * shadowAdder) + specularTexture * (((specular * shadowAdder) * vec4(light.color, 1)) * light.intensity));
     } else {
         return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * ((diffuse) * shadowAdder) + vec4(1,1,1,1)  * (((specular * shadowAdder) * vec4(light.color, 1)) * light.intensity));
     }
@@ -257,15 +335,33 @@ vec4 spotLight(SpotLight light) {
     float innerCone = 0.95;
 
     float specular = 0;
-    vec3 lightVec = light.lightPos - currentPosition;
+    vec3 lightVec;
+    if(hasNormalMap == 1) {
+        lightVec = (m_TBN * light.lightPos) - (m_TBN * currentPosition);
+    } else {
+        lightVec = light.lightPos - currentPosition;
+    }
 
-    vec3 normal = normalize(Normal);
+    vec3 normal;
+    if(isTex == 1 && hasNormalMap == 1) {
+        vec4 normalTex = texture(texture_normal0, texCoords);
+        normal = normalize(normalTex.rgb * 2.0 - 1.0);
+    } else {
+        normal = normalize(Normal);
+    }
+
     vec3 lightDir = normalize(lightVec);
     float diffuse = max(dot(normal, lightDir), 0.0);
 
     if(diffuse != 0.0f) {
         float specularLight = 0.5;
-        vec3 viewDirection = normalize(cameraPosition - currentPosition);
+        vec3 viewDirection;
+        if(hasNormalMap == 1) {
+            viewDirection = normalize((m_TBN * cameraPosition) - (m_TBN * currentPosition));
+        } else {
+            viewDirection = normalize(cameraPosition - currentPosition);
+        }
+
         vec3 reflectDir = reflect(-lightDir, normal);
 
         vec3 halfwayVec = normalize(viewDirection + lightDir);
@@ -275,11 +371,11 @@ vec4 spotLight(SpotLight light) {
     }
     float _smoothness = 1 - roughness;
 
-	if(_smoothness == 0.0) {
+    if(_smoothness == 0.0) {
         specular = 0.0;
     }
 
-    float angle = dot(light.angle, -lightDir);
+    float angle = dot(light.angle, -normalize(light.lightPos - currentPosition));
     float inten = clamp((angle - outerCone) / (innerCone - outerCone), 0.0, 1.0);
 
     // add smoothness to the specular
@@ -295,26 +391,26 @@ vec4 spotLight(SpotLight light) {
 vec4 light2d(Light2D light) {
     if(isTex == 1) {
         vec4 frag_color = texture(texture_diffuse0, texCoords) * baseColor;
-        if(frag_color.a < 1.0)
-            discard;
+        if(frag_color.a < 0.1)
+        discard;
 
         float distance = distance(light.lightPos, currentPosition.xy);
         float diffuse = 0.0;
 
         if (distance <= light.range)
-            diffuse =  1.0 - abs(distance / light.range);
+        diffuse =  1.0 - abs(distance / light.range);
 
         return vec4(min(frag_color.rgb * ((light.color * diffuse)), frag_color.rgb), 1.0);
     } else {
         vec4 frag_color = baseColor;
-        if(frag_color.a < 1.0)
-            discard;
+        if(frag_color.a < 0.1)
+        discard;
 
         float distance = distance(light.lightPos, currentPosition.xy);
         float diffuse = 0.0;
 
         if (distance <= light.range)
-            diffuse =  1.0 - abs(distance / light.range);
+        diffuse =  1.0 - abs(distance / light.range);
 
         return vec4(frag_color.rgb * ((light.color * diffuse)), frag_color.rgb);
     }
@@ -331,6 +427,8 @@ uniform uint u_EntityID;
 // }
 
 void main() {
+    vec4 normalTex = texture(texture_normal0, texCoords);
+
     float shadow = ShadowCalculation(fragPosLight);
     if(specularTexture == 0) {
         specularTexture = texture(texture_diffuse0, texCoords).r;
@@ -350,12 +448,9 @@ void main() {
         result.a = baseColor.a;
     }
 
-    // discard if the alpha is 0
     if(result.a < 0.1) {
         discard;
     }
-
-    // result += directionalLight();
 
     for(int i = 0; i < MAX_LIGHTS; i++) {
         if(pointLights[i].intensity > 0) {
@@ -375,25 +470,86 @@ void main() {
         }
     }
 
-//    float brightness = dot(result.rgb, vec3(0.2126, 0.7152, 0.0722));
-
-    // if its too bright make it more white
+    FragColor = result;
     BloomColor = vec4(u_BloomColor, 1);
-    if(u_BloomColor.r > 0 || u_BloomColor.g > 0 || u_BloomColor.b > 0) {
-        FragColor = result * 2;
-    } else {
-        FragColor = result;
-    }
-    //    if(brightness > 0.9) {
-    //        FragColor.rgb = mix(FragColor.rgb, vec3(1,1,1), 0.5);
-    //    } else {
-//    }
-//
-//    if(brightness > 0.05) {
-//        BloomColor = FragColor;
-//    } else {
-//        BloomColor = vec4(0);
-//    }
 
     EntityID = u_EntityID;
+}
+
+#shader geometry
+#version 330 core
+layout(triangles) in;
+layout(triangle_strip, max_vertices = 3) out;
+
+out vec2 texCoords;
+out vec3 Color;
+out vec3 Normal;
+out vec3 currentPosition;
+out vec3 reflectedVector;
+out vec4 fragPosLight;
+out mat3 m_TBN;
+
+in DATA {
+    vec2 texCoords;
+    vec3 Color;
+    vec3 Normal;
+    vec3 currentPosition;
+    vec3 reflectedVector;
+    vec4 fragPosLight;
+    mat4 projection;
+    mat4 model;
+    vec3 T;
+    vec3 B;
+    vec3 N;
+} data_in[];
+
+void main() {
+    vec3 edge0 = gl_in[1].gl_Position.xyz - gl_in[0].gl_Position.xyz;
+    vec3 edge1 = gl_in[2].gl_Position.xyz - gl_in[0].gl_Position.xyz;
+    vec2 deltaUV0 = data_in[1].texCoords - data_in[0].texCoords;
+    vec2 deltaUV1 = data_in[2].texCoords - data_in[0].texCoords;
+
+    float invDet = 1.0f / (deltaUV0.x * deltaUV1.y - deltaUV1.x * deltaUV0.y);
+
+    vec3 tangent = vec3(invDet * (deltaUV1.y * edge0 - deltaUV0.y * edge1));
+    vec3 bitangent = vec3(invDet * (-deltaUV1.x * edge0 + deltaUV0.x * edge1));
+
+    vec3 T = normalize(vec3(data_in[0].model * vec4(tangent, 0.0f)));
+    vec3 B = normalize(vec3(data_in[0].model * vec4(bitangent, 0.0f)));
+    vec3 N = normalize(vec3(data_in[0].model * vec4(cross(edge1, edge0), 0.0f)));
+
+    mat3 TBN = mat3(T, B, N);
+    TBN = transpose(TBN);
+
+    gl_Position = data_in[0].projection * gl_in[0].gl_Position;
+    Normal = data_in[0].Normal;
+    Color = data_in[0].Color;
+    currentPosition = gl_in[0].gl_Position.xyz;
+    reflectedVector = data_in[0].reflectedVector;
+    fragPosLight = data_in[0].fragPosLight;
+    texCoords = data_in[0].texCoords;
+    m_TBN = TBN;
+    EmitVertex();
+
+    gl_Position = data_in[1].projection * gl_in[1].gl_Position;
+    Normal = data_in[1].Normal;
+    Color = data_in[1].Color;
+    currentPosition = gl_in[1].gl_Position.xyz;
+    reflectedVector = data_in[1].reflectedVector;
+    fragPosLight = data_in[1].fragPosLight;
+    texCoords = data_in[1].texCoords;
+    m_TBN = TBN;
+    EmitVertex();
+
+    gl_Position = data_in[2].projection * gl_in[2].gl_Position;
+    Normal = data_in[2].Normal;
+    Color = data_in[2].Color;
+    currentPosition = gl_in[2].gl_Position.xyz;
+    reflectedVector = data_in[2].reflectedVector;
+    fragPosLight = data_in[2].fragPosLight;
+    texCoords = data_in[2].texCoords;
+    m_TBN = TBN;
+    EmitVertex();
+
+    EndPrimitive();
 }

@@ -159,6 +159,11 @@ namespace HyperAPI {
     bool isStopped = true;
     glm::vec3 mousePosWorld, mousePosCamWorld;
     float sceneMouseX, sceneMouseY;
+    Config config = {
+        "Vault Engine",
+        "assets/scenes/main.vault",
+        0.2,
+    };
 
     bool DecomposeTransform(const glm::mat4 &transform, glm::vec3 &translation, glm::vec3 &rotation, glm::vec3 &scale) {
         // From glm::decompose in matrix_decompose.inl
@@ -452,21 +457,23 @@ namespace HyperAPI {
             std::cout << infoLog << std::endl;
         }
 
-        // geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
-        // glShaderSource(geometryShader, 1, &geometryShaderCode, NULL);
-        // glCompileShader(geometryShader);
-        // glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
-        // if(!success) {
-        //     glGetShaderInfoLog(geometryShader, 512, NULL, infoLog);
-        //     std::cout << "Failed to compile geometry shader" << std::endl;
-        //     std::cout << infoLog << std::endl;
-        // }
+        if(type == 2) {
+            geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+            glShaderSource(geometryShader, 1, &geometryShaderCode, NULL);
+            glCompileShader(geometryShader);
+            glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
+            if (!success) {
+                glGetShaderInfoLog(geometryShader, 512, NULL, infoLog);
+                HYPER_LOG("Failed to compile Geometry Shader")
+                std::cout << infoLog << std::endl;
+            }
+        }
 
         ID = glCreateProgram();
         glAttachShader(ID, vertShader);
         glAttachShader(ID, fragShader);
-        if (geometryCode != "") {
-            // glAttachShader(ID, geometryShader);
+        if(type == 2) {
+            glAttachShader(ID, geometryShader);
         }
         glLinkProgram(ID);
         glGetProgramiv(ID, GL_LINK_STATUS, &success);
@@ -478,7 +485,9 @@ namespace HyperAPI {
 
         glDeleteShader(vertShader);
         glDeleteShader(fragShader);
-        // glDeleteShader(geometryShader);
+        if(type == 2) {
+            glDeleteShader(geometryShader);
+        }
     }
 
     void Shader::Bind() {
@@ -525,6 +534,40 @@ namespace HyperAPI {
         this->ID = uuid::generate_uuid_v4();
         this->empty = empty;
 
+        // calculate TBN
+        for (int i = 0; i < indices.size(); i += 3) {
+            Vertex &v0 = vertices[indices[i]];
+            Vertex &v1 = vertices[indices[i + 1]];
+            Vertex &v2 = vertices[indices[i + 2]];
+
+            glm::vec3 edge1 = v1.position - v0.position;
+            glm::vec3 edge2 = v2.position - v0.position;
+            glm::vec2 deltaUV1 = v1.texUV - v0.texUV;
+            glm::vec2 deltaUV2 = v2.texUV - v0.texUV;
+
+            float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+            glm::vec3 tangent;
+            tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+            tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+            tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+            tangent = glm::normalize(tangent);
+
+            glm::vec3 bitangent;
+            bitangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+            bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+            bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+            bitangent = glm::normalize(bitangent);
+
+            v0.tangent = tangent;
+            v1.tangent = tangent;
+            v2.tangent = tangent;
+
+            v0.bitangent = bitangent;
+            v1.bitangent = bitangent;
+            v2.bitangent = bitangent;
+        }
+
         TransformComponent component;
         component.position = Vector3(0, 0, 0);
         component.scale = Vector3(1, 1, 1);
@@ -568,6 +611,12 @@ namespace HyperAPI {
 
             glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, m_Weights));
             glEnableVertexAttribArray(5);
+
+            glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, tangent));
+            glEnableVertexAttribArray(6);
+
+            glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, bitangent));
+            glEnableVertexAttribArray(7);
 
             // glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(11 * sizeof(float)));
             // glEnableVertexAttribArray(4);
@@ -702,7 +751,6 @@ namespace HyperAPI {
 
         if (!camera.mode2D) {
             for (int i = 0; i < Scene::PointLights.size(); i++) {
-                // Scene::PointLights[i]->scriptComponent.OnUpdate();
                 shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].lightPos").c_str(),
                                     Scene::PointLights[i]->lightPos.x, Scene::PointLights[i]->lightPos.y,
                                     Scene::PointLights[i]->lightPos.z);
@@ -818,7 +866,21 @@ namespace HyperAPI {
                     GL_UNSIGNED_BYTE,
                     data
             );
-        } else if (nrChannels >= 4)
+        }
+        else if (std::string(textureType) == "texture_height") {
+            glTexImage2D(
+                    GL_TEXTURE_2D,
+                    0,
+                    GL_RED,
+                    width,
+                    height,
+                    0,
+                    GL_RGBA,
+                    GL_UNSIGNED_BYTE,
+                    data
+            );
+        }
+        else if (nrChannels >= 4)
             glTexImage2D(
                     GL_TEXTURE_2D,
                     0,
@@ -970,6 +1032,7 @@ namespace HyperAPI {
 
             if (mode2D) {
                 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.1f, 5000.0f);
+                projection = glm::scale(projection, glm::vec3(transform.scale.x, transform.scale.y, 1.0f));
             } else {
                 projection = glm::perspective(glm::radians(FOVdeg), aspect, nearPlane, farPlane);
             }
@@ -1838,7 +1901,17 @@ namespace HyperAPI {
             shader.SetUniform1i("texture_normal0", 2);
             shader.SetUniform1i("hasNormalMap", 1);
         } else {
-            shader.SetUniform1i("hasNormalMap", 1);
+            shader.SetUniform1i("texture_normal0", 4);
+            shader.SetUniform1i("hasNormalMap", 0);
+        }
+
+        if (height != nullptr) {
+            height->Bind(3);
+            shader.SetUniform1i("texture_height0", 3);
+            shader.SetUniform1i("hasHeightMap", 1);
+        } else {
+            shader.SetUniform1i("texture_height0", 4);
+            shader.SetUniform1i("hasHeightMap", 0);
         }
     }
 
@@ -1856,6 +1929,168 @@ namespace HyperAPI {
     }
 
     namespace Experimental {
+        nlohmann::json stateScene = nlohmann::json::array();
+        bool bulletPhysicsStarted = false;
+
+        void StartWorld(b2ContactListener *listener) {
+            InitScripts();
+
+            for (auto &gameObject : Scene::m_GameObjects) {
+                if(gameObject->prefab) continue;
+
+                std::cout << gameObject->name << std::endl;
+                if (gameObject->HasComponent<m_LuaScriptComponent>()) {
+                    gameObject->GetComponent<m_LuaScriptComponent>().Start();
+                }
+
+                if (gameObject->HasComponent<NativeScriptManager>()) {
+                    gameObject->GetComponent<NativeScriptManager>().Start();
+                }
+            }
+
+            Scene::world = new b2World({0.0, -5.8f});
+            Scene::world->SetContactListener(listener);
+            auto view = Scene::m_Registry.view<Rigidbody2D>();
+            auto view3D = Scene::m_Registry.view<Rigidbody3D>();
+
+            for (auto e : view) {
+                GameObject *gameObject;
+                for (auto &go : Scene::m_GameObjects) {
+                    if (go->entity == e) {
+                        gameObject = go;
+                        break;
+                    }
+                }
+
+                auto &transform = gameObject->GetComponent<Transform>();
+                auto &rb2d = gameObject->GetComponent<Rigidbody2D>();
+
+                b2BodyDef bodyDef;
+                bodyDef.userData.pointer = reinterpret_cast<uintptr_t>(gameObject);
+                bodyDef.type = rb2d.type;
+                bodyDef.position.Set(transform.position.x, transform.position.y);
+                bodyDef.angle = glm::radians(transform.rotation.z);
+                bodyDef.gravityScale = rb2d.gravityScale;
+
+                b2Body *body = Scene::world->CreateBody(&bodyDef);
+                body->SetFixedRotation(rb2d.fixedRotation);
+                rb2d.body = body;
+
+                if (gameObject->HasComponent<BoxCollider2D>()) {
+                    auto &boxCollider2D = gameObject->GetComponent<BoxCollider2D>();
+                    b2PolygonShape shape;
+                    shape.SetAsBox((((boxCollider2D.size.x) / 2) - 0.02) / 2, (((boxCollider2D.size.y) / 2) - 0.02) / 2);
+
+                    b2FixtureDef fixtureDef;
+                    fixtureDef.isSensor = boxCollider2D.trigger;
+                    fixtureDef.shape = &shape;
+                    fixtureDef.density = boxCollider2D.density;
+                    fixtureDef.friction = boxCollider2D.friction;
+                    fixtureDef.restitution = boxCollider2D.restitution;
+                    fixtureDef.restitutionThreshold = boxCollider2D.restitutionThreshold;
+                    boxCollider2D.fixture = body->CreateFixture(&fixtureDef);
+                }
+            }
+
+            BulletPhysicsWorld::Init();
+
+            for (auto e : view3D) {
+                GameObject *gameObject;
+                for (auto &go : Scene::m_GameObjects) {
+                    if (go->entity == e) {
+                        gameObject = go;
+                        break;
+                    }
+                }
+
+                auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
+                rigidbody.transform = &gameObject->GetComponent<Transform>();
+
+                if (gameObject->HasComponent<BoxCollider3D>()) {
+                    auto &collider = gameObject->GetComponent<BoxCollider3D>();
+                    collider.CreateShape();
+                    rigidbody.CreateBody(collider.shape);
+                }
+
+                if (gameObject->HasComponent<MeshCollider3D>()) {
+                    auto &collider = gameObject->GetComponent<MeshCollider3D>();
+                    collider.CreateShape(&gameObject->GetComponent<MeshRenderer>());
+                    rigidbody.CreateBody(collider.shape);
+                }
+            }
+
+            auto jointView = Scene::m_Registry.view<FixedJoint3D>();
+
+            for (auto e : jointView) {
+                GameObject *gameObject;
+                for (auto &go : Scene::m_GameObjects) {
+                    if (go->entity == e) {
+                        gameObject = go;
+                        break;
+                    }
+                }
+
+                auto &joint = gameObject->GetComponent<FixedJoint3D>();
+                joint.CreateJoint();
+            }
+
+            auto pathfindingView = Scene::m_Registry.view<PathfindingAI>();
+
+            for (auto e : pathfindingView) {
+                GameObject *gameObject;
+                for (auto &go : Scene::m_GameObjects) {
+                    if (go->entity == e) {
+                        gameObject = go;
+                        break;
+                    }
+                }
+
+                auto &pathfinding = gameObject->GetComponent<PathfindingAI>();
+                pathfinding.CreateGrid();
+            }
+
+            bulletPhysicsStarted = true;
+        }
+
+        void DeleteWorld() {
+            bulletPhysicsStarted = false;
+
+            // halt
+            Mix_HaltChannel(-1);
+            Mix_HaltMusic();
+
+            for (auto &gameObject : Scene::m_GameObjects) {
+                if (gameObject->HasComponent<FixedJoint3D>()) {
+                    auto &fixedJoint = gameObject->GetComponent<FixedJoint3D>();
+                    fixedJoint.DeleteJoint();
+                }
+
+                if (gameObject->HasComponent<NativeScriptManager>()) {
+                    auto &script = gameObject->GetComponent<NativeScriptManager>();
+                    for (auto &script : script.m_StaticScripts) {
+                        delete script;
+                    }
+
+                    gameObject->RemoveComponent<NativeScriptManager>();
+                }
+
+                if (gameObject->HasComponent<Rigidbody3D>()) {
+                    auto &component = gameObject->GetComponent<Rigidbody3D>();
+                    component.DeleteBody();
+                    if (component.ref) {
+                        delete component.ref;
+                    }
+                }
+
+                if (gameObject->HasComponent<PathfindingAI>()) {
+                    auto &component = gameObject->GetComponent<PathfindingAI>();
+                    component.DeleteGrid();
+                }
+            }
+
+            BulletPhysicsWorld::Delete();
+        }
+
         void DrawVec3Control(const std::string &label, Vector3 &values, float resetValue, float columnWidth) {
             ImGui::PushID(label.c_str());
             ImGui::Columns(2);
@@ -2349,8 +2584,6 @@ namespace HyperAPI {
 }
 
 namespace Hyper {
-    static Noesis::IView* _view;
-
     void Application::Run(std::function<void(unsigned int &)> update,
                           std::function<void(unsigned int &PPT, unsigned int &PPFBO)> gui,
                           std::function<void(HyperAPI::Shader &)> shadowMapRender) {
@@ -2641,6 +2874,7 @@ namespace Hyper {
             }
 
             update(S_PPT);
+
             glReadBuffer(GL_COLOR_ATTACHMENT2);
             unsigned int entityId;
             glReadPixels(sceneMouseX, sceneMouseY, 1, 1, GL_RED_INTEGER, GL_UNSIGNED_INT, &entityId);
@@ -2718,6 +2952,8 @@ namespace Hyper {
                     } else if (!ImGui::IsMouseDoubleClicked(0)) {
                         mouseClicked = false;
                     }
+
+                    break;
                 }
             }
 
@@ -2730,6 +2966,11 @@ namespace Hyper {
             for(unsigned int i = 0; i < amount; i++) {
                 glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
                 blurShader.SetUniform1i("horizontal", horizontal);
+
+                for(unsigned int i = 0; i < 32; i++) {
+                    glActiveTexture(GL_TEXTURE0 + i);
+                    glBindTexture(GL_TEXTURE_2D, 0);
+                }
 
                 if(first_iteration) {
                     glBindTexture(GL_TEXTURE_2D, bloomTexture);
