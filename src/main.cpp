@@ -746,7 +746,7 @@ int main(int argc, char **argv) {
     };
 
     // indices
-    std::vector<unsigned int> cubeIndices = {
+    std::vector<uint32_t> cubeIndices = {
             0, 1, 2, 2, 3, 0,
             1, 5, 6, 6, 2, 1,
             7, 6, 5, 5, 4, 7,
@@ -764,7 +764,7 @@ int main(int argc, char **argv) {
     };
 
     // indices
-    std::vector<unsigned int> planeIndices = {
+    std::vector<uint32_t> planeIndices = {
             0, 1, 2, 2, 3, 0
     };
 
@@ -787,7 +787,7 @@ int main(int argc, char **argv) {
                    glm::vec2(0.0f, 1.0f)}
     };
 
-    std::vector<unsigned int> sprite_indices = {
+    std::vector<uint32_t> sprite_indices = {
             0, 1, 2,
             0, 2, 3
     };
@@ -880,8 +880,8 @@ int main(int argc, char **argv) {
     editor.SetShowWhitespaces(false);
 
 #ifndef GAME_BUILD
-    std::function<void(unsigned int &PPT, unsigned int &PPFBO)> GUI_EXP =
-            [&](unsigned int &PPT, unsigned int &PPFBO) {
+    std::function<void(uint32_t &PPT, uint32_t &PPFBO)> GUI_EXP =
+            [&](uint32_t &PPT, uint32_t &PPFBO) {
                 ShortcutManager(openConfig);
                 if (ImGui::BeginMainMenuBar()) {
                     if (ImGui::BeginMenu("File")) {
@@ -1184,23 +1184,23 @@ int main(int argc, char **argv) {
                                     ImGui::TreePop();
                                 }
 
-//                                if (ImGui::TreeNode("Height")) {
-//                                    if (ImGui::BeginDragDropTarget()) {
-//                                        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("file")) {
-//                                            dirPayloadData.erase(0, cwd.length() + 1);
-//                                            m_InspectorMaterial.height = dirPayloadData;
-//                                        }
-//
-//                                        ImGui::EndDragDropTarget();
-//                                    }
-//
-//                                    ImGui::Text(m_InspectorMaterial.height.c_str());
-//                                    if (ImGui::Button(ICON_FA_TRASH" Remove Texture")) {
-//                                        m_InspectorMaterial.height = "None";
-//                                    }
-//
-//                                    ImGui::TreePop();
-//                                }
+                                if (ImGui::TreeNode("Emission")) {
+                                    if (ImGui::BeginDragDropTarget()) {
+                                        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("file")) {
+                                            dirPayloadData.erase(0, cwd.length() + 1);
+                                            m_InspectorMaterial.height = dirPayloadData;
+                                        }
+
+                                        ImGui::EndDragDropTarget();
+                                    }
+
+                                    ImGui::Text(m_InspectorMaterial.height.c_str());
+                                    if (ImGui::Button(ICON_FA_TRASH" Remove Texture")) {
+                                        m_InspectorMaterial.height = "None";
+                                    }
+
+                                    ImGui::TreePop();
+                                }
 
                                 ImGui::DragFloat2("UV Scale", &m_InspectorMaterial.texUVs.x, 0.01f);
                                 ImGui::DragFloat("Roughness", &m_InspectorMaterial.roughness, 0.01f, 0.0f, 1.0f);
@@ -1395,7 +1395,7 @@ int main(int argc, char **argv) {
                     ImGui::Text("Renderer: %s", glGetString(GL_RENDERER));
                     ImGui::Text("Version: %s", glGetString(GL_VERSION));
                     ImGui::Text("Shading Language Version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
-                    ImGui::Text("FPS: %s", fpsText.c_str());
+                    ImGui::Text(fpsText.c_str());
 
 #ifndef _WIN32 || GAME_BUILD
                     UpdatePresence(
@@ -2329,7 +2329,7 @@ int main(int argc, char **argv) {
                 }
             };
 #else
-    std::function<void(unsigned int &PPT, unsigned int &PPFBO)> GUI_EXP = [&](unsigned int &PPT, unsigned int &PPFBO){};
+    std::function<void(uint32_t &PPT, uint32_t &PPFBO)> GUI_EXP = [&](uint32_t &PPT, uint32_t &PPFBO){};
 #endif
 
     bool calledOnce = false;
@@ -2348,7 +2348,11 @@ int main(int argc, char **argv) {
 
     float wheel = 0;
 
-    app.Run([&](unsigned int &shadowMapTex) {
+    app.Run([&](uint32_t &shadowMapTex) {
+        shader.Bind();
+        shader.SetUniform1i("shadowMap", GL_TEXTURE7);
+        shader.SetUniformMat4("lightSpaceMatrix", Scene::projection);
+
         if (Scene::LoadingScene) return;
         app.exposure = config.exposure;
         app.isGuzimoInUse = usingImGuizmo;
@@ -2703,7 +2707,7 @@ int main(int argc, char **argv) {
                 if (!gameObject->enabled) continue;
                 if (gameObject->layer != layer.first) continue;
                 if (gameObject->HasComponent<MeshRenderer>()) {
-                    for(unsigned int i = 0; i < 32; i++) {
+                    for(uint32_t i = 0; i < 32; i++) {
                         // unbind all texture
                         glActiveTexture(GL_TEXTURE0 + i);
                         glBindTexture(GL_TEXTURE_2D, 0);
@@ -2718,7 +2722,6 @@ int main(int argc, char **argv) {
                     if (meshRenderer.m_Mesh != nullptr) {
                         shader.Bind();
                         shader.SetUniformMat4("lightSpaceMatrix", Scene::projection);
-                        shader.SetUniform1i("shadowMap", 13);
 
                         if (Scene::m_Object == gameObject) {
                             glStencilFunc(GL_ALWAYS, 1, 0xFF);
@@ -2731,7 +2734,7 @@ int main(int argc, char **argv) {
                             transform.Update();
                         }
 
-                        meshRenderer.m_Mesh->enttId = (unsigned int)gameObject->entity;
+                        meshRenderer.m_Mesh->enttId = (uint32_t)gameObject->entity;
                         glActiveTexture(GL_TEXTURE20);
                         glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
 
@@ -2746,7 +2749,7 @@ int main(int argc, char **argv) {
                 }
 
                 if (gameObject->HasComponent<SpriteRenderer>()) {
-                    for(unsigned int i = 0; i < 32; i++) {
+                    for(uint32_t i = 0; i < 32; i++) {
                         // unbind all texture
                         glActiveTexture(GL_TEXTURE0 + i);
                         glBindTexture(GL_TEXTURE_2D, 0);
@@ -2768,14 +2771,14 @@ int main(int argc, char **argv) {
                     glActiveTexture(GL_TEXTURE20);
                     glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
 
-                    spriteRenderer.mesh->enttId = (unsigned int)gameObject->entity;
+                    spriteRenderer.mesh->enttId = (uint32_t)gameObject->entity;
                     glDisable(GL_CULL_FACE);
                     spriteRenderer.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
                     glEnable(GL_CULL_FACE);
                 }
 
                 if (gameObject->HasComponent<SpritesheetRenderer>()) {
-                    for(unsigned int i = 0; i < 32; i++) {
+                    for(uint32_t i = 0; i < 32; i++) {
                         // unbind all texture
                         glActiveTexture(GL_TEXTURE0 + i);
                         glBindTexture(GL_TEXTURE_2D, 0);
@@ -2800,14 +2803,14 @@ int main(int argc, char **argv) {
                     // disable face culling
                     glDisable(GL_CULL_FACE);
                     if (spritesheetRenderer.mesh != nullptr) {
-                        spritesheetRenderer.mesh->enttId = (unsigned int)gameObject->entity;
+                        spritesheetRenderer.mesh->enttId = (uint32_t)gameObject->entity;
                         spritesheetRenderer.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
                     }
                     glEnable(GL_CULL_FACE);
                 }
 
                 if (gameObject->HasComponent<SpriteAnimation>()) {
-                    for(unsigned int i = 0; i < 32; i++) {
+                    for(uint32_t i = 0; i < 32; i++) {
                         // unbind all texture
                         glActiveTexture(GL_TEXTURE0 + i);
                         glBindTexture(GL_TEXTURE_2D, 0);
@@ -2829,14 +2832,14 @@ int main(int argc, char **argv) {
                     }
 
                     if (spriteAnimation.currMesh != nullptr) {
-                        spriteAnimation.currMesh->enttId = (unsigned int)gameObject->entity;
+                        spriteAnimation.currMesh->enttId = (uint32_t)gameObject->entity;
                         spriteAnimation.currMesh->Draw(shader, *Scene::mainCamera);
                         glDisable(GL_BLEND);
                     }
                 }
 
                 if (gameObject->HasComponent<c_SpritesheetAnimation>()) {
-                    for(unsigned int i = 0; i < 32; i++) {
+                    for(uint32_t i = 0; i < 32; i++) {
                         // unbind all texture
                         glActiveTexture(GL_TEXTURE0 + i);
                         glBindTexture(GL_TEXTURE_2D, 0);
@@ -2863,7 +2866,7 @@ int main(int argc, char **argv) {
 
                     glDisable(GL_CULL_FACE);
                     if (spritesheetAnimation.mesh != nullptr) {
-                        spritesheetAnimation.mesh->enttId = (unsigned int)gameObject->entity;
+                        spritesheetAnimation.mesh->enttId = (uint32_t)gameObject->entity;
                         spritesheetAnimation.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
                         glDisable(GL_BLEND);
                     }
@@ -2873,7 +2876,7 @@ int main(int argc, char **argv) {
         }
         glDisable(GL_CULL_FACE);
 
-        for(unsigned int i = 0; i < 32; i++) {
+        for(uint32_t i = 0; i < 32; i++) {
             // unbind all texture
             glActiveTexture(GL_TEXTURE0 + i);
             glBindTexture(GL_TEXTURE_2D, 0);
@@ -2916,9 +2919,6 @@ int main(int argc, char **argv) {
 
                         if (meshRenderer.m_Mesh != nullptr) {
                             shader.Bind();
-                            shader.SetUniformMat4("lightSpaceMatrix", Scene::projection);
-                            shader.SetUniform1i("shadowMap", 13);
-
                             if (Scene::m_Object == gameObject) {
                                 glStencilFunc(GL_ALWAYS, 1, 0xFF);
                                 glStencilMask(0xFF);
@@ -3084,7 +3084,7 @@ int main(int argc, char **argv) {
                 t.Update();
 
                 glDepthFunc(GL_LEQUAL);
-                dirLightIconMesh.enttId = (unsigned int)gameObject->entity;
+                dirLightIconMesh.enttId = (uint32_t)gameObject->entity;
                 dirLightIconMesh.Draw(workerShader, *camera, t.transform);
             }
 
@@ -3106,7 +3106,7 @@ int main(int argc, char **argv) {
                 t.Update();
 
                 glDepthFunc(GL_LEQUAL);
-                pointLightIconMesh.enttId = (unsigned int)gameObject->entity;
+                pointLightIconMesh.enttId = (uint32_t)gameObject->entity;
                 pointLightIconMesh.Draw(workerShader, *camera, t.transform);
             }
 
@@ -3128,7 +3128,7 @@ int main(int argc, char **argv) {
                 t.Update();
 
                 glDepthFunc(GL_LEQUAL);
-                spotLightIconMesh.enttId = (unsigned int)gameObject->entity;
+                spotLightIconMesh.enttId = (uint32_t)gameObject->entity;
                 spotLightIconMesh.Draw(workerShader, *camera, t.transform);
             }
 
@@ -3150,12 +3150,193 @@ int main(int argc, char **argv) {
                 t.Update();
 
                 glDepthFunc(GL_LEQUAL);
-                cameraIconMesh.enttId = (unsigned int)gameObject->entity;
+                cameraIconMesh.enttId = (uint32_t)gameObject->entity;
                 cameraIconMesh.Draw(workerShader, *camera, t.transform);
             }
         }
 #endif
     }, GUI_EXP, [&](Shader &m_shadowMapShader) {
+        for (auto &layer : Scene::layers) {
+            bool notInCameraLayer = true;
+            for (auto &camLayer : Scene::mainCamera->layers) {
+                if (Scene::mainCamera == camera) break;
+                if (camLayer == layer.first) {
+                    notInCameraLayer = false;
+                    break;
+                }
+            }
+            if (notInCameraLayer && Scene::mainCamera != camera) continue;
+
+            for (auto &gameObject : Scene::m_GameObjects) {
+                if (!gameObject->enabled) continue;
+                if (gameObject->layer != layer.first) continue;
+                if (gameObject->HasComponent<MeshRenderer>()) {
+                    for(uint32_t i = 0; i < 32; i++) {
+                        // unbind all texture
+                        glActiveTexture(GL_TEXTURE0 + i);
+                        glBindTexture(GL_TEXTURE_2D, 0);
+                    }
+
+                    auto meshRenderer = gameObject->GetComponent<MeshRenderer>();
+                    auto transform = gameObject->GetComponent<Transform>();
+                    transform.Update();
+
+                    glm::mat4 extra = meshRenderer.extraMatrix;
+
+                    if (meshRenderer.m_Mesh != nullptr) {
+                        m_shadowMapShader.Bind();
+
+                        if (Scene::m_Object == gameObject) {
+                            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+                            glStencilMask(0xFF);
+                        }
+                        if (transform.parentTransform != nullptr) {
+                            transform.position += transform.parentTransform->position;
+                            transform.rotation += transform.parentTransform->rotation;
+                            transform.scale *= transform.parentTransform->scale;
+                            transform.Update();
+                        }
+
+                        meshRenderer.m_Mesh->enttId = (uint32_t)gameObject->entity;
+                        glActiveTexture(GL_TEXTURE20);
+                        glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
+
+                        if(meshRenderer.meshType == "Plane") {
+                            glDisable(GL_CULL_FACE);
+                            meshRenderer.m_Mesh->Draw(m_shadowMapShader, *Scene::mainCamera, transform.transform * extra);
+                            glEnable(GL_CULL_FACE);
+                        } else {
+                            meshRenderer.m_Mesh->Draw(m_shadowMapShader, *Scene::mainCamera, transform.transform * extra);
+                        }
+                    }
+                }
+
+                if (gameObject->HasComponent<SpriteRenderer>()) {
+                    for(uint32_t i = 0; i < 32; i++) {
+                        // unbind all texture
+                        glActiveTexture(GL_TEXTURE0 + i);
+                        glBindTexture(GL_TEXTURE_2D, 0);
+                    }
+
+                    auto spriteRenderer = gameObject->GetComponent<SpriteRenderer>();
+                    auto transform = gameObject->GetComponent<Transform>();
+                    transform.Update();
+
+                    for (auto &go : Scene::m_GameObjects) {
+                        if (go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
+                            auto &parentTransform = go->GetComponent<Transform>();
+                            transform.position += parentTransform.position;
+                            transform.rotation += parentTransform.rotation;
+                            transform.scale *= parentTransform.scale;
+                        }
+                    }
+
+                    glActiveTexture(GL_TEXTURE20);
+                    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
+
+                    spriteRenderer.mesh->enttId = (uint32_t)gameObject->entity;
+                    glDisable(GL_CULL_FACE);
+                    spriteRenderer.mesh->Draw(m_shadowMapShader, *Scene::mainCamera, transform.transform);
+                    glEnable(GL_CULL_FACE);
+                }
+
+                if (gameObject->HasComponent<SpritesheetRenderer>()) {
+                    for(uint32_t i = 0; i < 32; i++) {
+                        // unbind all texture
+                        glActiveTexture(GL_TEXTURE0 + i);
+                        glBindTexture(GL_TEXTURE_2D, 0);
+                    }
+
+                    auto spritesheetRenderer = gameObject->GetComponent<SpritesheetRenderer>();
+                    auto transform = gameObject->GetComponent<Transform>();
+                    transform.Update();
+
+                    for (auto &go : Scene::m_GameObjects) {
+                        if (go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
+                            auto &parentTransform = go->GetComponent<Transform>();
+                            transform.position += parentTransform.position;
+                            transform.rotation += parentTransform.rotation;
+                            transform.scale *= parentTransform.scale;
+                        }
+                    }
+
+                    glActiveTexture(GL_TEXTURE20);
+                    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
+
+                    // disable face culling
+                    glDisable(GL_CULL_FACE);
+                    if (spritesheetRenderer.mesh != nullptr) {
+                        spritesheetRenderer.mesh->enttId = (uint32_t)gameObject->entity;
+                        spritesheetRenderer.mesh->Draw(m_shadowMapShader, *Scene::mainCamera, transform.transform);
+                    }
+                    glEnable(GL_CULL_FACE);
+                }
+
+                if (gameObject->HasComponent<SpriteAnimation>()) {
+                    for(uint32_t i = 0; i < 32; i++) {
+                        // unbind all texture
+                        glActiveTexture(GL_TEXTURE0 + i);
+                        glBindTexture(GL_TEXTURE_2D, 0);
+                    }
+
+                    auto spriteAnimation = gameObject->GetComponent<SpriteAnimation>();
+                    auto transform = gameObject->GetComponent<Transform>();
+                    transform.Update();
+
+                    spriteAnimation.Play();
+
+                    for (auto &go : Scene::m_GameObjects) {
+                        if (go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
+                            auto &parentTransform = go->GetComponent<Transform>();
+                            transform.position += parentTransform.position;
+                            transform.rotation += parentTransform.rotation;
+                            transform.scale *= parentTransform.scale;
+                        }
+                    }
+
+                    if (spriteAnimation.currMesh != nullptr) {
+                        spriteAnimation.currMesh->enttId = (uint32_t)gameObject->entity;
+                        spriteAnimation.currMesh->Draw(m_shadowMapShader, *Scene::mainCamera);
+                        glDisable(GL_BLEND);
+                    }
+                }
+
+                if (gameObject->HasComponent<c_SpritesheetAnimation>()) {
+                    for(uint32_t i = 0; i < 32; i++) {
+                        // unbind all texture
+                        glActiveTexture(GL_TEXTURE0 + i);
+                        glBindTexture(GL_TEXTURE_2D, 0);
+                    }
+
+                    auto spritesheetAnimation = gameObject->GetComponent<c_SpritesheetAnimation>();
+                    auto transform = gameObject->GetComponent<Transform>();
+                    transform.Update();
+
+                    for (auto &go : Scene::m_GameObjects) {
+                        if (go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
+                            auto &parentTransform = go->GetComponent<Transform>();
+                            transform.position += parentTransform.position;
+                            transform.rotation += parentTransform.rotation;
+                            transform.scale *= parentTransform.scale;
+                        }
+                    }
+
+                    spritesheetAnimation.Play();
+                    spritesheetAnimation.Update();
+
+                    glActiveTexture(GL_TEXTURE20);
+                    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
+
+                    glDisable(GL_CULL_FACE);
+                    if (spritesheetAnimation.mesh != nullptr) {
+                        spritesheetAnimation.mesh->enttId = (uint32_t)gameObject->entity;
+                        spritesheetAnimation.mesh->Draw(m_shadowMapShader, *Scene::mainCamera, transform.transform);
+                        glDisable(GL_BLEND);
+                    }
+                    glEnable(GL_CULL_FACE);
+                }
+            }
+        }
     });
 
     free(scrollData);
@@ -3316,7 +3497,7 @@ int main() {
         projects.push_back({project["name"], project["path"]});
     }
 
-    std::function<void(unsigned int&, unsigned int&)> GUI = [&](unsigned int &one, unsigned int &two){
+    std::function<void(uint32_t&, uint32_t&)> GUI = [&](uint32_t &one, uint32_t &two){
         // dock it to the left
         glfwGetWindowSize(app.renderer->window, &app.width, &app.height);
 
@@ -3459,6 +3640,6 @@ int main() {
         ImGui::End();
     };
 
-    app.Run([](unsigned int &shadowMap){}, GUI, [](Shader &shader){});
+    app.Run([](uint32_t &shadowMap){}, GUI, [](Shader &shader){});
 }
 #endif

@@ -564,10 +564,11 @@ namespace HyperAPI {
     public:
         std::vector<Texture> textures;
 
-        Texture* diffuse = nullptr;
-        Texture* specular = nullptr;
-        Texture* normal = nullptr;
-        Texture* height = nullptr;
+        Texture *diffuse = nullptr;
+        Texture *specular = nullptr;
+        Texture *normal = nullptr;
+        Texture *height = nullptr;
+        Texture *emission = nullptr;
 
         Vector4 baseColor;
         float shininess;
@@ -596,6 +597,10 @@ namespace HyperAPI {
 
             if(height != nullptr) {
                 delete height;
+            }
+
+            if(emission != nullptr) {
+                delete emission;
             }
         }
 
@@ -736,14 +741,14 @@ namespace HyperAPI {
             loadModel(path);
             // scriptComponent.componentSystem = this;
         }
-
-        ~Model() {
-            for(auto &mesh : meshes) {
-                if(mesh != nullptr) {
-                    delete mesh;
-                }
-            }
-        }
+//
+//        ~Model() {
+////            for(auto &mesh : meshes) {
+////                if(mesh != nullptr) {
+////                    delete mesh;
+////                }
+////            }
+//        }
 
         void Draw(Shader &shader, Camera &camera);
     };
@@ -1339,37 +1344,37 @@ namespace HyperAPI {
 
                                 if (ImGui::Button("Cube", ImVec2(200, 0))) {
                                     meshType = "Cube";
-                                    m_Mesh = std::move(Cube(Vector4(1, 1, 1, 1)).meshes[0]);
+                                    m_Mesh = Cube(Vector4(1, 1, 1, 1)).meshes[0];
                                     ImGui::CloseCurrentPopup();
                                 }
 
                                 if (ImGui::Button("Sphere", ImVec2(200, 0))) {
                                     meshType = "Sphere";
-                                    m_Mesh = std::move(Sphere(Vector4(1, 1, 1, 1)).meshes[0]);
+                                    m_Mesh = Sphere(Vector4(1, 1, 1, 1)).meshes[0];
                                     ImGui::CloseCurrentPopup();
                                 }
 
                                 if (ImGui::Button("Cone", ImVec2(200, 0))) {
                                     meshType = "Cone";
-                                    m_Mesh = std::move(Cone(Vector4(1, 1, 1, 1)).meshes[0]);
+                                    m_Mesh = Cone(Vector4(1, 1, 1, 1)).meshes[0];
                                     ImGui::CloseCurrentPopup();
                                 }
 
                                 if (ImGui::Button("Capsule", ImVec2(200, 0))) {
                                     meshType = "Capsule";
-                                    m_Mesh = std::move(Capsule(Vector4(1, 1, 1, 1)).meshes[0]);
+                                    m_Mesh = Capsule(Vector4(1, 1, 1, 1)).meshes[0];
                                     ImGui::CloseCurrentPopup();
                                 }
 
                                 if (ImGui::Button("Torus", ImVec2(200, 0))) {
                                     meshType = "Torus";
-                                    m_Mesh = std::move(Torus(Vector4(1, 1, 1, 1)).meshes[0]);
+                                    m_Mesh = Torus(Vector4(1, 1, 1, 1)).meshes[0];
                                     ImGui::CloseCurrentPopup();
                                 }
 
                                 if (ImGui::Button("Cylinder", ImVec2(200, 0))) {
                                     meshType = "Cylinder";
-                                    m_Mesh = std::move(Cylinder(Vector4(1, 1, 1, 1)).meshes[0]);
+                                    m_Mesh = Cylinder(Vector4(1, 1, 1, 1)).meshes[0];
                                     ImGui::CloseCurrentPopup();
                                 }
 
@@ -1491,6 +1496,15 @@ namespace HyperAPI {
             }
 
             void Update() {
+                if(m_Mesh != nullptr) {
+                    if(Scene::m_Registry.has<Bloom>(entity)) {
+                        auto &bloom = Scene::m_Registry.get<Bloom>(entity);
+                        m_Mesh->material.bloomColor = bloom.bloomColor;
+                    } else {
+                        m_Mesh->material.bloomColor = Vector3(0,0,0);
+                    }
+                }
+
                 if(std::experimental::filesystem::exists(matPath) && matPath != "" && m_Mesh != nullptr) {
                     std::ifstream file(matPath);
                     nlohmann::json JSON = nlohmann::json::parse(file);
@@ -1569,6 +1583,22 @@ namespace HyperAPI {
 //                        }
 //                    }
 
+                    if (heightTexture != "nullptr") {
+                        if (m_Mesh->material.emission != nullptr) {
+                            if (m_Mesh->material.emission->texPath != heightTexture) {
+                                delete m_Mesh->material.emission;
+                                m_Mesh->material.emission = new Texture(heightTexture.c_str(), 4, "texture_emission");
+                            }
+                        } else {
+                            m_Mesh->material.emission = new Texture(heightTexture.c_str(), 4, "texture_emission");
+                        }
+                    } else {
+                        if (m_Mesh->material.emission != nullptr) {
+                            delete m_Mesh->material.emission;
+                            m_Mesh->material.emission = nullptr;
+                        }
+                    }
+
                     m_Mesh->material.baseColor = Vector4(
                             JSON["baseColor"]["r"],
                             JSON["baseColor"]["g"],
@@ -1581,13 +1611,6 @@ namespace HyperAPI {
                     m_Mesh->material.texUVs = Vector2(JSON["texUV"]["x"], JSON["texUV"]["y"]);
 
                     file.close();
-
-                    if(Scene::m_Registry.has<Bloom>(entity)) {
-                        auto &bloom = Scene::m_Registry.get<Bloom>(entity);
-                        m_Mesh->material.bloomColor = bloom.bloomColor;
-                    } else {
-                        m_Mesh->material.bloomColor = Vector3(0,0,0);
-                    }
                 } else if(m_Mesh != nullptr) {
                     m_Mesh->material.diffuse = nullptr;
                     m_Mesh->material.specular = nullptr;

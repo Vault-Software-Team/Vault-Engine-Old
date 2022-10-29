@@ -5,8 +5,8 @@
         "g": 1.0,
         "r": 1.0
     },
-    "diffuse": "assets/sprites/Items/torch.png",
-    "height": "assets/sprites/Items/torch_emission.png",
+    "diffuse": "assets/models/skin/textures/F_MED_MeteorWoman_Alt_FaceAcc_FX_baseColor.png",
+    "height": "assets/models/skin/textures/F_MED_MeteorWoman_Alt_FaceAcc_FX_emissive.png",
     "metallic": 0.0,
     "normal": "nullptr",
     "roughness": 0.0,

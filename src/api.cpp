@@ -1586,7 +1586,7 @@ namespace HyperAPI {
         std::vector<uint32_t> indices;
         std::vector<Texture> textures;
 
-        for (uint32_t i = 0; i < mesh->mNumVertices; i++) {
+        for (int i = 0; i < mesh->mNumVertices; i++) {
             Vertex vertex;
             vertex.position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
             vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
@@ -1973,6 +1973,7 @@ namespace HyperAPI {
         shader.SetUniform1f("roughness", roughness);
         shader.SetUniform2f("texUvOffset", texUVs.x, texUVs.y);
         shader.SetUniform3f("u_BloomColor", bloomColor.x, bloomColor.y, bloomColor.z);
+        const uint32_t noEquippedSlot = 5;
 
         if (diffuse != nullptr) {
             diffuse->Bind(0);
@@ -1987,7 +1988,7 @@ namespace HyperAPI {
             specular->Bind(1);
             shader.SetUniform1i("texture_specular0", 1);
         } else {
-            shader.SetUniform1i("texture_specular0", -1);
+            shader.SetUniform1i("texture_specular0", noEquippedSlot);
         }
 
         if (normal != nullptr) {
@@ -1995,7 +1996,7 @@ namespace HyperAPI {
             shader.SetUniform1i("texture_normal0", 2);
             shader.SetUniform1i("hasNormalMap", 1);
         } else {
-            shader.SetUniform1i("texture_normal0", 4);
+            shader.SetUniform1i("texture_normal0", noEquippedSlot);
             shader.SetUniform1i("hasNormalMap", 0);
         }
 
@@ -2004,8 +2005,15 @@ namespace HyperAPI {
             shader.SetUniform1i("texture_height0", 3);
             shader.SetUniform1i("hasHeightMap", 1);
         } else {
-            shader.SetUniform1i("texture_height0", 4);
+            shader.SetUniform1i("texture_height0", noEquippedSlot);
             shader.SetUniform1i("hasHeightMap", 0);
+        }
+
+        if(emission != nullptr) {
+            emission->Bind(4);
+            shader.SetUniform1i("texture_emission0", 4);
+        } else {
+            shader.SetUniform1i("texture_emission0", noEquippedSlot);
         }
     }
 
@@ -3003,22 +3011,11 @@ namespace Hyper {
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, SRBO);
 
         float timeStep = 1.0f / 60.0f;
-        float near_plane = 1.0f, far_plane = 7.5f;
-        glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-
-        glm::mat4 lightView = glm::lookAt(glm::vec3(-2, 4, -1),
-                                          glm::vec3(0.0f, 0.0f, 0.0f),
-                                          glm::vec3(0.0f, 1.0f, 0.0f));
-
-        glm::mat4 lightSpaceMatrix = lightProjection * lightView;
-        HyperAPI::Scene::projection = lightSpaceMatrix;
 
         HYPER_LOG("Renderer initialized")
         float timeSinceAppStart = 0.0f;
 
         uint32_t depthMapFBO;
-        glGenFramebuffers(1, &depthMapFBO);
-
         glGenFramebuffers(1, &depthMapFBO);
 
         const uint32_t SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
@@ -3063,13 +3060,24 @@ namespace Hyper {
             glfwPollEvents();
             glfwGetWindowSize(renderer->window, &winWidth, &winHeight);
 
-            glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-            glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-            glClear(GL_DEPTH_BUFFER_BIT);
-            shadowMapProgram.Bind();
-            shadowMapProgram.SetUniformMat4("lightSpaceMatrix", lightSpaceMatrix);
-            shadowMapRender(shadowMapProgram);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//            glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+//            glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+//            glClear(GL_DEPTH_BUFFER_BIT);
+//            for(auto &light : HyperAPI::Scene::DirLights) {
+//                shadowMapProgram.Bind();
+//                float near_plane = 1.0f, far_plane = 7.5f;
+//                glm::mat4 lightView = glm::lookAt(light->lightPos,
+//                                                  glm::vec3(0.0f, 0.0f, 0.0f),
+//                                                  glm::vec3(0.0f, 1.0f, 0.0f));
+//
+//                glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+//                glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+//                HyperAPI::Scene::projection = lightSpaceMatrix;
+//
+//                shadowMapProgram.SetUniformMat4("lightSpaceMatrix", lightSpaceMatrix);
+//                shadowMapRender(shadowMapProgram);
+//            }
+//            glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glClear(GL_DEPTH_BUFFER_BIT);
 
             if (!renderOnScreen) {
@@ -3178,6 +3186,8 @@ namespace Hyper {
                 glViewport(0, 0, width, height);
             }
 
+            glActiveTexture(GL_TEXTURE7);
+            glBindTexture(GL_TEXTURE_2D, depthMap);
             update(S_PPT);
 
             glReadBuffer(GL_COLOR_ATTACHMENT2);

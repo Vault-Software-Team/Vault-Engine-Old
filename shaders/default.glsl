@@ -159,6 +159,7 @@ uniform sampler2D texture_diffuse0;
 uniform sampler2D texture_specular0;
 uniform sampler2D texture_normal0;
 uniform sampler2D texture_height0;
+uniform sampler2D texture_emission0;
 uniform vec4 baseColor;
 uniform vec3 u_BloomColor;
 uniform float metallic;
@@ -185,8 +186,7 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
-    // shadow without bias
-    float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
+    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
 
     return shadow;
 }
@@ -311,22 +311,16 @@ vec4 directionalLight(DirectionalLight light) {
         specular = specAmount * specularLight;
     }
 
-    // shadows
-    float shadow = 0;
-
     float _smoothness = 1 - roughness;
     if(_smoothness == 0) {
         specular = 0;
     }
-
-
     specular = specular * _smoothness;
-    float shadowAdder = 1.0;
 
     if(isTex == 1) {
-        return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * baseColor * vec4(light.color, 1) * ((diffuse ) * shadowAdder) + specularTexture * (((specular * shadowAdder) * vec4(light.color, 1)) * light.intensity));
+        return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * baseColor * vec4(light.color, 1) * (diffuse) + specularTexture * (((specular) * vec4(light.color, 1)) * light.intensity));
     } else {
-        return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * ((diffuse) * shadowAdder) + vec4(1,1,1,1)  * (((specular * shadowAdder) * vec4(light.color, 1)) * light.intensity));
+        return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * (diffuse) + vec4(1,1,1,1)  * (((specular) * vec4(light.color, 1)) * light.intensity));
     }
 }
 
@@ -474,13 +468,24 @@ void main() {
     if((u_BloomColor.r > 0.5 || u_BloomColor.g > 0.5 || u_BloomColor.b > 0.5)
     && (u_BloomColor.r < 0.7 || u_BloomColor.g < 0.7 || u_BloomColor.b < 0.7)) {
         FragColor = result * (u_BloomColor.r * 20);
-//        BloomColor = vec4(u_BloomColor * 2, 1);
+        BloomColor = vec4(u_BloomColor * 2, 1);
     } else if(u_BloomColor.r > 0.7 || u_BloomColor.g > 0.7 || u_BloomColor.b > 0.7) {
         FragColor = result * (u_BloomColor.r * 30);
-//        BloomColor = vec4(u_BloomColor * 3, 1);
+        BloomColor = vec4(u_BloomColor * 3, 1);
     } else {
+        BloomColor = vec4(u_BloomColor, 1);
     }
-    BloomColor = vec4(u_BloomColor, 1);
+
+    vec4 emission = texture(texture_emission0, texCoords);
+
+    if(emission.r > 0 || emission.g > 0 || emission.b > 0) {
+        FragColor += emission;
+        if(u_BloomColor.r > 0 || u_BloomColor.g > 0 || u_BloomColor.b > 0) {
+            BloomColor = emission * vec4(u_BloomColor, 1);
+        } else {
+            BloomColor = emission;
+        }
+    }
 
     EntityID = u_EntityID;
 }
