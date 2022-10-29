@@ -331,7 +331,7 @@ namespace HyperAPI {
 
     class Shader {
     public:
-        unsigned int ID;
+        uint32_t ID;
 
         Shader(const char *shaderPath);
 
@@ -352,7 +352,7 @@ namespace HyperAPI {
 
         void SetUniformMat4(const char *name, glm::mat4 value);
         // uint
-        void SetUniform1ui(const char *name, unsigned int value);
+        void SetUniform1ui(const char *name, uint32_t value);
     };
 
     struct CameraPosDec {
@@ -409,21 +409,23 @@ namespace HyperAPI {
 
     class Texture {
     public:
-        unsigned int ID;
+        uint32_t ID;
         int width, height, nrChannels;
         unsigned char *data;
         const char *texType;
-        unsigned int slot;
+        uint32_t slot;
         std::string texPath;
         const char *texStarterPath;
 
-        Texture(const char *texturePath, unsigned int slot, const char *textureType);
+        Texture(const char *texturePath, uint32_t slot, const char *textureType);
+        Texture(unsigned char *m_Data, uint32_t slot, const char *textureType, const char *texturePath = "");
+
         ~Texture() {
             HYPER_LOG("Texture " + texPath + " deleted");
             glDeleteTextures(1, &ID);
         }
 
-        void Bind(unsigned int slot = -1);
+        void Bind(uint32_t slot = -1);
 
         void Unbind();
     };
@@ -581,22 +583,18 @@ namespace HyperAPI {
             textures.clear();
 
             if(diffuse != nullptr) {
-                glDeleteTextures(1, &diffuse->ID);
                 delete diffuse;
             }
 
             if(specular != nullptr) {
-                glDeleteTextures(1, &specular->ID);
                 delete specular;
             }
 
             if(normal != nullptr) {
-                glDeleteTextures(1, &normal->ID);
                 delete normal;
             }
 
             if(height != nullptr) {
-                glDeleteTextures(1, &height->ID);
                 delete height;
             }
         }
@@ -611,9 +609,9 @@ namespace HyperAPI {
         std::string parentType = "None";
         Material material{Vector4(1, 1, 1, 1)};
 
-        unsigned int VBO, VAO, IBO;
+        uint32_t VBO, VAO, IBO;
         std::vector<Vertex> vertices;
-        std::vector<unsigned int> indices;
+        std::vector<uint32_t> indices;
         std::vector<Texture> textures;
         glm::mat4 model = glm::mat4(1.0f);
 
@@ -625,7 +623,7 @@ namespace HyperAPI {
 
         bool hasMaterial = true;
 
-        Mesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, Material &material, bool empty = false,
+        Mesh(std::vector<Vertex> &vertices, std::vector<uint32_t> &indices, Material &material, bool empty = false,
              bool batched = false);
 
         ~Mesh() {
@@ -638,7 +636,7 @@ namespace HyperAPI {
             glDeleteVertexArrays(1, &VAO);
         }
 
-        unsigned int enttId;
+        uint32_t enttId;
 
         void Draw(
                 Shader &shader,
@@ -739,14 +737,22 @@ namespace HyperAPI {
             // scriptComponent.componentSystem = this;
         }
 
+        ~Model() {
+            for(auto &mesh : meshes) {
+                if(mesh != nullptr) {
+                    delete mesh;
+                }
+            }
+        }
+
         void Draw(Shader &shader, Camera &camera);
     };
 
     class Skybox {
     public:
-        unsigned int skyboxVAO, skyboxVBO, skyboxEBO;
+        uint32_t skyboxVAO, skyboxVBO, skyboxEBO;
         Shader *shader;
-        unsigned int cubemapTexture;
+        uint32_t cubemapTexture;
         std::vector<std::string> facesCubemap;
 
         Skybox(const std::string &right, const std::string &left, const std::string &top, const std::string &bottom,
@@ -758,30 +764,30 @@ namespace HyperAPI {
     class Renderer {
     public:
         bool wireframe;
-        unsigned int postProcessingTexture;
-        unsigned int postProcessingFBO;
+        uint32_t postProcessingTexture;
+        uint32_t postProcessingFBO;
         Shader *framebufferShader;
-        unsigned int FBO;
-        unsigned int bufferTexture;
-        unsigned int rbo;
-        unsigned int rectVAO, rectVBO;
+        uint32_t FBO;
+        uint32_t bufferTexture;
+        uint32_t rbo;
+        uint32_t rectVAO, rectVBO;
         int width, height;
 
         const char *title;
 
-        unsigned int samples = 8;
+        uint32_t samples = 8;
 
         std::vector<PointLight> PointLights;
 
         GLFWwindow *window;
 
-        Renderer(int width, int height, const char *title, Vector2 g_gravity, unsigned int samples = 8,
+        Renderer(int width, int height, const char *title, Vector2 g_gravity, uint32_t samples = 8,
                  bool fullscreen = false, bool resizable = true, bool wireframe = false);
 
         void Render(Camera &camera);
 
-        void Swap(HyperAPI::Shader &framebufferShader, unsigned int FBO, unsigned int rectVAO,
-                  unsigned int postProcessingTexture, unsigned int postProcessingFBO);
+        void Swap(HyperAPI::Shader &framebufferShader, uint32_t FBO, uint32_t rectVAO,
+                  uint32_t postProcessingTexture, uint32_t postProcessingFBO);
 
         void NewFrame();
     };
@@ -1141,7 +1147,7 @@ namespace HyperAPI {
                                glm::vec2(0.0f, 1.0f)}
                 };
 
-                std::vector<unsigned int> indices = {
+                std::vector<uint32_t> indices = {
                         0, 1, 2,
                         0, 2, 3
                 };
@@ -3393,18 +3399,64 @@ namespace HyperAPI {
                                    Vector3 rotation = Vector3(0, 0, 0));
     }
 
+    namespace n_Bloom {
+        struct BloomMip {
+            glm::vec2 size;
+            glm::ivec2 intSize;
+            uint32_t texture;
+        };
+
+        class BloomBuffer {
+        public:
+            BloomBuffer();
+            ~BloomBuffer();
+
+            bool Init(uint32_t windowWidth, uint32_t windowHeight, uint32_t mipChainLength);
+            void Destroy();
+            void BindWriting();
+
+            const std::vector<BloomMip>& GetMipChain() const { return m_MipChain; }
+        private:
+            bool m_Init;
+            uint32_t m_Framebuffer;
+            std::vector<BloomMip> m_MipChain;
+        };
+
+        class BloomRenderer
+        {
+        public:
+            BloomRenderer();
+            ~BloomRenderer();
+            bool Init(uint32_t windowWidth, uint32_t windowHeight);
+            void Destroy();
+            void RenderBloomTexture(uint32_t srcTexture, float filterRadius, uint32_t &quadVAO);
+            uint32_t BloomTexture();
+
+            glm::ivec2 m_SrcViewportSize;
+            glm::vec2 m_SrcViewportSizeFloat;
+        private:
+            void RenderDownsamples(uint32_t srcTexture, uint32_t &quadVAO);
+
+            void RenderUpsamples(float filterRadius, uint32_t &quadVAO);
+            bool mInit;
+            BloomBuffer m_Framebuffer;
+            Shader* m_DownsampleShader;
+            Shader* m_UpsampleShader;
+        };
+    }
+
 #ifndef _WIN32
     namespace Text {
         class Font {
         public:
             struct Character {
-                unsigned int TextureID;  // ID handle of the glyph texture
+                uint32_t TextureID;  // ID handle of the glyph texture
                 glm::ivec2   Size;       // Size of glyph
                 glm::ivec2   Bearing;    // Offset from baseline to left/top of glyph
-                unsigned int Advance;    // Offset to advance to next glyph
+                uint32_t Advance;    // Offset to advance to next glyph
             };
             float scale;
-            unsigned int VAO, VBO;
+            uint32_t VAO, VBO;
             std::map<char, Character> Characters;
 
             FT_Library ft;
@@ -3419,19 +3471,19 @@ namespace HyperAPI {
 
 extern float rectangleVert[];
 
-void NewFrame(unsigned int FBO, int width, int height);
+void NewFrame(uint32_t FBO, int width, int height);
 
-void EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, unsigned int rectVAO,
-              unsigned int postProcessingTexture, unsigned int postProcessingFBO, const int width, const int height);
+void EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer, uint32_t rectVAO,
+              uint32_t postProcessingTexture, uint32_t postProcessingFBO, const int width, const int height);
 
 void EndEndFrame(
         HyperAPI::Shader &framebufferShader,
         HyperAPI::Renderer &renderer,
-        unsigned int rectVAO,
-        unsigned int postProcessingTexture,
-        unsigned int postProcessingFBO,
-        unsigned int S_postProcessingTexture,
-        unsigned int S_postProcessingFBO,
+        uint32_t rectVAO,
+        uint32_t postProcessingTexture,
+        uint32_t postProcessingFBO,
+        uint32_t S_postProcessingTexture,
+        uint32_t S_postProcessingFBO,
         const int width,
         const int height,
         const int mouseX,
@@ -3439,8 +3491,8 @@ void EndEndFrame(
 );
 
 void
-SC_EndFrame(HyperAPI::Renderer &renderer, unsigned int FBO, unsigned int rectVAO, unsigned int postProcessingTexture,
-            unsigned int postProcessingFBO, const int width, const int height);
+SC_EndFrame(HyperAPI::Renderer &renderer, uint32_t FBO, uint32_t rectVAO, uint32_t postProcessingTexture,
+            uint32_t postProcessingFBO, const int width, const int height);
 
 namespace Hyper {
     class Application {
@@ -3492,8 +3544,8 @@ namespace Hyper {
         }
 
         void Run(
-            std::function<void(unsigned int &)> update,
-            std::function<void(unsigned int &PPT, unsigned int &PPFBO)> gui = [](unsigned int &PPT, unsigned int &PPFBO) {},
+            std::function<void(uint32_t &)> update,
+            std::function<void(uint32_t &PPT, uint32_t &PPFBO)> gui = [](uint32_t &PPT, uint32_t &PPFBO) {},
             std::function<void(HyperAPI::Shader &)> shadowMapRender = [](HyperAPI::Shader &m_shadowMapShader) {}
         );
     };

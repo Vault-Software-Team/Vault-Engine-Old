@@ -1,0 +1,11 @@
+Model Information:
+* title:	The Paradigm NEW
+* source:	https://sketchfab.com/3d-models/the-paradigm-new-1e70947647e64e3eb57e197c305e71a2
+* author:	thevisitor (https://sketchfab.com/foundationthe2)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "The Paradigm NEW" (https://sketchfab.com/3d-models/the-paradigm-new-1e70947647e64e3eb57e197c305e71a2) by thevisitor (https://sketchfab.com/foundationthe2) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

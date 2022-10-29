@@ -21,10 +21,23 @@ uniform sampler2D bloomTexture;
 uniform float gamma;
 uniform float exposure;
 
+vec4 bloom()
+{
+    vec3 color = texture(screenTexture, texCoords).rgb;
+    vec3 bloomColor = texture(bloomTexture, texCoords).rgb;
+    return vec4(color + bloomColor, 1.0);
+}
+
 void main() {
+    vec2 resolution = vec2(1920, 1080);
+    vec2 srcTexel = 1.0 / resolution;
+    float x = srcTexel.x;
+    float y = srcTexel.y;
+    // upsample
+
     vec4 fragment = texture(screenTexture, texCoords.st);
-    vec4 bloom = texture(bloomTexture, texCoords.st);
-    vec4 color = fragment;
+//    vec4 color = fragment + bloom;
+    vec4 color = bloom();
 
     vec3 toneMapped = vec3(1.0) - exp(-color.rgb * exposure);
 

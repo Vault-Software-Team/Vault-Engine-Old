@@ -751,6 +751,8 @@ namespace HyperAPI {
             }
 
             file.close();
+            // delete json so that it wont take any space
+            JSON.clear();
 
             LoadingScene = false;
             HYPER_LOG("Loaded scene: " + scenePath);
@@ -1089,6 +1091,7 @@ namespace HyperAPI {
                         JSON[i]["components"][componentOffset]["animations"][in]["frames"][fn]["color"]["a"] = frame.mesh->material.baseColor.w;
                     }
                 }
+                componentOffset++;
             }
 
             if(gameObject->HasComponent<Experimental::c_SpritesheetAnimation>()) {
@@ -1126,6 +1129,7 @@ namespace HyperAPI {
                         };
                     }
                 }
+                componentOffset++;
             }
 
             if(gameObject->HasComponent<Experimental::Rigidbody2D>()) {
@@ -1231,6 +1235,8 @@ namespace HyperAPI {
                         {"y", bloom.bloomColor.y},
                         {"z", bloom.bloomColor.z}
                 };
+
+                componentOffset++;
             }
         }
 
@@ -1264,6 +1270,9 @@ namespace HyperAPI {
                 file << JSON;
             else
                 StateScene = JSON;
+
+            file.close();
+            JSON.clear();
 
             HYPER_LOG("Scene saved to " + path);
         }

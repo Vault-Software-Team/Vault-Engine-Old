@@ -471,6 +471,15 @@ void main() {
     }
 
     FragColor = result;
+    if((u_BloomColor.r > 0.5 || u_BloomColor.g > 0.5 || u_BloomColor.b > 0.5)
+    && (u_BloomColor.r < 0.7 || u_BloomColor.g < 0.7 || u_BloomColor.b < 0.7)) {
+        FragColor = result * (u_BloomColor.r * 20);
+//        BloomColor = vec4(u_BloomColor * 2, 1);
+    } else if(u_BloomColor.r > 0.7 || u_BloomColor.g > 0.7 || u_BloomColor.b > 0.7) {
+        FragColor = result * (u_BloomColor.r * 30);
+//        BloomColor = vec4(u_BloomColor * 3, 1);
+    } else {
+    }
     BloomColor = vec4(u_BloomColor, 1);
 
     EntityID = u_EntityID;
