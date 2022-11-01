@@ -1,3 +1,6 @@
+.vscode
+.idea
+.fleet
 bin/*.o
 GameJam
 *.o
