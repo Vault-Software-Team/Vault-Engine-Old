@@ -100,17 +100,17 @@ void EndFrame(HyperAPI::Shader &framebufferShader, HyperAPI::Renderer &renderer,
 }
 
 void EndEndFrame(
-        HyperAPI::Shader &framebufferShader,
-        HyperAPI::Renderer &renderer,
-        uint32_t rectVAO,
-        uint32_t postProcessingTexture,
-        uint32_t postProcessingFBO,
-        uint32_t S_postProcessingTexture,
-        uint32_t S_postProcessingFBO,
-        const int width,
-        const int height,
-        const int mouseX,
-        const int mouseY
+    HyperAPI::Shader &framebufferShader,
+    HyperAPI::Renderer &renderer,
+    uint32_t rectVAO,
+    uint32_t postProcessingTexture,
+    uint32_t postProcessingFBO,
+    uint32_t S_postProcessingTexture,
+    uint32_t S_postProcessingFBO,
+    const int width,
+    const int height,
+    const int mouseX,
+    const int mouseY
 ) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -3331,7 +3331,7 @@ namespace Hyper {
 
         }
 
-        HYPER_LOG("Closing Static Engine")
+        HYPER_LOG("Closing Vault Engine")
     }
 
     MousePicker::MousePicker(Application *app, HyperAPI::Camera *camera, glm::mat4 projection) {

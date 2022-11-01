@@ -1,4 +1,4 @@
-bin
+bin/*.o
 GameJam
 *.o
 src/*.o
@@ -8,14 +8,6 @@ api/*.o
 windows
 website/node_modules
 BASDGKAFSGL.ggg
-assets/flappy_bg.png
-assets/kevin.png
-assets/flappy.png
-assets/PONGON.png
 dist
-assets/guns
-assets/polyjam
-assets/scenes/*.static
 api
 platforms
-.vscode

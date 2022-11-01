@@ -11,8 +11,8 @@ if [ "$PLATFORM" = "windows" ]; then
         mkdir dist/windows
     fi
     
-    cp win_build.exe dist/windows/win_build.exe
-    cp win_proj.exe dist/windows/Vault\ Engine.exe
+    cp windows/win_build.exe dist/windows/win_build.exe
+    cp windows/win_proj.exe dist/windows/Vault\ Engine.exe
     cp *.dll dist/windows/
     cp -r assets dist/windows/assets
     cp -r imgui.ini dist/windows/imgui.ini

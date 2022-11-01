@@ -1,0 +1,70 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Linux",
+			"program": "make",
+			"args": ["linux"],
+			"cwd": "${workspaceFolder}",
+			"postDebugTask": "run"
+		},
+		{
+			// run
+			"type": "lldb",
+			"request": "launch",
+			"name": "Run Program",
+			"program": "${workspaceFolder}/build.out",
+			"args": [],
+			"cwd": "${workspaceFolder}",
+			// set environment variables
+			"env": {
+				"LD_LIBRARY_PATH": "${workspaceFolder}/lib"
+			}
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Linux Project",
+			"program": "make",
+			"args": ["projects"],
+			"cwd": "${workspaceFolder}"
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Linux Game",
+			"program": "make",
+			"args": ["linux_game"],
+			"cwd": "${workspaceFolder}"
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Windows",
+			"program": "make",
+			"args": ["win"],
+			"cwd": "${workspaceFolder}"
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Windows Game",
+			"program": "make",
+			"args": ["win_game"],
+			"cwd": "${workspaceFolder}"
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Windows Project",
+			"program": "make",
+			"args": ["projects_win"],
+			"cwd": "${workspaceFolder}"
+		}
+	]
+}
