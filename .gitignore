@@ -3,8 +3,6 @@
 .fleet
 bin/*.o
 GameJam
-*.o
-src/*.o
 api/*.o
 *.exe
 *.out
