@@ -5,7 +5,7 @@ src/*.o
 api/*.o
 *.exe
 *.out
-windows
+windows/*.exe
 website/node_modules
 BASDGKAFSGL.ggg
 dist
