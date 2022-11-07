@@ -21,6 +21,10 @@ uniform sampler2D bloomTexture;
 uniform float gamma;
 uniform float exposure;
 
+// post processing uniforms
+uniform float chromaticAmount;
+uniform float vignetteAmount;
+
 vec4 chromaticAberration(float amount)
 {
     float r = texture(screenTexture, texCoords - vec2(amount, 0)).r;
@@ -38,11 +42,52 @@ vec4 vignette(float amount)
     return vec4(vignette, vignette, vignette, 1.0);
 }
 
+float rand(vec2 co) {
+    return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+vec4 filmGrain(float amount) {
+    float grain = (rand(texCoords) - 0.5) * amount;
+
+    return vec4(grain, grain, grain, 1.0);
+}
+
+vec4 radialBlur(vec4 tex, vec2 cursorPos, float blurWidth) {
+    vec4 color = tex;
+	vec2 res;
+	res = texCoords;
+	vec2 pp = cursorPos;
+	vec2 center = pp;
+	float blurStart = 1.0;
+
+    const int nsamples = 10;
+
+	vec2 uv = texCoords.xy;
+
+	uv -= center;
+	float precompute = blurWidth * (1.0 / float(nsamples - 1));
+
+	for(int i = 0; i < nsamples; i++)
+	{
+		float scale = blurStart + (float(i)* precompute);
+		float r = texture2D(screenTexture, (uv * scale + center) - vec2(chromaticAmount, 0.0)).rgb.x;
+		float g = texture2D(screenTexture, (uv * scale + center)).rgb.y;
+		float b = texture2D(screenTexture, (uv * scale + center) + vec2(chromaticAmount, 0.0)).rgb.z;
+		float a = texture2D(screenTexture, (uv * scale + center)).a;
+
+		color += vec4(r, g, b, a);
+	}
+
+	color /= float(nsamples);
+    return color;
+}
+
 vec4 bloom()
 {
-    vec3 color = texture(screenTexture, texCoords).rgb;
+    // vec3 color = radialBlur(chromaticAberration(chromaticAmount), vec2(0.5, 0.5), 0.05).rgb;
+    vec3 color = chromaticAberration(chromaticAmount).rgb;
     vec3 bloomColor = texture(bloomTexture, texCoords).rgb;
-    return vec4(color + bloomColor, 1.0);
+    return vec4(color + bloomColor, 1.0) * vignette(vignetteAmount);
 }
 
 void main() {

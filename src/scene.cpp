@@ -1,5 +1,6 @@
 #include "lib/scene.hpp"
 #include "lib/api.hpp"
+#include <memory>
 
 bool G_END_WITH(std::string const & value, std::string const & ending)
 {
@@ -29,6 +30,8 @@ void ApplyTransform(HyperAPI::Experimental::Transform &transform, nlohmann::json
 
 namespace HyperAPI {
     namespace Scene {
+        std::map<std::string, Texture*> Textures;
+        
         void SavePrefab(const std::string &path, Experimental::GameObject *gameObject) {
             std::ofstream file(path);
             nlohmann::json JSON;
@@ -313,7 +316,7 @@ namespace HyperAPI {
                         component["color"]["r"],
                         component["color"]["g"],
                         component["color"]["b"],
-                        1
+                        component["color"]["a"]
                 );
 
                 if(component["sprite"] != "") {

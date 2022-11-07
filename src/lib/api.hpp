@@ -119,6 +119,25 @@ namespace HyperAPI {
         bool resizable;
         bool fullscreenOnLaunch;
         int width, height;
+        
+        struct PostProcessing {
+            bool enabled;
+            struct Vignette {
+                float intensity;
+                float smoothness;
+            } vignette;
+            
+            struct Bloom {
+                bool enabled;
+                float intensity;
+                float threshold;
+                float blurSize;
+            } bloom;
+
+            struct ChromaticAberration {
+                float intensity;
+            } chromaticAberration;
+        } postProcessing;
     };
 
     extern Config config;
@@ -332,8 +351,9 @@ namespace HyperAPI {
     class Shader {
     public:
         uint32_t ID;
+        std::string path;
 
-        Shader(const char *shaderPath);
+        Shader(const char *shaderPath, const std::string &shaderContent = "NO_CONTENT");
 
         void Bind();
 
@@ -442,8 +462,8 @@ namespace HyperAPI {
         glm::vec2 texUV = glm::vec2(0.0f, 0.0f);
         int m_BoneIDs[MAX_BONE_INFLUENCE] = {-1};
         float m_Weights[MAX_BONE_INFLUENCE] = {0.0f};
-        glm::vec3 tangent = glm::vec3(0.0f, 0.0f, 0.0f);
-        glm::vec3 bitangent = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 tangent = glm::vec3(-435.0f, -435.0f, -435.0f);
+        glm::vec3 bitangent = glm::vec3(-435.0f, -435.0f, -435.0f);
     };
 
     struct Vertex_Batch {
@@ -795,6 +815,7 @@ namespace HyperAPI {
                   uint32_t postProcessingTexture, uint32_t postProcessingFBO);
 
         void NewFrame();
+        std::pair<GLint, GLint> GetVRamUsage();
     };
 
     class Sprite {
@@ -1140,6 +1161,11 @@ namespace HyperAPI {
             Mesh *mesh;
             bool noComponent = false;
 
+            struct CustomShader {
+                bool usingCustomShader = false;
+                Shader *shader = nullptr;
+            } customShader;
+
             SpriteRenderer() {
                 std::vector<Vertex> vertices = {
                         Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(1, 1, 1), glm::vec3(0, 1, 0),
@@ -1185,7 +1211,30 @@ namespace HyperAPI {
 
                         ImGui::TreePop();
                     }
-                    ImGui::ColorEdit3("Color", &mesh->material.baseColor.x);
+                    ImGui::ColorEdit4("Color", &mesh->material.baseColor.x);
+                    ImGui::NewLine();
+
+                    if(!customShader.usingCustomShader) {
+                        ImGui::Button("Drag Shader Here");
+                    } else {
+                        // set std::experimental::filesystem as fs
+                        namespace fs = std::experimental::filesystem;
+                        fs::path path = customShader.shader->path;
+
+                        if(ImGui::Button(std::string(std::string("Click to remove shader: ") + path.filename().string()).c_str())) {
+                            customShader.usingCustomShader = false;
+                            delete customShader.shader;
+                            customShader.shader = nullptr;
+                        }
+                    }
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("file")) {
+                            if(G_END_WITH(dirPayloadData, ".glsl")) {
+                                customShader.usingCustomShader = true;
+                                customShader.shader = new Shader(dirPayloadData.c_str());
+                            }
+                        }
+                    }
 
                     ImGui::NewLine();
                     if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
@@ -1213,6 +1262,11 @@ namespace HyperAPI {
             Vector2 spriteSize = Vector2(32, 32);
             Vector2 spriteOffset = Vector2(0, 0);
             Material material{Vector4(1, 1, 1, 1)};
+
+            struct CustomShader {
+                bool usingCustomShader = false;
+                Shader *shader = nullptr;
+            } customShader;
 
             SpritesheetRenderer() {
                 Spritesheet sp("", material, spritesheetSize, spriteSize, spriteOffset);
@@ -1243,10 +1297,34 @@ namespace HyperAPI {
 
                         ImGui::TreePop();
                     }
-                    ImGui::ColorEdit3("Color", &mesh->material.baseColor.x);
+                    ImGui::ColorEdit4("Color", &mesh->material.baseColor.x);
                     DrawVec2Control("Sheet Size", spritesheetSize);
                     DrawVec2Control("Sprite Size", spriteSize);
                     DrawVec2Control("Sprite Offset", spriteOffset);
+
+                    ImGui::NewLine();
+
+                    if(!customShader.usingCustomShader) {
+                        ImGui::Button("Drag Shader Here");
+                    } else {
+                        // set std::experimental::filesystem as fs
+                        namespace fs = std::experimental::filesystem;
+                        fs::path path = customShader.shader->path;
+                        
+                        if(ImGui::Button(std::string(std::string("Click to remove shader: ") + path.filename().string()).c_str())) {
+                            customShader.usingCustomShader = false;
+                            delete customShader.shader;
+                            customShader.shader = nullptr;
+                        }
+                    }
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("file")) {
+                            if(G_END_WITH(dirPayloadData, ".glsl")) {
+                                customShader.usingCustomShader = true;
+                                customShader.shader = new Shader(dirPayloadData.c_str());
+                            }
+                        }
+                    }
 
                     ImGui::NewLine();
                     if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
@@ -1316,6 +1394,11 @@ namespace HyperAPI {
             std::string matPath = "";
             std::string meshType = "";
 
+            struct CustomShader {
+                bool usingCustomShader = false;
+                Shader *shader = nullptr;
+            } customShader;
+
             MeshRenderer() = default;
             void DeleteComp() override {
                 if(m_Mesh != nullptr) {
@@ -1326,7 +1409,6 @@ namespace HyperAPI {
             void GUI() override {
                 if (ImGui::TreeNode("Mesh Renderer")) {
                     if (!m_Model) {
-                        // mesh selection
                         if (ImGui::TreeNode("Mesh")) {
                             ImVec2 windowSize = ImGui::GetWindowSize();
                             if (ImGui::Button("Select Mesh")) {
@@ -1389,6 +1471,30 @@ namespace HyperAPI {
                         if (ImGui::Button("Select Material")) {
                             ImGuiFileDialog::Instance()->OpenDialog("SelectMaterial", "Select Material", ".material",
                                                                     ".");
+                        }
+                        ImGui::NewLine();
+
+                        if(!customShader.usingCustomShader) {
+                            ImGui::Button("Drag Shader Here");
+                        } else {
+                            // set std::experimental::filesystem as fs
+                            namespace fs = std::experimental::filesystem;
+                            fs::path path = customShader.shader->path;
+                            
+                            if(ImGui::Button(std::string(std::string("Click to remove shader: ") + path.filename().string()).c_str())) {
+                                customShader.usingCustomShader = false;
+                                delete customShader.shader;
+                                customShader.shader = nullptr;
+                            }
+                        }
+
+                        if (ImGui::BeginDragDropTarget()) {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("file")) {
+                                if(G_END_WITH(dirPayloadData, ".glsl")) {
+                                    customShader.usingCustomShader = true;
+                                    customShader.shader = new Shader(dirPayloadData.c_str());
+                                }
+                            }
                         }
                     }
 
@@ -1567,21 +1673,7 @@ namespace HyperAPI {
                         }
                     }
 
-//                    if (heightTexture != "nullptr") {
-//                        if (m_Mesh->material.height != nullptr) {
-//                            if (m_Mesh->material.height->texPath != heightTexture) {
-//                                delete m_Mesh->material.height;
-//                                m_Mesh->material.height = new Texture(heightTexture.c_str(), 3, "texture_height");
-//                            }
-//                        } else {
-//                            m_Mesh->material.height = new Texture(heightTexture.c_str(), 3, "texture_height");
-//                        }
-//                    } else {
-//                        if (m_Mesh->material.height != nullptr) {
-//                            delete m_Mesh->material.height;
-//                            m_Mesh->material.height = nullptr;
-//                        }
-//                    }
+
 
                     if (heightTexture != "nullptr") {
                         if (m_Mesh->material.emission != nullptr) {
@@ -1627,18 +1719,12 @@ namespace HyperAPI {
 
             PointLight *light = new PointLight(Scene::PointLights, lightPos, color, intensity);
 
-            c_PointLight() {
-                // PointLights.push_back(this);
-            }
-
-//            ~c_PointLight() {
-//                 Scene::PointLights.erase(std::remove(Scene::PointLights.begin(), Scene::PointLights.end(), light), Scene::PointLights.end());
-//            }
+            c_PointLight() = default;
 
             void GUI() {
 
                 if (ImGui::TreeNode("Point Light")) {
-                    ImGui::ColorEdit3("Color", &color.x, 0);
+                    ImGui::ColorEdit4("Color", &color.x, 0);
                     ImGui::DragFloat("Intensity", &intensity, 0.01f);
 
                     ImGui::NewLine();
@@ -1673,14 +1759,11 @@ namespace HyperAPI {
             Light2D *light = new Light2D(Scene::Lights2D, lightPos, Vector4(color, 1.0f), range);
 
             c_Light2D() = default;
-//            ~c_Light2D() {
-//                Scene::Lights2D.erase(std::remove(Scene::Lights2D.begin(), Scene::Lights2D.end(), light), Scene::Lights2D.end());
-//            }
 
             void GUI() {
 
                 if (ImGui::TreeNode("2D Light")) {
-                    ImGui::ColorEdit3("Color", &color.x, 0);
+                    ImGui::ColorEdit4("Color", &color.x, 0);
                     ImGui::DragFloat("Range", &range, 0.01f);
 
                     ImGui::NewLine();
@@ -1723,13 +1806,10 @@ namespace HyperAPI {
                     }
                 }
             }
-//            ~c_SpotLight() {
-//                Scene::SpotLights.erase(std::remove(Scene::SpotLights.begin(), Scene::SpotLights.end(), light), Scene::SpotLights.end());
-//            }
 
             void GUI() {
                 if (ImGui::TreeNode("Spot Light")) {
-                    ImGui::ColorEdit3("Color", &color.x, 0);
+                    ImGui::ColorEdit4("Color", &color.x, 0);
 
                     ImGui::NewLine();
                     if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
@@ -1760,16 +1840,13 @@ namespace HyperAPI {
             DirectionalLight *light = new DirectionalLight(Scene::DirLights, lightPos, color);
 
             c_DirectionalLight() = default;
-//            ~c_DirectionalLight() {
-//                Scene::DirLights.erase(std::remove(Scene::DirLights.begin(), Scene::DirLights.end(), light), Scene::DirLights.end());
-//            }
 
             void GUI() {
                 auto &transform = Scene::m_Registry.get<Transform>(entity);
                 lightPos = transform.position;
 
                 if (ImGui::TreeNode("Directional Light")) {
-                    ImGui::ColorEdit3("Color", &color.x, 0);
+                    ImGui::ColorEdit4("Color", &color.x, 0);
                     ImGui::DragFloat("Intensity", &intensity, 0.01f);
 
                     ImGui::NewLine();
@@ -2385,6 +2462,11 @@ namespace HyperAPI {
             std::vector<m_AnimationData> anims;
             char currAnim[499] = "";
 
+            struct CustomShader {
+                bool usingCustomShader = false;
+                Shader *shader = nullptr;
+            } customShader;
+
             SpriteAnimation() {
                 currMesh = nullptr;
                 for (auto &gameObject : Scene::m_GameObjects) {
@@ -2418,6 +2500,30 @@ namespace HyperAPI {
                 if (ImGui::TreeNode("Sprite Animation")) {
                     ImGui::InputText("Current Animation", currAnim, 499);
 
+                    if(!customShader.usingCustomShader) {
+                        ImGui::Button("Drag Shader Here");
+                    } else {
+                        // set std::experimental::filesystem as fs
+                        namespace fs = std::experimental::filesystem;
+                        fs::path path = customShader.shader->path;
+                        
+                        if(ImGui::Button(std::string(std::string("Click to remove shader: ") + path.filename().string()).c_str())) {
+                            customShader.usingCustomShader = false;
+                            delete customShader.shader;
+                            customShader.shader = nullptr;
+                        }
+                    }
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("file")) {
+                            if(G_END_WITH(dirPayloadData, ".glsl")) {
+                                customShader.usingCustomShader = true;
+                                customShader.shader = new Shader(dirPayloadData.c_str());
+                            }
+                        }
+                    }
+
+                    ImGui::NewLine();
+
                     for (auto &animation : anims) {
                         int index = &animation - &anims[0];
 
@@ -2443,7 +2549,7 @@ namespace HyperAPI {
                                         glDeleteTextures(1, &frame.mesh->material.diffuse->ID);
                                         delete frame.mesh->material.diffuse;
                                     }
-                                    ImGui::ColorEdit3("Color", &frame.mesh->material.baseColor.x);
+                                    ImGui::ColorEdit4("Color", &frame.mesh->material.baseColor.x);
 
                                     if (ImGui::Button(ICON_FA_TRASH " Remove Frame")) {
                                         animation.frames.erase(animation.frames.begin() + index);
@@ -2530,6 +2636,11 @@ namespace HyperAPI {
             Vector2 spritesheetSize;
             m_SpritesheetAnimationData::Frame currFrame;
 
+            struct CustomShader {
+                bool usingCustomShader = false;
+                Shader *shader = nullptr;
+            } customShader;
+
             c_SpritesheetAnimation() {
                 mesh = sheet.m_Mesh;
             }
@@ -2562,10 +2673,35 @@ namespace HyperAPI {
 
                         ImGui::TreePop();
                     }
-                    ImGui::ColorEdit3("Color", &mesh->material.baseColor.x);
+                    ImGui::ColorEdit4("Color", &mesh->material.baseColor.x);
                     DrawVec2Control("Sheet Size", spritesheetSize);
                     ImGui::NewLine();
+
+                    if(!customShader.usingCustomShader) {
+                        ImGui::Button("Drag Shader Here");
+                    } else {
+                        // set std::experimental::filesystem as fs
+                        namespace fs = std::experimental::filesystem;
+                        fs::path path = customShader.shader->path;
+                        
+                        if(ImGui::Button(std::string(std::string("Click to remove shader: ") + path.filename().string()).c_str())) {
+                            customShader.usingCustomShader = false;
+                            delete customShader.shader;
+                            customShader.shader = nullptr;
+                        }
+                    }
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("file")) {
+                            if(G_END_WITH(dirPayloadData, ".glsl")) {
+                                customShader.usingCustomShader = true;
+                                customShader.shader = new Shader(dirPayloadData.c_str());
+                            }
+                        }
+                    }
+
+                    ImGui::NewLine();
                     ImGui::InputText("Current Animation", currAnim, 499);
+                    
 
                     if(ImGui::TreeNode("Animations")) {
                         for (auto &animation : anims) {
@@ -2643,6 +2779,7 @@ namespace HyperAPI {
 
                     ImGui::TreePop();
                 }
+            
             }
 
             void Play() {

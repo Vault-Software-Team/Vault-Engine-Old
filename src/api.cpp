@@ -1,5 +1,7 @@
 #include "lib/api.hpp"
+#include "assimp/postprocess.h"
 #include "lib/scene.hpp"
+#include <sstream>
 
 std::vector<HyperAPI::PointLight *> PointLights;
 std::vector<HyperAPI::SpotLight *> SpotLights;
@@ -341,6 +343,10 @@ namespace HyperAPI {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         // core profile
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        // error callback
+        glfwSetErrorCallback([](int error, const char *description) {
+            HYPER_LOG("GLFW Error (" << error << "): " << description)
+        });
 
         if (fullscreen) {
             // get monitor width and height
@@ -389,6 +395,17 @@ namespace HyperAPI {
         glDepthFunc(GL_LESS);
     }
 
+    std::pair<GLint, GLint> Renderer::GetVRamUsage() {
+        GLint totalMemoryInKB = 0;
+        glGetIntegerv(0x9048, &totalMemoryInKB);
+
+        GLint curAvailMemoryInKB = 0;
+        glGetIntegerv(0x9049, &curAvailMemoryInKB);
+
+        // return in megabytes
+        return {(totalMemoryInKB - curAvailMemoryInKB) / 1024, totalMemoryInKB / 1024};
+    }
+
     void Renderer::Render(Camera &camera) {
         glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -398,34 +415,71 @@ namespace HyperAPI {
         glfwSwapBuffers(window);
     }
 
-    Shader::Shader(const char *shaderPath) {
-        if (strcmp(shaderPath, "NULL_SHADER") == 0) {
-            return;
-        }
-
-        HYPER_LOG(std::string("Loading shader: ") + shaderPath)
-
-        std::ifstream shaderFile(shaderPath);
-        if (!shaderFile.is_open()) {
-            std::cout << "Failed to open shader file" << std::endl;
-        }
+    Shader::Shader(const char *shaderPath, const std::string &shaderContent) {
+        path = shaderPath;
+        
+        enum ShaderType {
+            NONE = -1, 
+            VERTEX = 0, 
+            FRAGMENT = 1, 
+            GEOMETRY = 2
+        } type;
 
         std::string vertCode, fragCode, geometryCode, line;
-        int type = -1;
-        while (getline(shaderFile, line)) {
-            if (line == "#shader vertex") {
-                type = 0;
-            } else if (line == "#shader fragment") {
-                type = 1;
-            } else if (line == "#shader geometry") {
-                type = 2;
-            } else {
-                if (type == 0) {
-                    vertCode += line + "\n";
-                } else if (type == 1) {
-                    fragCode += line + "\n";
-                } else if (type == 2) {
-                    geometryCode += line + "\n";
+        if(strcmp(shaderPath, "NULL_SHADER") == 0) {
+            HYPER_LOG(std::string("Loading shader: ") + typeid(this).name());
+            std::stringstream ss(shaderContent);
+            while (getline(ss, line)) {
+                if (line == "#shader vertex") {
+                    type = ShaderType::VERTEX;
+                } else if (line == "#shader fragment") {
+                    type = ShaderType::FRAGMENT;
+                } else if (line == "#shader geometry") {
+                    type = ShaderType::GEOMETRY;
+                } else {
+                    switch (type) {
+                        case ShaderType::VERTEX:
+                            vertCode += line + "\n";
+                            break;
+                        case ShaderType::FRAGMENT:
+                            fragCode += line + "\n";
+                            break;
+                        case ShaderType::GEOMETRY:
+                            geometryCode += line + "\n";
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+        } else {
+            HYPER_LOG(std::string("Loading shader: ") + shaderPath);
+            std::ifstream shaderFile(shaderPath);
+            if (!shaderFile.is_open()) {
+                std::cout << "Failed to open shader file" << std::endl;
+            }
+            
+            while (getline(shaderFile, line)) {
+                if (line == "#shader vertex") {
+                    type = ShaderType::VERTEX;
+                } else if (line == "#shader fragment") {
+                    type = ShaderType::FRAGMENT;
+                } else if (line == "#shader geometry") {
+                    type = ShaderType::GEOMETRY;
+                } else {
+                    switch (type) {
+                        case ShaderType::VERTEX:
+                            vertCode += line + "\n";
+                            break;
+                        case ShaderType::FRAGMENT:
+                            fragCode += line + "\n";
+                            break;
+                        case ShaderType::GEOMETRY:
+                            geometryCode += line + "\n";
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
         }
@@ -457,7 +511,7 @@ namespace HyperAPI {
             std::cout << infoLog << std::endl;
         }
 
-        if(type == 2) {
+        if(type == ShaderType::GEOMETRY) {
             geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
             glShaderSource(geometryShader, 1, &geometryShaderCode, NULL);
             glCompileShader(geometryShader);
@@ -485,7 +539,7 @@ namespace HyperAPI {
 
         glDeleteShader(vertShader);
         glDeleteShader(fragShader);
-        if(type == 2) {
+        if(type == ShaderType::GEOMETRY) {
             glDeleteShader(geometryShader);
         }
     }
@@ -542,14 +596,15 @@ namespace HyperAPI {
 
         // calculate TBN
         for (int i = 0; i < indices.size(); i += 3) {
-            Vertex &v0 = vertices[indices[i]];
-            Vertex &v1 = vertices[indices[i + 1]];
-            Vertex &v2 = vertices[indices[i + 2]];
+            Vertex &v1 = vertices[indices[i]];
+            Vertex &v2 = vertices[indices[i + 1]];
+            Vertex &v3 = vertices[indices[i + 2]];
+            if(v1.tangent.x != -435.0f && v2.tangent.x != -435.0f && v3.tangent.x != -435.0f) continue;
 
-            glm::vec3 edge1 = v1.position - v0.position;
-            glm::vec3 edge2 = v2.position - v0.position;
-            glm::vec2 deltaUV1 = v1.texUV - v0.texUV;
-            glm::vec2 deltaUV2 = v2.texUV - v0.texUV;
+            glm::vec3 edge1 = v2.position - v1.position;
+            glm::vec3 edge2 = v3.position - v1.position;
+            glm::vec2 deltaUV1 = v2.texUV - v1.texUV;
+            glm::vec2 deltaUV2 = v3.texUV - v1.texUV;
 
             float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
 
@@ -557,21 +612,19 @@ namespace HyperAPI {
             tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
             tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
             tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
-            tangent = glm::normalize(tangent);
 
             glm::vec3 bitangent;
             bitangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
             bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
             bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
-            bitangent = glm::normalize(bitangent);
 
-            v0.tangent = tangent;
             v1.tangent = tangent;
             v2.tangent = tangent;
+            v3.tangent = tangent;
 
-            v0.bitangent = bitangent;
             v1.bitangent = bitangent;
             v2.bitangent = bitangent;
+            v3.bitangent = bitangent;
         }
 
         if (empty) {
@@ -618,6 +671,10 @@ namespace HyperAPI {
 
             glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, bitangent));
             glEnableVertexAttribArray(7);
+            // error check
+            if (glGetError() != GL_NO_ERROR) {
+                HYPER_LOG("Error creating mesh");
+            }
 
             // glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(11 * sizeof(float)));
             // glEnableVertexAttribArray(4);
@@ -751,80 +808,78 @@ namespace HyperAPI {
         shader.SetUniformMat4("rotation", rot);
         shader.SetUniformMat4("scale", sca);
 
-        if (!camera.mode2D) {
-            for (int i = 0; i < Scene::PointLights.size(); i++) {
-                shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].lightPos").c_str(),
-                                    Scene::PointLights[i]->lightPos.x, Scene::PointLights[i]->lightPos.y,
-                                    Scene::PointLights[i]->lightPos.z);
-                shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].color").c_str(),
-                                    Scene::PointLights[i]->color.x, Scene::PointLights[i]->color.y,
-                                    Scene::PointLights[i]->color.z);
-                shader.SetUniform1f(("pointLights[" + std::to_string(i) + "].intensity").c_str(),
-                                    Scene::PointLights[i]->intensity);
+        for (int i = 0; i < Scene::PointLights.size(); i++) {
+            shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].lightPos").c_str(),
+                        Scene::PointLights[i]->lightPos.x, Scene::PointLights[i]->lightPos.y,
+                        Scene::PointLights[i]->lightPos.z);
+            shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].color").c_str(),
+                        Scene::PointLights[i]->color.x, Scene::PointLights[i]->color.y,
+                        Scene::PointLights[i]->color.z);
+            shader.SetUniform1f(("pointLights[" + std::to_string(i) + "].intensity").c_str(),
+                        Scene::PointLights[i]->intensity);
+        }
+        if (Scene::PointLights.size() == 0) {
+            for (int i = 0; i < 100; i++) {
+                shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].lightPos").c_str(), 0, 0, 0);
+                shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].color").c_str(), 0, 0, 0);
+                shader.SetUniform1f(("pointLights[" + std::to_string(i) + "].intensity").c_str(), 0);
             }
-            if (Scene::PointLights.size() == 0) {
-                for (int i = 0; i < 100; i++) {
-                    shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].lightPos").c_str(), 0, 0, 0);
-                    shader.SetUniform3f(("pointLights[" + std::to_string(i) + "].color").c_str(), 0, 0, 0);
-                    shader.SetUniform1f(("pointLights[" + std::to_string(i) + "].intensity").c_str(), 0);
-                }
-            }
+        }
 
-            for (int i = 0; i < Scene::SpotLights.size(); i++) {
-                // Scene::SpotLights[i]->scriptComponent.OnUpdate();
-                shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].lightPos").c_str(),
-                                    Scene::SpotLights[i]->lightPos.x, Scene::SpotLights[i]->lightPos.y,
-                                    Scene::SpotLights[i]->lightPos.z);
-                shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].color").c_str(),
-                                    Scene::SpotLights[i]->color.x, Scene::SpotLights[i]->color.y,
-                                    Scene::SpotLights[i]->color.z);
-                // shader.SetUniform1f(("spotLights[" + std::to_string(i) + "].outerCone").c_str(), Scene::SpotLights[i]->outerCone);
-                // shader.SetUniform1f(("spotLights[" + std::to_string(i) + "].innerCone").c_str(), Scene::SpotLights[i]->innerCone);
-                shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].angle").c_str(),
-                                    Scene::SpotLights[i]->angle.x, Scene::SpotLights[i]->angle.y,
-                                    Scene::SpotLights[i]->angle.z);
+        for (int i = 0; i < Scene::SpotLights.size(); i++) {
+            // Scene::SpotLights[i]->scriptComponent.OnUpdate();
+            shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].lightPos").c_str(),
+                        Scene::SpotLights[i]->lightPos.x, Scene::SpotLights[i]->lightPos.y,
+                        Scene::SpotLights[i]->lightPos.z);
+            shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].color").c_str(),
+                        Scene::SpotLights[i]->color.x, Scene::SpotLights[i]->color.y,
+                        Scene::SpotLights[i]->color.z);
+            // shader.SetUniform1f(("spotLights[" + std::to_string(i) + "].outerCone").c_str(), Scene::SpotLights[i]->outerCone);
+            // shader.SetUniform1f(("spotLights[" + std::to_string(i) + "].innerCone").c_str(), Scene::SpotLights[i]->innerCone);
+            shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].angle").c_str(),
+                        Scene::SpotLights[i]->angle.x, Scene::SpotLights[i]->angle.y,
+                        Scene::SpotLights[i]->angle.z);
+        }
+        if (Scene::SpotLights.size() == 0) {
+            for (int i = 0; i < 100; i++) {
+                shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].lightPos").c_str(), 0, 0, 0);
+                shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].color").c_str(), 0, 0, 0);
+                shader.SetUniform1f(("spotLights[" + std::to_string(i) + "].outerCone").c_str(), 0);
+                shader.SetUniform1f(("spotLights[" + std::to_string(i) + "].innerCone").c_str(), 0);
             }
-            if (Scene::SpotLights.size() == 0) {
-                for (int i = 0; i < 100; i++) {
-                    shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].lightPos").c_str(), 0, 0, 0);
-                    shader.SetUniform3f(("spotLights[" + std::to_string(i) + "].color").c_str(), 0, 0, 0);
-                    shader.SetUniform1f(("spotLights[" + std::to_string(i) + "].outerCone").c_str(), 0);
-                    shader.SetUniform1f(("spotLights[" + std::to_string(i) + "].innerCone").c_str(), 0);
-                }
-            }
+        }
 
-            for (int i = 0; i < Scene::DirLights.size(); i++) {
-                // Scene::DirLights[i]->scriptComponent.OnUpdate();
-                shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].lightPos").c_str(),
-                                    Scene::DirLights[i]->lightPos.x, Scene::DirLights[i]->lightPos.y,
-                                    Scene::DirLights[i]->lightPos.z);
-                shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].color").c_str(),
-                                    Scene::DirLights[i]->color.x, Scene::DirLights[i]->color.y,
-                                    Scene::DirLights[i]->color.z);
-                shader.SetUniform1f(("dirLights[" + std::to_string(i) + "].intensity").c_str(),
-                                    Scene::DirLights[i]->intensity);
+        for (int i = 0; i < Scene::DirLights.size(); i++) {
+            // Scene::DirLights[i]->scriptComponent.OnUpdate();
+            shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].lightPos").c_str(),
+                        Scene::DirLights[i]->lightPos.x, Scene::DirLights[i]->lightPos.y,
+                        Scene::DirLights[i]->lightPos.z);
+            shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].color").c_str(),
+                        Scene::DirLights[i]->color.x, Scene::DirLights[i]->color.y,
+                        Scene::DirLights[i]->color.z);
+            shader.SetUniform1f(("dirLights[" + std::to_string(i) + "].intensity").c_str(),
+                        Scene::DirLights[i]->intensity);
+        }
+        if (Scene::DirLights.size() == 0) {
+            for (int i = 0; i < 100; i++) {
+                shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].lightPos").c_str(), 0, 0, 0);
+                shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].color").c_str(), 0, 0, 0);
+                shader.SetUniform1f(("dirLights[" + std::to_string(i) + "].intensity").c_str(), 0);
             }
-            if (Scene::DirLights.size() == 0) {
-                for (int i = 0; i < 100; i++) {
-                    shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].lightPos").c_str(), 0, 0, 0);
-                    shader.SetUniform3f(("dirLights[" + std::to_string(i) + "].color").c_str(), 0, 0, 0);
-                    shader.SetUniform1f(("dirLights[" + std::to_string(i) + "].intensity").c_str(), 0);
-                }
-            }
-        } else {
-            for (int i = 0; i < Scene::Lights2D.size(); i++) {
-                shader.SetUniform2f(("light2ds[" + std::to_string(i) + "].lightPos").c_str(),
-                                    Scene::Lights2D[i]->lightPos.x, Scene::Lights2D[i]->lightPos.y);
-                shader.SetUniform3f(("light2ds[" + std::to_string(i) + "].color").c_str(), Scene::Lights2D[i]->color.x,
-                                    Scene::Lights2D[i]->color.y, Scene::Lights2D[i]->color.z);
-                shader.SetUniform1f(("light2ds[" + std::to_string(i) + "].range").c_str(), Scene::Lights2D[i]->range);
-            }
-            if (Scene::Lights2D.size() == 0) {
-                for (int i = 0; i < 100; i++) {
-                    shader.SetUniform2f(("light2ds[" + std::to_string(i) + "].lightPos").c_str(), 0, 0);
-                    shader.SetUniform3f(("light2ds[" + std::to_string(i) + "].color").c_str(), 0, 0, 0);
-                    shader.SetUniform1f(("light2ds[" + std::to_string(i) + "].range").c_str(), 0);
-                }
+        }
+
+        for (int i = 0; i < Scene::Lights2D.size(); i++) {
+            shader.SetUniform2f(("light2ds[" + std::to_string(i) + "].lightPos").c_str(),
+                        Scene::Lights2D[i]->lightPos.x, Scene::Lights2D[i]->lightPos.y);
+            shader.SetUniform3f(("light2ds[" + std::to_string(i) + "].color").c_str(), Scene::Lights2D[i]->color.x,
+                        Scene::Lights2D[i]->color.y, Scene::Lights2D[i]->color.z);
+            shader.SetUniform1f(("light2ds[" + std::to_string(i) + "].range").c_str(), Scene::Lights2D[i]->range);
+        }
+        if (Scene::Lights2D.size() == 0) {
+            for (int i = 0; i < 100; i++) {
+                shader.SetUniform2f(("light2ds[" + std::to_string(i) + "].lightPos").c_str(), 0, 0);
+                shader.SetUniform3f(("light2ds[" + std::to_string(i) + "].color").c_str(), 0, 0, 0);
+                shader.SetUniform1f(("light2ds[" + std::to_string(i) + "].range").c_str(), 0);
             }
         }
 
@@ -832,6 +887,7 @@ namespace HyperAPI {
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * vertices.size(), vertices.data());
         glDrawElements(GL_TRIANGLES, static_cast<uint32_t>(indices.size()), GL_UNSIGNED_INT, 0);
+
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         material.Unbind(shader);
@@ -1082,7 +1138,7 @@ namespace HyperAPI {
                 float A = target_width / target_height;
                 float V = width / height;
 
-                projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, nearPlane, farPlane);
+                projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.1f, 5000.0f);
                 projection = glm::scale(projection, glm::vec3(transform.scale.x, transform.scale.y, 1.0f));
             } else {
                 projection = glm::perspective(glm::radians(FOVdeg), aspect, nearPlane, farPlane);
@@ -1158,6 +1214,8 @@ namespace HyperAPI {
 
     void Camera::Matrix(Shader &shader, const char *uniform) {
         glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(camMatrix));
+        shader.SetUniformMat4("cam_view", view);
+        shader.SetUniformMat4("cam_projection", projection);
     }
 
     void Camera::ControllerCameraMove(GLFWwindow *window) {
@@ -2362,7 +2420,7 @@ namespace HyperAPI {
 
         void Model::loadModel(std::string path) {
             Assimp::Importer import;
-            const aiScene *scene = import.ReadFile(path, aiProcess_Triangulate);
+            const aiScene *scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
                 std::cout << "ERROR::ASSIMP::" << import.GetErrorString() << std::endl;
@@ -2425,6 +2483,8 @@ namespace HyperAPI {
                 } else {
                     vertex.texUV = glm::vec2(0.0f, 0.0f);
                 }
+                vertex.tangent = glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
+                vertex.bitangent = glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
                 vertices.push_back(vertex);
             }
             ExtractBoneWeightForVertices(vertices, mesh, scene);
@@ -3051,6 +3111,10 @@ namespace Hyper {
             framebufferShader.Bind();
             framebufferShader.SetUniform1f("exposure", exposure);
 
+            framebufferShader.Bind();
+            framebufferShader.SetUniform1f("chromaticAmount", HyperAPI::config.postProcessing.chromaticAberration.intensity);
+            framebufferShader.SetUniform1f("vignetteAmount", HyperAPI::config.postProcessing.vignette.intensity);
+
             HyperAPI::Timestep::currentFrame = glfwGetTime();
             HyperAPI::Timestep::deltaTime = HyperAPI::Timestep::currentFrame - HyperAPI::Timestep::lastFrame;
             HyperAPI::Timestep::lastFrame = HyperAPI::Timestep::currentFrame;
@@ -3294,6 +3358,7 @@ namespace Hyper {
 //                horizontal = !horizontal;
 //            }
 
+            glDisable(GL_BLEND);
             bloomRenderer.RenderBloomTexture(bloomTexture, 0.005f, rectVAO);
 
 //            bloomRenderer.RenderBloomTexture(first_iteration ? bloomTexture : pingpongBuffer[!horizontal], 0.005f, rectVAO);

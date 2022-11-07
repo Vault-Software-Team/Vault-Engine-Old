@@ -36,10 +36,14 @@
 #include "scene.hpp"
 #include <memory>
 
+bool G_END_WITH(std::string const & value, std::string const & ending);
+
 namespace HyperAPI {
     class Mesh;
     class Model;
     class Camera;
+    class Texture;
+    class Shader;
     class Texture;
     struct Log;
 
@@ -50,9 +54,13 @@ namespace HyperAPI {
     namespace Experimental {
         class GameObject;
         struct m_AnimationData;
+        
     }
 
+
     namespace Scene {
+        extern std::map<std::string, Texture*> Textures;
+
         enum DragType {
             DRAG_DIFFUSE,
             DRAG_SPECULAR,
@@ -62,7 +70,8 @@ namespace HyperAPI {
             DRAG_SPRITE,
             DRAG_SPRITE_NO_MESH,
             DRAG_PREFAB,
-            DRAG_GAMEOBJECT
+            DRAG_GAMEOBJECT,
+            DRAG_SHADER
         };
 
         enum SceneType {

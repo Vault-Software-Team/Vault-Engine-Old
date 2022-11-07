@@ -1,6 +1,10 @@
 #include <random>
 #include <memory>
+#include "lib/InputEvents.hpp"
+#include "icons/icons.h"
+#include "imgui/imgui.h"
 #include "lib/api.hpp"
+#include "lib/scene.hpp"
 #include "vendor/json/json.hpp"
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
@@ -28,6 +32,7 @@ public:
         b2Fixture *fixtureA = contact->GetFixtureA();
         b2Fixture *fixtureB = contact->GetFixtureB();
         // getuser data
+        
         b2BodyUserData &bodyUserDataA = fixtureA->GetBody()->GetUserData();
         b2BodyUserData &bodyUserDataB = fixtureB->GetBody()->GetUserData();
 
@@ -165,6 +170,9 @@ fs::path relative(fs::path p, fs::path base)
 
 #ifndef PROJECT_MENU
 fs::path currentDirectory = fs::path("assets");
+
+auto langDef = TextEditor::LanguageDefinition::Lua();
+auto glslDef = TextEditor::LanguageDefinition::GLSL();
 void DirIter(const std::string &path) {
     // alphabetical sort
     auto iter = fs::directory_iterator(currentDirectory);
@@ -260,9 +268,20 @@ void DirIter(const std::string &path) {
                     std::ifstream file(entry.path().string());
                     std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
                     editor.SetText(str);
+                    editor.SetLanguageDefinition(langDef);
                     currentFilePath = entry.path().string();
                 }
-            } else if (ends_with(entry.path().string(), ".png") || ends_with(entry.path().string(), ".jpg") ||
+            } else if (ends_with(entry.path().string(), ".glsl")) {
+                ImGui::Button(ICON_FA_PAINT_ROLLER, ImVec2(buttonSize, buttonSize - 30));
+                if (item) {
+                    std::ifstream file(entry.path().string());
+                    std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+                    editor.SetText(str);
+                    editor.SetLanguageDefinition(glslDef);
+                    currentFilePath = entry.path().string();
+                }
+            }
+            else if (ends_with(entry.path().string(), ".png") || ends_with(entry.path().string(), ".jpg") ||
                        ends_with(entry.path().string(), ".jpeg")) {
                 ImGui::Button(ICON_FA_IMAGE, ImVec2(buttonSize, buttonSize - 30));
             } else if (ends_with(entry.path().string(), ".ogg") || ends_with(entry.path().string(), ".mp3") ||
@@ -483,6 +502,20 @@ void ShortcutManager(bool &openConfig) {
 
 time_t timestamp = time(0);
 
+void PostProcessingEffects(Shader &shader, const Camera *sceneCamera) {
+    // if(Scene::mainCamera == sceneCamera) return;
+    // if(!config.postProcessing.enabled) return;
+
+    // for(auto &shader : shaders) {
+    //     shader->Bind();
+    //     shader->SetUniform1i("globalBloom", config.postProcessing.bloom.enabled);
+    //     shader->SetUniform1f("bloomThreshold", config.postProcessing.bloom.threshold);
+    // }
+    shader.Bind();
+    shader.SetUniform1i("globalBloom", config.postProcessing.bloom.enabled);
+    shader.SetUniform1f("bloomThreshold", config.postProcessing.bloom.threshold);
+}
+
 #ifndef _WIN32 || GAME_BUILD
 
 void UpdatePresence(
@@ -660,14 +693,9 @@ int main(int argc, char **argv) {
     Input::window = app.renderer->window;
     // glfw enable sticky mouse buttons
     Shader shader("shaders/default.glsl");
-    Shader spriteShader("shaders/sprite.glsl");
     Shader workerShader("shaders/worker.glsl");
     Shader outlineShader("shaders/outline.glsl");
-    Shader batchShader("shaders/batch.glsl");
-    Shader textShader("shaders/text_shader.glsl");
-
-    spriteShader.Bind();
-    spriteShader.SetUniform1f("ambient", 1);
+    // Shader gridShader("shaders/grid.glsl");
 
     shader.Bind();
     shader.SetUniform1f("ambient", 0.2);
@@ -692,6 +720,7 @@ int main(int argc, char **argv) {
     bool openDetails = false;
     bool openInspector = true;
     bool openLayers = false;
+    bool openShaders = false;
     char layerName[32] = "New Layer";
 
     int inspectorType = InspecType::None;
@@ -832,7 +861,21 @@ int main(int argc, char **argv) {
 
     Scene::SceneType sceneType = Scene::MAIN_SCENE;
 
-    TextEditor::LanguageDefinition langDef = TextEditor::LanguageDefinition::Lua();
+    glslDef.mName = "GLSL";
+    glslDef.mCommentStart = "/*";
+    glslDef.mCommentEnd = "*/";
+    glslDef.mSingleLineComment = "//";
+    glslDef.mCaseSensitive = true;
+    glslDef.mAutoIndentation = true;
+
+    TextEditor::Identifier glslId;
+    glslId.mDeclaration = "#shader vertex";
+    glslDef.mIdentifiers.insert(std::make_pair("Vertex Shader", glslId));
+    glslId.mDeclaration = "#shader fragment";
+    glslDef.mIdentifiers.insert(std::make_pair("Fragment Shader", glslId));
+    glslId.mDeclaration = "#shader geometry";
+    glslDef.mIdentifiers.insert(std::make_pair("Geometry Shader", glslId));
+
     langDef.mName = "Lua";
     langDef.mCommentStart = "--";
     langDef.mCommentEnd = "";
@@ -1040,7 +1083,7 @@ int main(int argc, char **argv) {
                 ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
                 if (openLayers) {
-                    if (ImGui::Begin(ICON_FA_LAYER_GROUP " Layers")) {
+                    if (ImGui::Begin(ICON_FA_LAYER_GROUP " Layers", &openLayers)) {
                         if (ImGui::TreeNode("New Layer")) {
                             ImGui::InputText("Name", layerName, 32);
                             if (ImGui::Button("Create")) {
@@ -1078,12 +1121,6 @@ int main(int argc, char **argv) {
                             ImGui::Text(((std::string(ICON_FA_PHOTO_FILM)) + std::string(layer.first)).c_str());
                             ImGui::PopID();
                         }
-
-                        ImGui::NewLine();
-                        if (ImGui::Button("Close")) {
-                            openLayers = false;
-                        }
-
                     }
                     ImGui::End();
                 }
@@ -1091,7 +1128,7 @@ int main(int argc, char **argv) {
                 if (openInspector) {
                     static std::string matPath;
 
-                    if (ImGui::Begin(ICON_FA_MAGNIFYING_GLASS " Inspector")) {
+                    if (ImGui::Begin(ICON_FA_MAGNIFYING_GLASS " Inspector", &openInspector)) {
                         if (ImGui::BeginDragDropTarget()) {
                             if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("file")) {
                                 // const char* path = (const char*)payload->Data;
@@ -1205,7 +1242,7 @@ int main(int argc, char **argv) {
                                 ImGui::DragFloat2("UV Scale", &m_InspectorMaterial.texUVs.x, 0.01f);
                                 ImGui::DragFloat("Roughness", &m_InspectorMaterial.roughness, 0.01f, 0.0f, 1.0f);
                                 ImGui::DragFloat("Metallic", &m_InspectorMaterial.metallic, 0.01f, 0.0f, 1.0f);
-                                ImGui::ColorEdit3("Color", &m_InspectorMaterial.baseColor.x);
+                                ImGui::ColorEdit4("Color", &m_InspectorMaterial.baseColor.x);
 
                                 if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save Material")) {
                                     std::ofstream file(matPath);
@@ -1286,11 +1323,6 @@ int main(int argc, char **argv) {
                         if (inspectorType == InspecType::None) {
                             ImGui::TextWrapped("To inspect an object, drag it into the inspector window's title bar.");
                         }
-                        if (ImGui::Button("Close")) {
-                            inspectorType = InspecType::None;
-                            openInspector = false;
-                        }
-
                     }
                     ImGui::End();
                 }
@@ -1315,11 +1347,6 @@ int main(int argc, char **argv) {
                     openConfig = false;
                 }
 
-                if (openDetails) {
-                    ImGui::OpenPopup("Details");
-                    openDetails = false;
-                }
-
                 ImGui::SetNextWindowSize(ImVec2(500, 0));
                 if (ImGui::BeginPopup("Edit Config")) {
 #ifndef _WIN32 || GAME_BUILD
@@ -1335,6 +1362,29 @@ int main(int argc, char **argv) {
                     ImGui::Checkbox("Resizable", &config.resizable);
                     ImGui::DragInt("Width", &config.width, 1, 0, 1920);
                     ImGui::DragInt("Height", &config.height, 1, 0, 1080);
+
+                    if(ImGui::TreeNode("Post Processing")) {
+                        ImGui::Checkbox("Enabled", &config.postProcessing.enabled);
+
+                        if(ImGui::TreeNode("Chromatic Aberration")) {
+                            ImGui::DragFloat("Strength", &config.postProcessing.chromaticAberration.intensity, 0.001f, 0);
+                            ImGui::TreePop();
+                        }
+
+                        if(ImGui::TreeNode("Bloom")) {
+                            ImGui::Checkbox("Enabled", &config.postProcessing.bloom.enabled);
+                            ImGui::DragFloat("Threshold", &config.postProcessing.bloom.threshold, 0.001f, 0);
+                            ImGui::TreePop();
+                        }
+
+                        if(ImGui::TreeNode("Vignette")) {
+                            ImGui::DragFloat("Strength", &config.postProcessing.vignette.intensity, 0.01f, 0);
+                            ImGui::TreePop();
+                        }
+
+                        ImGui::TreePop();
+                    }
+
                     if (ImGui::Button("Main Scene", ImVec2(500, 0))) {
                         ImGuiFileDialog::Instance()->OpenDialog("ChooseMainScene", "Choose Main Scene", ".vault", ".");
 #ifndef _WIN32 || GAME_BUILD
@@ -1390,24 +1440,24 @@ int main(int argc, char **argv) {
                 }
 
                 // docking with mutli-viewport
-                if (ImGui::BeginPopup("Details")) {
-                    ImGui::Text("Vendor: %s", glGetString(GL_VENDOR));
-                    ImGui::Text("Renderer: %s", glGetString(GL_RENDERER));
-                    ImGui::Text("Version: %s", glGetString(GL_VERSION));
-                    ImGui::Text("Shading Language Version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
-                    ImGui::Text(fpsText.c_str());
+                if(openDetails) {
+                    if (ImGui::Begin("Details", &openDetails)) {
+                        ImGui::Text("Vendor: %s", glGetString(GL_VENDOR));
+                        ImGui::Text("Renderer: %s", glGetString(GL_RENDERER));
+                        ImGui::Text("Version: %s", glGetString(GL_VERSION));
+                        ImGui::Text("Shading Language Version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+                        ImGui::Text("%s", fpsText.c_str());
+                        auto vram = app.renderer->GetVRamUsage();
+                        ImGui::Text("VRAM: %d MB / %d MB", vram.first, vram.second);
 
-#ifndef _WIN32 || GAME_BUILD
-                    UpdatePresence(
-                            "In Editor",
-                            "Checking Details"
-                    );
-#endif
-
-                    if (ImGui::Button("Close")) {
-                        ImGui::CloseCurrentPopup();
+    #ifndef _WIN32 || GAME_BUILD
+                        UpdatePresence(
+                                "In Editor",
+                                "Checking Details"
+                        );
+    #endif
+                        ImGui::End();
                     }
-                    ImGui::EndPopup();
                 }
 
                 if (ImGui::Begin(ICON_FA_CODE" Text Editor")) {
@@ -1500,9 +1550,17 @@ int main(int argc, char **argv) {
                         glm::mat4 transformMat = transform.transform;
                         glm::vec3 originalRot = transform.rotation;
 
+                        bool snap = Input::IsKeyPressed(KEY_LEFT_CONTROL);
+                        float snapValue = 0.5f;
+
+                        if (m_GuizmoMode == ImGuizmo::OPERATION::ROTATE)
+                            snapValue = 45.0f;
+
+                        float snapValues[3] = { snapValue, snapValue, snapValue };
+
                         ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection),
                                              (ImGuizmo::OPERATION) m_GuizmoMode, ImGuizmo::WORLD,
-                                             glm::value_ptr(transformMat));
+                                             glm::value_ptr(transformMat), nullptr, snap ? snapValues : nullptr);
 
                         if (ImGuizmo::IsOver()) {
                             usingImGuizmo = true;
@@ -2143,9 +2201,279 @@ int main(int argc, char **argv) {
                             ImGui::CloseCurrentPopup();
                         }
 
+                        if(ImGui::Button(ICON_FA_PAINTBRUSH " Shader", ImVec2(200, 0))) {
+#ifdef _WIN32
+                            fs::path p = fs::path(currentDirectory.string() + "\\new_shader.glsl");
+#else
+                            fs::path p = fs::path(currentDirectory.string() + "/new_shader.glsl");
+#endif
+
+                            if(!fs::exists(p)) {
+                                std::ofstream file(p);
+                                std::string shader = R"(
+                                    #shader vertex
+                                    #version 330 core
+                                    layout(location = 0) in vec3 position;
+                                    layout(location = 1) in vec3 color;
+                                    layout(location = 2) in vec3 aNormal;
+                                    layout(location = 3) in vec2 g_texCoords;
+                                    layout(location = 4) in ivec4 boneIds;
+                                    layout(location = 5) in vec4 weights;
+                                    layout(location = 6) in vec3 tangent;
+                                    layout(location = 7) in vec3 bitangent;
+
+                                    uniform mat4 camera;
+                                    uniform mat4 translation;
+                                    uniform mat4 rotation;
+                                    uniform mat4 scale;
+                                    uniform mat4 model;
+                                    uniform mat4 lightSpaceMatrix;
+                                    uniform vec3 cameraPosition;
+                                    uniform vec2 texUvOffset;
+
+                                    out DATA {
+                                        vec2 texCoords;
+                                        vec3 Color;
+                                        vec3 Normal;
+                                        vec3 currentPosition;
+                                        vec3 reflectedVector;
+                                        vec4 fragPosLight;
+                                        mat4 projection;
+                                        mat4 model;
+                                        vec3 T;
+                                        vec3 B;
+                                        vec3 N;
+                                    } data_out;
+
+                                    const int MAX_BONES = 100;
+                                    const int MAX_BONE_INFLUENCE = 4;
+                                    uniform mat4 finalBonesMatrices[MAX_BONES];
+
+                                    void main() {
+                                        vec4 totalPosition = vec4(0);
+
+                                        for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
+                                        {
+                                            if(boneIds[i] == -1) {
+                                                continue;
+                                            }
+
+                                            if(boneIds[i] >=MAX_BONES)
+                                            {
+                                                totalPosition = vec4(position, 1.0f);
+                                                break;
+                                            }
+
+                                            vec4 localPosition = finalBonesMatrices[boneIds[i]] * vec4(position, 1.0f);
+                                            totalPosition += localPosition * weights[i];
+                                            vec3 localNormal = mat3(finalBonesMatrices[boneIds[i]]) * aNormal;
+                                        }
+                                        if(totalPosition == vec4(0))
+                                        {
+                                            totalPosition = vec4(position, 1.0f);
+                                        }
+
+                                        vec4 worldPosition = model * translation * rotation * scale * totalPosition;
+                                        data_out.currentPosition = vec3(model * translation * rotation * scale * totalPosition);
+                                        data_out.projection = camera;
+                                        gl_Position = vec4(data_out.currentPosition, 1.0);
+                                        data_out.model = model * translation * rotation * scale;
+
+                                        vec2 finalCoords = g_texCoords;
+
+                                        if(finalCoords.x > 0) {
+                                            finalCoords.x = finalCoords.x + texUvOffset.x;
+                                        }
+
+                                        if(finalCoords.y > 0) {
+                                            finalCoords.y = finalCoords.y + texUvOffset.y;
+                                        }
+
+                                        data_out.texCoords = finalCoords;
+                                        data_out.Color = color;
+                                        // make normal apply rotation
+                                        data_out.Normal = mat3(transpose(inverse(model))) * aNormal;
+                                        // Normal = aNormal;
+
+                                        data_out.fragPosLight = lightSpaceMatrix * vec4(data_out.currentPosition, 1.0);
+
+                                        vec3 viewVector = normalize(worldPosition.xyz - cameraPosition);
+                                        data_out.reflectedVector = reflect(viewVector, data_out.Normal);
+
+                                        vec3 T   = normalize(mat3(model) * tangent);
+                                        vec3 B   = normalize(mat3(model) * bitangent);
+                                        vec3 N   = normalize(mat3(model) * data_out.Normal);
+
+                                        data_out.T = T;
+                                        data_out.B = B;
+                                        data_out.N = N;
+                                    }
+                                    #shader fragment
+                                    #version 330 core
+
+                                    layout(location = 0) out vec4 FragColor;
+                                    layout(location = 1) out vec4 BloomColor;
+                                    layout(location = 2) out uint EntityID;
+
+                                    in vec2 texCoords;
+                                    in vec3 Color;
+                                    in vec3 Normal;
+                                    in vec3 currentPosition;
+                                    in vec3 reflectedVector;
+                                    in vec4 fragPosLight;
+                                    in mat3 m_TBN;
+
+                                    struct PointLight {
+                                        vec3 lightPos;
+                                        vec3 color;
+                                        float intensity;
+                                    };
+
+                                    struct SpotLight {
+                                        vec3 lightPos;
+                                        vec3 color;
+                                        vec3 angle;
+                                    };
+
+                                    struct DirectionalLight {
+                                        vec3 lightPos;
+                                        vec3 color;
+                                        float intensity;
+                                    };
+
+                                    struct Light2D {
+                                        vec2 lightPos;
+                                        vec3 color;
+                                        float range;
+                                    };
+
+                                    uniform float ambient;
+                                    #define MAX_LIGHTS 60
+                                    uniform PointLight pointLights[MAX_LIGHTS];
+                                    uniform Light2D light2ds[MAX_LIGHTS];
+                                    uniform SpotLight spotLights[MAX_LIGHTS];
+                                    uniform DirectionalLight dirLights[MAX_LIGHTS];
+
+                                    uniform int isTex;
+                                    uniform samplerCube cubeMap;
+                                    uniform vec3 cameraPosition;
+
+                                    //Material properties
+                                    uniform sampler2D texture_diffuse0;
+                                    uniform sampler2D texture_specular0;
+                                    uniform sampler2D texture_normal0;
+                                    uniform sampler2D texture_height0;
+                                    uniform sampler2D texture_emission0;
+                                    uniform vec4 baseColor;
+                                    uniform vec3 u_BloomColor;
+                                    uniform float metallic;
+                                    uniform float roughness;
+
+                                    //texture setters
+                                    uniform int hasNormalMap;
+                                    uniform int hasHeightMap;
+
+                                    //global textures
+                                    uniform sampler2D shadowMap;
+
+                                    vec4 reflectedColor = texture(cubeMap, reflectedVector);
+                                    float specularTexture = texture(texture_specular0, texCoords).r;
+
+                                    float near = 0.1;
+                                    float far = 100.0;
+
+                                    uniform uint u_EntityID;
+
+                                    // Post Processing uniforms
+                                    uniform int globalBloom;
+                                    uniform float bloomThreshold;
+
+                                    void main() {
+                                        FragColor = texture(texture_diffuse0, texCoords);
+                                        EntityID = u_EntityID;
+                                    }
+
+                                    #shader geometry
+                                    #version 330 core
+                                    layout(triangles) in;
+                                    layout(triangle_strip, max_vertices = 3) out;
+
+                                    out vec2 texCoords;
+                                    out vec3 Color;
+                                    out vec3 Normal;
+                                    out vec3 currentPosition;
+                                    out vec3 reflectedVector;
+                                    out vec4 fragPosLight;
+                                    out mat3 m_TBN;
+
+                                    in DATA {
+                                        vec2 texCoords;
+                                        vec3 Color;
+                                        vec3 Normal;
+                                        vec3 currentPosition;
+                                        vec3 reflectedVector;
+                                        vec4 fragPosLight;
+                                        mat4 projection;
+                                        mat4 model;
+                                        vec3 T;
+                                        vec3 B;
+                                        vec3 N;
+                                    } data_in[];
+
+                                    void main() {
+                                        gl_Position = data_in[0].projection * gl_in[0].gl_Position;
+                                        Normal = data_in[0].Normal;
+                                        Color = data_in[0].Color;
+                                        currentPosition = gl_in[0].gl_Position.xyz;
+                                        reflectedVector = data_in[0].reflectedVector;
+                                        fragPosLight = data_in[0].fragPosLight;
+                                        texCoords = data_in[0].texCoords;
+                                        m_TBN = TBN;
+                                        EmitVertex();
+
+                                        gl_Position = data_in[1].projection * gl_in[1].gl_Position;
+                                        Normal = data_in[1].Normal;
+                                        Color = data_in[1].Color;
+                                        currentPosition = gl_in[1].gl_Position.xyz;
+                                        reflectedVector = data_in[1].reflectedVector;
+                                        fragPosLight = data_in[1].fragPosLight;
+                                        texCoords = data_in[1].texCoords;
+                                        m_TBN = TBN;
+                                        EmitVertex();
+
+                                        gl_Position = data_in[2].projection * gl_in[2].gl_Position;
+                                        Normal = data_in[2].Normal;
+                                        Color = data_in[2].Color;
+                                        currentPosition = gl_in[2].gl_Position.xyz;
+                                        reflectedVector = data_in[2].reflectedVector;
+                                        fragPosLight = data_in[2].fragPosLight;
+                                        texCoords = data_in[2].texCoords;
+                                        m_TBN = TBN;
+                                        EmitVertex();
+
+                                        EndPrimitive();
+                                    }
+                                )";
+
+
+                                std::string newShader;
+                                std::stringstream ss(shader);
+                                std::string line;
+                                while (std::getline(ss, line)) {
+                                    // replace "                                    " with "" using regex
+                                    newShader += std::regex_replace(line, std::regex("                                    "), "") + "\n";
+                                }
+                                file << newShader;
+
+                                file.close();
+                            }
+                            
+                            ImGui::CloseCurrentPopup();
+                        }
+
                         if (ImGui::Button(ICON_FA_FILE " Material", ImVec2(200, 0))) {
 #ifdef _WIN32
-                            fs::path p = fs::path(currentDirectory.string() + "/New Material.material");
+                            fs::path p = fs::path(currentDirectory.string() + "\\New Material.material");
 #else
                             fs::path p = fs::path(currentDirectory.string() + "/New Material.material");
 #endif
@@ -2348,12 +2676,21 @@ int main(int argc, char **argv) {
 
     float wheel = 0;
 
+    // infinite grid
+#ifndef GAME_BUILD
+    Mesh *gridMesh = Plane(Vector4(1,0,0,1)).m_Mesh;
+#endif 
+
     app.Run([&](uint32_t &shadowMapTex) {
         shader.Bind();
         shader.SetUniform1i("shadowMap", GL_TEXTURE7);
         shader.SetUniformMat4("lightSpaceMatrix", Scene::projection);
 
         if (Scene::LoadingScene) return;
+
+        // std::vector<Shader*> shaders = {&shader};
+        PostProcessingEffects(shader, camera);
+
         app.exposure = config.exposure;
         app.isGuzimoInUse = usingImGuizmo;
 
@@ -2532,14 +2869,6 @@ int main(int argc, char **argv) {
         shader.Bind();
         shader.SetUniform1f("ambient", config.ambientLight);
 
-        spriteShader.Bind();
-        spriteShader.SetUniform1f("ambient", config.ambientLight);
-
-        batchShader.Bind();
-        batchShader.SetUniform1f("ambient", config.ambientLight);
-
-        // Physics
-
         if (HyperAPI::isRunning && Scene::world != nullptr) {
             const int32_t velocityIterations = 6;
             const int32_t positionIterations = 2;
@@ -2692,6 +3021,10 @@ int main(int argc, char **argv) {
         glCullFace(GL_BACK);
         glFrontFace(GL_CCW);
 
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        // disable wireframe mode
+        // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         for (auto &layer : Scene::layers) {
             bool notInCameraLayer = true;
             for (auto &camLayer : Scene::mainCamera->layers) {
@@ -2719,6 +3052,16 @@ int main(int argc, char **argv) {
 
                     glm::mat4 extra = meshRenderer.extraMatrix;
 
+                    glm::mat4 m_parentTransform = glm::mat4(1.0f);
+                
+                    for (auto &go : Scene::m_GameObjects) {
+                        if (go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
+                            auto &parentTransform = go->GetComponent<Transform>();
+                            parentTransform.Update();
+                            m_parentTransform = parentTransform.transform;
+                        }
+                    }
+
                     if (meshRenderer.m_Mesh != nullptr) {
                         shader.Bind();
                         shader.SetUniformMat4("lightSpaceMatrix", Scene::projection);
@@ -2727,23 +3070,17 @@ int main(int argc, char **argv) {
                             glStencilFunc(GL_ALWAYS, 1, 0xFF);
                             glStencilMask(0xFF);
                         }
-                        if (transform.parentTransform != nullptr) {
-                            transform.position += transform.parentTransform->position;
-                            transform.rotation += transform.parentTransform->rotation;
-                            transform.scale *= transform.parentTransform->scale;
-                            transform.Update();
-                        }
 
                         meshRenderer.m_Mesh->enttId = (uint32_t)gameObject->entity;
-                        glActiveTexture(GL_TEXTURE20);
-                        glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
+                        glActiveTexture(GL_TEXTURE21);
+                        glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture); 
 
                         if(meshRenderer.meshType == "Plane") {
                             glDisable(GL_CULL_FACE);
-                            meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera, transform.transform * extra);
+                            meshRenderer.m_Mesh->Draw(meshRenderer.customShader.usingCustomShader ? *meshRenderer.customShader.shader : shader, *Scene::mainCamera, transform.transform * extra * m_parentTransform);
                             glEnable(GL_CULL_FACE);
                         } else {
-                            meshRenderer.m_Mesh->Draw(shader, *Scene::mainCamera, transform.transform * extra);
+                            meshRenderer.m_Mesh->Draw(meshRenderer.customShader.usingCustomShader ? *meshRenderer.customShader.shader : shader, *Scene::mainCamera, transform.transform * extra * m_parentTransform);
                         }
                     }
                 }
@@ -2757,23 +3094,22 @@ int main(int argc, char **argv) {
 
                     auto spriteRenderer = gameObject->GetComponent<SpriteRenderer>();
                     auto transform = gameObject->GetComponent<Transform>();
-                    transform.Update();
-
+                    glm::mat4 m_parentTransform = glm::mat4(1.0f);
+                
                     for (auto &go : Scene::m_GameObjects) {
                         if (go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
                             auto &parentTransform = go->GetComponent<Transform>();
-                            transform.position += parentTransform.position;
-                            transform.rotation += parentTransform.rotation;
-                            transform.scale *= parentTransform.scale;
+                            parentTransform.Update();
+                            m_parentTransform = parentTransform.transform;
                         }
                     }
 
-                    glActiveTexture(GL_TEXTURE20);
+                    glActiveTexture(GL_TEXTURE21);
                     glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
 
                     spriteRenderer.mesh->enttId = (uint32_t)gameObject->entity;
                     glDisable(GL_CULL_FACE);
-                    spriteRenderer.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
+                    spriteRenderer.mesh->Draw(spriteRenderer.customShader.usingCustomShader ? *spriteRenderer.customShader.shader : shader, *Scene::mainCamera, transform.transform * m_parentTransform);
                     glEnable(GL_CULL_FACE);
                 }
 
@@ -2788,23 +3124,24 @@ int main(int argc, char **argv) {
                     auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
 
+                    glm::mat4 m_parentTransform = glm::mat4(1.0f);
+                
                     for (auto &go : Scene::m_GameObjects) {
                         if (go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
                             auto &parentTransform = go->GetComponent<Transform>();
-                            transform.position += parentTransform.position;
-                            transform.rotation += parentTransform.rotation;
-                            transform.scale *= parentTransform.scale;
+                            parentTransform.Update();
+                            m_parentTransform = parentTransform.transform;
                         }
                     }
 
-                    glActiveTexture(GL_TEXTURE20);
+                    glActiveTexture(GL_TEXTURE21);
                     glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
 
                     // disable face culling
                     glDisable(GL_CULL_FACE);
                     if (spritesheetRenderer.mesh != nullptr) {
                         spritesheetRenderer.mesh->enttId = (uint32_t)gameObject->entity;
-                        spritesheetRenderer.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
+                        spritesheetRenderer.mesh->Draw(spritesheetRenderer.customShader.usingCustomShader ? *spritesheetRenderer.customShader.shader : shader, *Scene::mainCamera, transform.transform * m_parentTransform);
                     }
                     glEnable(GL_CULL_FACE);
                 }
@@ -2820,21 +3157,22 @@ int main(int argc, char **argv) {
                     auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
 
-                    spriteAnimation.Play();
-
+                    glm::mat4 m_parentTransform = glm::mat4(1.0f);
+                
                     for (auto &go : Scene::m_GameObjects) {
                         if (go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
                             auto &parentTransform = go->GetComponent<Transform>();
-                            transform.position += parentTransform.position;
-                            transform.rotation += parentTransform.rotation;
-                            transform.scale *= parentTransform.scale;
+                            parentTransform.Update();
+                            m_parentTransform = parentTransform.transform;
                         }
                     }
 
+                    spriteAnimation.Play();
+
                     if (spriteAnimation.currMesh != nullptr) {
                         spriteAnimation.currMesh->enttId = (uint32_t)gameObject->entity;
-                        spriteAnimation.currMesh->Draw(shader, *Scene::mainCamera);
-                        glDisable(GL_BLEND);
+                        spriteAnimation.currMesh->Draw(spriteAnimation.customShader.usingCustomShader ? *spriteAnimation.customShader.shader : shader, *Scene::mainCamera, transform.transform * m_parentTransform);
+                        // glDisable(GL_BLEND);
                     }
                 }
 
@@ -2849,32 +3187,45 @@ int main(int argc, char **argv) {
                     auto transform = gameObject->GetComponent<Transform>();
                     transform.Update();
 
+                    glm::mat4 m_parentTransform = glm::mat4(1.0f);
+                
                     for (auto &go : Scene::m_GameObjects) {
                         if (go->ID == gameObject->parentID && go->HasComponent<Transform>()) {
                             auto &parentTransform = go->GetComponent<Transform>();
-                            transform.position += parentTransform.position;
-                            transform.rotation += parentTransform.rotation;
-                            transform.scale *= parentTransform.scale;
+                            parentTransform.Update();
+                            m_parentTransform = parentTransform.transform;
                         }
                     }
 
                     spritesheetAnimation.Play();
                     spritesheetAnimation.Update();
 
-                    glActiveTexture(GL_TEXTURE20);
+                    glActiveTexture(GL_TEXTURE21);
                     glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
 
                     glDisable(GL_CULL_FACE);
                     if (spritesheetAnimation.mesh != nullptr) {
                         spritesheetAnimation.mesh->enttId = (uint32_t)gameObject->entity;
-                        spritesheetAnimation.mesh->Draw(shader, *Scene::mainCamera, transform.transform);
-                        glDisable(GL_BLEND);
+                        spritesheetAnimation.mesh->Draw(spritesheetAnimation.customShader.usingCustomShader ? *spritesheetAnimation.customShader.shader : shader, *Scene::mainCamera, transform.transform * m_parentTransform);
+                        // glDisable(GL_BLEND);
                     }
                     glEnable(GL_CULL_FACE);
                 }
             }
         }
+        glDisable(GL_BLEND);
         glDisable(GL_CULL_FACE);
+
+        // Grid
+        // clear depth buffer
+        // glClear(GL_DEPTH_BUFFER_BIT);
+        // if(Scene::mainCamera == camera) {
+        //     Transform transform;
+        //     transform.position = glm::vec3(0.0f, 0.0f, 0.0f);
+        //     transform.scale = glm::vec3(100.0f, 100.0f, 100.0f);
+        //     gridMesh->Draw(gridShader, *camera, transform.transform);
+        // }
+        // // Grid
 
         for(uint32_t i = 0; i < 32; i++) {
             // unbind all texture
@@ -3198,7 +3549,7 @@ int main(int argc, char **argv) {
                         }
 
                         meshRenderer.m_Mesh->enttId = (uint32_t)gameObject->entity;
-                        glActiveTexture(GL_TEXTURE20);
+                        glActiveTexture(GL_TEXTURE21);
                         glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
 
                         if(meshRenderer.meshType == "Plane") {
@@ -3231,7 +3582,7 @@ int main(int argc, char **argv) {
                         }
                     }
 
-                    glActiveTexture(GL_TEXTURE20);
+                    glActiveTexture(GL_TEXTURE21);
                     glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
 
                     spriteRenderer.mesh->enttId = (uint32_t)gameObject->entity;
@@ -3260,7 +3611,7 @@ int main(int argc, char **argv) {
                         }
                     }
 
-                    glActiveTexture(GL_TEXTURE20);
+                    glActiveTexture(GL_TEXTURE21);
                     glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
 
                     // disable face culling
@@ -3297,7 +3648,7 @@ int main(int argc, char **argv) {
                     if (spriteAnimation.currMesh != nullptr) {
                         spriteAnimation.currMesh->enttId = (uint32_t)gameObject->entity;
                         spriteAnimation.currMesh->Draw(m_shadowMapShader, *Scene::mainCamera);
-                        glDisable(GL_BLEND);
+                        // glDisable(GL_BLEND);
                     }
                 }
 
@@ -3324,14 +3675,14 @@ int main(int argc, char **argv) {
                     spritesheetAnimation.Play();
                     spritesheetAnimation.Update();
 
-                    glActiveTexture(GL_TEXTURE20);
+                    glActiveTexture(GL_TEXTURE21);
                     glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.cubemapTexture);
 
                     glDisable(GL_CULL_FACE);
                     if (spritesheetAnimation.mesh != nullptr) {
                         spritesheetAnimation.mesh->enttId = (uint32_t)gameObject->entity;
                         spritesheetAnimation.mesh->Draw(m_shadowMapShader, *Scene::mainCamera, transform.transform);
-                        glDisable(GL_BLEND);
+                        // glDisable(GL_BLEND);
                     }
                     glEnable(GL_CULL_FACE);
                 }

@@ -9,13 +9,6 @@ layout(location = 5) in vec4 weights;
 layout(location = 6) in vec3 tangent;
 layout(location = 7) in vec3 bitangent;
 
-//out vec2 texCoords;
-//out vec3 Color;
-//out vec3 Normal;
-//out vec3 currentPosition;
-//out vec3 reflectedVector;
-//out vec4 fragPosLight;
-
 uniform mat4 camera;
 uniform mat4 translation;
 uniform mat4 rotation;
@@ -25,19 +18,27 @@ uniform mat4 lightSpaceMatrix;
 uniform vec3 cameraPosition;
 uniform vec2 texUvOffset;
 
-out DATA {
-    vec2 texCoords;
-    vec3 Color;
-    vec3 Normal;
-    vec3 currentPosition;
-    vec3 reflectedVector;
-    vec4 fragPosLight;
-    mat4 projection;
-    mat4 model;
-    vec3 T;
-    vec3 B;
-    vec3 N;
-} data_out;
+// out DATA {
+//     vec2 texCoords;
+//     vec3 Color;
+//     vec3 Normal;
+//     vec3 currentPosition;
+//     vec3 reflectedVector;
+//     vec4 fragPosLight;
+//     mat4 projection;
+//     mat4 model;
+//     vec3 T;
+//     vec3 B;
+//     vec3 N;
+// } data_out;
+out vec2 texCoords;
+out vec3 Color;
+out vec3 Normal;
+out vec3 currentPosition;
+out vec3 reflectedVector;
+out vec4 fragPosLight;
+out mat4 projection;
+out mat3 m_TBN;
 
 const int MAX_BONES = 100;
 const int MAX_BONE_INFLUENCE = 4;
@@ -68,39 +69,44 @@ void main() {
     }
 
     vec4 worldPosition = model * translation * rotation * scale * totalPosition;
-    data_out.currentPosition = vec3(model * translation * rotation * scale * totalPosition);
-    data_out.projection = camera;
-    gl_Position = vec4(data_out.currentPosition, 1.0);
-    data_out.model = model * translation * rotation * scale;
+    currentPosition = vec3(model * translation * rotation * scale * totalPosition);
+    projection = camera;
+    gl_Position = camera * vec4(currentPosition, 1.0);
 
-    vec2 finalCoords = g_texCoords;
+    // vec2 finalCoords = g_texCoords;
 
-    if(finalCoords.x > 0) {
-        finalCoords.x = finalCoords.x + texUvOffset.x;
+    // if(finalCoords.x > 0) {
+    //     finalCoords.x = finalCoords.x + texUvOffset.x;
+    // }
+
+    // if(finalCoords.y > 0) {
+    //     finalCoords.y = finalCoords.y + texUvOffset.y;
+    // }
+
+    texCoords = g_texCoords;
+    if(texUvOffset.x > 0) {
+        texCoords.x *= texUvOffset.x;
+    } 
+    if(texUvOffset.y > 0) {
+        texCoords.y *= texUvOffset.y;
     }
 
-    if(finalCoords.y > 0) {
-        finalCoords.y = finalCoords.y + texUvOffset.y;
-    }
-
-    data_out.texCoords = finalCoords;
-    data_out.Color = color;
+    Color = color;
     // make normal apply rotation
-    data_out.Normal = mat3(transpose(inverse(model))) * aNormal;
+    Normal = mat3(transpose(inverse(model))) * aNormal;
     // Normal = aNormal;
 
-    data_out.fragPosLight = lightSpaceMatrix * vec4(data_out.currentPosition, 1.0);
+    fragPosLight = lightSpaceMatrix * vec4(currentPosition, 1.0);
 
     vec3 viewVector = normalize(worldPosition.xyz - cameraPosition);
-    data_out.reflectedVector = reflect(viewVector, data_out.Normal);
+    reflectedVector = reflect(viewVector, Normal);
 
-    vec3 T   = normalize(mat3(model) * tangent);
-    vec3 B   = normalize(mat3(model) * bitangent);
-    vec3 N   = normalize(mat3(model) * data_out.Normal);
+    // calculate tangent/bitangent of the current vertex
+    vec3 T = normalize(tangent);
+    vec3 B = normalize(bitangent);
+    vec3 N = normalize(Normal);
 
-    data_out.T = T;
-    data_out.B = B;
-    data_out.N = N;
+    m_TBN = transpose(mat3(T, B, N));
 }
 
 #shader fragment
@@ -111,13 +117,22 @@ layout(location = 1) out vec4 BloomColor;
 // entity data that is unsigned int
 layout(location = 2) out uint EntityID;
 
+// in vec2 texCoords;
+// in vec3 Color;
+// in vec3 Normal;
+// in vec3 currentPosition;
+// in vec3 reflectedVector;
+// in vec4 fragPosLight;
+in mat3 m_TBN;
+
 in vec2 texCoords;
 in vec3 Color;
 in vec3 Normal;
 in vec3 currentPosition;
 in vec3 reflectedVector;
 in vec4 fragPosLight;
-in mat3 m_TBN;
+in mat4 projection;
+// out mat4 model;
 
 struct PointLight {
     vec3 lightPos;
@@ -196,7 +211,8 @@ vec4 pointLight(PointLight light) {
 
     vec3 lightVec = light.lightPos - currentPosition;
     if(hasNormalMap == 1) {
-        lightVec = (m_TBN * light.lightPos) - (m_TBN * currentPosition);
+        // tbn
+        lightVec = m_TBN * lightVec;
     } else {
         lightVec = light.lightPos - currentPosition;
     }
@@ -204,7 +220,9 @@ vec4 pointLight(PointLight light) {
     vec3 normal;
     if(isTex == 1 && hasNormalMap == 1) {
         vec4 normalTex = texture(texture_normal0, texCoords);
-        normal = normalize(normalTex.rgb * 2.0 - 1.0);
+        normal = normalize(normalTex.xyz * 2.0 - 1.0);
+        // tbn
+        normal = m_TBN * normal;
     } else {
         normal = normalize(Normal);
     }
@@ -222,7 +240,8 @@ vec4 pointLight(PointLight light) {
         float specularLight = 0.5;
         vec3 viewDirection;
         if(hasNormalMap == 1) {
-            viewDirection = normalize((m_TBN * cameraPosition) - (m_TBN * currentPosition));
+            // tbn 
+            viewDirection = normalize(m_TBN * (cameraPosition - currentPosition));
         } else {
             viewDirection = normalize(cameraPosition - currentPosition);
         }
@@ -415,10 +434,9 @@ float far = 100.0;
 
 uniform uint u_EntityID;
 
-// vec4 fog() {
-//     float depth = logisticDepth(gl_FragCoord.z);
-//     return (directionalLight() * (1 - depth) + vec4(depth * vec3(0.85, 0.85, 0.90), 1));
-// }
+// Post Processing uniforms
+uniform int globalBloom;
+uniform float bloomThreshold;
 
 void main() {
     vec4 normalTex = texture(texture_normal0, texCoords);
@@ -463,8 +481,14 @@ void main() {
             result += light2d(light2ds[i]);
         }
     }
-
+    result.a = baseColor.a;
     FragColor = result;
+
+    float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    if(brightness > bloomThreshold && globalBloom == 0) {
+        // BloomColor = FragColor;
+    }
+
     if((u_BloomColor.r > 0.5 || u_BloomColor.g > 0.5 || u_BloomColor.b > 0.5)
     && (u_BloomColor.r < 0.7 || u_BloomColor.g < 0.7 || u_BloomColor.b < 0.7)) {
         FragColor = result * (u_BloomColor.r * 20);
@@ -486,84 +510,85 @@ void main() {
             BloomColor = emission;
         }
     }
+    FragColor.a = baseColor.a;
 
     EntityID = u_EntityID;
 }
 
-#shader geometry
-#version 330 core
-layout(triangles) in;
-layout(triangle_strip, max_vertices = 3) out;
+// #shader geometry
+// #version 330 core
+// layout(triangles) in;
+// layout(triangle_strip, max_vertices = 3) out;
 
-out vec2 texCoords;
-out vec3 Color;
-out vec3 Normal;
-out vec3 currentPosition;
-out vec3 reflectedVector;
-out vec4 fragPosLight;
-out mat3 m_TBN;
+// out vec2 texCoords;
+// out vec3 Color;
+// out vec3 Normal;
+// out vec3 currentPosition;
+// out vec3 reflectedVector;
+// out vec4 fragPosLight;
+// out mat3 m_TBN;
 
-in DATA {
-    vec2 texCoords;
-    vec3 Color;
-    vec3 Normal;
-    vec3 currentPosition;
-    vec3 reflectedVector;
-    vec4 fragPosLight;
-    mat4 projection;
-    mat4 model;
-    vec3 T;
-    vec3 B;
-    vec3 N;
-} data_in[];
+// in DATA {
+//     vec2 texCoords;
+//     vec3 Color;
+//     vec3 Normal;
+//     vec3 currentPosition;
+//     vec3 reflectedVector;
+//     vec4 fragPosLight;
+//     mat4 projection;
+//     mat4 model;
+//     vec3 T;
+//     vec3 B;
+//     vec3 N;
+// } data_in[];
 
-void main() {
-    vec3 edge0 = gl_in[1].gl_Position.xyz - gl_in[0].gl_Position.xyz;
-    vec3 edge1 = gl_in[2].gl_Position.xyz - gl_in[0].gl_Position.xyz;
-    vec2 deltaUV0 = data_in[1].texCoords - data_in[0].texCoords;
-    vec2 deltaUV1 = data_in[2].texCoords - data_in[0].texCoords;
+// void main() {
+//     vec3 edge0 = gl_in[1].gl_Position.xyz - gl_in[0].gl_Position.xyz;
+//     vec3 edge1 = gl_in[2].gl_Position.xyz - gl_in[0].gl_Position.xyz;
+//     vec2 deltaUV0 = data_in[1].texCoords - data_in[0].texCoords;
+//     vec2 deltaUV1 = data_in[2].texCoords - data_in[0].texCoords;
 
-    float invDet = 1.0f / (deltaUV0.x * deltaUV1.y - deltaUV1.x * deltaUV0.y);
+//     float invDet = 1.0f / (deltaUV0.x * deltaUV1.y - deltaUV1.x * deltaUV0.y);
 
-    vec3 tangent = vec3(invDet * (deltaUV1.y * edge0 - deltaUV0.y * edge1));
-    vec3 bitangent = vec3(invDet * (-deltaUV1.x * edge0 + deltaUV0.x * edge1));
+//     vec3 tangent = vec3(invDet * (deltaUV1.y * edge0 - deltaUV0.y * edge1));
+//     vec3 bitangent = vec3(invDet * (-deltaUV1.x * edge0 + deltaUV0.x * edge1));
 
-    vec3 T = normalize(vec3(data_in[0].model * vec4(tangent, 0.0f)));
-    vec3 B = normalize(vec3(data_in[0].model * vec4(bitangent, 0.0f)));
-    vec3 N = normalize(vec3(data_in[0].model * vec4(cross(edge1, edge0), 0.0f)));
+//     vec3 T = normalize(vec3(data_in[0].model * vec4(tangent, 0.0f)));
+//     vec3 B = normalize(vec3(data_in[0].model * vec4(bitangent, 0.0f)));
+//     vec3 N = normalize(vec3(data_in[0].model * vec4(cross(edge1, edge0), 0.0f)));
 
-    mat3 TBN = mat3(T, B, N);
-    TBN = transpose(TBN);
+//     mat3 TBN = mat3(T, B, N);
+//     TBN = transpose(TBN);
 
-    gl_Position = data_in[0].projection * gl_in[0].gl_Position;
-    Normal = data_in[0].Normal;
-    Color = data_in[0].Color;
-    currentPosition = gl_in[0].gl_Position.xyz;
-    reflectedVector = data_in[0].reflectedVector;
-    fragPosLight = data_in[0].fragPosLight;
-    texCoords = data_in[0].texCoords;
-    m_TBN = TBN;
-    EmitVertex();
+//     gl_Position = data_in[0].projection * gl_in[0].gl_Position;
+//     Normal = data_in[0].Normal;
+//     Color = data_in[0].Color;
+//     currentPosition = gl_in[0].gl_Position.xyz;
+//     reflectedVector = data_in[0].reflectedVector;
+//     fragPosLight = data_in[0].fragPosLight;
+//     texCoords = data_in[0].texCoords;
+//     m_TBN = TBN;
+//     EmitVertex();
 
-    gl_Position = data_in[1].projection * gl_in[1].gl_Position;
-    Normal = data_in[1].Normal;
-    Color = data_in[1].Color;
-    currentPosition = gl_in[1].gl_Position.xyz;
-    reflectedVector = data_in[1].reflectedVector;
-    fragPosLight = data_in[1].fragPosLight;
-    texCoords = data_in[1].texCoords;
-    m_TBN = TBN;
-    EmitVertex();
+//     gl_Position = data_in[1].projection * gl_in[1].gl_Position;
+//     Normal = data_in[1].Normal;
+//     Color = data_in[1].Color;
+//     currentPosition = gl_in[1].gl_Position.xyz;
+//     reflectedVector = data_in[1].reflectedVector;
+//     fragPosLight = data_in[1].fragPosLight;
+//     texCoords = data_in[1].texCoords;
+//     m_TBN = TBN;
+//     EmitVertex();
 
-    gl_Position = data_in[2].projection * gl_in[2].gl_Position;
-    Normal = data_in[2].Normal;
-    Color = data_in[2].Color;
-    currentPosition = gl_in[2].gl_Position.xyz;
-    reflectedVector = data_in[2].reflectedVector;
-    fragPosLight = data_in[2].fragPosLight;
-    texCoords = data_in[2].texCoords;
-    m_TBN = TBN;
-    EmitVertex();
+//     gl_Position = data_in[2].projection * gl_in[2].gl_Position;
+//     Normal = data_in[2].Normal;
+//     Color = data_in[2].Color;
+//     currentPosition = gl_in[2].gl_Position.xyz;
+//     reflectedVector = data_in[2].reflectedVector;
+//     fragPosLight = data_in[2].fragPosLight;
+//     texCoords = data_in[2].texCoords;
+//     m_TBN = TBN;
+//     EmitVertex();
 
-    EndPrimitive();
-}
+//     EndPrimitive();
+// }
