@@ -6,9 +6,9 @@
         "r": 1.0
     },
     "diffuse": "assets/textures/diffuse.png",
-    "height": "nullptr",
+    "height": "assets/textures/bricks2.jpg",
     "metallic": 0.0,
-    "normal": "assets/textures/normal.png",
+    "normal": "nullptr",
     "roughness": 0.0,
     "specular": "nullptr",
     "texUV": {

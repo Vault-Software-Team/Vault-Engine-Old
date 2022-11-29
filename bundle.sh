@@ -10,14 +10,23 @@ if [ "$PLATFORM" = "windows" ]; then
     else
         mkdir dist/windows
     fi
+
+    # if [ -d dist/windows/cpp_headers ]; then
+    #     rm -r dist/windows/cpp_headers
+    #     mkdir dist/windows/cpp_headers
+    # else
+    #     mkdir dist/windows/cpp_headers
+    # fi
     
+    cp -r src/lib dist/windows/cpp_headers/lib
+    cp -r src/vendor dist/windows/cpp_headers/vendor
     cp windows/win_build.exe dist/windows/win_build.exe
     cp windows/win_proj.exe dist/windows/Vault\ Engine.exe
-    cp *.dll dist/windows/
+    cp windows/*.dll dist/windows/
     cp -r assets dist/windows/assets
     cp -r imgui.ini dist/windows/imgui.ini
     cp -r shaders dist/windows/shaders
-    cp -r build dist/windows/build
+    cp -r build dist/windows/build 
 else 
     if [ -d dist/linux ]; then
         rm -r dist/linux

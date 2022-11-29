@@ -1,0 +1,11 @@
+Model Information:
+* title:	Maxwell The Cat
+* source:	https://sketchfab.com/3d-models/maxwell-the-cat-141a6a0dc2704fcb878125e3936b1248
+* author:	JZVFX (https://sketchfab.com/JZVFX)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Maxwell The Cat" (https://sketchfab.com/3d-models/maxwell-the-cat-141a6a0dc2704fcb878125e3936b1248) by JZVFX (https://sketchfab.com/JZVFX) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

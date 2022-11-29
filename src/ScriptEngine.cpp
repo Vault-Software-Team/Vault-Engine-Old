@@ -1634,7 +1634,7 @@ namespace ScriptEngine {
 
             if(gameObject != nullptr) {
                 auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
-                rigidbody.SetVelocity({lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4)});
+                rigidbody.SetVelocity({(float)lua_tonumber(L, 2), (float)lua_tonumber(L, 3), (float)lua_tonumber(L, 4)});
             }
 
             return 1;

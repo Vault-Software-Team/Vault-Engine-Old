@@ -10,7 +10,7 @@ function follow:OnUpdate()
 
     local transform = GetComponent("Transform");
     transform.positionX = target_transform.positionX;
-    transform.positionY = target_transform.positionY;
+    transform.positionZ = target_transform.positionZ + 0.5;
 
     UpdateComponent(transform);
 end

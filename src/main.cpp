@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <random>
 #include <memory>
 #include "lib/InputEvents.hpp"
@@ -6,11 +7,11 @@
 #include "lib/api.hpp"
 #include "lib/scene.hpp"
 #include "vendor/json/json.hpp"
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
 
 #ifndef _WIN32
 #include <unistd.h>
+#include <stdlib.h>
+#include <dlfcn.h>
 #else
 #include <direct.h>
 #endif
@@ -541,7 +542,7 @@ void UpdatePresence(
 
 #endif
 
-
+using namespace CppScripting;
 int main(int argc, char **argv) {
     if(argc > 1) {
 #ifdef _WIN32
@@ -614,13 +615,28 @@ int main(int argc, char **argv) {
         config.mainScene = JSON["mainScene"];
         config.resizable = JSON["resizable"];
         config.fullscreenOnLaunch = JSON["fullscreen_on_launch"];
+        strcpy(config.linuxCompiler, ((std::string)JSON["linux_compiler"]).c_str());
+        strcpy(config.windowsCompiler, ((std::string)JSON["windows_compiler"]).c_str());
         for (auto &layer : JSON["layers"]) {
             Scene::layers[(std::string) layer] = true;
         }
         mainSceneFound = true;
+
+        if(JSON.contains("post_processing")) {
+            config.postProcessing.enabled = JSON["post_processing"]["enabled"];
+            config.postProcessing.bloom.enabled = JSON["post_processing"]["bloom"]["enabled"];
+            config.postProcessing.bloom.threshold = JSON["post_processing"]["bloom"]["threshold"];
+            
+            config.postProcessing.vignette.intensity = JSON["post_processing"]["vignette"]["intensity"];
+            config.postProcessing.vignette.smoothness = JSON["post_processing"]["vignette"]["smoothness"];
+
+            config.postProcessing.chromaticAberration.intensity = JSON["post_processing"]["chromatic_aberration"]["intensity"];
+        }
     }
     else {
         nlohmann::json j = {
+                {"linux_compiler",       config.linuxCompiler},
+                {"windows_compiler",     config.windowsCompiler},
                 {"name",                 config.name},
                 {"ambientLight",         config.ambientLight},
                 {"exposure",             config.exposure},
@@ -631,7 +647,26 @@ int main(int argc, char **argv) {
                 {"fullscreen_on_launch", config.fullscreenOnLaunch},
                 {"layers",               {
                                                  "Default"
-                                         }}
+                                         }},
+                {"post_processing", {
+                    {"enabled", false},
+                    {"bloom", {
+                        {"enabled", false},
+                        {"threshold", 0.5f}
+                    }},
+                    {"vignette", {
+                        {"enabled", config.postProcessing.enabled},
+                        {"intensity", config.postProcessing.vignette.intensity},
+                        {"smoothness", config.postProcessing.vignette.smoothness},
+                    }},
+                    {"bloom", {
+                        {"enabled", config.postProcessing.enabled},
+                        {"threshold", config.postProcessing.bloom.threshold},
+                    }},
+                    {"chromatic_aberration", {
+                        {"intensity", config.postProcessing.chromaticAberration.intensity},
+                    }}
+                }}
         };
 
         std::ofstream o("assets/game.config");
@@ -639,7 +674,7 @@ int main(int argc, char **argv) {
     }
 
 #ifdef GAME_BUILD
-    Hyper::Application app(1280, 720, "Static Engine", config.fullscreenOnLaunch, config.resizable, false, [&]() {
+    Hyper::Application app(1280, 720, config.name, config.fullscreenOnLaunch, config.resizable, false, [&]() {
         // get io
         auto &io = ImGui::GetIO();
         io.ConfigWindowsMoveFromTitleBarOnly = true;
@@ -731,6 +766,7 @@ int main(int argc, char **argv) {
     InspectorMaterial m_InspectorMaterial;
 
     json M_JS;
+    LoadScripts();
     Scene::LoadScene(config.mainScene, M_JS);
 
 #ifdef GAME_BUILD
@@ -923,11 +959,19 @@ int main(int argc, char **argv) {
     editor.SetShowWhitespaces(false);
 
 #ifndef GAME_BUILD
-    std::function<void(uint32_t &PPT, uint32_t &PPFBO)> GUI_EXP =
-            [&](uint32_t &PPT, uint32_t &PPFBO) {
+    std::function<void(uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui)> GUI_EXP =
+            [&](uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui) {
                 ShortcutManager(openConfig);
                 if (ImGui::BeginMainMenuBar()) {
                     if (ImGui::BeginMenu("File")) {
+                        if(ImGui::MenuItem("Compile C++ Scripts (Linux)")) {
+                            CompileLinuxScripts();
+                        }
+
+                        if(ImGui::MenuItem("Compile C++ Scripts (Windows)")) {
+                            CompileWindowsScripts();
+                        }
+
                         if (ImGui::MenuItem("Save Scene", "CTRL+S")) {
                             if (Scene::currentScenePath == "") {
                                 ImGuiFileDialog::Instance()->OpenDialog("SaveSceneDialog",
@@ -1097,6 +1141,8 @@ int main(int argc, char **argv) {
 
 
                                 nlohmann::json j = {
+                                        {"linux_compiler",       config.linuxCompiler},
+                                        {"windows_compiler",     config.windowsCompiler},
                                         {"name",                 config.name},
                                         {"ambientLight",         config.ambientLight},
                                         {"exposure",             config.exposure},
@@ -1105,7 +1151,26 @@ int main(int argc, char **argv) {
                                         {"height",               config.height},
                                         {"resizable",            config.resizable},
                                         {"fullscreen_on_launch", config.fullscreenOnLaunch},
-                                        {"layers",               layerStarters}
+                                        {"layers",               layerStarters},
+                                        {"post_processing", {
+                                            {"enabled", false},
+                                            {"bloom", {
+                                                {"enabled", false},
+                                                {"threshold", 0.5f}
+                                            }},
+                                            {"vignette", {
+                                                {"enabled", config.postProcessing.enabled},
+                                                {"intensity", config.postProcessing.vignette.intensity},
+                                                {"smoothness", config.postProcessing.vignette.smoothness},
+                                            }},
+                                            {"bloom", {
+                                                {"enabled", config.postProcessing.enabled},
+                                                {"threshold", config.postProcessing.bloom.threshold},
+                                            }},
+                                            {"chromatic_aberration", {
+                                                {"intensity", config.postProcessing.chromaticAberration.intensity},
+                                            }}
+                                        }}
                                 };
 
                                 file << j.dump(4);
@@ -1271,9 +1336,6 @@ int main(int argc, char **argv) {
                                     };
 
                                     file << j.dump(4);
-//                                    ImGuiFileDialog::Instance()->OpenDialog("SaveMaterialDialog",
-//                                                                            ICON_FA_FLOPPY_DISK " Save Material",
-//                                                                            ".material", ".");
                                 }
                                 ImGui::NewLine();
 
@@ -1349,12 +1411,15 @@ int main(int argc, char **argv) {
 
                 ImGui::SetNextWindowSize(ImVec2(500, 0));
                 if (ImGui::BeginPopup("Edit Config")) {
-#ifndef _WIN32 || GAME_BUILD
+                    #ifndef _WIN32 || GAME_BUILD
                     UpdatePresence(
                             "In Editor",
                             "Editing Configurations"
                     );
-#endif
+                    #endif
+                    ImGui::InputText("Linux Compiler", config.linuxCompiler, 500);
+                    ImGui::InputText("Windows Compiler", config.windowsCompiler, 500);
+
                     ImGui::InputText("Game Name", config.name, 500);
                     ImGui::DragFloat("Ambient Lightning", &config.ambientLight, 0.01f, 0, 1);
                     ImGui::DragFloat("Exposure", &config.exposure, 0.01f, 0);
@@ -1387,17 +1452,24 @@ int main(int argc, char **argv) {
 
                     if (ImGui::Button("Main Scene", ImVec2(500, 0))) {
                         ImGuiFileDialog::Instance()->OpenDialog("ChooseMainScene", "Choose Main Scene", ".vault", ".");
-#ifndef _WIN32 || GAME_BUILD
+                        #ifndef _WIN32 || GAME_BUILD
                         UpdatePresence(
                                 "In Editor",
                                 "Making a game"
                         );
-#endif
+                        #endif
                         // ImGui::CloseCurrentPopup();
                     }
                     ImGui::Separator();
                     if (ImGui::Button("Save", ImVec2(500, 0))) {
+                        std::vector<std::string> layerStarters;
+                        for (auto &layer : Scene::layers) {
+                            layerStarters.push_back(layer.first);
+                        }
+                        
                         nlohmann::json j = {
+                                {"linux_compiler",        config.linuxCompiler},
+                                {"windows_compiler",        config.windowsCompiler},
                                 {"name",                 config.name},
                                 {"ambientLight",         config.ambientLight},
                                 {"exposure",             config.exposure},
@@ -1405,18 +1477,38 @@ int main(int argc, char **argv) {
                                 {"resizable",            config.resizable},
                                 {"fullscreen_on_launch", config.fullscreenOnLaunch},
                                 {"width",                config.width},
-                                {"height",               config.height}
+                                {"height",               config.height},
+                                {"layers",               layerStarters},
+                                {"post_processing", {
+                                    {"enabled", false},
+                                    {"bloom", {
+                                        {"enabled", false},
+                                        {"threshold", 0.5f}
+                                    }},
+                                    {"vignette", {
+                                        {"enabled", config.postProcessing.enabled},
+                                        {"intensity", config.postProcessing.vignette.intensity},
+                                        {"smoothness", config.postProcessing.vignette.smoothness},
+                                    }},
+                                    {"bloom", {
+                                        {"enabled", config.postProcessing.enabled},
+                                        {"threshold", config.postProcessing.bloom.threshold},
+                                    }},
+                                    {"chromatic_aberration", {
+                                        {"intensity", config.postProcessing.chromaticAberration.intensity},
+                                    }}
+                                }}
                         };
 
                         std::ofstream o("assets/game.config");
                         o << std::setw(4) << j << std::endl;
 
-#ifndef _WIN32 || GAME_BUILD
+                        #ifndef _WIN32 || GAME_BUILD
                         UpdatePresence(
                                 "In Editor",
                                 "Making a game"
                         );
-#endif
+                        #endif
 
                         ImGui::CloseCurrentPopup();
                     }
@@ -1450,12 +1542,12 @@ int main(int argc, char **argv) {
                         auto vram = app.renderer->GetVRamUsage();
                         ImGui::Text("VRAM: %d MB / %d MB", vram.first, vram.second);
 
-    #ifndef _WIN32 || GAME_BUILD
+                        #ifndef _WIN32 || GAME_BUILD
                         UpdatePresence(
                                 "In Editor",
                                 "Checking Details"
                         );
-    #endif
+                        #endif
                         ImGui::End();
                     }
                 }
@@ -1533,17 +1625,17 @@ int main(int argc, char **argv) {
                     auto selectedObject = Scene::m_Object;
 
                     //                    m_GuizmoMode = ImGuizmo::OPERATION::ROTATE
-                    if (Scene::mainCamera != camera) m_GuizmoMode = -1;
-                    else if (m_GuizmoMode == -1) m_GuizmoMode = ImGuizmo::OPERATION::TRANSLATE;
+                    // if (Scene::mainCamera != camera) m_GuizmoMode = -1;
+                    if (m_GuizmoMode == -1) m_GuizmoMode = ImGuizmo::OPERATION::TRANSLATE;
                     if (selectedObject && m_GuizmoMode != -1) {
-                        ImGuizmo::SetOrthographic(camera->mode2D);
+                        ImGuizmo::SetOrthographic(Scene::mainCamera->mode2D);
                         ImGuizmo::SetDrawlist();
                         ImGuizmo::SetRect(viewX, viewY, viewWidth, viewHeight);
 
                         // check if ImGuizmo is hovered
 
-                        glm::mat4 view = camera->view;
-                        glm::mat4 projection = camera->projection;
+                        glm::mat4 view = Scene::mainCamera->view;
+                        glm::mat4 projection = Scene::mainCamera->projection;
 
                         auto &transform = selectedObject->GetComponent<Transform>();
                         transform.Update();
@@ -1867,12 +1959,12 @@ int main(int argc, char **argv) {
                 if (ImGui::Begin(ICON_FA_SHARE_NODES " Components")) {
                     if (Scene::m_Object != nullptr && !Scene::LoadingScene) {
                         if (ImGui::IsWindowFocused()) {
-#ifndef _WIN32 || GAME_BUILD
+                            #ifndef _WIN32 || GAME_BUILD
                             UpdatePresence(
                                     "In Editor",
                                     "Editing " + Scene::m_Object->name
                             );
-#endif
+                            #endif
                         }
                         ImGui::InputText("Name", Scene::name, 500);
                         ImGui::InputText("Tag", Scene::tag, 500);
@@ -1933,6 +2025,11 @@ int main(int argc, char **argv) {
 
                         if (Scene::m_Object->HasComponent<m_LuaScriptComponent>()) {
                             auto &comp = Scene::m_Object->GetComponent<m_LuaScriptComponent>();
+                            if (comp.hasGUI) comp.GUI();
+                        }
+
+                        if (Scene::m_Object->HasComponent<CppScriptManager>()) {
+                            auto &comp = Scene::m_Object->GetComponent<CppScriptManager>();
                             if (comp.hasGUI) comp.GUI();
                         }
 
@@ -2053,6 +2150,11 @@ int main(int argc, char **argv) {
                             ImGui::CloseCurrentPopup();
                         }
 
+                        if (ImGui::Button("C++ Scripts", ImVec2(200, 0))) {
+                            Scene::m_Object->AddComponent<CppScriptManager>();
+                            ImGui::CloseCurrentPopup();
+                        }
+
                         if (ImGui::Button("Camera", ImVec2(200, 0))) {
                             // CameraComponent has one argument of type entt::entity
                             Scene::m_Object->AddComponent<CameraComponent>();
@@ -2154,11 +2256,11 @@ int main(int argc, char **argv) {
 
                     if (ImGui::BeginPopup("New File")) {
                         if (ImGui::Button(ICON_FA_CODE" Lua Script", ImVec2(200, 0))) {
-#ifdef _WIN32
+                            #ifdef _WIN32
                             fs::path p = fs::path(currentDirectory.string() + "\\New Script.lua");
-#else
+                            #else
                             fs::path p = fs::path(currentDirectory.string() + "/new_script.lua");
-#endif
+                            #endif
 
                             if (!fs::exists(p)) {
                                 std::ofstream file(p);
@@ -2175,11 +2277,11 @@ int main(int argc, char **argv) {
 
                         // folder
                         if (ImGui::Button(ICON_FA_FOLDER " Folder", ImVec2(200, 0))) {
-#ifdef _WIN32
+                            #ifdef _WIN32
                             fs::path p = fs::path(currentDirectory.string() + "\\New Folder");
-#else
+                            #else
                             fs::path p = fs::path(currentDirectory.string() + "/New Folder");
-#endif
+                            #endif
 
                             if (!fs::exists(p)) {
                                 fs::create_directory(p);
@@ -2189,11 +2291,11 @@ int main(int argc, char **argv) {
 
                         // file
                         if (ImGui::Button(ICON_FA_FILE " File", ImVec2(200, 0))) {
-#ifdef _WIN32
+                            #ifdef _WIN32
                             fs::path p = fs::path(currentDirectory.string() + "\\New File");
-#else
+                            #else
                             fs::path p = fs::path(currentDirectory.string() + "/New File");
-#endif
+                            #endif
                             if (!fs::exists(p)) {
                                 std::ofstream file(p);
                                 file.close();
@@ -2202,11 +2304,11 @@ int main(int argc, char **argv) {
                         }
 
                         if(ImGui::Button(ICON_FA_PAINTBRUSH " Shader", ImVec2(200, 0))) {
-#ifdef _WIN32
+                            #ifdef _WIN32
                             fs::path p = fs::path(currentDirectory.string() + "\\new_shader.glsl");
-#else
+                            #else
                             fs::path p = fs::path(currentDirectory.string() + "/new_shader.glsl");
-#endif
+                            #endif
 
                             if(!fs::exists(p)) {
                                 std::ofstream file(p);
@@ -2472,11 +2574,11 @@ int main(int argc, char **argv) {
                         }
 
                         if (ImGui::Button(ICON_FA_FILE " Material", ImVec2(200, 0))) {
-#ifdef _WIN32
+                            #ifdef _WIN32
                             fs::path p = fs::path(currentDirectory.string() + "\\New Material.material");
-#else
+                            #else
                             fs::path p = fs::path(currentDirectory.string() + "/New Material.material");
-#endif
+                            #endif
 
                             if (!fs::exists(p)) {
                                 std::ofstream file(p);
@@ -2552,16 +2654,16 @@ int main(int argc, char **argv) {
                             ImGui::InputText("New Name", newName, 256);
 
                             if (ImGui::Button("Rename")) {
-#ifdef _WIN32
+                                #ifdef _WIN32
                                 fs::path p = fs::path(m_originalName);
                                 fs::path newP = fs::path(m_originalName.substr(0, m_originalName.find_last_of("\\")) + "\\" + newName);
                                 fs::rename(p, newP);
-#else
+                                #else
                                 fs::path p = fs::path(m_originalName);
                                 fs::path newP = fs::path(
                                         m_originalName.substr(0, m_originalName.find_last_of("/")) + "/" + newName);
                                 fs::rename(p, newP);
-#endif
+                                #endif
                                 renameWindow = false;
                                 ImGui::CloseCurrentPopup();
                             }
@@ -2598,17 +2700,17 @@ int main(int argc, char **argv) {
                     if (ImGuiFileDialog::Instance()->IsOk()) {
                         std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
                         std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
-#ifdef _WIN32
+                        #ifdef _WIN32
                         system(("rmdir /s /q " + filePathName).c_str());
                             system(("mkdir " + filePathName).c_str());
                             system(("xcopy /s /e /y \"" + cwd + "\\assets\" \"" + filePathName + "\\assets\\\"").c_str());
                             system(("xcopy /s /e /y \"" + cwd + "\\build\" \"" + filePathName + "\\build\\\"").c_str());
-                            system(("xcopy /s /e /y \"" + cwd + "\\shaders\" \"" + filePathName + "\\shaders\\\"").c_str());
+                            system(("xcopy /s /e /y \"" + cwd + "\\shaders\" \"" + filePathName + "\\shaders/\"").c_str());
                             system(("xcopy /s /e /y \"" + cwd + "\\dlls\\*.dll\" \"" + filePathName + "\"").c_str());
                             system(("xcopy /s /e /y \"" + cwd + "\\game.exe\" \"" + filePathName + "\"").c_str());
                             // rename game.exe to game name
                             system(("rename " + filePathName + "\\game.exe " + config.name + ".exe").c_str());
-#else
+                        #else
                         system(std::string("rm -r \"" + filePathName + "\"").c_str());
                         system(std::string("mkdir \"" + filePathName + "\"").c_str());
                         system(std::string("cp assets \"" + filePathName + "/assets\" -r").c_str());
@@ -2616,7 +2718,7 @@ int main(int argc, char **argv) {
                         system(std::string("cp shaders \"" + filePathName + "/shaders\" -r").c_str());
                         system(std::string("cp dlls/*.dll \"" + filePathName + "\"").c_str());
                         system(std::string("cp game.exe \"" + filePathName + "/" + config.name + ".exe\"").c_str());
-#endif
+                        #endif
 
                     }
                     ImGuiFileDialog::Instance()->Close();
@@ -2628,18 +2730,18 @@ int main(int argc, char **argv) {
                         std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
                         std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
 
-#ifdef _WIN32
+                        #ifdef _WIN32
                         system(("rmdir /s /q " + filePathName).c_str());
                             system(("mkdir " + filePathName).c_str());
                             // mark xcopy as directory
                             system(("xcopy /s /e /y  \"" + cwd + "\\assets\" \"" + filePathName + "\\assets\\\"").c_str());
                             system(("xcopy /s /e /y \"" + cwd + "\\build\" \"" + filePathName + "\\build\\\"").c_str());
-                            system(("xcopy /s /e /y \"" + cwd + "\\shaders\" \"" + filePathName + "\\shaders\\\"").c_str());
+                            system(("xcopy /s /e /y \"" + cwd + "\\shaders\" \"" + filePathName + "\\shaders/\"").c_str());
                             system(("xcopy /s /e /y \"" + cwd + "\\lib\" \"" + filePathName + "\\lib\\\"").c_str());
                             system(("xcopy /s /e /y \"" + cwd + "\\game.out\" \"" + filePathName + "\"").c_str());
                             system(("xcopy /s /e /y \"" + cwd + "\\LaunchGame.sh\" \"" + filePathName + "\"").c_str());
                             system(("rename \"" + filePathName + "\\LaunchGame.sh\" \"" + config.name + ".sh\"").c_str());
-#else
+                        #else
                         system(std::string("rm -r \"" + filePathName + "\"").c_str());
                         system(std::string("mkdir \"" + filePathName + "\"").c_str());
                         system(std::string("cp assets \"" + filePathName + "/assets\" -r").c_str());
@@ -2649,7 +2751,7 @@ int main(int argc, char **argv) {
                         system(std::string("cp game.out \"" + filePathName + "/game.out\"").c_str());
                         system(std::string(
                                 "cp LaunchGame.sh \"" + filePathName + "/" + config.name + ".sh\"").c_str());
-#endif
+                        #endif
                     }
 
                     // close
@@ -2657,7 +2759,7 @@ int main(int argc, char **argv) {
                 }
             };
 #else
-    std::function<void(uint32_t &PPT, uint32_t &PPFBO)> GUI_EXP = [&](uint32_t &PPT, uint32_t &PPFBO){};
+    std::function<void(uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui)> GUI_EXP = [&](uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui){};
 #endif
 
     bool calledOnce = false;
@@ -2685,6 +2787,7 @@ int main(int argc, char **argv) {
         shader.Bind();
         shader.SetUniform1i("shadowMap", GL_TEXTURE7);
         shader.SetUniformMat4("lightSpaceMatrix", Scene::projection);
+        shader.SetUniform1f("time", Timestep::deltaTime);
 
         if (Scene::LoadingScene) return;
 
@@ -2968,9 +3071,9 @@ int main(int argc, char **argv) {
                 gameObject->GetComponent<Transform>().Update();
             }
 
-            if (gameObject->HasComponent<m_LuaScriptComponent>()) {
-                gameObject->GetComponent<m_LuaScriptComponent>().Update();
-            }
+            // if (gameObject->HasComponent<m_LuaScriptComponent>()) {
+            //     gameObject->GetComponent<m_LuaScriptComponent>().Update();
+            // }
 
             if (gameObject->HasComponent<c_PointLight>()) {
                 gameObject->GetComponent<c_PointLight>().Update();
@@ -3007,6 +3110,13 @@ int main(int argc, char **argv) {
                 }
             }
 
+            if (gameObject->HasComponent<CppScriptManager>()) {
+                auto &script = gameObject->GetComponent<CppScriptManager>();
+                if (HyperAPI::isRunning) {
+                    script.Update();
+                }
+            }
+
             if (gameObject->HasComponent<NativeScriptManager>()) {
                 auto &script = gameObject->GetComponent<NativeScriptManager>();
                 if (HyperAPI::isRunning) {
@@ -3034,7 +3144,19 @@ int main(int argc, char **argv) {
                     break;
                 }
             }
+
+            bool isDepthCamera = false;
+            auto view = Scene::m_Registry.view<CameraComponent>();
+            for(auto e : view) {
+                auto &cam = Scene::m_Registry.get<CameraComponent>(e);
+                if(cam.camera == Scene::mainCamera && cam.depthCamera) {
+                    isDepthCamera = true;
+                    break;
+                }   
+            }
+
             if (notInCameraLayer && Scene::mainCamera != camera) continue;
+            if (isDepthCamera && Scene::mainCamera != camera) continue;
 
             for (auto &gameObject : Scene::m_GameObjects) {
                 if (!gameObject->enabled) continue;
@@ -3261,6 +3383,13 @@ int main(int argc, char **argv) {
                 for (auto &gameObject : Scene::m_GameObjects) {
                     if (!gameObject->enabled) continue;
                     if (gameObject->layer != layer.first) continue;
+
+                    Transform parentTransform;
+                    if(gameObject->parentID != "NO_PARENT") {
+                        parentTransform = f_GameObject::FindGameObjectByID(gameObject->parentID)->GetComponent<Transform>();
+                    }
+                    parentTransform.Update();
+
                     if (gameObject->HasComponent<MeshRenderer>()) {
                         auto meshRenderer = gameObject->GetComponent<MeshRenderer>();
                         auto transform = gameObject->GetComponent<Transform>();
@@ -3274,14 +3403,8 @@ int main(int argc, char **argv) {
                                 glStencilFunc(GL_ALWAYS, 1, 0xFF);
                                 glStencilMask(0xFF);
                             }
-                            if (transform.parentTransform != nullptr) {
-                                transform.position += transform.parentTransform->position;
-                                transform.rotation += transform.parentTransform->rotation;
-                                transform.scale *= transform.parentTransform->scale;
-                                transform.Update();
-                            }
 
-                            meshRenderer.m_Mesh->Draw(shader, *camera.camera, transform.transform * extra);
+                            meshRenderer.m_Mesh->Draw(shader, *camera.camera, transform.transform * extra * parentTransform.transform);
                         }
                     }
 
@@ -3317,7 +3440,7 @@ int main(int argc, char **argv) {
                         }
 
                         if (spritesheetRenderer.mesh != nullptr) {
-                            spritesheetRenderer.mesh->Draw(shader, *camera.camera, transform.transform);
+                            spritesheetRenderer.mesh->Draw(shader, *camera.camera, transform.transform * parentTransform.transform);
                         }
                     }
 
@@ -3338,7 +3461,7 @@ int main(int argc, char **argv) {
                         }
 
                         if (spriteAnimation.currMesh != nullptr) {
-                            spriteAnimation.currMesh->Draw(shader, *camera.camera, transform.transform);
+                            spriteAnimation.currMesh->Draw(shader, *camera.camera, transform.transform * parentTransform.transform);
                         }
                     }
 
@@ -3359,7 +3482,7 @@ int main(int argc, char **argv) {
                         spritesheetAnimation.Play();
                         spritesheetAnimation.Update();
                         if (spritesheetAnimation.mesh != nullptr) {
-                            spritesheetAnimation.mesh->Draw(shader, *camera.camera, transform.transform);
+                            spritesheetAnimation.mesh->Draw(shader, *camera.camera, transform.transform * parentTransform.transform);
                         }
                     }
                 }
@@ -3848,7 +3971,7 @@ int main() {
         projects.push_back({project["name"], project["path"]});
     }
 
-    std::function<void(uint32_t&, uint32_t&)> GUI = [&](uint32_t &one, uint32_t &two){
+    std::function<void(uint32_t&, uint32_t&, uint32_t&)> GUI = [&](uint32_t &one, uint32_t &two, uint32_t &three){
         // dock it to the left
         glfwGetWindowSize(app.renderer->window, &app.width, &app.height);
 

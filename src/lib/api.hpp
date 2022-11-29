@@ -13,6 +13,7 @@
 #include "../vendor/glm/gtc/type_ptr.hpp"
 #include "../vendor/glm/ext.hpp"
 #include "../vendor/glm/gtx/quaternion.hpp"
+#include "LinearMath/btTransform.h"
 #include "nativeScripts.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include "../vendor/glm/gtx/matrix_decompose.hpp"
@@ -53,6 +54,9 @@
 #include "InputEvents.hpp"
 #include "scripts.hpp"
 #include "networking.h"
+
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
 
 #ifndef _WIN32
 
@@ -131,13 +135,14 @@ namespace HyperAPI {
                 bool enabled;
                 float intensity;
                 float threshold;
-                float blurSize;
             } bloom;
 
             struct ChromaticAberration {
                 float intensity;
             } chromaticAberration;
         } postProcessing;
+        char linuxCompiler[500];
+        char windowsCompiler[500];
     };
 
     extern Config config;
@@ -1017,6 +1022,29 @@ namespace HyperAPI {
         Torus(Vector4 color = Vector4(1, 1, 1, 1));
     };
 
+    namespace CppScripting {        
+        class Script {
+        public:
+            std::string objId;
+            std::string name;
+
+            virtual void Start(){};
+            virtual void Update(){};
+        };
+
+        struct SharedObject {
+            std::string name;
+            std::string typeName;
+            void *handle;
+            Script *(*create)();   
+        };
+        extern std::vector<SharedObject> cpp_scripts;
+
+        void LoadScripts();
+        void CompileLinuxScripts();
+        void CompileWindowsScripts();
+    }
+
     namespace Experimental {
         class ComponentEntity {
         public:
@@ -1100,6 +1128,83 @@ namespace HyperAPI {
             }
         };
 
+        struct CppScriptManager : public BaseComponent {            
+            std::vector<CppScripting::Script*> addedScripts;
+            bool showScripts;
+            std::string id = uuid::generate_uuid_v4();
+
+            CppScriptManager() = default;
+
+            void GUI() {
+                if(ImGui::TreeNode("C++ Script Manager")) {
+                    ImGui::ListBoxHeader("Scripts");
+                    for (int i = 0; i < CppScripting::cpp_scripts.size(); i++) {
+                        auto item = CppScripting::cpp_scripts[i];
+                        bool addedToScripts = false;
+                        int index = -1;
+                        for(int j = 0; j < addedScripts.size(); j++) {
+                            if(addedScripts[j]->name == item.name) {
+                                addedToScripts = true;
+                                index = j;
+                                break;
+                            }
+                        }
+
+                        if(addedToScripts) {
+                            if(ImGui::Selectable(std::string(ICON_FA_CHECK + std::string(" ") + item.name).c_str())) {
+                                addedScripts.erase(addedScripts.begin() + index);
+                            }
+                        } else {
+                            if(ImGui::Selectable(item.name.c_str())) {
+                                CppScripting::Script *script = item.create();
+                                addedScripts.push_back(script);
+                                addedScripts[addedScripts.size() - 1]->name = item.name;
+                            }
+                        }
+
+/*                         if(ImGui::Selectable(
+                            addedToScripts ? std::string(ICON_FA_CHECK + std::string(" ") + item.name).c_str() : item.name.c_str()
+                        )) {
+                            if(addedToScripts) {
+                                addedScripts.erase(addedScripts.begin() + index);
+                            } else {
+                                CppScripting::Script *script = item.create();
+                                script->name = item.name;
+                                addedScripts.push_back(script);
+                            }
+                        } */
+                    }
+                    ImGui::ListBoxFooter();
+
+                    ImGui::TreePop();
+                }
+            }  
+
+            void DeleteComp() {
+                for(auto *script : addedScripts) {
+                    delete script;
+                }
+                addedScripts.clear();
+            }
+
+            void Update() {
+                using namespace CppScripting;
+
+                for(auto *script : addedScripts) {
+                    script->Update();
+                } 
+            }
+
+            void Start() {
+                using namespace CppScripting;
+
+                for(auto *script : addedScripts) {
+                    script->objId = ID;
+                    script->Start();
+                } 
+            }
+        };
+
         struct Transform : public BaseComponent {
             Transform *parentTransform = nullptr;
             glm::mat4 transform = glm::mat4(1.0f);
@@ -1128,15 +1233,15 @@ namespace HyperAPI {
             }
 
             void Update() {
-                const glm::mat4 inverted = glm::inverse(transform);
-                forward = normalize(glm::vec3(inverted[2]));
-
                 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
                 up = glm::normalize(glm::cross(right, forward));
 
                 transform = glm::translate(glm::mat4(1.0f), position) *
                             glm::toMat4(glm::quat(rotation)) *
                             glm::scale(glm::mat4(1.0f), Vector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
+
+                const glm::mat4 inverted = glm::inverse(transform);
+                forward = normalize(glm::vec3(inverted[2]));                        
             }
 
             void LookAt(glm::vec3 target) {
@@ -2329,7 +2434,9 @@ namespace HyperAPI {
                 glm::vec3 pos, rot, scal;
                 DecomposeTransform(mat, pos, rot, scal);
                 transform->position = pos;
-                transform->rotation = rot;
+                if(!fixedRotation) {
+                    transform->rotation = rot;
+                }
             }
 
             void GUI() override {
@@ -3552,6 +3659,7 @@ namespace HyperAPI {
         Experimental::GameObject* FindGameObjectByName(const std::string &name);
         Experimental::GameObject* FindGameObjectByTag(const std::string &tag);
         Experimental::GameObject* FindGameObjectByID(const std::string &id);
+        Experimental::GameObject* FindGameObjectByEntt(const entt::entity &entity);
         Experimental::GameObject* InstantiatePrefab(const std::string &path);
 
         Experimental::GameObject*
@@ -3705,7 +3813,7 @@ namespace Hyper {
 
         void Run(
             std::function<void(uint32_t &)> update,
-            std::function<void(uint32_t &PPT, uint32_t &PPFBO)> gui = [](uint32_t &PPT, uint32_t &PPFBO) {},
+            std::function<void(uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui)> gui = [](uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui) {},
             std::function<void(HyperAPI::Shader &)> shadowMapRender = [](HyperAPI::Shader &m_shadowMapShader) {}
         );
     };

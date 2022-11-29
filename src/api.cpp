@@ -1,6 +1,12 @@
 #include "lib/api.hpp"
+#include "GLFW/glfw3.h"
 #include "assimp/postprocess.h"
+#include "imgui/imgui.h"
 #include "lib/scene.hpp"
+#include <dlfcn.h>
+#include <experimental/bits/fs_dir.h>
+#include <experimental/bits/fs_ops.h>
+#include <regex>
 #include <sstream>
 
 std::vector<HyperAPI::PointLight *> PointLights;
@@ -71,6 +77,7 @@ std::string get_file_contents(const char *file) {
 }
 
 void NewFrame(uint32_t FBO, int width, int height) {
+    
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
     glClearColor(pow(0.3f, 2.2f), pow(0.3f, 2.2f), pow(0.3f, 2.2f), 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -134,9 +141,6 @@ void EndEndFrame(
     } else {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
-
-    glClearColor(pow(0.3f, 2.2f), pow(0.3f, 2.2f), pow(0.3f, 2.2f), 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
 void
@@ -2105,6 +2109,10 @@ namespace HyperAPI {
                 if (gameObject->HasComponent<NativeScriptManager>()) {
                     gameObject->GetComponent<NativeScriptManager>().Start();
                 }
+
+                if (gameObject->HasComponent<CppScriptManager>()) {
+                    gameObject->GetComponent<CppScriptManager>().Start();
+                }
             }
 
             Scene::world = new b2World({0.0, -5.8f});
@@ -2420,7 +2428,7 @@ namespace HyperAPI {
 
         void Model::loadModel(std::string path) {
             Assimp::Importer import;
-            const aiScene *scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
+            const aiScene *scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_PreTransformVertices);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
                 std::cout << "ERROR::ASSIMP::" << import.GetErrorString() << std::endl;
@@ -2603,6 +2611,16 @@ namespace HyperAPI {
         Experimental::GameObject *FindGameObjectByID(const std::string &id) {
             for (auto &gameObject : Scene::m_GameObjects) {
                 if (gameObject->ID == id) {
+                    return gameObject;
+                }
+            }
+
+            return nullptr;
+        }
+
+        Experimental::GameObject* FindGameObjectByEntt(const entt::entity &entity) {
+            for (auto &gameObject : Scene::m_GameObjects) {
+                if (gameObject->entity == entity) {
                     return gameObject;
                 }
             }
@@ -2829,6 +2847,101 @@ namespace HyperAPI {
         }
     }
 
+    namespace CppScripting {
+        std::vector<SharedObject> cpp_scripts;
+
+        void LoadScripts() {
+            auto iter = fs::recursive_directory_iterator("assets");
+            for(auto &dirEntry : iter) {
+                if(G_END_WITH(dirEntry.path().string(), ".cpp")) {
+                    std::string file = dirEntry.path();
+                    file = std::regex_replace(file, std::regex("\\.cpp"), ".so");
+                   
+                    if(!fs::exists(file)) continue;
+                    SharedObject sharedObj;
+
+                    sharedObj.handle = dlopen(file.c_str(), RTLD_LAZY);
+                    sharedObj.create = (Script*(*)())dlsym(sharedObj.handle, "create_object"); 
+                    sharedObj.name = dirEntry.path().filename();
+                    cpp_scripts.push_back(sharedObj);
+                }
+            }
+        }
+
+        void CompileLinuxScripts() {
+            auto iter = fs::recursive_directory_iterator("assets");
+            for(auto &dirEntry : iter) {
+                if(G_END_WITH(dirEntry.path().string(), ".cpp")) {
+                    std::string file = dirEntry.path();
+                    file = std::regex_replace(file, std::regex("\\.cpp"), ".so");
+                    
+                    std::string objFile = dirEntry.path();
+                    objFile = std::regex_replace(objFile, std::regex("\\.cpp"), ".o");
+
+                    std::string headers = "-I\"./src/vendor\" -I\"./src/vendor/bullet/bullet\" -I\"./src/vendor/NoesisGUI\"";
+                    system(
+                        (
+                            std::string(config.linuxCompiler) + " -c -fPIC " + dirEntry.path().string() + " "
+                            + headers + " -rdynamic -o " + objFile
+                        ).c_str()
+                    );
+
+                    system(
+                        (
+                            std::string(config.linuxCompiler) + " -shared " + objFile
+                            + " -o " + file
+                        ).c_str()
+                    );
+
+                    for(auto script : cpp_scripts) {
+                        dlclose(script.handle);
+                    }
+                    cpp_scripts.clear();
+
+                    HYPER_LOG("C++ Scripts have been compiled (Linux Compiler)")
+                    LoadScripts();
+                }
+            }
+        }
+
+        void CompileWindowsScripts() {
+            auto iter = fs::recursive_directory_iterator("assets");
+            for(auto &dirEntry : iter) {
+                if(G_END_WITH(dirEntry.path().string(), ".cpp")) {
+                    std::string file = dirEntry.path();
+                    file = std::regex_replace(file, std::regex("\\.cpp"), ".dll");
+                    
+                    std::string objFile = dirEntry.path();
+                    objFile = std::regex_replace(objFile, std::regex("\\.cpp"), ".o");
+                    
+                    std::string headers = "-I\"./src/vendor\" -I\"./src/vendor/bullet/bullet\" -I\"./src/vendor/NoesisGUI\"";
+                    headers += " ";
+                    headers += "-lstdc++fs -L\"./win_libs\" -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype -lSDL2.dll -lSDL2_mixer.dll -ldiscord-rpc -ltinyxml2";
+                    headers += " -lBulletDynamics.dll -lBulletCollision.dll -lLinearMath.dll";
+                    system(
+                        (
+                            std::string(config.windowsCompiler) + " -c -DBUILD_DLL " + dirEntry.path().string() + " src/api.cpp "
+                            + headers + " -o " + objFile
+                        ).c_str()
+                    );
+
+                    system(
+                        (
+                            std::string(config.windowsCompiler) + " " + headers + " -shared -o " + file + " " + objFile + " -Wl,--out-implib,libshared_lib.a"
+                        ).c_str()
+                    );
+
+                    // for(auto script : cpp_scripts) {
+                    //     dlclose(script.handle);
+                    // }
+                    // cpp_scripts.clear();
+
+                    HYPER_LOG("C++ Scripts have been compiled (Windows Compiler)")
+                }
+            }
+        }
+    }
+
 #ifndef _WIN32
     namespace Text {
         Font::Font(const std::string &path, int size) : scale(size) {
@@ -2952,14 +3065,14 @@ namespace HyperAPI {
 
 namespace Hyper {
     void Application::Run(std::function<void(uint32_t &)> update,
-                          std::function<void(uint32_t &PPT, uint32_t &PPFBO)> gui,
+                          std::function<void(uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui)> gui,
                           std::function<void(HyperAPI::Shader &)> shadowMapRender) {
         HYPER_LOG("Application started")
 
         float gamma = 2.2f;
-        if (renderOnScreen) {
-            glEnable(GL_FRAMEBUFFER_SRGB);
-        }
+        // if (renderOnScreen) {
+            // glEnable(GL_FRAMEBUFFER_SRGB);
+        // }
 
         HyperAPI::Shader shadowMapProgram("shaders/shadowMap.glsl");
         HyperAPI::Shader framebufferShader("shaders/framebuffer.glsl");
@@ -3105,6 +3218,28 @@ namespace Hyper {
         HyperAPI::n_Bloom::BloomRenderer bloomRenderer;
         bloomRenderer.Init(width, height);
 
+        // create a framebuffer test
+        uint32_t testFBO;
+        glGenFramebuffers(1, &testFBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, testFBO);
+        
+        uint32_t testTexture;
+        glGenTextures(1, &testTexture);
+        glBindTexture(GL_TEXTURE_2D, testTexture);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, testTexture, 0);
+
+        uint32_t testRBO;
+        glGenRenderbuffers(1, &testRBO);
+        glBindRenderbuffer(GL_RENDERBUFFER, testRBO);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, testRBO);
+
         while (!glfwWindowShouldClose(renderer->window)) {
             bloomRenderer.m_SrcViewportSize = glm::vec2(width, height);
             bloomRenderer.m_SrcViewportSizeFloat = glm::vec2(width, height);
@@ -3123,127 +3258,126 @@ namespace Hyper {
 
             glfwPollEvents();
             glfwGetWindowSize(renderer->window, &winWidth, &winHeight);
-
-//            glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-//            glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-//            glClear(GL_DEPTH_BUFFER_BIT);
-//            for(auto &light : HyperAPI::Scene::DirLights) {
-//                shadowMapProgram.Bind();
-//                float near_plane = 1.0f, far_plane = 7.5f;
-//                glm::mat4 lightView = glm::lookAt(light->lightPos,
-//                                                  glm::vec3(0.0f, 0.0f, 0.0f),
-//                                                  glm::vec3(0.0f, 1.0f, 0.0f));
-//
-//                glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-//                glm::mat4 lightSpaceMatrix = lightProjection * lightView;
-//                HyperAPI::Scene::projection = lightSpaceMatrix;
-//
-//                shadowMapProgram.SetUniformMat4("lightSpaceMatrix", lightSpaceMatrix);
-//                shadowMapRender(shadowMapProgram);
-//            }
-//            glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glClear(GL_DEPTH_BUFFER_BIT);
 
-            if (!renderOnScreen) {
-                // post processing delete them
-                glDeleteFramebuffers(1, &postProcessingFBO);
-                glDeleteTextures(1, &postProcessingTexture);
+            glDeleteFramebuffers(1, &postProcessingFBO);
+            glDeleteTextures(1, &postProcessingTexture);
 
-                glDeleteFramebuffers(1, &S_PPFBO);
-                glDeleteTextures(1, &S_PPT);
-                glDeleteTextures(1, &bloomTexture);
-                glDeleteFramebuffers(2, pingpongFBO);
-                glDeleteTextures(2, pingpongBuffer);
-                glDeleteRenderbuffers(1, &SRBO);
-                glDeleteRenderbuffers(1, &rbo);
-                glDeleteTextures(1, &entityTexture);
+            glDeleteFramebuffers(1, &S_PPFBO);
+            glDeleteTextures(1, &S_PPT);
+            glDeleteTextures(1, &bloomTexture);
+            glDeleteFramebuffers(2, pingpongFBO);
+            glDeleteTextures(2, pingpongBuffer);
+            glDeleteRenderbuffers(1, &SRBO);
+            glDeleteRenderbuffers(1, &rbo);
+            glDeleteTextures(1, &entityTexture);
+            glDeleteTextures(1, &testTexture);
+            glDeleteFramebuffers(1, &testFBO);
+            glDeleteRenderbuffers(1, &testRBO);
 
-                glGenFramebuffers(1, &postProcessingFBO);
-                glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
+            glGenFramebuffers(1, &testFBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, testFBO);
 
-                glGenTextures(1, &postProcessingTexture);
-                glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postProcessingTexture, 0);
+            glGenTextures(1, &testTexture);
+            glBindTexture(GL_TEXTURE_2D, testTexture);
 
-                glGenTextures(1, &bloomTexture);
-                glBindTexture(GL_TEXTURE_2D, bloomTexture);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, bloomTexture, 0);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, testTexture, 0);
 
-                glGenTextures(1, &entityTexture);
-                glBindTexture(GL_TEXTURE_2D, entityTexture);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, nullptr);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, entityTexture, 0);
+            glGenRenderbuffers(1, &testRBO);
+            glBindRenderbuffer(GL_RENDERBUFFER, testRBO);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, testRBO);
 
-                glDrawBuffers(3, attachments);
+            glGenFramebuffers(1, &postProcessingFBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
 
-                glGenRenderbuffers(1, &rbo);
-                glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-                glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
-                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+            glGenTextures(1, &postProcessingTexture);
+            glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postProcessingTexture, 0);
 
-                glBindFramebuffer(GL_FRAMEBUFFER, S_PPFBO);
+            glGenTextures(1, &bloomTexture);
+            glBindTexture(GL_TEXTURE_2D, bloomTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, bloomTexture, 0);
 
-                glGenFramebuffers(2, pingpongFBO);
-                glGenTextures(2, pingpongBuffer);
+            glGenTextures(1, &entityTexture);
+            glBindTexture(GL_TEXTURE_2D, entityTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, entityTexture, 0);
 
-                for(uint32_t i = 0; i < 2; i++)
-                {
-                    glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
-                    glBindTexture(GL_TEXTURE_2D, pingpongBuffer[i]);
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongBuffer[i], 0);
-                }
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glDrawBuffers(3, attachments);
 
-                glGenFramebuffers(1, &S_PPFBO);
-                glBindFramebuffer(GL_FRAMEBUFFER, S_PPFBO);
+            glGenRenderbuffers(1, &rbo);
+            glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
-                glGenTextures(1, &S_PPT);
-                glBindTexture(GL_TEXTURE_2D, S_PPT);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, S_PPT, 0);
-                glBindBuffer(GL_ARRAY_BUFFER, rectVBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, S_PPFBO);
 
-                glGenRenderbuffers(1, &SRBO);
-                glBindRenderbuffer(GL_RENDERBUFFER, SRBO);
-                glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
-                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, SRBO);
+            // glGenFramebuffers(2, pingpongFBO);
+            // glGenTextures(2, pingpongBuffer);
 
-                float rectangleVert[] = {
-                        1, -1, 1, 0,
-                        -1, -1, 0, 0,
-                        -1, 1, 0, 1,
+            // for(uint32_t i = 0; i < 2; i++)
+            // {
+            //     glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
+            //     glBindTexture(GL_TEXTURE_2D, pingpongBuffer[i]);
+            //     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+            //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            //     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongBuffer[i], 0);
+            // }
+            // glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-                        1, 1, 1, 1,
-                        1, -1, 1, 0,
-                        -1, 1, 0, 1,
-                };
-                glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(rectangleVert), rectangleVert);
-                NewFrame(postProcessingFBO, width, height);
+            glGenFramebuffers(1, &S_PPFBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, S_PPFBO);
 
-            }
+            glGenTextures(1, &S_PPT);
+            glBindTexture(GL_TEXTURE_2D, S_PPT);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, S_PPT, 0);
+            glBindBuffer(GL_ARRAY_BUFFER, rectVBO);
+
+            glGenRenderbuffers(1, &SRBO);
+            glBindRenderbuffer(GL_RENDERBUFFER, SRBO);
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, SRBO);
+
+            float rectangleVert[] = {
+                    1, -1, 1, 0,
+                    -1, -1, 0, 0,
+                    -1, 1, 0, 1,
+
+                    1, 1, 1, 1,
+                    1, -1, 1, 0,
+                    -1, 1, 0, 1,
+            };
+
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(rectangleVert), rectangleVert);
+            NewFrame(postProcessingFBO, width, height);
 
             if (renderOnScreen) {
                 glfwGetWindowSize(renderer->window, &width, &height);
@@ -3342,37 +3476,20 @@ namespace Hyper {
             int amount = 10;
             blurShader.Bind();
 
-//            for(uint32_t i = 0; i < amount; i++) {
-//                glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
-//                blurShader.SetUniform1i("horizontal", horizontal);
-//
-//                if(first_iteration) {
-//                    glBindTexture(GL_TEXTURE_2D, bloomTexture);
-//                    first_iteration = false;
-//                } else {
-//                    glBindTexture(GL_TEXTURE_2D, pingpongBuffer[!horizontal]);
-//                }
-//
-//                glBindVertexArray(rectVAO);
-//                glDrawArrays(GL_TRIANGLES, 0, 6);
-//                horizontal = !horizontal;
-//            }
-
             glDisable(GL_BLEND);
             bloomRenderer.RenderBloomTexture(bloomTexture, 0.005f, rectVAO);
 
-//            bloomRenderer.RenderBloomTexture(first_iteration ? bloomTexture : pingpongBuffer[!horizontal], 0.005f, rectVAO);
             glActiveTexture(GL_TEXTURE16);
             glBindTexture(GL_TEXTURE_2D, bloomRenderer.BloomTexture());
 
             glClear(GL_DEPTH_BUFFER_BIT);
-            if (!renderOnScreen) {
-                framebufferShader.Bind();
-//                glActiveTexture(GL_TEXTURE16);
-//                glBindTexture(GL_TEXTURE_2D, pingpongBuffer[!horizontal]);
-                glActiveTexture(GL_TEXTURE16);
-                glBindTexture(GL_TEXTURE_2D, bloomRenderer.BloomTexture());
-                framebufferShader.SetUniform1i("bloomTexture", 16);
+            framebufferShader.Bind();
+            glActiveTexture(GL_TEXTURE16);
+            glBindTexture(GL_TEXTURE_2D, bloomRenderer.BloomTexture());
+            framebufferShader.SetUniform1i("bloomTexture", 16);
+            if(renderOnScreen) {
+                EndFrame(framebufferShader, *renderer, rectVAO, postProcessingTexture, postProcessingFBO, width, height);
+            } else {
                 EndEndFrame(framebufferShader, *renderer, rectVAO, postProcessingTexture, postProcessingFBO, S_PPT, S_PPFBO, width, height, sceneMouseX, sceneMouseY);
             }
 
@@ -3382,7 +3499,7 @@ namespace Hyper {
                 ImGui::NewFrame();
                 ImGuizmo::BeginFrame();
 
-                gui(S_PPT, S_PPFBO);
+                gui(S_PPT, S_PPFBO, testTexture);
 
                 ImGui::Render();
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

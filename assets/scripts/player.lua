@@ -2,25 +2,22 @@ player = {}
 fx_speed = 5
 fx_health = 100
 fx_cycleSpeed = 5;
- 
+
+local defaultScale = 1;
 function player:OnStart()
---     local gameObject = InstantiatePrefab("assets/Object.prefab")
---     local transform = gameObject:GetComponent("Transform");
---     local randomX = math.random(-44, 44);
---     local randomY = math.random(-21, 21);
---
---     transform.positionX = randomX;
---     transform.positionY = randomY;
---     gameObject:UpdateComponent(transform);
---     -- for loop 10 timesr
 end
 
 time = 3;
 isDay = true;
+local calledOnce = false;
 function player:OnUpdate()
-    local rigidbody = GetComponent("Rigidbody2D");
+    local rigidbody = GetComponent("Rigidbody3D");
     local transform = GetComponent("Transform");
-    local velocity = rigidbody:GetVelocity();
+
+    if calledOnce == false then
+        defaultScale = transform.scaleX;
+        calledOnce = true;
+    end
 
     if isDay then
         Vault.Ambient = Vault.Ambient - Timestep.DeltaTime * fx_cycleSpeed;
@@ -34,54 +31,30 @@ function player:OnUpdate()
         isDay = true;
     end
 
-    if Input.IsKeyPressed(KEY_A) then
-        rigidbody:SetVelocity(-fx_speed, velocity.y);
-        transform.scaleX = Float.Lerp(transform.scaleX, 2, Timestep.DeltaTime * 15);
-        UpdateComponent(transform);
-    elseif Input.IsKeyPressed(KEY_D) then
-        rigidbody:SetVelocity(fx_speed, velocity.y);
-        transform.scaleX = Float.Lerp(transform.scaleX, -2, Timestep.DeltaTime * 15);
-        UpdateComponent(transform);
-    else
-        rigidbody:SetVelocity(0, velocity.y);
-    end
-
-    local velocity2 = rigidbody:GetVelocity();
+    local Xaxis = 0;
+    local Zaxis = 0;
 
     if Input.IsKeyPressed(KEY_W) then
-        rigidbody:SetVelocity(velocity2.x, fx_speed);
+        rigidbody:SetVelocity(Xaxis, 0, -fx_speed * Timestep.DeltaTime);
+        Zaxis = -fx_speed * Timestep.DeltaTime;
     elseif Input.IsKeyPressed(KEY_S) then
-        rigidbody:SetVelocity(velocity2.x, -fx_speed);
+        rigidbody:SetVelocity(Xaxis, 0, fx_speed * Timestep.DeltaTime);
+        Zaxis = fx_speed * Timestep.DeltaTime;
     else
-        rigidbody:SetVelocity(velocity2.x, 0);
+        Zaxis = 0;
+    end
+
+    if Input.IsKeyPressed(KEY_A) then
+        rigidbody:SetVelocity(-fx_speed * Timestep.DeltaTime, 0, Zaxis);
+        Xaxis = -fx_speed * Timestep.DeltaTime;
+        transform.scaleX = Float.Lerp(transform.scaleX, -defaultScale, Timestep.DeltaTime * 8);
+        UpdateComponent(transform);
+    elseif Input.IsKeyPressed(KEY_D) then
+        rigidbody:SetVelocity(fx_speed * Timestep.DeltaTime, 0, Zaxis * Timestep.DeltaTime);
+        Xaxis = fx_speed * Timestep.DeltaTime;
+        transform.scaleX = Float.Lerp(transform.scaleX, defaultScale, Timestep.DeltaTime * 8);
+        UpdateComponent(transform);
+    else
+        Xaxis = 0;
     end
 end
-
-function player:OnCollision2D()
-	if collidedWith.tag == "Enemy" then
-        Log("Player collided with enemy");
-    end
-end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

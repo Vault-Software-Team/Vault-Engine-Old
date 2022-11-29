@@ -24,7 +24,7 @@
 -   **Physics Engine: Box2D, Bullet Physics (3D)**
 -   **Audio: SDL_mixer**
 -   **Level Editor**
--   **Native Scripting**
+-   **C++ Scripting**
 -   **2D Lighting**
 -   **3D Lighting**
 -   **More coming soon**
@@ -53,7 +53,7 @@
 
 # Installation
 
-### **Linux**
+## **Linux**
 
 ```bash
 git clone https://github.com/koki10190/Vault-Engine.git
@@ -63,9 +63,13 @@ make linux
 ./Vault\ Engine.sh
 ```
 
-If it failes you probably do not have G++ and make installed.
+If it fails you probably do not have G++ and make installed.
 
-### **Windows**
+### C++ Scripting
+
+To make cross-platform games you must have x86_64-w64-mingw32 and g++ installed so that you can compile C++ Script code (if you use C++ otherwise ignore this)
+
+## **Windows**
 
 Go to **Makefile** and edit **MINGW_COMPILER**
 
@@ -76,6 +80,10 @@ make projects_win
 make win
 .\windows\win_proj.exe
 ```
+
+### C++ Scripting
+
+To make cross-platform games with C++ Scripting, you must have MinGW installed and linux C++ compiler (GCC) installed and paths set.
 
 ### **Bundling**
 
@@ -93,7 +101,6 @@ NOTE: while building is implemented, it will not work as of now!
 -   **Vulkan Rendering**
 -   **JavaScript Scripting**
 -   **Python Scripting**
--   **Full C++ Scripting support**
 -   **Asset Packager**
 -   **Android Support**
 -   **Flowchart Editor (like in Unreal Engine)**

@@ -309,6 +309,22 @@ namespace HyperAPI {
                 }
             }
 
+            if(type == "CppScriptManager") {
+                gameObject->AddComponent<Experimental::CppScriptManager>();
+            
+                auto &scriptManager = gameObject->GetComponent<Experimental::CppScriptManager>();
+
+                for(auto &scriptName : component["scripts"]) {
+                    for(auto sharedObj : CppScripting::cpp_scripts) {
+                        if(sharedObj.name == scriptName) {
+                            CppScripting::Script *script = sharedObj.create();
+                            scriptManager.addedScripts.push_back(script);
+                            scriptManager.addedScripts[scriptManager.addedScripts.size() - 1]->name = sharedObj.name;
+                        }
+                    }
+                }
+            }
+
             if(type == "SpriteRenderer") {
                 gameObject->AddComponent<Experimental::SpriteRenderer>();
                 auto &spriteRenderer = gameObject->GetComponent<Experimental::SpriteRenderer>();
@@ -533,6 +549,11 @@ namespace HyperAPI {
 
                     if (gameObject->HasComponent<Experimental::m_LuaScriptComponent>()) {
                         auto &comp = gameObject->GetComponent<Experimental::m_LuaScriptComponent>();
+                        comp.DeleteComp();
+                    }
+
+                    if (gameObject->HasComponent<Experimental::CppScriptManager>()) {
+                        auto &comp = gameObject->GetComponent<Experimental::CppScriptManager>();
                         comp.DeleteComp();
                     }
 
@@ -1051,6 +1072,16 @@ namespace HyperAPI {
                     for(auto &field : script.scripts[scr].m_Fields) {
                         JSON[i]["components"][componentOffset]["script_fields"][script.scripts[scr].pathToScript][field.first] = field.second.value;
                     }
+                }
+
+                componentOffset++;
+            }
+
+            if(gameObject->HasComponent<Experimental::CppScriptManager>()) {
+                auto &scriptManager = gameObject->GetComponent<Experimental::CppScriptManager>();
+                JSON[i]["components"][componentOffset]["type"] = "CppScriptManager";
+                for(int scr = 0; scr < scriptManager.addedScripts.size(); scr++) {
+                    JSON[i]["components"][componentOffset]["scripts"][scr] = scriptManager.addedScripts[scr]->name;
                 }
 
                 componentOffset++;

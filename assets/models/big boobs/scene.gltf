@@ -1,0 +1,410 @@
+{
+  "accessors": [
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 479,
+      "max": [
+        12.520513534545898,
+        18.447092056274414,
+        7.690371990203857
+      ],
+      "min": [
+        -17.29825782775879,
+        -0.7670459747314453,
+        -8.803175926208496
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 5748,
+      "componentType": 5126,
+      "count": 479,
+      "max": [
+        0.9944117069244385,
+        0.9999723434448242,
+        0.9928522109985352
+      ],
+      "min": [
+        -0.9777158498764038,
+        -0.9994027614593506,
+        -0.9937175512313843
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 479,
+      "max": [
+        0.9998986721038818,
+        0.9851600527763367,
+        0.9975570440292358,
+        1.0
+      ],
+      "min": [
+        -0.9897159337997437,
+        -0.9738248586654663,
+        -0.9999428987503052,
+        -1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 479,
+      "max": [
+        0.960748016834259,
+        0.9127410054206848
+      ],
+      "min": [
+        0.023128999397158623,
+        0.07524999976158142
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 3832,
+      "componentType": 5126,
+      "count": 479,
+      "max": [
+        0.960748016834259,
+        0.9127410054206848
+      ],
+      "min": [
+        0.023128999397158623,
+        0.07524999976158142
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 7664,
+      "componentType": 5126,
+      "count": 479,
+      "max": [
+        0.960748016834259,
+        0.9127410054206848
+      ],
+      "min": [
+        0.023128999397158623,
+        0.07524999976158142
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 11496,
+      "componentType": 5126,
+      "count": 479,
+      "max": [
+        0.960748016834259,
+        0.9127410054206848
+      ],
+      "min": [
+        0.023128999397158623,
+        0.07524999976158142
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 1776,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 11496,
+      "componentType": 5126,
+      "count": 18,
+      "max": [
+        15.933141708374023,
+        12.787069320678711,
+        9.942054748535156
+      ],
+      "min": [
+        2.8553149700164795,
+        6.7361040115356445,
+        -0.4937460124492645
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 11712,
+      "componentType": 5126,
+      "count": 18,
+      "max": [
+        0.8035964965820313,
+        0.7096874713897705,
+        0.9298675060272217
+      ],
+      "min": [
+        -0.02671743370592594,
+        -0.3632870018482208,
+        0.24725976586341858
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 15328,
+      "componentType": 5126,
+      "count": 18,
+      "max": [
+        0.5125179886817932,
+        0.7462790012359619
+      ],
+      "min": [
+        0.022947000339627266,
+        -0.04838800057768822
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 7104,
+      "componentType": 5125,
+      "count": 48,
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "extras": {
+      "author": "JZVFX (https://sketchfab.com/JZVFX)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/maxwell-the-cat-141a6a0dc2704fcb878125e3936b1248",
+      "title": "Maxwell The Cat"
+    },
+    "generator": "Sketchfab-14.39.1",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 7296,
+      "name": "floatBufferViews",
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 15472,
+      "byteOffset": 7296,
+      "byteStride": 8,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 11928,
+      "byteOffset": 22768,
+      "byteStride": 12,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 7664,
+      "byteOffset": 34696,
+      "byteStride": 16,
+      "name": "floatBufferViews",
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 42360,
+      "uri": "scene.bin"
+    }
+  ],
+  "images": [
+    {
+      "uri": "textures/Maxwell_Body_baseColor.png"
+    },
+    {
+      "uri": "textures/Maxwell_Body_metallicRoughness.png"
+    },
+    {
+      "uri": "textures/Maxwell_Body_normal.png"
+    },
+    {
+      "uri": "textures/Maxwell_Whiskers_baseColor.png"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "name": "Maxwell_Body",
+      "normalTexture": {
+        "index": 2
+      },
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicFactor": 0.0,
+        "metallicRoughnessTexture": {
+          "index": 1
+        }
+      }
+    },
+    {
+      "alphaMode": "BLEND",
+      "doubleSided": true,
+      "name": "Maxwell_Whiskers",
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 3
+        },
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.5
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Object_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0,
+            "TANGENT": 2,
+            "TEXCOORD_0": 3,
+            "TEXCOORD_1": 4,
+            "TEXCOORD_2": 5,
+            "TEXCOORD_3": 6
+          },
+          "indices": 7,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Object_1",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 9,
+            "POSITION": 8,
+            "TEXCOORD_0": 10
+          },
+          "indices": 11,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "matrix": [
+        -1.2372827809044666e-17,
+        1.2372827809044666e-17,
+        -0.05572226271033287,
+        0.0,
+        -0.05572226271033287,
+        -2.7473196626647637e-33,
+        1.2372827809044666e-17,
+        0.0,
+        0.0,
+        0.05572226271033287,
+        1.2372827809044666e-17,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Sketchfab_model"
+    },
+    {
+      "children": [
+        2
+      ],
+      "name": "root"
+    },
+    {
+      "children": [
+        3
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.220446049250313e-16,
+        1.0,
+        0.0,
+        0.0,
+        -1.0,
+        2.220446049250313e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "GLTF_SceneRootNode"
+    },
+    {
+      "children": [
+        4,
+        5
+      ],
+      "name": "Maxwell_0"
+    },
+    {
+      "mesh": 0,
+      "name": "Object_4"
+    },
+    {
+      "mesh": 1,
+      "name": "Object_5"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Sketchfab_Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 1
+    },
+    {
+      "sampler": 0,
+      "source": 2
+    },
+    {
+      "sampler": 0,
+      "source": 3
+    }
+  ]
+}
