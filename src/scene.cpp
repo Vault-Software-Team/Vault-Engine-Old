@@ -325,6 +325,16 @@ namespace HyperAPI {
                 }
             }
 
+            if(type == "CsharpScriptManager") {
+                gameObject->AddComponent<Experimental::CsharpScriptManager>();
+
+                auto &scriptManager = gameObject->GetComponent<Experimental::CsharpScriptManager>();
+
+                for(auto klass : component["scripts"]) {
+                    scriptManager.selectedScripts[klass] = klass;
+                }
+            }
+
             if(type == "SpriteRenderer") {
                 gameObject->AddComponent<Experimental::SpriteRenderer>();
                 auto &spriteRenderer = gameObject->GetComponent<Experimental::SpriteRenderer>();
@@ -1082,6 +1092,17 @@ namespace HyperAPI {
                 JSON[i]["components"][componentOffset]["type"] = "CppScriptManager";
                 for(int scr = 0; scr < scriptManager.addedScripts.size(); scr++) {
                     JSON[i]["components"][componentOffset]["scripts"][scr] = scriptManager.addedScripts[scr]->name;
+                }
+
+                componentOffset++;
+            }
+
+            if(gameObject->HasComponent<Experimental::CsharpScriptManager>()) {
+                auto &scriptManager = gameObject->GetComponent<Experimental::CsharpScriptManager>();
+                JSON[i]["components"][componentOffset]["type"] = "CsharpScriptManager";
+
+                for(auto klass : scriptManager.selectedScripts) {
+                    JSON[i]["components"][componentOffset]["scripts"] = klass.first; 
                 }
 
                 componentOffset++;

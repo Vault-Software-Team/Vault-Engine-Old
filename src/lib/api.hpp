@@ -14,7 +14,11 @@
 #include "../vendor/glm/ext.hpp"
 #include "../vendor/glm/gtx/quaternion.hpp"
 #include "LinearMath/btTransform.h"
+#include "mono/metadata/class.h"
+#include "mono/metadata/exception.h"
+#include "mono/metadata/object.h"
 #include "nativeScripts.hpp"
+#include <unordered_map>
 #define GLM_ENABLE_EXPERIMENTAL
 #include "../vendor/glm/gtx/matrix_decompose.hpp"
 #include "../vendor/glm/gtx/rotate_vector.hpp"
@@ -37,6 +41,7 @@
 #include "../vendor/SDL2/SDL_mixer.h"
 #include "../vendor/bullet/bullet/btBulletDynamicsCommon.h"
 #include "../vendor/bullet/bullet/BulletCollision/CollisionDispatch/btGhostObject.h"
+#include "csharp.hpp"
 
 // C++ Libraries
 #include <vector>
@@ -45,6 +50,7 @@
 #include <any>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <random>
 #include <memory>
 
@@ -335,19 +341,19 @@ namespace HyperAPI {
                     ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_FA_MESSAGE);
                     // same line
                     ImGui::SameLine();
-                    ImGui::Text((std::string(" - ") + message).c_str());
+                    ImGui::TextWrapped("%s", (std::string(" - ") + message).c_str());
                     break;
                 case LOG_WARNING:
                     ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.0f, 1.0f), ICON_FA_TRIANGLE_EXCLAMATION);
                     // same line
                     ImGui::SameLine();
-                    ImGui::Text((std::string(" - ") + message).c_str());
+                    ImGui::TextWrapped("%s", (std::string(" - ") + message).c_str());
                     break;
                 case LOG_ERROR:
                     ImGui::TextColored(ImVec4(1.2f, 0.0f, 0.0f, 1.0f), ICON_FA_CIRCLE_EXCLAMATION);
                     // same line
                     ImGui::SameLine();
-                    ImGui::Text((std::string(" - ") + message).c_str());
+                    ImGui::TextWrapped("%s", (std::string(" - ") + message).c_str());
                     break;
             }
         }
@@ -1128,6 +1134,80 @@ namespace HyperAPI {
             }
         };
 
+        struct CsharpScriptManager : public BaseComponent {
+            std::unordered_map<std::string, std::string> selectedScripts;
+
+            CsharpScriptManager() = default;
+
+            void GUI() {
+                if(ImGui::TreeNode("C# Script Manager")) {
+                    ImGui::ListBoxHeader("C# Scripts");
+
+                    for(auto klass : CsharpScriptEngine::entityClasses) {
+                        if(ImGui::Selectable(
+                        selectedScripts[klass.first] == klass.first 
+                        ? (std::string(ICON_FA_CHECK) + " " + klass.first).c_str()
+                        : klass.first.c_str()
+                        , false)) {
+                            if(selectedScripts[klass.first] == klass.first) {
+                                selectedScripts.erase(klass.first);
+                            } else {
+                                selectedScripts[klass.first] = klass.first;
+                            }
+                        }
+                    }
+
+                    ImGui::ListBoxFooter();
+
+                    ImGui::NewLine();
+                    if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::m_Registry.remove<CsharpScriptManager>(entity);
+                    }
+
+                    ImGui::TreePop();
+                }
+            }  
+
+            void Start() {
+                for(auto klass : selectedScripts) {
+                    std::istringstream iss(klass.first);
+                    std::vector<std::string> tokens;
+                    std::string token;
+                    while (std::getline(iss, token, '.')) {
+                        if (!token.empty())
+                            tokens.push_back(token);
+                    }
+
+                    MonoScriptClass *behaviour = new MonoScriptClass(tokens[0], tokens[1]);
+                    behaviour->CallConstructor();
+                    CsharpScriptEngine::nextId = ID;
+                    MonoMethod *onStart = behaviour->GetMethod("OnStart", 0);
+
+                    // void *iterator = nullptr; 
+                    // while(MonoClassField *field = mono_class_get_fields(behaviour->GetClass(), &iterator)) {
+                    //     const char *name = mono_field_get_name(field);
+                    //     const char *type = mono_type_get_name(mono_field_get_type(field));
+
+                    //     std::cout << "Name: " << name << " Type: " << type << std::endl;
+                    // }
+
+                    void *params[0] = {};
+                    mono_runtime_invoke(onStart, behaviour->GetObject(), params, nullptr);
+                    CsharpScriptEngine::instances[klass.first] = behaviour;
+                }
+            }
+
+            void Update() {
+                for(auto klass : selectedScripts) {
+                    MonoScriptClass *behaviour = CsharpScriptEngine::instances[klass.first];
+                    MonoMethod *onUpdate = behaviour->GetMethod("OnUpdate", 1);
+
+                    void *params = &Timestep::deltaTime;
+                    mono_runtime_invoke(onUpdate, behaviour->GetObject(), &params, nullptr);
+                }
+            }
+        };
+
         struct CppScriptManager : public BaseComponent {            
             std::vector<CppScripting::Script*> addedScripts;
             bool showScripts;
@@ -1162,7 +1242,8 @@ namespace HyperAPI {
                             }
                         }
 
-/*                         if(ImGui::Selectable(
+                        /*                         
+                        if(ImGui::Selectable(
                             addedToScripts ? std::string(ICON_FA_CHECK + std::string(" ") + item.name).c_str() : item.name.c_str()
                         )) {
                             if(addedToScripts) {
@@ -1175,6 +1256,11 @@ namespace HyperAPI {
                         } */
                     }
                     ImGui::ListBoxFooter();
+
+                    ImGui::NewLine();
+                    if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                        Scene::m_Registry.remove<CppScriptManager>(entity);
+                    }
 
                     ImGui::TreePop();
                 }

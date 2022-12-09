@@ -3,7 +3,12 @@
 #include "assimp/postprocess.h"
 #include "imgui/imgui.h"
 #include "lib/scene.hpp"
-#include <dlfcn.h>
+
+// C++ Scripting Libraries
+#ifndef _WIN32
+#include <dlfcn.h> 
+#endif
+
 #include <experimental/bits/fs_dir.h>
 #include <experimental/bits/fs_ops.h>
 #include <regex>
@@ -2113,6 +2118,10 @@ namespace HyperAPI {
                 if (gameObject->HasComponent<CppScriptManager>()) {
                     gameObject->GetComponent<CppScriptManager>().Start();
                 }
+
+                if (gameObject->HasComponent<CsharpScriptManager>()) {
+                    gameObject->GetComponent<CsharpScriptManager>().Start();
+                }
             }
 
             Scene::world = new b2World({0.0, -5.8f});
@@ -2254,6 +2263,11 @@ namespace HyperAPI {
                     component.DeleteGrid();
                 }
             }
+
+            for(auto instance : CsharpScriptEngine::instances) {
+                if(instance.second != nullptr) delete instance.second;
+            }
+            CsharpScriptEngine::instances.clear();
 
             BulletPhysicsWorld::Delete();
         }
@@ -2851,6 +2865,7 @@ namespace HyperAPI {
         std::vector<SharedObject> cpp_scripts;
 
         void LoadScripts() {
+            #ifndef  _WIN32
             auto iter = fs::recursive_directory_iterator("assets");
             for(auto &dirEntry : iter) {
                 if(G_END_WITH(dirEntry.path().string(), ".cpp")) {
@@ -2866,9 +2881,11 @@ namespace HyperAPI {
                     cpp_scripts.push_back(sharedObj);
                 }
             }
+            #endif
         }
 
         void CompileLinuxScripts() {
+            #ifndef _WIN32
             auto iter = fs::recursive_directory_iterator("assets");
             for(auto &dirEntry : iter) {
                 if(G_END_WITH(dirEntry.path().string(), ".cpp")) {
@@ -2902,6 +2919,7 @@ namespace HyperAPI {
                     LoadScripts();
                 }
             }
+            #endif
         }
 
         void CompileWindowsScripts() {
@@ -3240,6 +3258,7 @@ namespace Hyper {
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, testRBO);
 
+        float prevWidth, prevHeight;
         while (!glfwWindowShouldClose(renderer->window)) {
             bloomRenderer.m_SrcViewportSize = glm::vec2(width, height);
             bloomRenderer.m_SrcViewportSizeFloat = glm::vec2(width, height);
@@ -3260,111 +3279,116 @@ namespace Hyper {
             glfwGetWindowSize(renderer->window, &winWidth, &winHeight);
             glClear(GL_DEPTH_BUFFER_BIT);
 
-            glDeleteFramebuffers(1, &postProcessingFBO);
-            glDeleteTextures(1, &postProcessingTexture);
+            if(width != prevWidth || prevHeight != height) {
+                glDeleteFramebuffers(1, &postProcessingFBO);
+                glDeleteTextures(1, &postProcessingTexture);
 
-            glDeleteFramebuffers(1, &S_PPFBO);
-            glDeleteTextures(1, &S_PPT);
-            glDeleteTextures(1, &bloomTexture);
-            glDeleteFramebuffers(2, pingpongFBO);
-            glDeleteTextures(2, pingpongBuffer);
-            glDeleteRenderbuffers(1, &SRBO);
-            glDeleteRenderbuffers(1, &rbo);
-            glDeleteTextures(1, &entityTexture);
-            glDeleteTextures(1, &testTexture);
-            glDeleteFramebuffers(1, &testFBO);
-            glDeleteRenderbuffers(1, &testRBO);
+                glDeleteFramebuffers(1, &S_PPFBO);
+                glDeleteTextures(1, &S_PPT);
+                glDeleteTextures(1, &bloomTexture);
+                glDeleteFramebuffers(2, pingpongFBO);
+                glDeleteTextures(2, pingpongBuffer);
+                glDeleteRenderbuffers(1, &SRBO);
+                glDeleteRenderbuffers(1, &rbo);
+                glDeleteTextures(1, &entityTexture);
+                glDeleteTextures(1, &testTexture);
+                glDeleteFramebuffers(1, &testFBO);
+                glDeleteRenderbuffers(1, &testRBO);
 
-            glGenFramebuffers(1, &testFBO);
-            glBindFramebuffer(GL_FRAMEBUFFER, testFBO);
+                glGenFramebuffers(1, &testFBO);
+                glBindFramebuffer(GL_FRAMEBUFFER, testFBO);
 
-            glGenTextures(1, &testTexture);
-            glBindTexture(GL_TEXTURE_2D, testTexture);
+                glGenTextures(1, &testTexture);
+                glBindTexture(GL_TEXTURE_2D, testTexture);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, testTexture, 0);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, testTexture, 0);
 
-            glGenRenderbuffers(1, &testRBO);
-            glBindRenderbuffer(GL_RENDERBUFFER, testRBO);
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, testRBO);
+                glGenRenderbuffers(1, &testRBO);
+                glBindRenderbuffer(GL_RENDERBUFFER, testRBO);
+                glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, testRBO);
 
-            glGenFramebuffers(1, &postProcessingFBO);
-            glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
+                glGenFramebuffers(1, &postProcessingFBO);
+                glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
 
-            glGenTextures(1, &postProcessingTexture);
-            glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postProcessingTexture, 0);
+                glGenTextures(1, &postProcessingTexture);
+                glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postProcessingTexture, 0);
 
-            glGenTextures(1, &bloomTexture);
-            glBindTexture(GL_TEXTURE_2D, bloomTexture);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, bloomTexture, 0);
+                glGenTextures(1, &bloomTexture);
+                glBindTexture(GL_TEXTURE_2D, bloomTexture);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, bloomTexture, 0);
 
-            glGenTextures(1, &entityTexture);
-            glBindTexture(GL_TEXTURE_2D, entityTexture);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, nullptr);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, entityTexture, 0);
+                glGenTextures(1, &entityTexture);
+                glBindTexture(GL_TEXTURE_2D, entityTexture);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, nullptr);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, entityTexture, 0);
 
-            glDrawBuffers(3, attachments);
+                glDrawBuffers(3, attachments);
 
-            glGenRenderbuffers(1, &rbo);
-            glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-            glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+                glGenRenderbuffers(1, &rbo);
+                glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+                glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
+                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
-            glBindFramebuffer(GL_FRAMEBUFFER, S_PPFBO);
+                glBindFramebuffer(GL_FRAMEBUFFER, S_PPFBO);
 
-            // glGenFramebuffers(2, pingpongFBO);
-            // glGenTextures(2, pingpongBuffer);
+                // glGenFramebuffers(2, pingpongFBO);
+                // glGenTextures(2, pingpongBuffer);
 
-            // for(uint32_t i = 0; i < 2; i++)
-            // {
-            //     glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
-            //     glBindTexture(GL_TEXTURE_2D, pingpongBuffer[i]);
-            //     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-            //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            //     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongBuffer[i], 0);
-            // }
-            // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                // for(uint32_t i = 0; i < 2; i++)
+                // {
+                //     glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
+                //     glBindTexture(GL_TEXTURE_2D, pingpongBuffer[i]);
+                //     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+                //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                //     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongBuffer[i], 0);
+                // }
+                // glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-            glGenFramebuffers(1, &S_PPFBO);
-            glBindFramebuffer(GL_FRAMEBUFFER, S_PPFBO);
+                glGenFramebuffers(1, &S_PPFBO);
+                glBindFramebuffer(GL_FRAMEBUFFER, S_PPFBO);
 
-            glGenTextures(1, &S_PPT);
-            glBindTexture(GL_TEXTURE_2D, S_PPT);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, S_PPT, 0);
-            glBindBuffer(GL_ARRAY_BUFFER, rectVBO);
+                glGenTextures(1, &S_PPT);
+                glBindTexture(GL_TEXTURE_2D, S_PPT);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, S_PPT, 0);
+                glBindBuffer(GL_ARRAY_BUFFER, rectVBO);
 
-            glGenRenderbuffers(1, &SRBO);
-            glBindRenderbuffer(GL_RENDERBUFFER, SRBO);
-            glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, SRBO);
+                glGenRenderbuffers(1, &SRBO);
+                glBindRenderbuffer(GL_RENDERBUFFER, SRBO);
+                glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8, width, height);
+                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, SRBO);
+            }
+
+            prevWidth = width;
+            prevHeight = height;
 
             float rectangleVert[] = {
                     1, -1, 1, 0,

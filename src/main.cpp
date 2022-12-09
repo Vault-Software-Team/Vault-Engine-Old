@@ -6,7 +6,14 @@
 #include "imgui/imgui.h"
 #include "lib/api.hpp"
 #include "lib/scene.hpp"
+#include "mono/metadata/appdomain.h"
+#include "mono/metadata/assembly.h"
+#include "mono/metadata/class.h"
+#include "mono/metadata/image.h"
+#include "mono/metadata/loader.h"
+#include "mono/metadata/object-forward.h"
 #include "vendor/json/json.hpp"
+#include "lib/csharp.hpp"
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -543,7 +550,13 @@ void UpdatePresence(
 #endif
 
 using namespace CppScripting;
+
 int main(int argc, char **argv) {
+    unsetenv("TERM");
+    setenv("MONO_LOG_LEVEL", "debug", 0);
+    setenv("MONO_LOG_MASK", "dll", 0);
+
+
     if(argc > 1) {
 #ifdef _WIN32
         std::string path = argv[1];
@@ -557,6 +570,8 @@ int main(int argc, char **argv) {
         getcwd(cwd, sizeof(cwd));
         std::cout << "Current working dir: " << cwd << std::endl;
     }
+    
+    CsharpScriptEngine::InitMono();
 
 #ifndef _WIN32 || GAME_BUILD
     DiscordEventHandlers handlers;
@@ -966,6 +981,18 @@ int main(int argc, char **argv) {
                     if (ImGui::BeginMenu("File")) {
                         if(ImGui::MenuItem("Compile C++ Scripts (Linux)")) {
                             CompileLinuxScripts();
+                        }
+
+                        if(ImGui::MenuItem("Compile C# Assemblies")) {
+                            CsharpScriptEngine::CompileAssemblies();
+                        }
+
+                        if(ImGui::MenuItem("Reload C# Assemblies")) {
+                            CsharpScriptEngine::ReloadAssembly();
+                        }
+
+                        if(ImGui::MenuItem("Create C# Project")) {
+                            CsharpScriptEngine::CreateCsharpProject();
                         }
 
                         if(ImGui::MenuItem("Compile C++ Scripts (Windows)")) {
@@ -2033,6 +2060,11 @@ int main(int argc, char **argv) {
                             if (comp.hasGUI) comp.GUI();
                         }
 
+                        if (Scene::m_Object->HasComponent<CsharpScriptManager>()) {
+                            auto &comp = Scene::m_Object->GetComponent<CsharpScriptManager>();
+                            if (comp.hasGUI) comp.GUI();
+                        }
+
                         if (Scene::m_Object->HasComponent<c_PointLight>()) {
                             auto &comp = Scene::m_Object->GetComponent<c_PointLight>();
                             if (comp.hasGUI) comp.GUI();
@@ -2152,6 +2184,11 @@ int main(int argc, char **argv) {
 
                         if (ImGui::Button("C++ Scripts", ImVec2(200, 0))) {
                             Scene::m_Object->AddComponent<CppScriptManager>();
+                            ImGui::CloseCurrentPopup();
+                        }
+
+                        if (ImGui::Button("C# Scripts", ImVec2(200, 0))) {
+                            Scene::m_Object->AddComponent<CsharpScriptManager>();
                             ImGui::CloseCurrentPopup();
                         }
 
@@ -3112,6 +3149,13 @@ int main(int argc, char **argv) {
 
             if (gameObject->HasComponent<CppScriptManager>()) {
                 auto &script = gameObject->GetComponent<CppScriptManager>();
+                if (HyperAPI::isRunning) {
+                    script.Update();
+                }
+            }
+
+            if (gameObject->HasComponent<CsharpScriptManager>()) {
+                auto &script = gameObject->GetComponent<CsharpScriptManager>();
                 if (HyperAPI::isRunning) {
                     script.Update();
                 }

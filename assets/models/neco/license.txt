@@ -1,0 +1,11 @@
+Model Information:
+* title:	Neco Arc by ArcanaAeon
+* source:	https://sketchfab.com/3d-models/neco-arc-by-arcanaaeon-7e1d765c2c4a4cbb9109125578a3fced
+* author:	Aeon (https://sketchfab.com/AeonArcana)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Neco Arc by ArcanaAeon" (https://sketchfab.com/3d-models/neco-arc-by-arcanaaeon-7e1d765c2c4a4cbb9109125578a3fced) by Aeon (https://sketchfab.com/AeonArcana) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
