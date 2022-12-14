@@ -6,7 +6,7 @@
         "r": 1.0
     },
     "diffuse": "assets/sprites/Items/campfire.png",
-    "height": "assets/sprites/Items/fire_emission2.png",
+    "height": "assets/sprites/Items/fire_emission.png",
     "metallic": 0.0,
     "normal": "nullptr",
     "roughness": 0.0,

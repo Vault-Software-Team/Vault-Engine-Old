@@ -3171,6 +3171,14 @@ int main(int argc, char **argv) {
 
 //        font.Render(textShader, *camera, "Hello World!", fontTransform);
 
+        // Transform Updates
+        for(auto &gameObject : Scene::m_GameObjects) {
+            if(gameObject->HasComponent<Transform>()) {
+                auto &transform = gameObject->GetComponent<Transform>();
+                transform.Update();
+            }
+        }
+
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
         glFrontFace(GL_CCW);
@@ -3179,6 +3187,7 @@ int main(int argc, char **argv) {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         // disable wireframe mode
         // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        
         for (auto &layer : Scene::layers) {
             bool notInCameraLayer = true;
             for (auto &camLayer : Scene::mainCamera->layers) {

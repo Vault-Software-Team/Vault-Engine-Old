@@ -20,7 +20,8 @@ namespace Sandbox
 
     public class Player : Entity
     {
-        public Vector3 vec3;
+        private float speed = 5;
+
         void OnStart()
         {
             GetID(out string result);
@@ -29,9 +30,8 @@ namespace Sandbox
 
         void OnUpdate(float ts)
         {
-            Transform comp = GetComponent<Transform>();
-            Vector3 vec3 = comp.position;
-            comp.position = new Vector3(1, 1, 1);
+            MeshRenderer renderer = GetComponent<MeshRenderer>();
+            renderer.material.metallic = 5;
         }
     }
 }

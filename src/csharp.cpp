@@ -7,6 +7,7 @@
 #include "mono/metadata/loader.h"
 #include "mono/metadata/object-forward.h"
 #include "mono/metadata/object.h"
+#include <cstddef>
 #include <cstring>
 #include <experimental/bits/fs_ops.h>
 #include <functional>
@@ -110,48 +111,438 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         }
     }
 
-    void Transform_SetKey(MonoString *key, MonoString *id, MonoString *value) {
+    void Transform_SetKey(MonoString *key, MonoString *id, float x, float y, float z) {
         using namespace Experimental;
-        const std::string valStr = mono_string_to_utf8(value);
-
         const std::string keyStr = mono_string_to_utf8(key);
         const std::string idStr = mono_string_to_utf8(id);
 
         auto *gameObject = f_GameObject::FindGameObjectByID(idStr);
         auto &transform = gameObject->GetComponent<Transform>();
 
-        std::cout << "Test" << std::endl;
-
-        std::vector<float> vals;
-        std::stringstream ss(valStr);
-        std::string line;
-
-        while(getline(ss, line, ' ')) {
-            vals.push_back(std::stof(line));
-        }
-
         if(keyStr == "position") {
-            transform.position.x = vals[0];
-            transform.position.y = vals[1];
-            transform.position.z = vals[2];
+            transform.position.x = x;
+            transform.position.y = y;
+            transform.position.z = z;
         } 
 
         if(keyStr == "rotation") {
-            transform.rotation.x = vals[0];
-            transform.rotation.y = vals[1];
-            transform.rotation.z = vals[2];
+            transform.rotation.x = x;
+            transform.rotation.y = y;
+            transform.rotation.z = z;
         }
 
         if(keyStr == "scale") {
-            transform.scale.x = vals[0];
-            transform.scale.y = vals[1];
-            transform.scale.z = vals[2];
+            transform.scale.x = x;
+            transform.scale.y = y;
+            transform.scale.z = z;
         }
     }
 
     // Entity Shit
     void Entity_GetID(MonoString **result) {
         *result = mono_string_new(CsharpVariables::appDomain, nextId.c_str());
+    }
+
+    // Inputs
+    bool Input_IsKeyPressed(int key) {
+        return Input::IsKeyPressed(key);
+    }
+
+    bool Input_IsKeyReleased(int key) {
+        return Input::IsKeyReleased(key);
+    }
+
+    bool Input_IsMouseButtonPressed(int button) {
+        return Input::IsMouseButtonPressed(button);
+    }
+     
+    bool Input_IsMouseButtonReleased(int button) {
+        return Input::IsMouseButtonReleased(button);
+    }
+
+    int Input_GetHorizontalAxis() {
+        return Input::GetHorizontalAxis();
+    }
+
+    int Input_GetVerticalAxis() {
+        return Input::GetVerticalAxis();
+    }
+
+    int Input_GetMouseXAxis() {
+        return Input::GetMouseXAxis();
+    }
+
+    int Input_GetMouseYAxis() {
+        return Input::GetMouseYAxis();
+    }
+
+    void Input_SetMouseHidden(bool hidden) {
+        Input::SetMouseHidden(hidden);
+    }
+
+    void Input_SetMousePosition(float x, float y) {
+        Input::SetMousePosition(x, y);
+    }
+
+    // Material Stuff
+    void Material_GetTexture(MonoString *ID, MonoString *Component, MonoString *type, MonoString **texture) {
+        using namespace Experimental;
+        
+        const std::string id = mono_string_to_utf8(ID);
+        const std::string component = mono_string_to_utf8(Component);
+        const std::string Type = mono_string_to_utf8(type);
+
+        auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+        if(component == "MeshRenderer") {
+            auto &renderer = gameObject->GetComponent<MeshRenderer>();
+
+            if(Type == "diffuse") {
+                *texture = mono_string_new(CsharpVariables::appDomain, renderer.m_Mesh->material.diffuse != nullptr ? renderer.m_Mesh->material.diffuse->texPath.c_str() : "null");
+            }
+            else if(Type == "specular") {
+                *texture = mono_string_new(CsharpVariables::appDomain, renderer.m_Mesh->material.specular != nullptr ? renderer.m_Mesh->material.specular->texPath.c_str() : "null");
+            }
+            else if(Type == "normal") {
+                *texture = mono_string_new(CsharpVariables::appDomain, renderer.m_Mesh->material.normal != nullptr ? renderer.m_Mesh->material.normal->texPath.c_str() : "null");
+            }
+            else if(Type == "emission") {
+                *texture = mono_string_new(CsharpVariables::appDomain, renderer.m_Mesh->material.emission != nullptr ? renderer.m_Mesh->material.emission->texPath.c_str() : "null");
+            }
+        }
+        else if(component == "SpriteRenderer") {
+            auto &renderer = gameObject->GetComponent<SpriteRenderer>();
+
+            if(Type == "diffuse") {
+                *texture = mono_string_new(CsharpVariables::appDomain, renderer.mesh->material.diffuse != nullptr ? renderer.mesh->material.diffuse->texPath.c_str() : "null");
+            }
+            else if(Type == "specular") {
+                *texture = mono_string_new(CsharpVariables::appDomain, renderer.mesh->material.specular != nullptr ? renderer.mesh->material.specular->texPath.c_str() : "null");
+            }
+            else if(Type == "normal") {
+                *texture = mono_string_new(CsharpVariables::appDomain, renderer.mesh->material.normal != nullptr ? renderer.mesh->material.normal->texPath.c_str() : "null");
+            }
+            else if(Type == "emission") {
+                *texture = mono_string_new(CsharpVariables::appDomain, renderer.mesh->material.emission != nullptr ? renderer.mesh->material.emission->texPath.c_str() : "null");
+            }
+        }
+        else if(component == "SpritesheetAnimation") {
+            auto &renderer = gameObject->GetComponent<c_SpritesheetAnimation>();
+
+            if(Type == "diffuse") {
+                *texture = mono_string_new(CsharpVariables::appDomain, renderer.mesh->material.diffuse != nullptr ? renderer.mesh->material.diffuse->texPath.c_str() : "null");
+            }
+            else if(Type == "specular") {
+                *texture = mono_string_new(CsharpVariables::appDomain, renderer.mesh->material.specular != nullptr ? renderer.mesh->material.specular->texPath.c_str() : "null");
+            }
+            else if(Type == "normal") {
+                *texture = mono_string_new(CsharpVariables::appDomain, renderer.mesh->material.normal != nullptr ? renderer.mesh->material.normal->texPath.c_str() : "null");
+            }
+            else if(Type == "emission") {
+                *texture = mono_string_new(CsharpVariables::appDomain, renderer.mesh->material.emission != nullptr ? renderer.mesh->material.emission->texPath.c_str() : "null");
+            }
+        }
+    }
+
+    void Material_SetTexture(MonoString *ID, MonoString *Component, MonoString *type, MonoString *texture) {
+        using namespace Experimental;
+        
+        const std::string id = mono_string_to_utf8(ID);
+        const std::string component = mono_string_to_utf8(Component);
+        const std::string Type = mono_string_to_utf8(type);
+        const std::string tex = mono_string_to_utf8(texture);
+
+        auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+        if(component == "MeshRenderer") {
+            auto &renderer = gameObject->GetComponent<MeshRenderer>();
+
+            if(Type == "diffuse") {
+                if(renderer.m_Mesh->material.diffuse == nullptr) {
+                    renderer.m_Mesh->material.diffuse = new Texture(tex.c_str(), 0, "texture_diffuse");
+                } else {
+                    delete renderer.m_Mesh->material.diffuse; 
+                    renderer.m_Mesh->material.diffuse = new Texture(tex.c_str(), 0, "texture_diffuse");
+                }
+            }
+            else if(Type == "specular") {
+                if(renderer.m_Mesh->material.specular == nullptr) {
+                    renderer.m_Mesh->material.specular = new Texture(tex.c_str(), 0, "texture_specular");
+                } else {
+                    delete renderer.m_Mesh->material.specular; 
+                    renderer.m_Mesh->material.specular = new Texture(tex.c_str(), 0, "texture_specular");
+                }
+            }
+            else if(Type == "normal") {
+                if(renderer.m_Mesh->material.normal == nullptr) {
+                    renderer.m_Mesh->material.normal = new Texture(tex.c_str(), 0, "texture_normal");
+                } else {
+                    delete renderer.m_Mesh->material.normal; 
+                    renderer.m_Mesh->material.normal = new Texture(tex.c_str(), 0, "texture_normal");
+                }
+            }
+            else if(Type == "emission") {
+                if(renderer.m_Mesh->material.emission == nullptr) {
+                    renderer.m_Mesh->material.emission = new Texture(tex.c_str(), 0, "texture_emission");
+                } else {
+                    delete renderer.m_Mesh->material.emission; 
+                    renderer.m_Mesh->material.emission = new Texture(tex.c_str(), 0, "texture_emission");
+                }
+            }
+        }
+        else if(component == "SpriteRenderer") {
+            auto &renderer = gameObject->GetComponent<SpriteRenderer>();
+
+            if(Type == "diffuse") {
+                if(renderer.mesh->material.diffuse == nullptr) {
+                    renderer.mesh->material.diffuse = new Texture(tex.c_str(), 0, "texture_diffuse");
+                } else {
+                    delete renderer.mesh->material.diffuse; 
+                    renderer.mesh->material.diffuse = new Texture(tex.c_str(), 0, "texture_diffuse");
+                }
+            }
+            else if(Type == "specular") {
+                if(renderer.mesh->material.specular == nullptr) {
+                    renderer.mesh->material.specular = new Texture(tex.c_str(), 0, "texture_specular");
+                } else {
+                    delete renderer.mesh->material.specular; 
+                    renderer.mesh->material.specular = new Texture(tex.c_str(), 0, "texture_specular");
+                }
+            }
+            else if(Type == "normal") {
+                if(renderer.mesh->material.normal == nullptr) {
+                    renderer.mesh->material.normal = new Texture(tex.c_str(), 0, "texture_normal");
+                } else {
+                    delete renderer.mesh->material.normal; 
+                    renderer.mesh->material.normal = new Texture(tex.c_str(), 0, "texture_normal");
+                }
+            }
+            else if(Type == "emission") {
+                if(renderer.mesh->material.emission == nullptr) {
+                    renderer.mesh->material.emission = new Texture(tex.c_str(), 0, "texture_emission");
+                } else {
+                    delete renderer.mesh->material.emission; 
+                    renderer.mesh->material.emission = new Texture(tex.c_str(), 0, "texture_emission");
+                }
+            }
+        }
+        else if(component == "SpritesheetAnimation") {
+            auto &renderer = gameObject->GetComponent<c_SpritesheetAnimation>();
+
+            if(Type == "diffuse") {
+                if(renderer.mesh->material.diffuse == nullptr) {
+                    renderer.mesh->material.diffuse = new Texture(tex.c_str(), 0, "texture_diffuse");
+                } else {
+                    delete renderer.mesh->material.diffuse; 
+                    renderer.mesh->material.diffuse = new Texture(tex.c_str(), 0, "texture_diffuse");
+                }
+            }
+            else if(Type == "specular") {
+                if(renderer.mesh->material.specular == nullptr) {
+                    renderer.mesh->material.specular = new Texture(tex.c_str(), 0, "texture_specular");
+                } else {
+                    delete renderer.mesh->material.specular; 
+                    renderer.mesh->material.specular = new Texture(tex.c_str(), 0, "texture_specular");
+                }
+            }
+            else if(Type == "normal") {
+                if(renderer.mesh->material.normal == nullptr) {
+                    renderer.mesh->material.normal = new Texture(tex.c_str(), 0, "texture_normal");
+                } else {
+                    delete renderer.mesh->material.normal; 
+                    renderer.mesh->material.normal = new Texture(tex.c_str(), 0, "texture_normal");
+                }
+            }
+            else if(Type == "emission") {
+                if(renderer.mesh->material.emission == nullptr) {
+                    renderer.mesh->material.emission = new Texture(tex.c_str(), 0, "texture_emission");
+                } else {
+                    delete renderer.mesh->material.emission; 
+                    renderer.mesh->material.emission = new Texture(tex.c_str(), 0, "texture_emission");
+                }
+            }
+        }
+    }
+
+    void Material_GetColor(MonoString *ID, MonoString *Component, MonoString **out) {
+        using namespace Experimental;
+        
+        const std::string id = mono_string_to_utf8(ID);
+        const std::string component = mono_string_to_utf8(Component);
+        
+        auto *gameObject = f_GameObject::FindGameObjectByID(id);
+        Vector4 color;
+
+        if(component == "MeshRenderer") {
+            auto &renderer = gameObject->GetComponent<MeshRenderer>();
+
+            color = renderer.m_Mesh->material.baseColor;
+        }
+        else if(component == "SpriteRenderer") {
+            auto &renderer = gameObject->GetComponent<SpriteRenderer>();
+
+            color = renderer.mesh->material.baseColor;
+        }
+        else if(component == "SpritesheetAnimation") {
+            auto &renderer = gameObject->GetComponent<c_SpritesheetAnimation>();
+
+            color = renderer.mesh->material.baseColor;
+        }
+
+        *out = mono_string_new(CsharpVariables::appDomain, (
+            std::to_string(color.r) + " " + std::to_string(color.g) + " " + std::to_string(color.b) + " " + std::to_string(color.a)
+        ).c_str());
+    }
+
+    void Material_SetColor(MonoString *ID, MonoString *Component, float r, float g, float b, float a) {
+        using namespace Experimental;
+        
+        const std::string id = mono_string_to_utf8(ID);
+        const std::string component = mono_string_to_utf8(Component);
+        
+        auto *gameObject = f_GameObject::FindGameObjectByID(id);
+        Vector4 *color;
+
+        if(component == "MeshRenderer") {
+            auto &renderer = gameObject->GetComponent<MeshRenderer>();
+
+            color = &renderer.m_Mesh->material.baseColor;
+        }
+        else if(component == "SpriteRenderer") {
+            auto &renderer = gameObject->GetComponent<SpriteRenderer>();
+
+            color = &renderer.mesh->material.baseColor;
+        }
+        else if(component == "SpritesheetAnimation") {
+            auto &renderer = gameObject->GetComponent<c_SpritesheetAnimation>();
+
+            color = &renderer.mesh->material.baseColor;
+        }
+
+        color->r = r;
+        color->g = g;
+        color->b = b;
+        color->a = a;
+    }
+
+    void SpritesheetAnimation_GetCurrentAnimation(MonoString *ID, MonoString **out) {
+        using namespace CsharpVariables;
+        using namespace Experimental;
+
+        const std::string id = mono_string_to_utf8(ID);
+
+        auto *gameObject = f_GameObject::FindGameObjectByID(id);
+        auto &renderer = gameObject->GetComponent<c_SpritesheetAnimation>();
+
+        *out = mono_string_new(appDomain, renderer.currAnim);
+    }
+
+    void SpritesheetAnimation_SetCurrentAnimation(MonoString *ID, MonoString *value) {
+        using namespace CsharpVariables;
+        using namespace Experimental;
+
+        const std::string id = mono_string_to_utf8(ID);
+        const std::string Value = mono_string_to_utf8(value);
+
+        auto *gameObject = f_GameObject::FindGameObjectByID(id);
+        auto &renderer = gameObject->GetComponent<c_SpritesheetAnimation>();
+
+        strcpy(renderer.currAnim, Value.c_str());
+    }
+
+    void Material_GetTextureScale(MonoString *ID, MonoString **result) {
+        using namespace CsharpVariables;
+        using namespace Experimental;
+        
+        const std::string id = mono_string_to_utf8(ID);
+        auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+        auto &renderer = gameObject->GetComponent<MeshRenderer>();
+
+        if(renderer.m_Mesh) {
+            *result = mono_string_new(appDomain, (
+                std::to_string(renderer.m_Mesh->material.texUVs.x) 
+                + " " +
+                std::to_string(renderer.m_Mesh->material.texUVs.y)
+            ).c_str());
+        }
+    }
+
+    void Material_SetTextureScale(MonoString *ID, float x, float y) {
+        using namespace CsharpVariables;
+        using namespace Experimental;
+        
+        const std::string id = mono_string_to_utf8(ID);
+        auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+        auto &renderer = gameObject->GetComponent<MeshRenderer>();
+
+        if(renderer.m_Mesh) {
+            renderer.m_Mesh->material.texUVs.x = x;
+            renderer.m_Mesh->material.texUVs.y = y;
+        }
+    }
+
+    void Material_GetMetallic(MonoString *ID, MonoString **result) {
+        using namespace CsharpVariables;
+        using namespace Experimental;
+        
+        const std::string id = mono_string_to_utf8(ID);
+        auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+        auto &renderer = gameObject->GetComponent<MeshRenderer>();
+
+        if(renderer.m_Mesh) {
+            *result = mono_string_new(appDomain, (
+                std::to_string(renderer.m_Mesh->material.metallic) 
+            ).c_str());
+        }
+    }
+
+    void Material_SetMetallic(MonoString *ID, float value) {
+        using namespace CsharpVariables;
+        using namespace Experimental;
+
+        std::cout << value << std::endl;
+
+        const std::string id = mono_string_to_utf8(ID);
+        auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+        auto &renderer = gameObject->GetComponent<MeshRenderer>();
+
+        if(renderer.m_Mesh) {
+            renderer.m_Mesh->material.metallic = value;
+        }
+    }
+
+    void Material_GetRoughness(MonoString *ID, MonoString **result) {
+        using namespace CsharpVariables;
+        using namespace Experimental;
+        
+        const std::string id = mono_string_to_utf8(ID);
+        auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+        auto &renderer = gameObject->GetComponent<MeshRenderer>();
+
+        if(renderer.m_Mesh) {
+            *result = mono_string_new(appDomain, (
+                std::to_string(renderer.m_Mesh->material.roughness) 
+            ).c_str());
+        }
+    }
+
+    void Material_SetRoughness(MonoString *ID, float value) {
+        using namespace CsharpVariables;
+        using namespace Experimental;
+        
+        const std::string id = mono_string_to_utf8(ID);
+        auto *gameObject = f_GameObject::FindGameObjectByID(id);
+
+        auto &renderer = gameObject->GetComponent<MeshRenderer>();
+
+        if(renderer.m_Mesh) {
+            renderer.m_Mesh->material.roughness = value;
+        }
     }
 
     void RegisterFunctions() {
@@ -176,6 +567,35 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         // ID Shit
         mono_add_internal_call("Vault.Entity::GetID", reinterpret_cast<void*(*)>(Entity_GetID));
+    
+        // Input Keyboard
+        mono_add_internal_call("Vault.Input::IsKeyPressed", reinterpret_cast<void*(*)>(Input_IsKeyPressed));
+        mono_add_internal_call("Vault.Input::IsKeyReleased", reinterpret_cast<void*(*)>(Input_IsKeyReleased));
+        mono_add_internal_call("Vault.Input::IsMouseButtonPressed", reinterpret_cast<void*(*)>(Input_IsMouseButtonPressed));
+        mono_add_internal_call("Vault.Input::IsMouseButtonReleased", reinterpret_cast<void*(*)>(Input_IsMouseButtonReleased));
+        mono_add_internal_call("Vault.Input::GetHorizontalAxis", reinterpret_cast<void*(*)>(Input_GetHorizontalAxis));
+        mono_add_internal_call("Vault.Input::GetVerticalAxis", reinterpret_cast<void*(*)>(Input_GetVerticalAxis));
+        mono_add_internal_call("Vault.Input::GetMouseXAxis", reinterpret_cast<void*(*)>(Input_GetMouseXAxis));
+        mono_add_internal_call("Vault.Input::GetMouseYAxis", reinterpret_cast<void*(*)>(Input_GetMouseYAxis));
+        mono_add_internal_call("Vault.Input::SetMouseHidden", reinterpret_cast<void*(*)>(Input_SetMouseHidden));
+        mono_add_internal_call("Vault.Input::SetMousePosition", reinterpret_cast<void*(*)>(Input_SetMousePosition));
+    
+        // Material Component
+        mono_add_internal_call("Vault.Material::GetTexture", reinterpret_cast<void*(*)>(Material_GetTexture));
+        mono_add_internal_call("Vault.Material::SetTexture", reinterpret_cast<void*(*)>(Material_SetTexture));
+        mono_add_internal_call("Vault.Material::GetTextureScale", reinterpret_cast<void*(*)>(Material_GetTextureScale));
+        mono_add_internal_call("Vault.Material::SetTextureScale", reinterpret_cast<void*(*)>(Material_SetTextureScale));
+        mono_add_internal_call("Vault.Material::GetMetallic", reinterpret_cast<void*(*)>(Material_GetMetallic));
+        mono_add_internal_call("Vault.Material::SetMetallic", reinterpret_cast<void*(*)>(Material_SetMetallic));
+        mono_add_internal_call("Vault.Material::GetRoughness", reinterpret_cast<void*(*)>(Material_GetRoughness));
+        mono_add_internal_call("Vault.Material::SetRoughness", reinterpret_cast<void*(*)>(Material_SetRoughness));
+
+        mono_add_internal_call("Vault.Material::GetColor", reinterpret_cast<void*(*)>(Material_GetColor));
+        mono_add_internal_call("Vault.Material::SetColor", reinterpret_cast<void*(*)>(Material_SetColor));
+
+        // SpritesheetAnimation Component
+        mono_add_internal_call("Vault.SpritesheetAnimation::GetCurrentAnimation", reinterpret_cast<void*(*)>(SpritesheetAnimation_GetCurrentAnimation));
+        mono_add_internal_call("Vault.SpritesheetAnimation::SetCurrentAnimation", reinterpret_cast<void*(*)>(SpritesheetAnimation_SetCurrentAnimation));
     }
 }
 
