@@ -2,3 +2,4 @@ IndentWidth: 4
 NamespaceIndentation: All
 IndentAccessModifiers: false
 AccessModifierOffset: -4
+SortIncludes: false
