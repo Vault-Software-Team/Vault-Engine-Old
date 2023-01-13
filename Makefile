@@ -35,6 +35,14 @@ api += $(wildcard src/scene.cpp)
 api += $(wildcard src/ScriptEngine.cpp)
 api += $(wildcard src/networking.cpp)
 api += $(wildcard src/nativeScripts.cpp)
+
+components = $(wildcard src/Components/*.cpp)
+renderer = $(wildcard src/Renderer/*.cpp)
+other_stuff = $(wildcard src/Application/*.cpp)
+other_stuff += $(wildcard src/Bloom/*.cpp)
+other_stuff += $(wildcard src/f_GameObject/*.cpp)
+other_stuff += $(wildcard src/Experimental/*.cpp)
+
 scripts = $(wildcard src/scripts/*.cpp)
 
 api_obj = $(api:.cpp=.o)
@@ -54,6 +62,33 @@ eng:
 # set the .o files with objects variable
 	$(GNU_LINUX_COMPILER) -c $(api) src/scripts.cpp  $(flags)
 	mv *.o bin
+
+components:
+	$(GNU_LINUX_COMPILER) -c $(components) $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) -c src/main.cpp src/csharp.cpp $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
+
+other:
+	$(GNU_LINUX_COMPILER) -c $(other_stuff) $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) -c src/main.cpp src/csharp.cpp $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
+
+renderer:
+	$(GNU_LINUX_COMPILER) -c $(renderer) $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) -c src/main.cpp src/csharp.cpp $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
 
 libs:
 	for i in $(sources); do \

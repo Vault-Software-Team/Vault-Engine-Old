@@ -487,7 +487,8 @@ void ApplyMaterial(nlohmann::json JSON, Material &material, int i) {
 }
 
 namespace InspecType {
-    enum Type { None, Material };
+    enum Type { None,
+                Material };
 }
 
 struct InspectorMaterial {
@@ -2176,15 +2177,15 @@ int main(int argc, char **argv) {
 
             if (ImGui::Begin(ICON_FA_CUBES " Hierarchy")) {
                 if (ImGui::BeginDragDropTarget()) {
-                    if (const ImGuiPayload *payload =
-                            ImGui::AcceptDragDropPayload("game_object")) {
+                    if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("game_object")) {
                         for (auto &gameObject : Scene::m_GameObjects) {
                             if (gameObject->ID == HyperAPI::dirPayloadData) {
                                 if (gameObject->HasComponent<Transform>()) {
-                                    auto &transform =
-                                        gameObject->GetComponent<Transform>();
+                                    auto &transform = gameObject->GetComponent<Transform>();
+
                                     transform.parentTransform = nullptr;
                                 }
+
                                 gameObject->parentID = "NO_PARENT";
                                 break;
                             }
@@ -2196,12 +2197,17 @@ int main(int argc, char **argv) {
                 Scene::DropTargetMat(Scene::DRAG_MODEL, nullptr, nullptr);
                 ImVec2 win_size = ImGui::GetWindowSize();
 
-                if (ImGui::Button(ICON_FA_PLUS " Add GameObject",
-                                  ImVec2(win_size.x - 15, 25))) {
+                if (ImGui::Button(ICON_FA_PLUS " Add GameObject", ImVec2(win_size.x - 15, 25))) {
                     GameObject *go = new GameObject();
                     go->AddComponent<Transform>();
                     Scene::m_GameObjects.push_back(go);
                 }
+
+                // if (ImGui::Button(ICON_FA_FOLDER " Add Folder", ImVec2(win_size.x - 15, 25))) {
+                //     GameObject *go = new GameObject();
+                //     go->AddComponent<Transform>();
+                //     Scene::m_GameObjects.push_back(go);
+                // }
 
                 for (int i = 0; i < Scene::m_GameObjects.size(); i++) {
                     if (Scene::m_GameObjects[i]->parentID != "NO_PARENT") {
@@ -4122,7 +4128,7 @@ int main(int argc, char **argv) {
             //                    glm::radians(90.0f), glm::vec3(1.0f, 0.0f,
             //                    0.0f));
             ////            mesh_BoxCollider2D.Draw(workerShader, *camera,
-            ///model);
+            /// model);
             //
             //            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             //        }

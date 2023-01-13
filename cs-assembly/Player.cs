@@ -31,8 +31,8 @@ namespace Sandbox
         void OnUpdate(float ts)
         {
             MeshRenderer renderer = GetComponent<MeshRenderer>();
-            Material.GetMetallic(ID, out string result);
-            Console.WriteLine(result);
+            // Material.GetMetallic(ID, out string result);
+            // Console.WriteLine(result);
         }
     }
 }

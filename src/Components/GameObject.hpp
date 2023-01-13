@@ -12,6 +12,7 @@ namespace HyperAPI::Experimental {
     public:
         bool enabled = true;
         bool keyDown = false;
+        bool isFolder = false;
         std::string NODE_ID = uuid::generate_uuid_v4();
         std::string layer = "Default";
         char layerData[32] = "Default";

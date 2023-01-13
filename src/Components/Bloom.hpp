@@ -20,5 +20,4 @@ namespace HyperAPI::Experimental {
             }
         }
     };
-
 } // namespace HyperAPI::Experimental
