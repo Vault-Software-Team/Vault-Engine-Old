@@ -62,6 +62,7 @@ namespace HyperAPI::CppScripting {
     }
 
     void CompileWindowsScripts() {
+#ifndef _WIN32
         auto iter = fs::recursive_directory_iterator("assets");
         for (auto &dirEntry : iter) {
             if (G_END_WITH(dirEntry.path().string(), ".cpp")) {
@@ -100,5 +101,6 @@ namespace HyperAPI::CppScripting {
                 HYPER_LOG("C++ Scripts have been compiled (Windows Compiler)")
             }
         }
+#endif
     }
 } // namespace HyperAPI::CppScripting

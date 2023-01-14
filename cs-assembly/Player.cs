@@ -30,9 +30,10 @@ namespace Sandbox
 
         void OnUpdate(float ts)
         {
-            MeshRenderer renderer = GetComponent<MeshRenderer>();
-            // Material.GetMetallic(ID, out string result);
-            // Console.WriteLine(result);
+            Transform transform = GetComponent<Transform>();
+            Vector3 rotation = transform.rotation;
+            rotation.y += ts;
+            transform.rotation = rotation;
         }
     }
 }

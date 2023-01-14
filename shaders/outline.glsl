@@ -11,7 +11,8 @@ uniform float outlining;
 uniform mat4 model;
 
 void main() {
-    vec3 currentPosition = vec3(model * translation * rotation * scale * vec4(position + normal * outlining, 1));
+    // vec3 currentPosition = vec3(model * translation * rotation * scale * outlining * vec4(position, 1));
+    vec3 currentPosition = vec3(model * vec4(position + normal * 0.000001, 1));
     gl_Position = camera * vec4(currentPosition, 1);
 }
 

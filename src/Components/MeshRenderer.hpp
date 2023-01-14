@@ -90,11 +90,106 @@ namespace HyperAPI::Experimental {
                 }
 
                 if (m_Mesh != nullptr) {
-                    if (ImGui::Button("Select Material")) {
+                    if (ImGui::Button("Drag Material Here")) {
                         ImGuiFileDialog::Instance()->OpenDialog(
                             "SelectMaterial", "Select Material", ".material",
                             ".");
                     }
+
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload *payload =
+                                ImGui::AcceptDragDropPayload("file")) {
+                            if (G_END_WITH(dirPayloadData, ".material")) {
+                                std::string filePathName = dirPayloadData;
+                                // remove cwd from filePathName
+                                filePathName.erase(0, cwd.length() + 1);
+                                std::string filePath =
+                                    ImGuiFileDialog::Instance()->GetCurrentPath();
+
+                                std::ifstream file(filePathName);
+                                nlohmann::json JSON = nlohmann::json::parse(file);
+
+                                const std::string diffuseTexture = JSON["diffuse"];
+                                const std::string specularTexture = JSON["specular"];
+                                const std::string normalTexture = JSON["normal"];
+                                std::string heightTexture = "nullptr";
+                                if (JSON.contains("height")) {
+                                    heightTexture = JSON["height"];
+                                }
+
+                                if (diffuseTexture != "nullptr") {
+                                    if (m_Mesh->material.diffuse != nullptr) {
+                                        delete m_Mesh->material.diffuse;
+                                    }
+
+                                    m_Mesh->material.diffuse = new Texture(
+                                        diffuseTexture.c_str(), 0, "texture_diffuse");
+                                }
+
+                                if (specularTexture != "nullptr") {
+                                    if (m_Mesh->material.specular != nullptr) {
+                                        delete m_Mesh->material.specular;
+                                    }
+
+                                    m_Mesh->material.specular = new Texture(
+                                        specularTexture.c_str(), 1, "texture_specular");
+                                }
+
+                                if (normalTexture != "nullptr") {
+                                    if (m_Mesh->material.normal != nullptr) {
+                                        delete m_Mesh->material.normal;
+                                    }
+
+                                    m_Mesh->material.normal = new Texture(
+                                        normalTexture.c_str(), 2, "texture_normal");
+                                }
+
+                                if (heightTexture != "nullptr") {
+                                    if (m_Mesh->material.height != nullptr) {
+                                        delete m_Mesh->material.height;
+                                    }
+
+                                    m_Mesh->material.height = new Texture(
+                                        heightTexture.c_str(), 2, "texture_normal");
+                                }
+
+                                m_Mesh->material.baseColor = Vector4(
+                                    JSON["baseColor"]["r"], JSON["baseColor"]["g"],
+                                    JSON["baseColor"]["b"], JSON["baseColor"]["a"]);
+
+                                m_Mesh->material.roughness = JSON["roughness"];
+                                m_Mesh->material.metallic = JSON["metallic"];
+                                m_Mesh->material.texUVs =
+                                    Vector2(JSON["texUV"]["x"], JSON["texUV"]["y"]);
+
+                                matPath = filePathName;
+                                file.close();
+                            }
+                        }
+                    }
+
+                    if (matPath != "") {
+                        ImGui::Text("Material: %s", matPath.c_str());
+                        if (ImGui::Button("Remove Material")) {
+                            matPath = "";
+                            if (m_Mesh->material.diffuse != nullptr) {
+                                delete m_Mesh->material.diffuse;
+                            }
+
+                            if (m_Mesh->material.specular != nullptr) {
+                                delete m_Mesh->material.specular;
+                            }
+
+                            if (m_Mesh->material.normal != nullptr) {
+                                delete m_Mesh->material.normal;
+                            }
+
+                            m_Mesh->material.roughness = 0.0f;
+                            m_Mesh->material.metallic = 0.0f;
+                            m_Mesh->material.texUVs = Vector2(0, 0);
+                        }
+                    }
+
                     ImGui::NewLine();
 
                     if (!customShader.usingCustomShader) {
@@ -124,28 +219,6 @@ namespace HyperAPI::Experimental {
                                     new Shader(dirPayloadData.c_str());
                             }
                         }
-                    }
-                }
-
-                if (matPath != "") {
-                    ImGui::Text("Material: %s", matPath.c_str());
-                    if (ImGui::Button("Remove Material")) {
-                        matPath = "";
-                        if (m_Mesh->material.diffuse != nullptr) {
-                            delete m_Mesh->material.diffuse;
-                        }
-
-                        if (m_Mesh->material.specular != nullptr) {
-                            delete m_Mesh->material.specular;
-                        }
-
-                        if (m_Mesh->material.normal != nullptr) {
-                            delete m_Mesh->material.normal;
-                        }
-
-                        m_Mesh->material.roughness = 0.0f;
-                        m_Mesh->material.metallic = 0.0f;
-                        m_Mesh->material.texUVs = Vector2(0, 0);
                     }
                 }
 

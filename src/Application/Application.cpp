@@ -14,6 +14,7 @@
 #include "../Components/SpriteAnimation.hpp"
 #include "../Components/SpritesheetAnimation.hpp"
 #include "../Renderer/Camera.hpp"
+#include "../Debugging/GLError.hpp"
 
 namespace Hyper {
     void Application::Run(
@@ -60,6 +61,7 @@ namespace Hyper {
         uint32_t postProcessingFBO;
         glGenFramebuffers(1, &postProcessingFBO);
         glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
+        glCheckError();
 
         uint32_t postProcessingTexture;
         glGenTextures(1, &postProcessingTexture);
@@ -72,6 +74,7 @@ namespace Hyper {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                GL_TEXTURE_2D, postProcessingTexture, 0);
+        glCheckError();
 
         uint32_t bloomTexture;
         glGenTextures(1, &bloomTexture);
@@ -84,6 +87,7 @@ namespace Hyper {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1,
                                GL_TEXTURE_2D, bloomTexture, 0);
+        glCheckError();
 
         // r32i entityTexture
         uint32_t entityTexture;
@@ -97,6 +101,7 @@ namespace Hyper {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2,
                                GL_TEXTURE_2D, entityTexture, 0);
+        glCheckError();
 
         // rbo
         uint32_t rbo;
@@ -106,6 +111,7 @@ namespace Hyper {
                               height);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
                                   GL_RENDERBUFFER, rbo);
+        glCheckError();
 
         uint32_t attachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
                                    GL_COLOR_ATTACHMENT2};
@@ -134,6 +140,7 @@ namespace Hyper {
         uint32_t S_PPFBO;
         glGenFramebuffers(1, &S_PPFBO);
         glBindFramebuffer(GL_FRAMEBUFFER, S_PPFBO);
+        glCheckError();
 
         uint32_t S_PPT;
         glGenTextures(1, &S_PPT);
@@ -146,6 +153,7 @@ namespace Hyper {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                GL_TEXTURE_2D, S_PPT, 0);
+        glCheckError();
 
         uint32_t SRBO;
         glGenRenderbuffers(1, &SRBO);
@@ -154,6 +162,7 @@ namespace Hyper {
                                          GL_DEPTH24_STENCIL8, width, height);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
                                   GL_RENDERBUFFER, SRBO);
+        glCheckError();
 
         float timeStep = 1.0f / 60.0f;
 
@@ -216,6 +225,7 @@ namespace Hyper {
                               height);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
                                   GL_RENDERBUFFER, testRBO);
+        glCheckError();
 
         float prevWidth, prevHeight;
         while (!glfwWindowShouldClose(renderer->window)) {
@@ -401,9 +411,31 @@ namespace Hyper {
             prevHeight = height;
 
             float rectangleVert[] = {
-                1, -1, 1, 0, -1, -1, 0, 0, -1, 1, 0, 1,
+                1,
+                -1,
+                1,
+                0,
+                -1,
+                -1,
+                0,
+                0,
+                -1,
+                1,
+                0,
+                1,
 
-                1, 1,  1, 1, 1,  -1, 1, 0, -1, 1, 0, 1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                -1,
+                1,
+                0,
+                -1,
+                1,
+                0,
+                1,
             };
 
             glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(rectangleVert),

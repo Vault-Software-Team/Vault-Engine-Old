@@ -53,8 +53,8 @@ namespace HyperAPI::Experimental {
             bt_transform->setOrigin(btVector3(transform->position.x,
                                               transform->position.y,
                                               transform->position.z));
-            glm::quat q = transform->rotation;
-            bt_transform->setRotation(btQuaternion(q.x, q.y, q.z));
+            glm::vec3 q = transform->rotation;
+            bt_transform->setRotation(btQuaternion(glm::degrees(q.x), glm::degrees(q.y), glm::degrees(q.z)));
 
             motionState = new btDefaultMotionState(*bt_transform);
 

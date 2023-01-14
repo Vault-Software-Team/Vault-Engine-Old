@@ -42,6 +42,9 @@ other_stuff = $(wildcard src/Application/*.cpp)
 other_stuff += $(wildcard src/Bloom/*.cpp)
 other_stuff += $(wildcard src/f_GameObject/*.cpp)
 other_stuff += $(wildcard src/Experimental/*.cpp)
+other_stuff += $(wildcard src/scene.cpp)
+
+debugging = $(wildcard src/Debugging/*.cpp)
 
 scripts = $(wildcard src/scripts/*.cpp)
 
@@ -83,6 +86,15 @@ other:
 
 renderer:
 	$(GNU_LINUX_COMPILER) -c $(renderer) $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) -c src/main.cpp src/csharp.cpp $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
+
+debugging:
+	$(GNU_LINUX_COMPILER) -c $(debugging) $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) -c src/main.cpp src/csharp.cpp $(flags)

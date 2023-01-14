@@ -17,6 +17,7 @@ namespace HyperAPI {
         float m_Weights[MAX_BONE_INFLUENCE] = {0.0f};
         glm::vec3 tangent = glm::vec3(-435.0f, -435.0f, -435.0f);
         glm::vec3 bitangent = glm::vec3(-435.0f, -435.0f, -435.0f);
+        float transformIndex = 0;
     };
 
     struct Vertex_Batch {

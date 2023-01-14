@@ -69,7 +69,7 @@ namespace HyperAPI::Experimental {
                 // }
 
                 void *params[0] = {};
-                mono_runtime_invoke(onStart, behaviour->GetObject(), params,
+                mono_runtime_invoke(onStart, behaviour->f_GetObject(), params,
                                     nullptr);
                 CsharpScriptEngine::instances[klass.first] = behaviour;
             }
@@ -82,7 +82,7 @@ namespace HyperAPI::Experimental {
                 MonoMethod *onUpdate = behaviour->GetMethod("OnUpdate", 1);
 
                 void *params = &Timestep::deltaTime;
-                mono_runtime_invoke(onUpdate, behaviour->GetObject(), &params,
+                mono_runtime_invoke(onUpdate, behaviour->f_GetObject(), &params,
                                     nullptr);
             }
         }

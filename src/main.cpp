@@ -608,9 +608,11 @@ void UpdatePresence(const std::string &details = "",
 using namespace CppScripting;
 
 int main(int argc, char **argv) {
+#ifndef _WIN32
     unsetenv("TERM");
     setenv("MONO_LOG_LEVEL", "debug", 0);
     setenv("MONO_LOG_MASK", "dll", 0);
+#endif
 
     if (argc > 1) {
 #ifdef _WIN32
@@ -672,7 +674,6 @@ int main(int argc, char **argv) {
     // check if game.config exists
     std::ifstream file("assets/game.config");
     bool mainSceneFound = false;
-
     if (file.is_open()) {
         nlohmann::json JSON = nlohmann::json::parse(file);
 
@@ -815,6 +816,7 @@ int main(int argc, char **argv) {
     Shader shader("shaders/default.glsl");
     Shader workerShader("shaders/worker.glsl");
     Shader outlineShader("shaders/outline.glsl");
+    // Shader batchShader("shaders/batch.glsl");
     // Shader gridShader("shaders/grid.glsl");
 
     shader.Bind();
@@ -3196,6 +3198,13 @@ int main(int argc, char **argv) {
 #ifndef GAME_BUILD
     Mesh *gridMesh = Plane(Vector4(1, 0, 0, 1)).m_Mesh;
 #endif
+
+    Batch batch;
+    Transform m_transform;
+    m_transform.position = Vector3(0, 0, 0);
+    m_transform.rotation = Vector3(0, 0, 0);
+    m_transform.scale = Vector3(1, 1, 1);
+    batch.AddMesh(*gridMesh, &m_transform);
 
     app.Run(
         [&](uint32_t &shadowMapTex) {

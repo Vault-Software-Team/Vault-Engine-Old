@@ -1,10 +1,16 @@
 #include "lib/scene.hpp"
+#include "Renderer/Mesh.hpp"
+#include "Renderer/Structures.hpp"
 #include "lib/api.hpp"
+#include "libs.hpp"
+#include "json/json.hpp"
+#include <experimental/bits/fs_ops.h>
 #include <memory>
+#include <cmath>
 
-bool G_END_WITH(std::string const & value, std::string const & ending)
-{
-    if (ending.size() > value.size()) return false;
+bool G_END_WITH(std::string const &value, std::string const &ending) {
+    if (ending.size() > value.size())
+        return false;
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
 
@@ -12,26 +18,23 @@ void ApplyTransform(HyperAPI::Experimental::Transform &transform, nlohmann::json
     transform.position = Vector3(
         JSON["position"]["x"],
         JSON["position"]["y"],
-        JSON["position"]["z"]
-    );
+        JSON["position"]["z"]);
 
     transform.rotation = Vector3(
         JSON["rotation"]["x"],
         JSON["rotation"]["y"],
-        JSON["rotation"]["z"]
-    );
+        JSON["rotation"]["z"]);
 
     transform.scale = Vector3(
         JSON["scale"]["x"],
         JSON["scale"]["y"],
-        JSON["scale"]["z"]
-    );
+        JSON["scale"]["z"]);
 }
 
 namespace HyperAPI {
     namespace Scene {
-        std::map<std::string, Texture*> Textures;
-        
+        std::map<std::string, Texture *> Textures;
+
         void SavePrefab(const std::string &path, Experimental::GameObject *gameObject) {
             std::ofstream file(path);
             nlohmann::json JSON;
@@ -53,10 +56,11 @@ namespace HyperAPI {
 
             int componentOffset = 0;
             SaveComponents(JSON, gameObject, 0, componentOffset);
-        
-            for(int i = 0; i < m_GameObjects.size(); i++) {
+
+            for (int i = 0; i < m_GameObjects.size(); i++) {
                 auto &gameObject = m_GameObjects[i];
-                if(gameObject->parentID != ID) continue;
+                if (gameObject->parentID != ID)
+                    continue;
 
                 std::string name = gameObject->name;
                 std::string ID = gameObject->ID;
@@ -74,7 +78,7 @@ namespace HyperAPI {
                 int componentOffset = 0;
                 SaveComponents(JSON, gameObject, i, componentOffset);
             }
-        
+
             file << JSON;
             file.close();
         }
@@ -97,9 +101,10 @@ namespace HyperAPI {
             int componentOffset = 0;
             SaveComponents(JSON, gameObject, 0, componentOffset);
 
-            for(int i = 0; i < m_GameObjects.size(); i++) {
+            for (int i = 0; i < m_GameObjects.size(); i++) {
                 auto &gameObject = m_GameObjects[i];
-                if(gameObject->parentID != ID) continue;
+                if (gameObject->parentID != ID)
+                    continue;
 
                 std::string name = gameObject->name;
                 std::string ID = gameObject->ID;
@@ -120,7 +125,7 @@ namespace HyperAPI {
         }
 
         void LoadComponents(nlohmann::json &component, Experimental::GameObject *gameObject, std::string type, std::string &meshType, Experimental::Transform &transform) {
-            if(type == "Transform") {
+            if (type == "Transform") {
                 gameObject->AddComponent<Experimental::Transform>();
                 ApplyTransform(gameObject->GetComponent<Experimental::Transform>(), component);
                 transform.position = gameObject->GetComponent<Experimental::Transform>().position;
@@ -128,38 +133,38 @@ namespace HyperAPI {
                 transform.scale = gameObject->GetComponent<Experimental::Transform>().scale;
             }
 
-            if(type == "MeshRenderer") {
+            if (type == "MeshRenderer") {
                 gameObject->AddComponent<Experimental::MeshRenderer>();
                 auto &meshRenderer = gameObject->GetComponent<Experimental::MeshRenderer>();
                 nlohmann::json meshConfig = component["mesh"];
 
-                if(!meshConfig["custom"]) {
+                if (!meshConfig["custom"]) {
                     std::string meshType = meshConfig["mesh"];
                     meshRenderer.meshType = meshType;
 
-                    if(meshType == "Plane") {
-                        meshRenderer.m_Mesh = Plane(Vector4(1,1,1,1)).m_Mesh;
+                    if (meshType == "Plane") {
+                        meshRenderer.m_Mesh = Plane(Vector4(1, 1, 1, 1)).m_Mesh;
                     }
-                    if(meshType == "Cube") {
-                        meshRenderer.m_Mesh = Cube(Vector4(1,1,1,1)).meshes[0];
+                    if (meshType == "Cube") {
+                        meshRenderer.m_Mesh = Cube(Vector4(1, 1, 1, 1)).meshes[0];
                     }
-                    if(meshType == "Sphere") {
-                        meshRenderer.m_Mesh = Sphere(Vector4(1,1,1,1)).meshes[0];
+                    if (meshType == "Sphere") {
+                        meshRenderer.m_Mesh = Sphere(Vector4(1, 1, 1, 1)).meshes[0];
                     }
-                    if(meshType == "Cone") {
-                        meshRenderer.m_Mesh = Cone(Vector4(1,1,1,1)).meshes[0];
+                    if (meshType == "Cone") {
+                        meshRenderer.m_Mesh = Cone(Vector4(1, 1, 1, 1)).meshes[0];
                     }
-                    if(meshType == "Capsule") {
-                        meshRenderer.m_Mesh = Capsule(Vector4(1,1,1,1)).meshes[0];
+                    if (meshType == "Capsule") {
+                        meshRenderer.m_Mesh = Capsule(Vector4(1, 1, 1, 1)).meshes[0];
                     }
-                    if(meshType == "Torus") {
-                        meshRenderer.m_Mesh = Torus(Vector4(1,1,1,1)).meshes[0];
+                    if (meshType == "Torus") {
+                        meshRenderer.m_Mesh = Torus(Vector4(1, 1, 1, 1)).meshes[0];
                     }
-                    if(meshType == "Cylinder") {
-                        meshRenderer.m_Mesh = Cylinder(Vector4(1,1,1,1)).meshes[0];
+                    if (meshType == "Cylinder") {
+                        meshRenderer.m_Mesh = Cylinder(Vector4(1, 1, 1, 1)).meshes[0];
                     }
 
-                    if(component["material"] != "") {
+                    if (component["material"] != "") {
                         std::ifstream file(component["material"]);
                         nlohmann::json JSON = nlohmann::json::parse(file);
 
@@ -167,24 +172,24 @@ namespace HyperAPI {
                         const std::string specularTexture = JSON["specular"];
                         const std::string normalTexture = JSON["normal"];
 
-                        if(diffuseTexture != "nullptr") {
-                            if(meshRenderer.m_Mesh->material.diffuse != nullptr) {
+                        if (diffuseTexture != "nullptr") {
+                            if (meshRenderer.m_Mesh->material.diffuse != nullptr) {
                                 delete meshRenderer.m_Mesh->material.diffuse;
                             }
 
                             meshRenderer.m_Mesh->material.diffuse = new Texture(diffuseTexture.c_str(), 0, "texture_diffuse");
                         }
 
-                        if(specularTexture != "nullptr") {
-                            if(meshRenderer.m_Mesh->material.specular != nullptr) {
+                        if (specularTexture != "nullptr") {
+                            if (meshRenderer.m_Mesh->material.specular != nullptr) {
                                 delete meshRenderer.m_Mesh->material.specular;
                             }
 
                             meshRenderer.m_Mesh->material.specular = new Texture(specularTexture.c_str(), 1, "texture_specular");
                         }
 
-                        if(normalTexture != "nullptr") {
-                            if(meshRenderer.m_Mesh->material.normal != nullptr) {
+                        if (normalTexture != "nullptr") {
+                            if (meshRenderer.m_Mesh->material.normal != nullptr) {
                                 delete meshRenderer.m_Mesh->material.normal;
                             }
 
@@ -192,11 +197,10 @@ namespace HyperAPI {
                         }
 
                         meshRenderer.m_Mesh->material.baseColor = Vector4(
-                                JSON["baseColor"]["r"],
-                                JSON["baseColor"]["g"],
-                                JSON["baseColor"]["b"],
-                                JSON["baseColor"]["a"]
-                        );
+                            JSON["baseColor"]["r"],
+                            JSON["baseColor"]["g"],
+                            JSON["baseColor"]["b"],
+                            JSON["baseColor"]["a"]);
 
                         meshRenderer.m_Mesh->material.roughness = JSON["roughness"];
                         meshRenderer.m_Mesh->material.metallic = JSON["metallic"];
@@ -204,64 +208,153 @@ namespace HyperAPI {
 
                         meshRenderer.matPath = component["material"];
                     }
-                }
-                else {
+                } else {
                     meshType = meshConfig["mesh"];
-                }
 
+                    std::ifstream file("assets/models/" + gameObject->name + ".vault.model");
+                    nlohmann::json modelJSON = json::parse(file);
+
+                    std::vector<Vertex> vertices;
+                    std::vector<uint32_t> indices;
+
+                    for (auto vertex : modelJSON["vertices"]) {
+                        Vertex vert = {
+                            Vector3(
+                                vertex["position"]["x"],
+                                vertex["position"]["y"],
+                                vertex["position"]["z"]),
+                            Vector3(
+                                vertex["color"]["x"],
+                                vertex["color"]["y"],
+                                vertex["color"]["z"]),
+                            Vector3(
+                                vertex["normal"]["x"],
+                                vertex["normal"]["y"],
+                                vertex["normal"]["z"]),
+                            Vector2(
+                                vertex["texUV"]["x"],
+                                vertex["texUV"]["y"]),
+                            {-1},
+                            {0.0f},
+                            Vector3(
+                                vertex["tangent"]["x"],
+                                vertex["tangent"]["y"],
+                                vertex["tangent"]["z"]),
+                            Vector3(
+                                vertex["bitangent"]["x"],
+                                vertex["bitangent"]["y"],
+                                vertex["bitangent"]["z"]),
+                            1};
+
+                        vertices.push_back(vert);
+                    }
+
+                    for (auto index : modelJSON["indices"]) {
+                        indices.push_back((uint32_t)index);
+                    }
+
+                    if (meshRenderer.m_Mesh)
+                        delete meshRenderer.m_Mesh;
+                    Material baseMaterial;
+                    meshRenderer.m_Mesh = new Mesh(vertices, indices, baseMaterial);
+
+                    if (component["material"] != "") {
+                        std::ifstream file(component["material"]);
+                        nlohmann::json JSON = nlohmann::json::parse(file);
+
+                        const std::string diffuseTexture = JSON["diffuse"];
+                        const std::string specularTexture = JSON["specular"];
+                        const std::string normalTexture = JSON["normal"];
+
+                        if (diffuseTexture != "nullptr") {
+                            if (meshRenderer.m_Mesh->material.diffuse != nullptr) {
+                                delete meshRenderer.m_Mesh->material.diffuse;
+                            }
+
+                            meshRenderer.m_Mesh->material.diffuse = new Texture(diffuseTexture.c_str(), 0, "texture_diffuse");
+                        }
+
+                        if (specularTexture != "nullptr") {
+                            if (meshRenderer.m_Mesh->material.specular != nullptr) {
+                                delete meshRenderer.m_Mesh->material.specular;
+                            }
+
+                            meshRenderer.m_Mesh->material.specular = new Texture(specularTexture.c_str(), 1, "texture_specular");
+                        }
+
+                        if (normalTexture != "nullptr") {
+                            if (meshRenderer.m_Mesh->material.normal != nullptr) {
+                                delete meshRenderer.m_Mesh->material.normal;
+                            }
+
+                            meshRenderer.m_Mesh->material.normal = new Texture(normalTexture.c_str(), 2, "texture_normal");
+                        }
+
+                        meshRenderer.m_Mesh->material.baseColor = Vector4(
+                            JSON["baseColor"]["r"],
+                            JSON["baseColor"]["g"],
+                            JSON["baseColor"]["b"],
+                            JSON["baseColor"]["a"]);
+
+                        meshRenderer.m_Mesh->material.roughness = JSON["roughness"];
+                        meshRenderer.m_Mesh->material.metallic = JSON["metallic"];
+                        meshRenderer.m_Mesh->material.texUVs = Vector2(JSON["texUV"]["x"], JSON["texUV"]["y"]);
+
+                        meshRenderer.matPath = component["material"];
+                    }
+
+                    meshRenderer.m_Model = true;
+                    file.close();
+                }
             }
 
-            if(type == "DirectionalLight") {
+            if (type == "DirectionalLight") {
                 gameObject->AddComponent<Experimental::c_DirectionalLight>();
                 auto &light = gameObject->GetComponent<Experimental::c_DirectionalLight>();
 
                 light.color = Vector3(
-                        component["color"]["r"],
-                        component["color"]["g"],
-                        component["color"]["b"]
-                );
+                    component["color"]["r"],
+                    component["color"]["g"],
+                    component["color"]["b"]);
 
                 light.intensity = component["intensity"];
             }
 
-            if(type == "PointLight") {
+            if (type == "PointLight") {
                 gameObject->AddComponent<Experimental::c_PointLight>();
                 auto &light = gameObject->GetComponent<Experimental::c_PointLight>();
 
                 light.color = Vector3(
-                        component["color"]["r"],
-                        component["color"]["g"],
-                        component["color"]["b"]
-                );
+                    component["color"]["r"],
+                    component["color"]["g"],
+                    component["color"]["b"]);
 
                 light.intensity = component["intensity"];
             }
 
-            if(type == "SpotLight") {
+            if (type == "SpotLight") {
                 gameObject->AddComponent<Experimental::c_SpotLight>();
                 auto &light = gameObject->GetComponent<Experimental::c_SpotLight>();
 
                 light.color = Vector3(
-                        component["color"]["r"],
-                        component["color"]["g"],
-                        component["color"]["b"]
-                );
+                    component["color"]["r"],
+                    component["color"]["g"],
+                    component["color"]["b"]);
             }
 
-            if(type == "Light2D") {
+            if (type == "Light2D") {
                 gameObject->AddComponent<Experimental::c_Light2D>();
                 auto &light = gameObject->GetComponent<Experimental::c_Light2D>();
 
                 light.color = Vector3(
-                        component["color"]["r"],
-                        component["color"]["g"],
-                        component["color"]["b"]
-                );
+                    component["color"]["r"],
+                    component["color"]["g"],
+                    component["color"]["b"]);
 
                 light.range = component["range"];
             }
 
-            if(type == "CameraComponent") {
+            if (type == "CameraComponent") {
                 gameObject->AddComponent<Experimental::CameraComponent>();
                 auto &transformg = gameObject->GetComponent<Experimental::Transform>();
                 transformg.rotation = transform.rotation;
@@ -272,32 +365,32 @@ namespace HyperAPI {
                 camera.camera->cam_far = component["far"];
                 camera.camera->mainCamera = component["mainCamera"];
                 camera.camera->mode2D = component["mode2D"];
-                if(component.contains("depthCamera")) {
+                if (component.contains("depthCamera")) {
                     camera.depthCamera = component["depthCamera"];
                 }
 
-                for(auto &layer : component["layers"]) {
+                for (auto &layer : component["layers"]) {
                     camera.camera->layers.push_back(layer);
                 }
 
-                if(camera.camera->mainCamera) {
+                if (camera.camera->mainCamera) {
                     mainCamera = camera.camera;
                 }
             }
 
-            if(type == "LuaScriptComponent") {
+            if (type == "LuaScriptComponent") {
                 gameObject->AddComponent<Experimental::m_LuaScriptComponent>();
                 auto &m_script = gameObject->GetComponent<Experimental::m_LuaScriptComponent>();
-                for(auto &scriptPath : component["scripts"]) {
+                for (auto &scriptPath : component["scripts"]) {
                     ScriptEngine::m_LuaScript script(scriptPath);
                     script.m_GameObject = gameObject;
                     script.ID = gameObject->ID;
                     // script.Init();
                     script.GetFields();
-                    if(component.contains("script_fields")) {
-                        for(auto &scriptField : script.m_Fields) {
+                    if (component.contains("script_fields")) {
+                        for (auto &scriptField : script.m_Fields) {
                             auto &j_field = component["script_fields"][scriptPath];
-                            if(j_field.contains(scriptField.first)) {
+                            if (j_field.contains(scriptField.first)) {
 
                                 ScriptEngine::m_FieldValue value;
                                 strcpy(value.value, j_field[scriptField.first].get<std::string>().c_str());
@@ -309,14 +402,14 @@ namespace HyperAPI {
                 }
             }
 
-            if(type == "CppScriptManager") {
+            if (type == "CppScriptManager") {
                 gameObject->AddComponent<Experimental::CppScriptManager>();
-            
+
                 auto &scriptManager = gameObject->GetComponent<Experimental::CppScriptManager>();
 
-                for(auto &scriptName : component["scripts"]) {
-                    for(auto sharedObj : CppScripting::cpp_scripts) {
-                        if(sharedObj.name == scriptName) {
+                for (auto &scriptName : component["scripts"]) {
+                    for (auto sharedObj : CppScripting::cpp_scripts) {
+                        if (sharedObj.name == scriptName) {
                             CppScripting::Script *script = sharedObj.create();
                             scriptManager.addedScripts.push_back(script);
                             scriptManager.addedScripts[scriptManager.addedScripts.size() - 1]->name = sharedObj.name;
@@ -325,32 +418,31 @@ namespace HyperAPI {
                 }
             }
 
-            if(type == "CsharpScriptManager") {
+            if (type == "CsharpScriptManager") {
                 gameObject->AddComponent<Experimental::CsharpScriptManager>();
 
                 auto &scriptManager = gameObject->GetComponent<Experimental::CsharpScriptManager>();
 
-                for(auto klass : component["scripts"]) {
+                for (auto klass : component["scripts"]) {
                     scriptManager.selectedScripts[klass] = klass;
                 }
             }
 
-            if(type == "SpriteRenderer") {
+            if (type == "SpriteRenderer") {
                 gameObject->AddComponent<Experimental::SpriteRenderer>();
                 auto &spriteRenderer = gameObject->GetComponent<Experimental::SpriteRenderer>();
                 spriteRenderer.mesh->material.baseColor = Vector4(
-                        component["color"]["r"],
-                        component["color"]["g"],
-                        component["color"]["b"],
-                        component["color"]["a"]
-                );
+                    component["color"]["r"],
+                    component["color"]["g"],
+                    component["color"]["b"],
+                    component["color"]["a"]);
 
-                if(component["sprite"] != "") {
+                if (component["sprite"] != "") {
                     spriteRenderer.mesh->material.diffuse = new Texture(((std::string)component["sprite"]).c_str(), 0, "texture_diffuse");
                 }
             }
 
-            if(type == "Rigidbody2D") {
+            if (type == "Rigidbody2D") {
                 gameObject->AddComponent<Experimental::Rigidbody2D>();
                 auto &rigidbody = gameObject->GetComponent<Experimental::Rigidbody2D>();
 
@@ -359,14 +451,13 @@ namespace HyperAPI {
                 rigidbody.fixedRotation = component["fixedRotation"];
             }
 
-            if(type == "BoxCollider2D") {
+            if (type == "BoxCollider2D") {
                 gameObject->AddComponent<Experimental::BoxCollider2D>();
                 auto &boxCollider = gameObject->GetComponent<Experimental::BoxCollider2D>();
 
                 boxCollider.size = Vector2(
-                        component["size"]["x"],
-                        component["size"]["y"]
-                );
+                    component["size"]["x"],
+                    component["size"]["y"]);
                 boxCollider.friction = component["friction"];
                 boxCollider.density = component["density"];
                 boxCollider.restitution = component["restitution"];
@@ -374,47 +465,43 @@ namespace HyperAPI {
                 boxCollider.trigger = component["trigger"];
             }
 
-            if(type == "SpritesheetRenderer") {
+            if (type == "SpritesheetRenderer") {
                 gameObject->AddComponent<Experimental::SpritesheetRenderer>();
                 auto &spritesheetRenderer = gameObject->GetComponent<Experimental::SpritesheetRenderer>();
 
                 float alpha = 1;
-                if(component["color"].contains("a")) {
+                if (component["color"].contains("a")) {
                     alpha = component["a"];
                 }
 
                 spritesheetRenderer.mesh->material.baseColor = Vector4(
-                        component["color"]["r"],
-                        component["color"]["g"],
-                        component["color"]["b"],
-                        alpha
-                );
+                    component["color"]["r"],
+                    component["color"]["g"],
+                    component["color"]["b"],
+                    alpha);
 
                 spritesheetRenderer.spriteOffset = Vector2(
-                        component["spriteOffset"]["x"],
-                        component["spriteOffset"]["y"]
-                );
+                    component["spriteOffset"]["x"],
+                    component["spriteOffset"]["y"]);
 
                 spritesheetRenderer.spriteSize = Vector2(
-                        component["spriteSize"]["x"],
-                        component["spriteSize"]["y"]
-                );
+                    component["spriteSize"]["x"],
+                    component["spriteSize"]["y"]);
 
                 spritesheetRenderer.spritesheetSize = Vector2(
-                        component["spritesheetSize"]["x"],
-                        component["spritesheetSize"]["y"]
-                );
+                    component["spritesheetSize"]["x"],
+                    component["spritesheetSize"]["y"]);
 
                 delete spritesheetRenderer.mesh;
                 delete spritesheetRenderer.sp;
                 spritesheetRenderer.sp = new Spritesheet("", spritesheetRenderer.material, spritesheetRenderer.spritesheetSize, spritesheetRenderer.spriteSize, spritesheetRenderer.spriteOffset);
                 spritesheetRenderer.mesh = spritesheetRenderer.sp->m_Mesh;
-                if(component["spritesheet"] != "") {
+                if (component["spritesheet"] != "") {
                     spritesheetRenderer.mesh->material.diffuse = new Texture(((std::string)component["spritesheet"]).c_str(), 0, "texture_diffuse");
                 }
             }
 
-            if(type == "Rigidbody3D") {
+            if (type == "Rigidbody3D") {
                 gameObject->AddComponent<Experimental::Rigidbody3D>();
                 auto &rigidbody = gameObject->GetComponent<Experimental::Rigidbody3D>();
 
@@ -425,43 +512,41 @@ namespace HyperAPI {
                 rigidbody.trigger = component["trigger"];
             }
 
-            if(type == "BoxCollider3D") {
+            if (type == "BoxCollider3D") {
                 gameObject->AddComponent<Experimental::BoxCollider3D>();
                 auto &boxCollider = gameObject->GetComponent<Experimental::BoxCollider3D>();
 
                 boxCollider.size = Vector3(
-                        component["size"]["x"],
-                        component["size"]["y"],
-                        component["size"]["z"]
-                );
+                    component["size"]["x"],
+                    component["size"]["y"],
+                    component["size"]["z"]);
             }
 
-            if(type == "MeshCollider3D") {
+            if (type == "MeshCollider3D") {
                 gameObject->AddComponent<Experimental::MeshCollider3D>();
                 auto &meshCollider = gameObject->GetComponent<Experimental::MeshCollider3D>();
 
                 meshCollider.size = Vector3(
-                        component["size"]["x"],
-                        component["size"]["y"],
-                        component["size"]["z"]
-                );
+                    component["size"]["x"],
+                    component["size"]["y"],
+                    component["size"]["z"]);
             }
 
-            if(type == "SpriteAnimation") {
+            if (type == "SpriteAnimation") {
                 gameObject->AddComponent<Experimental::SpriteAnimation>();
                 auto &spriteAnimation = gameObject->GetComponent<Experimental::SpriteAnimation>();
                 strcpy(spriteAnimation.currAnim, component["currAnim"].get<std::string>().c_str());
 
-                for(auto &animation : component["animations"]) {
+                for (auto &animation : component["animations"]) {
                     Experimental::m_AnimationData animData;
                     strcpy(animData.name, animation["name"].get<std::string>().c_str());
                     animData.delay = animation["delay"];
                     animData.loop = animation["loop"];
                     animData.delay_counter = animation["delay_counter"];
 
-                    for(auto &frame : animation["frames"]) {
+                    for (auto &frame : animation["frames"]) {
                         Experimental::SpriteRenderer frameData;
-                        if(frame["texture"] != "nullptr") {
+                        if (frame["texture"] != "nullptr") {
                             frameData.mesh->material.diffuse = new Texture(((std::string)frame["texture"]).c_str(), 0, "texture_diffuse");
                         }
                         animData.frames.push_back(frameData);
@@ -471,52 +556,48 @@ namespace HyperAPI {
                 }
             }
 
-            if(type == "SpritesheetAnimation") {
+            if (type == "SpritesheetAnimation") {
                 gameObject->AddComponent<Experimental::c_SpritesheetAnimation>();
                 auto &spritesheetAnimation = gameObject->GetComponent<Experimental::c_SpritesheetAnimation>();
 
                 strcpy(spritesheetAnimation.currAnim, component["currAnim"].get<std::string>().c_str());
-                if(component["texture"] != "nullptr") {
+                if (component["texture"] != "nullptr") {
                     spritesheetAnimation.mesh->material.diffuse = new Texture(((std::string)component["texture"]).c_str(), 0, "texture_diffuse");
                 }
 
                 spritesheetAnimation.spritesheetSize = Vector2(
-                        component["spritesheetSize"]["x"],
-                        component["spritesheetSize"]["y"]
-                );
+                    component["spritesheetSize"]["x"],
+                    component["spritesheetSize"]["y"]);
 
                 float alpha = 1;
 
-                if(component.contains("color")) {
-                    if(component["color"].contains("a")) {
+                if (component.contains("color")) {
+                    if (component["color"].contains("a")) {
                         alpha = component["color"]["a"];
                     }
                     spritesheetAnimation.mesh->material.baseColor = Vector4(
-                            component["color"]["r"],
-                            component["color"]["g"],
-                            component["color"]["b"],
-                            alpha
-                    );
+                        component["color"]["r"],
+                        component["color"]["g"],
+                        component["color"]["b"],
+                        alpha);
                 }
 
-                for(auto &animation : component["animations"]) {
+                for (auto &animation : component["animations"]) {
                     Experimental::m_SpritesheetAnimationData animData;
                     strcpy(animData.name, animation["name"].get<std::string>().c_str());
                     animData.delay = animation["delay"];
                     animData.loop = animation["loop"];
                     animData.delay_counter = animation["delay_counter"];
 
-                    for(auto &frame : animation["frames"]) {
+                    for (auto &frame : animation["frames"]) {
                         Experimental::m_SpritesheetAnimationData::Frame frameData;
                         frameData.size = Vector2(
-                                frame["size"]["x"],
-                                frame["size"]["y"]
-                        );
+                            frame["size"]["x"],
+                            frame["size"]["y"]);
 
                         frameData.offset = Vector2(
-                                frame["offset"]["x"],
-                                frame["offset"]["y"]
-                        );
+                            frame["offset"]["x"],
+                            frame["offset"]["y"]);
                         animData.frames.push_back(frameData);
                     }
 
@@ -524,24 +605,23 @@ namespace HyperAPI {
                 }
             }
 
-            if(type == "Bloom") {
+            if (type == "Bloom") {
                 auto &bloom = gameObject->AddComponent<Experimental::Bloom>();
 
                 bloom.bloomColor = Vector3(
-                        component["bloomColor"]["x"],
-                        component["bloomColor"]["y"],
-                        component["bloomColor"]["z"]
-                );
+                    component["bloomColor"]["x"],
+                    component["bloomColor"]["y"],
+                    component["bloomColor"]["z"]);
             }
         }
 
         void LoadScene(const std::string &scenePath, nlohmann::json &StateScene) {
             LoadingScene = true;
-            if(scenePath != "")
+            if (scenePath != "")
                 currentScenePath = scenePath;
 
             try {
-                for(auto &gameObject : m_GameObjects) {
+                for (auto &gameObject : m_GameObjects) {
                     if (gameObject->HasComponent<Experimental::Transform>()) {
                         auto &comp = gameObject->GetComponent<Experimental::Transform>();
                         comp.DeleteComp();
@@ -653,46 +733,45 @@ namespace HyperAPI {
                 }
                 m_GameObjects.clear();
 
-                for(auto &light : DirLights) {
+                for (auto &light : DirLights) {
                     delete light;
                 }
                 DirLights.clear();
 
-                for(auto &light : PointLights) {
+                for (auto &light : PointLights) {
                     delete light;
                 }
                 PointLights.clear();
 
-                for(auto &light : SpotLights) {
+                for (auto &light : SpotLights) {
                     delete light;
                 }
                 SpotLights.clear();
 
-                for(auto &light : Lights2D) {
+                for (auto &light : Lights2D) {
                     delete light;
                 }
                 Lights2D.clear();
 
                 m_GameObjects.clear();
-            }
-            catch(...) {
+            } catch (...) {
             }
 
             std::ifstream file(scenePath);
             // get content
             std::string content;
-            if(scenePath != "")
+            if (scenePath != "")
                 content = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
             nlohmann::json JSON;
-            if(scenePath != "")
+            if (scenePath != "")
                 JSON = nlohmann::json::parse(content);
             else
                 JSON = StateScene;
 
             try {
-                for(int i = 0; i < Scene::cameras.size(); i++) {
-                    if(Scene::mainCamera == Scene::cameras[i]) {
+                for (int i = 0; i < Scene::cameras.size(); i++) {
+                    if (Scene::mainCamera == Scene::cameras[i]) {
                         Scene::mainCamera = nullptr;
                     }
                     delete Scene::cameras[i];
@@ -702,8 +781,7 @@ namespace HyperAPI {
                 std::cout << e.what() << std::endl;
             }
 
-
-            for(int i = 0; i < JSON.size(); i++) {
+            for (int i = 0; i < JSON.size(); i++) {
                 Experimental::GameObject *gameObject = new Experimental::GameObject();
                 std::string name = JSON[i]["name"];
                 std::string ID = JSON[i]["ID"];
@@ -723,65 +801,64 @@ namespace HyperAPI {
                 Experimental::Transform transform;
                 m_GameObjects.push_back(gameObject);
 
-                for(auto &component : components) {
+                for (auto &component : components) {
                     std::string type = component["type"];
 
                     LoadComponents(component, gameObject, type, meshType, transform);
                 }
-//                if(parentID != "NO_PARENT") {
-//                    Experimental::Transform childTransform;
-//
-//                    delete gameObject;
-//                    //erase back
-//                    m_GameObjects.erase(m_GameObjects.begin() + m_GameObjects.size() - 1);
-//                    int amountOfChildren = 0;
-//                    std::vector<std::string> childNames;
-//                    for(int j = 0; j < m_GameObjects.size(); j++) {
-//                        if(m_GameObjects[j]->ID == parentID) {
-//                            Experimental::Model *newEntity = new Experimental::Model((char*)meshType.c_str(), false);
-//                            auto &m_Transform = newEntity->mainGameObject->GetComponent<Experimental::Transform>();
-//
-//                            for(int g = 0; g < JSON.size(); g++) {
-//                                std::string p_ID = JSON[g]["ID"];
-//                                std::string name = JSON[g]["name"];
-//
-//                                if(parentID == p_ID) {
-//                                    for(int b = 0; b < JSON.size(); b++) {
-//                                        std::string c_ID = JSON[b]["parentID"];
-//                                        std::string c_name = JSON[b]["name"];
-//
-//                                        if(p_ID == c_ID) {
-//                                            childNames.push_back(c_name);
-//                                            amountOfChildren++;
-//                                        }
-//                                    }
-//
-//                                    for(auto &component : JSON[g]["components"]) {
-//                                        std::string type = component["type"];
-//
-//                                        if(type == "Transform") {
-//                                            ApplyTransform(m_Transform, component);
-//                                            newEntity->mainGameObject->name = name;
-//                                        }
-//                                    }
-//                                }
-//                            }
-//
-//                            for(int a = 0; a < amountOfChildren; a++) {
-//                                newEntity->m_gameObjects[a]->name = childNames[a];
-//                                newEntity->m_gameObjects[a]->GetComponent<Experimental::Transform>().position = transform.position;
-//                                newEntity->m_gameObjects[a]->GetComponent<Experimental::Transform>().rotation = transform.rotation;
-//                                newEntity->m_gameObjects[a]->GetComponent<Experimental::Transform>().scale = transform.scale;
-//                            }
-//
-//                            delete m_GameObjects[j];
-//                            m_GameObjects.erase(m_GameObjects.begin() + j);
-//
-//                            break;
-//                        }
-//                    }
-//                }
-
+                //                if(parentID != "NO_PARENT") {
+                //                    Experimental::Transform childTransform;
+                //
+                //                    delete gameObject;
+                //                    //erase back
+                //                    m_GameObjects.erase(m_GameObjects.begin() + m_GameObjects.size() - 1);
+                //                    int amountOfChildren = 0;
+                //                    std::vector<std::string> childNames;
+                //                    for(int j = 0; j < m_GameObjects.size(); j++) {
+                //                        if(m_GameObjects[j]->ID == parentID) {
+                //                            Experimental::Model *newEntity = new Experimental::Model((char*)meshType.c_str(), false);
+                //                            auto &m_Transform = newEntity->mainGameObject->GetComponent<Experimental::Transform>();
+                //
+                //                            for(int g = 0; g < JSON.size(); g++) {
+                //                                std::string p_ID = JSON[g]["ID"];
+                //                                std::string name = JSON[g]["name"];
+                //
+                //                                if(parentID == p_ID) {
+                //                                    for(int b = 0; b < JSON.size(); b++) {
+                //                                        std::string c_ID = JSON[b]["parentID"];
+                //                                        std::string c_name = JSON[b]["name"];
+                //
+                //                                        if(p_ID == c_ID) {
+                //                                            childNames.push_back(c_name);
+                //                                            amountOfChildren++;
+                //                                        }
+                //                                    }
+                //
+                //                                    for(auto &component : JSON[g]["components"]) {
+                //                                        std::string type = component["type"];
+                //
+                //                                        if(type == "Transform") {
+                //                                            ApplyTransform(m_Transform, component);
+                //                                            newEntity->mainGameObject->name = name;
+                //                                        }
+                //                                    }
+                //                                }
+                //                            }
+                //
+                //                            for(int a = 0; a < amountOfChildren; a++) {
+                //                                newEntity->m_gameObjects[a]->name = childNames[a];
+                //                                newEntity->m_gameObjects[a]->GetComponent<Experimental::Transform>().position = transform.position;
+                //                                newEntity->m_gameObjects[a]->GetComponent<Experimental::Transform>().rotation = transform.rotation;
+                //                                newEntity->m_gameObjects[a]->GetComponent<Experimental::Transform>().scale = transform.scale;
+                //                            }
+                //
+                //                            delete m_GameObjects[j];
+                //                            m_GameObjects.erase(m_GameObjects.begin() + j);
+                //
+                //                            break;
+                //                        }
+                //                    }
+                //                }
             }
 
             file.close();
@@ -799,7 +876,7 @@ namespace HyperAPI {
             JSON = nlohmann::json::parse(content);
 
             Experimental::GameObject *parentObject = nullptr;
-            for(int i = 0; i < JSON.size(); i++) {
+            for (int i = 0; i < JSON.size(); i++) {
                 Experimental::GameObject *gameObject = new Experimental::GameObject();
                 gameObject->prefab = true;
                 std::string name = (std::string)JSON[i]["name"] + " (Prefab)";
@@ -812,7 +889,7 @@ namespace HyperAPI {
                 gameObject->name = name;
                 gameObject->tag = tag;
                 gameObject->parentID = parentID;
-                if(gameObject->parentID == "NO_PARENT") {
+                if (gameObject->parentID == "NO_PARENT") {
                     parentObject = gameObject;
                 }
                 gameObject->layer = layer;
@@ -823,44 +900,44 @@ namespace HyperAPI {
                 Experimental::Transform transform;
                 m_GameObjects.push_back(gameObject);
 
-                for(auto &component : components) {
+                for (auto &component : components) {
                     std::string type = component["type"];
 
                     LoadComponents(component, gameObject, type, meshType, transform);
                 }
 
-                if(parentID != "NO_PARENT") {
+                if (parentID != "NO_PARENT") {
                     Experimental::Transform childTransform;
 
                     delete gameObject;
-                    //erase back
+                    // erase back
                     m_GameObjects.erase(m_GameObjects.begin() + m_GameObjects.size() - 1);
                     int amountOfChildren = 0;
                     std::vector<std::string> childNames;
-                    for(int j = 0; j < m_GameObjects.size(); j++) {
-                        if(m_GameObjects[j]->ID == parentID) {
-                            Experimental::Model *newEntity = new Experimental::Model((char*)meshType.c_str(), false);
+                    for (int j = 0; j < m_GameObjects.size(); j++) {
+                        if (m_GameObjects[j]->ID == parentID) {
+                            Experimental::Model *newEntity = new Experimental::Model((char *)meshType.c_str(), false);
                             auto &m_Transform = newEntity->mainGameObject->GetComponent<Experimental::Transform>();
 
-                            for(int g = 0; g < JSON.size(); g++) {
+                            for (int g = 0; g < JSON.size(); g++) {
                                 std::string p_ID = JSON[g]["ID"];
                                 std::string name = JSON[g]["name"];
 
-                                if(parentID == p_ID) {
-                                    for(int b = 0; b < JSON.size(); b++) {
+                                if (parentID == p_ID) {
+                                    for (int b = 0; b < JSON.size(); b++) {
                                         std::string c_ID = JSON[b]["parentID"];
                                         std::string c_name = JSON[b]["name"];
 
-                                        if(p_ID == c_ID) {
+                                        if (p_ID == c_ID) {
                                             childNames.push_back(c_name);
                                             amountOfChildren++;
                                         }
                                     }
 
-                                    for(auto &component : JSON[g]["components"]) {
+                                    for (auto &component : JSON[g]["components"]) {
                                         std::string type = component["type"];
 
-                                        if(type == "Transform") {
+                                        if (type == "Transform") {
                                             ApplyTransform(m_Transform, component);
                                             newEntity->mainGameObject->name = name;
                                         }
@@ -868,7 +945,7 @@ namespace HyperAPI {
                                 }
                             }
 
-                            for(int a = 0; a < amountOfChildren; a++) {
+                            for (int a = 0; a < amountOfChildren; a++) {
                                 newEntity->m_gameObjects[a]->name = childNames[a];
                                 newEntity->m_gameObjects[a]->GetComponent<Experimental::Transform>().position = transform.position;
                                 newEntity->m_gameObjects[a]->GetComponent<Experimental::Transform>().rotation = transform.rotation;
@@ -881,7 +958,6 @@ namespace HyperAPI {
                         }
                     }
                 }
-
             }
 
             file.close();
@@ -891,7 +967,7 @@ namespace HyperAPI {
         }
         Experimental::GameObject *LoadJSONPrefab(const nlohmann::json &JSON) {
             Experimental::GameObject *parentObject = nullptr;
-            for(int i = 0; i < JSON.size(); i++) {
+            for (int i = 0; i < JSON.size(); i++) {
                 Experimental::GameObject *gameObject = new Experimental::GameObject();
                 std::string name = (std::string)JSON[i]["name"] + " (Prefab)";
                 std::string oldID = JSON[i]["ID"];
@@ -903,7 +979,7 @@ namespace HyperAPI {
                 gameObject->name = name;
                 gameObject->tag = tag;
                 gameObject->parentID = parentID;
-                if(gameObject->parentID == "NO_PARENT") {
+                if (gameObject->parentID == "NO_PARENT") {
                     parentObject = gameObject;
                 }
                 gameObject->layer = layer;
@@ -914,44 +990,44 @@ namespace HyperAPI {
                 Experimental::Transform transform;
                 m_GameObjects.push_back(gameObject);
 
-                for(auto &component : components) {
+                for (auto &component : components) {
                     std::string type = component["type"];
 
                     LoadComponents(component, gameObject, type, meshType, transform);
                 }
 
-                if(parentID != "NO_PARENT") {
+                if (parentID != "NO_PARENT") {
                     Experimental::Transform childTransform;
 
                     delete gameObject;
-                    //erase back
+                    // erase back
                     m_GameObjects.erase(m_GameObjects.begin() + m_GameObjects.size() - 1);
                     int amountOfChildren = 0;
                     std::vector<std::string> childNames;
-                    for(int j = 0; j < m_GameObjects.size(); j++) {
-                        if(m_GameObjects[j]->ID == parentID) {
-                            Experimental::Model *newEntity = new Experimental::Model((char*)meshType.c_str(), false);
+                    for (int j = 0; j < m_GameObjects.size(); j++) {
+                        if (m_GameObjects[j]->ID == parentID) {
+                            Experimental::Model *newEntity = new Experimental::Model((char *)meshType.c_str(), false);
                             auto &m_Transform = newEntity->mainGameObject->GetComponent<Experimental::Transform>();
 
-                            for(int g = 0; g < JSON.size(); g++) {
+                            for (int g = 0; g < JSON.size(); g++) {
                                 std::string p_ID = JSON[g]["ID"];
                                 std::string name = JSON[g]["name"];
 
-                                if(parentID == p_ID) {
-                                    for(int b = 0; b < JSON.size(); b++) {
+                                if (parentID == p_ID) {
+                                    for (int b = 0; b < JSON.size(); b++) {
                                         std::string c_ID = JSON[b]["parentID"];
                                         std::string c_name = JSON[b]["name"];
 
-                                        if(p_ID == c_ID) {
+                                        if (p_ID == c_ID) {
                                             childNames.push_back(c_name);
                                             amountOfChildren++;
                                         }
                                     }
 
-                                    for(auto &component : JSON[g]["components"]) {
+                                    for (auto &component : JSON[g]["components"]) {
                                         std::string type = component["type"];
 
-                                        if(type == "Transform") {
+                                        if (type == "Transform") {
                                             ApplyTransform(m_Transform, component);
                                             newEntity->mainGameObject->name = name;
                                         }
@@ -959,7 +1035,7 @@ namespace HyperAPI {
                                 }
                             }
 
-                            for(int a = 0; a < amountOfChildren; a++) {
+                            for (int a = 0; a < amountOfChildren; a++) {
                                 newEntity->m_gameObjects[a]->name = childNames[a];
                                 newEntity->m_gameObjects[a]->GetComponent<Experimental::Transform>().position = transform.position;
                                 newEntity->m_gameObjects[a]->GetComponent<Experimental::Transform>().rotation = transform.rotation;
@@ -972,7 +1048,6 @@ namespace HyperAPI {
                         }
                     }
                 }
-
             }
 
             HYPER_LOG("Loaded JSON Prefab")
@@ -980,7 +1055,7 @@ namespace HyperAPI {
         }
 
         void SaveComponents(nlohmann::json &JSON, Experimental::GameObject *gameObject, const int i, int &componentOffset) {
-            if(gameObject->HasComponent<Experimental::Transform>()) {
+            if (gameObject->HasComponent<Experimental::Transform>()) {
                 auto &transform = gameObject->GetComponent<Experimental::Transform>();
                 JSON[i]["components"][componentOffset]["type"] = "Transform";
                 JSON[i]["components"][componentOffset]["position"]["x"] = transform.position.x;
@@ -998,18 +1073,76 @@ namespace HyperAPI {
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::MeshRenderer>()) {
+            if (gameObject->HasComponent<Experimental::MeshRenderer>()) {
                 auto &meshRenderer = gameObject->GetComponent<Experimental::MeshRenderer>();
 
-                JSON[i]["components"][componentOffset]["type"] = "MeshRenderer";
                 JSON[i]["components"][componentOffset]["mesh"]["custom"] = meshRenderer.m_Model;
+                if (meshRenderer.m_Model) {
+                    if (!fs::exists("assets/models"))
+                        fs::create_directory("assets/models");
+                    std::ofstream modelFile("assets/models/" + gameObject->name + ".vault.model");
+
+                    nlohmann::json modelJSON = nlohmann::json::parse("{\"vertices\": [], \"indices\": []}");
+
+                    std::vector<float> vertices;
+                    std::vector<uint32_t> indices;
+
+                    for (int gb = 0; gb < meshRenderer.m_Mesh->vertices.size(); gb++) {
+                        auto &vertex = meshRenderer.m_Mesh->vertices[gb];
+                        std::cout << vertex.position.x << " " << vertex.position.y << " " << vertex.position.z << std::endl;
+                        modelJSON["vertices"][gb]["position"] = {
+                            {"x", std::isnan(vertex.position.x) ? 0 : vertex.position.x},
+                            {"y", std::isnan(vertex.position.y) ? 0 : vertex.position.y},
+                            {"z", std::isnan(vertex.position.z) ? 0 : vertex.position.z},
+                        };
+
+                        modelJSON["vertices"][gb]["color"] = {
+                            {"x", std::isnan(vertex.color.x) ? 0 : vertex.color.x},
+                            {"y", std::isnan(vertex.color.y) ? 0 : vertex.color.y},
+                            {"z", std::isnan(vertex.color.z) ? 0 : vertex.color.z},
+                        };
+
+                        modelJSON["vertices"][gb]["normal"] = {
+                            {"x", std::isnan(vertex.normal.x) ? 0 : vertex.normal.x},
+                            {"y", std::isnan(vertex.normal.y) ? 0 : vertex.normal.y},
+                            {"z", std::isnan(vertex.normal.z) ? 0 : vertex.normal.z},
+                        };
+
+                        modelJSON["vertices"][gb]["texUV"] = {
+                            {"x", std::isnan(vertex.texUV.x) ? 0 : vertex.texUV.x},
+                            {"y", std::isnan(vertex.texUV.y) ? 0 : vertex.texUV.y},
+                        };
+
+                        modelJSON["vertices"][gb]["tangent"] = {
+                            {"x", std::isnan(vertex.tangent.x) ? 0 : vertex.tangent.x},
+                            {"y", std::isnan(vertex.tangent.y) ? 0 : vertex.tangent.y},
+                            {"z", std::isnan(vertex.tangent.z) ? 0 : vertex.tangent.z},
+                        };
+
+                        modelJSON["vertices"][gb]["bitangent"] = {
+                            {"x", std::isnan(vertex.bitangent.x) ? 0 : vertex.bitangent.x},
+                            {"y", std::isnan(vertex.bitangent.y) ? 0 : vertex.bitangent.y},
+                            {"z", std::isnan(vertex.bitangent.z) ? 0 : vertex.bitangent.z},
+                        };
+                    }
+
+                    for (int ind = 0; ind < meshRenderer.m_Mesh->indices.size(); ind++) {
+                        modelJSON["indices"][ind] = meshRenderer.m_Mesh->indices[ind];
+                    }
+
+                    modelFile << modelJSON.dump(4);
+                    modelFile.close();
+                    JSON[i]["components"][componentOffset]["mesh"]["meshPath"] = "assets/models/" + gameObject->name + ".vault.model";
+                }
+
+                JSON[i]["components"][componentOffset]["type"] = "MeshRenderer";
                 JSON[i]["components"][componentOffset]["mesh"]["mesh"] = meshRenderer.meshType;
                 JSON[i]["components"][componentOffset]["material"] = meshRenderer.matPath;
 
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::c_DirectionalLight>()) {
+            if (gameObject->HasComponent<Experimental::c_DirectionalLight>()) {
                 auto &light = gameObject->GetComponent<Experimental::c_DirectionalLight>();
 
                 JSON[i]["components"][componentOffset]["type"] = "DirectionalLight";
@@ -1021,7 +1154,7 @@ namespace HyperAPI {
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::c_PointLight>()) {
+            if (gameObject->HasComponent<Experimental::c_PointLight>()) {
                 auto &light = gameObject->GetComponent<Experimental::c_PointLight>();
 
                 JSON[i]["components"][componentOffset]["type"] = "PointLight";
@@ -1033,7 +1166,7 @@ namespace HyperAPI {
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::c_SpotLight>()) {
+            if (gameObject->HasComponent<Experimental::c_SpotLight>()) {
                 auto &light = gameObject->GetComponent<Experimental::c_SpotLight>();
 
                 JSON[i]["components"][componentOffset]["type"] = "SpotLight";
@@ -1044,7 +1177,7 @@ namespace HyperAPI {
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::c_Light2D>()) {
+            if (gameObject->HasComponent<Experimental::c_Light2D>()) {
                 auto &light = gameObject->GetComponent<Experimental::c_Light2D>();
 
                 JSON[i]["components"][componentOffset]["type"] = "Light2D";
@@ -1056,7 +1189,7 @@ namespace HyperAPI {
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::CameraComponent>()) {
+            if (gameObject->HasComponent<Experimental::CameraComponent>()) {
                 auto &camera = gameObject->GetComponent<Experimental::CameraComponent>();
 
                 JSON[i]["components"][componentOffset]["type"] = "CameraComponent";
@@ -1071,15 +1204,15 @@ namespace HyperAPI {
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::m_LuaScriptComponent>()) {
+            if (gameObject->HasComponent<Experimental::m_LuaScriptComponent>()) {
                 auto &script = gameObject->GetComponent<Experimental::m_LuaScriptComponent>();
 
                 JSON[i]["components"][componentOffset]["type"] = "LuaScriptComponent";
-                for(int scr = 0; scr < script.scripts.size(); scr++) {
+                for (int scr = 0; scr < script.scripts.size(); scr++) {
                     JSON[i]["components"][componentOffset]["scripts"][scr] = script.scripts[scr].pathToScript;
                     JSON[i]["components"][componentOffset]["script_fields"][script.scripts[scr].pathToScript] = json::object();
 
-                    for(auto &field : script.scripts[scr].m_Fields) {
+                    for (auto &field : script.scripts[scr].m_Fields) {
                         JSON[i]["components"][componentOffset]["script_fields"][script.scripts[scr].pathToScript][field.first] = field.second.value;
                     }
                 }
@@ -1087,28 +1220,28 @@ namespace HyperAPI {
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::CppScriptManager>()) {
+            if (gameObject->HasComponent<Experimental::CppScriptManager>()) {
                 auto &scriptManager = gameObject->GetComponent<Experimental::CppScriptManager>();
                 JSON[i]["components"][componentOffset]["type"] = "CppScriptManager";
-                for(int scr = 0; scr < scriptManager.addedScripts.size(); scr++) {
+                for (int scr = 0; scr < scriptManager.addedScripts.size(); scr++) {
                     JSON[i]["components"][componentOffset]["scripts"][scr] = scriptManager.addedScripts[scr]->name;
                 }
 
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::CsharpScriptManager>()) {
+            if (gameObject->HasComponent<Experimental::CsharpScriptManager>()) {
                 auto &scriptManager = gameObject->GetComponent<Experimental::CsharpScriptManager>();
                 JSON[i]["components"][componentOffset]["type"] = "CsharpScriptManager";
 
-                for(auto klass : scriptManager.selectedScripts) {
-                    JSON[i]["components"][componentOffset]["scripts"] = klass.first; 
+                for (auto klass : scriptManager.selectedScripts) {
+                    JSON[i]["components"][componentOffset]["scripts"] = klass.first;
                 }
 
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::SpriteRenderer>()) {
+            if (gameObject->HasComponent<Experimental::SpriteRenderer>()) {
                 auto &spriteRenderer = gameObject->GetComponent<Experimental::SpriteRenderer>();
 
                 JSON[i]["components"][componentOffset]["type"] = "SpriteRenderer";
@@ -1121,14 +1254,14 @@ namespace HyperAPI {
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::SpriteAnimation>()) {
+            if (gameObject->HasComponent<Experimental::SpriteAnimation>()) {
                 auto &spriteAnimation = gameObject->GetComponent<Experimental::SpriteAnimation>();
 
                 JSON[i]["components"][componentOffset]["type"] = "SpriteAnimation";
                 JSON[i]["components"][componentOffset]["currAnim"] = std::string(spriteAnimation.currAnim);
                 JSON[i]["components"][componentOffset]["animations"] = json::array();
 
-                for(auto &anim : spriteAnimation.anims) {
+                for (auto &anim : spriteAnimation.anims) {
                     int in = &anim - &spriteAnimation.anims[0];
 
                     JSON[i]["components"][componentOffset]["animations"][in]["name"] = anim.name;
@@ -1137,7 +1270,7 @@ namespace HyperAPI {
                     JSON[i]["components"][componentOffset]["animations"][in]["loop"] = anim.loop;
                     JSON[i]["components"][componentOffset]["animations"][in]["frames"] = json::array();
 
-                    for(auto &frame : anim.frames) {
+                    for (auto &frame : anim.frames) {
                         int fn = &frame - &anim.frames[0];
                         JSON[i]["components"][componentOffset]["animations"][in]["frames"][fn]["texture"] = frame.mesh->material.diffuse == nullptr ? "nullptr" : frame.mesh->material.diffuse->texPath;
                         JSON[i]["components"][componentOffset]["animations"][in]["frames"][fn]["color"]["r"] = frame.mesh->material.baseColor.x;
@@ -1149,7 +1282,7 @@ namespace HyperAPI {
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::c_SpritesheetAnimation>()) {
+            if (gameObject->HasComponent<Experimental::c_SpritesheetAnimation>()) {
                 auto &spriteAnimation = gameObject->GetComponent<Experimental::c_SpritesheetAnimation>();
 
                 JSON[i]["components"][componentOffset]["type"] = "SpritesheetAnimation";
@@ -1164,30 +1297,28 @@ namespace HyperAPI {
                 JSON[i]["components"][componentOffset]["color"]["b"] = spriteAnimation.mesh->material.baseColor.z;
                 JSON[i]["components"][componentOffset]["color"]["a"] = spriteAnimation.mesh->material.baseColor.w;
 
-                for(auto &anim : spriteAnimation.anims) {
+                for (auto &anim : spriteAnimation.anims) {
                     int in = &anim - &spriteAnimation.anims[0];
                     JSON[i]["components"][componentOffset]["animations"][in]["name"] = std::string(anim.name);
                     JSON[i]["components"][componentOffset]["animations"][in]["delay"] = anim.delay;
                     JSON[i]["components"][componentOffset]["animations"][in]["loop"] = anim.loop;
                     JSON[i]["components"][componentOffset]["animations"][in]["delay_counter"] = anim.delay_counter;
                     JSON[i]["components"][componentOffset]["animations"][in]["frames"] = json::array();
-                    for(auto &frame : anim.frames) {
+                    for (auto &frame : anim.frames) {
                         int index = &frame - &anim.frames[0];
                         JSON[i]["components"][componentOffset]["animations"][in]["frames"][index]["size"] = {
-                                {"x", frame.size.x},
-                                {"y", frame.size.y}
-                        };
+                            {"x", frame.size.x},
+                            {"y", frame.size.y}};
 
                         JSON[i]["components"][componentOffset]["animations"][in]["frames"][index]["offset"] = {
-                                {"x", frame.offset.x},
-                                {"y", frame.offset.y}
-                        };
+                            {"x", frame.offset.x},
+                            {"y", frame.offset.y}};
                     }
                 }
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::Rigidbody2D>()) {
+            if (gameObject->HasComponent<Experimental::Rigidbody2D>()) {
                 auto &rigidbody = gameObject->GetComponent<Experimental::Rigidbody2D>();
 
                 JSON[i]["components"][componentOffset]["type"] = "Rigidbody2D";
@@ -1198,7 +1329,7 @@ namespace HyperAPI {
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::BoxCollider2D>()) {
+            if (gameObject->HasComponent<Experimental::BoxCollider2D>()) {
                 auto &collider = gameObject->GetComponent<Experimental::BoxCollider2D>();
 
                 JSON[i]["components"][componentOffset]["type"] = "BoxCollider2D";
@@ -1208,14 +1339,13 @@ namespace HyperAPI {
                 JSON[i]["components"][componentOffset]["restitution"] = collider.restitution;
                 JSON[i]["components"][componentOffset]["restitutionThreshold"] = collider.restitutionThreshold;
                 JSON[i]["components"][componentOffset]["size"] = {
-                        {"x", collider.size.x},
-                        {"y", collider.size.y}
-                };
+                    {"x", collider.size.x},
+                    {"y", collider.size.y}};
 
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::SpritesheetRenderer>()) {
+            if (gameObject->HasComponent<Experimental::SpritesheetRenderer>()) {
                 auto &spritesheetRenderer = gameObject->GetComponent<Experimental::SpritesheetRenderer>();
 
                 JSON[i]["components"][componentOffset]["type"] = "SpritesheetRenderer";
@@ -1224,26 +1354,23 @@ namespace HyperAPI {
                 JSON[i]["components"][componentOffset]["color"]["b"] = spritesheetRenderer.material.baseColor.z;
 
                 JSON[i]["components"][componentOffset]["spritesheetSize"] = {
-                        {"x", spritesheetRenderer.spritesheetSize.x},
-                        {"y", spritesheetRenderer.spritesheetSize.y}
-                };
+                    {"x", spritesheetRenderer.spritesheetSize.x},
+                    {"y", spritesheetRenderer.spritesheetSize.y}};
 
                 JSON[i]["components"][componentOffset]["spriteSize"] = {
-                        {"x", spritesheetRenderer.spriteSize.x},
-                        {"y", spritesheetRenderer.spriteSize.y}
-                };
+                    {"x", spritesheetRenderer.spriteSize.x},
+                    {"y", spritesheetRenderer.spriteSize.y}};
 
                 JSON[i]["components"][componentOffset]["spriteOffset"] = {
-                        {"x", spritesheetRenderer.spriteOffset.x},
-                        {"y", spritesheetRenderer.spriteOffset.y}
-                };
+                    {"x", spritesheetRenderer.spriteOffset.x},
+                    {"y", spritesheetRenderer.spriteOffset.y}};
 
                 JSON[i]["components"][componentOffset]["spritesheet"] = spritesheetRenderer.mesh->material.diffuse == nullptr ? "" : spritesheetRenderer.mesh->material.diffuse->texPath;
 
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::Rigidbody3D>()) {
+            if (gameObject->HasComponent<Experimental::Rigidbody3D>()) {
                 auto &rigidbody = gameObject->GetComponent<Experimental::Rigidbody3D>();
 
                 JSON[i]["components"][componentOffset]["type"] = "Rigidbody3D";
@@ -1256,40 +1383,36 @@ namespace HyperAPI {
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::BoxCollider3D>()) {
+            if (gameObject->HasComponent<Experimental::BoxCollider3D>()) {
                 auto &collider = gameObject->GetComponent<Experimental::BoxCollider3D>();
 
                 JSON[i]["components"][componentOffset]["type"] = "BoxCollider3D";
                 JSON[i]["components"][componentOffset]["size"] = {
-                        {"x", collider.size.x},
-                        {"y", collider.size.y},
-                        {"z", collider.size.z}
-                };
-
+                    {"x", collider.size.x},
+                    {"y", collider.size.y},
+                    {"z", collider.size.z}};
 
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::MeshCollider3D>()) {
+            if (gameObject->HasComponent<Experimental::MeshCollider3D>()) {
                 auto &collider = gameObject->GetComponent<Experimental::MeshCollider3D>();
                 JSON[i]["components"][componentOffset]["type"] = "MeshCollider3D";
                 JSON[i]["components"][componentOffset]["size"] = {
-                        {"x", collider.size.x},
-                        {"y", collider.size.y},
-                        {"z", collider.size.z}
-                };
+                    {"x", collider.size.x},
+                    {"y", collider.size.y},
+                    {"z", collider.size.z}};
 
                 componentOffset++;
             }
 
-            if(gameObject->HasComponent<Experimental::Bloom>()) {
+            if (gameObject->HasComponent<Experimental::Bloom>()) {
                 auto &bloom = gameObject->GetComponent<Experimental::Bloom>();
                 JSON[i]["components"][componentOffset]["type"] = "Bloom";
                 JSON[i]["components"][componentOffset]["bloomColor"] = {
-                        {"x", bloom.bloomColor.x},
-                        {"y", bloom.bloomColor.y},
-                        {"z", bloom.bloomColor.z}
-                };
+                    {"x", bloom.bloomColor.x},
+                    {"y", bloom.bloomColor.y},
+                    {"z", bloom.bloomColor.z}};
 
                 componentOffset++;
             }
@@ -1301,12 +1424,12 @@ namespace HyperAPI {
 
             int offset = 0;
 
-            for(int i = 0; i < m_GameObjects.size(); i++) {
+            for (int i = 0; i < m_GameObjects.size(); i++) {
                 auto &gameObject = m_GameObjects[i];
 
-                std::string name = gameObject->name; 
-                std::string ID = gameObject->ID; 
-                std::string parentID = gameObject->parentID; 
+                std::string name = gameObject->name;
+                std::string ID = gameObject->ID;
+                std::string parentID = gameObject->parentID;
                 std::string tag = gameObject->tag;
                 std::string layer = gameObject->layer;
 
@@ -1320,8 +1443,8 @@ namespace HyperAPI {
                 int componentOffset = 0;
                 SaveComponents(JSON, gameObject, i, componentOffset);
             }
-            
-            if(path != "")
+
+            if (path != "")
                 file << JSON;
             else
                 StateScene = JSON;
@@ -1333,13 +1456,11 @@ namespace HyperAPI {
         }
 
         bool DropTargetMat(DragType type, Mesh *currEntity, Texture *otherData) {
-            if (ImGui::BeginDragDropTarget())
-            {
-                if(type == DragType::DRAG_GAMEOBJECT) {
-                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("game_object"))
-                    {
-                        for(auto &obj : m_GameObjects) {
-                            if(obj->ID == dirPayloadData && type == DRAG_GAMEOBJECT) {
+            if (ImGui::BeginDragDropTarget()) {
+                if (type == DragType::DRAG_GAMEOBJECT) {
+                    if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("game_object")) {
+                        for (auto &obj : m_GameObjects) {
+                            if (obj->ID == dirPayloadData && type == DRAG_GAMEOBJECT) {
                                 SavePrefab((std::string("assets/") + obj->name + std::string(".prefab")).c_str(), obj);
                                 break;
                             }
@@ -1347,63 +1468,60 @@ namespace HyperAPI {
                     }
                 }
 
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("file"))
-                {
+                if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("file")) {
                     // const char* path = (const char*)payload->Data;
-                    if(type != DRAG_GAMEOBJECT) {
+                    if (type != DRAG_GAMEOBJECT) {
                         dirPayloadData.erase(0, cwd.length() + 1);
                     }
 
-                    if(
+                    if (
                         G_END_WITH(dirPayloadData, ".png") ||
                         G_END_WITH(dirPayloadData, ".jpg") ||
-                        G_END_WITH(dirPayloadData, ".jpeg")
-                    ) {
-                        switch (type)
-                        {
-                            case DRAG_DIFFUSE: {
-                                if(currEntity->material.diffuse != nullptr) {
-                                    glDeleteTextures(1, &currEntity->material.diffuse->ID);
-                                }
+                        G_END_WITH(dirPayloadData, ".jpeg")) {
+                        switch (type) {
+                        case DRAG_DIFFUSE: {
+                            if (currEntity->material.diffuse != nullptr) {
+                                glDeleteTextures(1, &currEntity->material.diffuse->ID);
+                            }
 
-                                currEntity->material.diffuse = new Texture((char*)dirPayloadData.c_str(), 0, "texture_diffuse");
-                                break;
+                            currEntity->material.diffuse = new Texture((char *)dirPayloadData.c_str(), 0, "texture_diffuse");
+                            break;
+                        }
+                        case DRAG_SPECULAR: {
+                            if (currEntity->material.specular != nullptr) {
+                                glDeleteTextures(1, &currEntity->material.specular->ID);
                             }
-                            case DRAG_SPECULAR: {
-                                if(currEntity->material.specular != nullptr) {
-                                    glDeleteTextures(1, &currEntity->material.specular->ID);
-                                }
-                                currEntity->material.specular = new Texture((char*)dirPayloadData.c_str(), 1, "texture_specular");
-                                break;
+                            currEntity->material.specular = new Texture((char *)dirPayloadData.c_str(), 1, "texture_specular");
+                            break;
+                        }
+                        case DRAG_NORMAL: {
+                            if (currEntity->material.normal != nullptr) {
+                                glDeleteTextures(1, &currEntity->material.normal->ID);
                             }
-                            case DRAG_NORMAL: {
-                                if(currEntity->material.normal != nullptr) {
-                                    glDeleteTextures(1, &currEntity->material.normal->ID);
-                                }
-                                currEntity->material.normal = new Texture((char*)dirPayloadData.c_str(), 2, "texture_normal");
-                                break;
+                            currEntity->material.normal = new Texture((char *)dirPayloadData.c_str(), 2, "texture_normal");
+                            break;
+                        }
+                        case DRAG_SPRITE: {
+                            if (currEntity->material.diffuse != nullptr) {
+                                glDeleteTextures(1, &currEntity->material.diffuse->ID);
                             }
-                            case DRAG_SPRITE: {
-                                if(currEntity->material.diffuse != nullptr) {
-                                    glDeleteTextures(1, &currEntity->material.diffuse->ID);
-                                }
 
-                                currEntity->material.diffuse = new Texture((char*)dirPayloadData.c_str(), 0, "texture_diffuse");
+                            currEntity->material.diffuse = new Texture((char *)dirPayloadData.c_str(), 0, "texture_diffuse");
 
-                                break;
+                            break;
+                        }
+                        case DRAG_SPRITE_NO_MESH: {
+                            if (otherData != nullptr) {
+                                glDeleteTextures(1, &otherData->ID);
                             }
-                            case DRAG_SPRITE_NO_MESH: {
-                                if(otherData != nullptr) {
-                                    glDeleteTextures(1, &otherData->ID);
-                                }
 
-                                otherData = new Texture((char*)dirPayloadData.c_str(), 0, "texture_diffuse");
-                            }
+                            otherData = new Texture((char *)dirPayloadData.c_str(), 0, "texture_diffuse");
+                        }
                         }
                     }
 
                     std::cout << "Dropped " << dirPayloadData << std::endl;
-                    if(
+                    if (
                         G_END_WITH(dirPayloadData, ".obj") ||
                         G_END_WITH(dirPayloadData, ".fbx") ||
                         G_END_WITH(dirPayloadData, ".gltf") ||
@@ -1414,32 +1532,28 @@ namespace HyperAPI {
                         G_END_WITH(dirPayloadData, ".ase") ||
                         G_END_WITH(dirPayloadData, ".ifc") ||
                         G_END_WITH(dirPayloadData, ".xgl") ||
-                        G_END_WITH(dirPayloadData, ".zgl")
-                    ) {
-                        switch (type)
-                        {
-                            case DRAG_MODEL: {
-                                Experimental::Model *newEntity = new Experimental::Model((char*)dirPayloadData.c_str(), false);
-                                break;
-                            }
+                        G_END_WITH(dirPayloadData, ".zgl")) {
+                        switch (type) {
+                        case DRAG_MODEL: {
+                            Experimental::Model *newEntity = new Experimental::Model((char *)dirPayloadData.c_str(), false);
+                            break;
+                        }
                         }
                     }
 
-                    if(
-                        G_END_WITH(dirPayloadData, ".vault") && type == DRAG_SCENE
-                    ) {
+                    if (
+                        G_END_WITH(dirPayloadData, ".vault") && type == DRAG_SCENE) {
                         nlohmann::json J;
                         LoadScene(dirPayloadData, J);
                     }
 
-                    if(
-                        G_END_WITH(dirPayloadData, ".prefab") && type == DRAG_MODEL
-                    ) {
+                    if (
+                        G_END_WITH(dirPayloadData, ".prefab") && type == DRAG_MODEL) {
                         LoadPrefab(dirPayloadData);
                     }
 
-                    for(auto &obj : m_GameObjects) {
-                        if(obj->ID == dirPayloadData && type == DRAG_GAMEOBJECT) {
+                    for (auto &obj : m_GameObjects) {
+                        if (obj->ID == dirPayloadData && type == DRAG_GAMEOBJECT) {
                             SavePrefab((std::string("assets/") + obj->name + std::string(".prefab")).c_str(), obj);
                             break;
                         }
@@ -1457,34 +1571,33 @@ namespace HyperAPI {
         std::string currentScenePath = "";
         entt::registry m_Registry;
         std::map<std::string, bool> layers;
-        std::vector<Experimental::GameObject*> m_GameObjects = {};
+        std::vector<Experimental::GameObject *> m_GameObjects = {};
 
         Experimental::GameObject *m_Object = nullptr;
         char name[499];
         char tag[499];
         char layer[32];
 
-        std::vector<Mesh*> entities = {};
+        std::vector<Mesh *> entities = {};
         std::vector<Model> models = {};
         Camera *mainCamera;
-        std::vector<Camera*> cameras = {};
+        std::vector<Camera *> cameras = {};
         std::vector<Log> logs = {};
         glm::mat4 projection = glm::mat4(1.0f);
 
         std::vector<entt::entity> backup_entities = {};
 
-        std::vector<HyperAPI::PointLight*> PointLights = {};
-        std::vector<HyperAPI::Light2D*> Lights2D = {};
-        std::vector<HyperAPI::SpotLight*> SpotLights = {};
-        std::vector<HyperAPI::DirectionalLight*> DirLights = {};
-        std::vector<HyperAPI::Mesh*> hyperEntities = {};
+        std::vector<HyperAPI::PointLight *> PointLights = {};
+        std::vector<HyperAPI::Light2D *> Lights2D = {};
+        std::vector<HyperAPI::SpotLight *> SpotLights = {};
+        std::vector<HyperAPI::DirectionalLight *> DirLights = {};
+        std::vector<HyperAPI::Mesh *> hyperEntities = {};
         std::map<std::string, std::map<std::string, int>> currFrames;
         std::map<std::string, std::map<std::string, float>> currDelays;
 
         bool LoadingScene = false;
 
         b2World *world = nullptr;
-        std::vector<Experimental::GameObject*> m_UIObjects;
-    }
-}
-
+        std::vector<Experimental::GameObject *> m_UIObjects;
+    } // namespace Scene
+} // namespace HyperAPI

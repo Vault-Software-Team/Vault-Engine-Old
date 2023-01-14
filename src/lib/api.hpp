@@ -56,3 +56,7 @@
 #include "../Renderer/Structures.hpp"
 #include "../Renderer/Texture.hpp"
 #include "../Renderer/Timestep.hpp"
+#include "../Renderer/Batch.hpp"
+
+// Debugging
+#include "../Debugging/GLError.hpp"
