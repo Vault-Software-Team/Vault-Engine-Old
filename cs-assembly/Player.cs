@@ -3,7 +3,6 @@ using Vault;
 
 namespace Sandbox
 {
-
     public class TestVec3
     {
         public float x;
@@ -30,10 +29,8 @@ namespace Sandbox
 
         void OnUpdate(float ts)
         {
-            Transform transform = GetComponent<Transform>();
-            Vector3 rotation = transform.rotation;
-            rotation.y += ts;
-            transform.rotation = rotation;
+            MeshRenderer renderer = GetComponent<MeshRenderer>();
+            string texture = renderer.material.diffuse;
         }
     }
 }

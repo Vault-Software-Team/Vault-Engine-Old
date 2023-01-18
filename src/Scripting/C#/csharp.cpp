@@ -1,8 +1,8 @@
-#include "lib/api.hpp"
+#include <api.hpp>
 #include "mono/metadata/appdomain.h"
 #include "mono/metadata/assembly.h"
 #include "mono/metadata/class.h"
-#include "lib/csharp.hpp"
+#include <csharp.hpp>
 #include "mono/metadata/image.h"
 #include "mono/metadata/loader.h"
 #include "mono/metadata/object-forward.h"

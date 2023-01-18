@@ -51,8 +51,7 @@ namespace HyperAPI::Experimental {
             anims.clear();
 
             if (mesh) {
-                if (mesh)
-                    delete mesh;
+                delete mesh;
             }
         }
 

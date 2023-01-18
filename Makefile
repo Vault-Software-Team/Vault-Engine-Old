@@ -45,6 +45,7 @@ other_stuff += $(wildcard src/Experimental/*.cpp)
 other_stuff += $(wildcard src/scene.cpp)
 
 debugging = $(wildcard src/Debugging/*.cpp)
+scripting = $(wildcard src/Scripting/*/*.cpp)
 
 scripts = $(wildcard src/scripts/*.cpp)
 
@@ -70,7 +71,7 @@ components:
 	$(GNU_LINUX_COMPILER) -c $(components) $(flags)
 	mv *.o bin
 
-	$(GNU_LINUX_COMPILER) -c src/main.cpp src/csharp.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
@@ -79,7 +80,7 @@ other:
 	$(GNU_LINUX_COMPILER) -c $(other_stuff) $(flags)
 	mv *.o bin
 
-	$(GNU_LINUX_COMPILER) -c src/main.cpp src/csharp.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
@@ -88,7 +89,7 @@ renderer:
 	$(GNU_LINUX_COMPILER) -c $(renderer) $(flags)
 	mv *.o bin
 
-	$(GNU_LINUX_COMPILER) -c src/main.cpp src/csharp.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
@@ -97,7 +98,16 @@ debugging:
 	$(GNU_LINUX_COMPILER) -c $(debugging) $(flags)
 	mv *.o bin
 
-	$(GNU_LINUX_COMPILER) -c src/main.cpp src/csharp.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
+
+scripting:
+	$(GNU_LINUX_COMPILER) -c $(scripting) $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
@@ -119,7 +129,7 @@ scripts:
 	done
 
 app:
-	$(GNU_LINUX_COMPILER) -c src/main.cpp src/csharp.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)

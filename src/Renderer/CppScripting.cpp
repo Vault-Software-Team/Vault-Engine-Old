@@ -39,7 +39,7 @@ namespace HyperAPI::CppScripting {
 
                 std::string headers =
                     "-I\"./src/vendor\" -I\"./src/vendor/bullet/bullet\" "
-                    "-I\"./src/vendor/NoesisGUI\"";
+                    "-I\"./src/vendor/NoesisGUI\" -I\"./src/lib\"";
                 system((std::string(config.linuxCompiler) + " -c -fPIC " +
                         dirEntry.path().string() + " " + headers +
                         " -rdynamic -o " + objFile)
@@ -75,7 +75,7 @@ namespace HyperAPI::CppScripting {
 
                 std::string headers =
                     "-I\"./src/vendor\" -I\"./src/vendor/bullet/bullet\" "
-                    "-I\"./src/vendor/NoesisGUI\"";
+                    "-I\"./src/vendor/NoesisGUI\" -I\"./src/lib\"";
                 headers += " ";
                 headers +=
                     "-lstdc++fs -L\"./win_libs\" -lglfw3dll -lstdc++fs "
