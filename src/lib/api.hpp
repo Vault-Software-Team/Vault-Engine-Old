@@ -35,6 +35,7 @@
 #include "../Components/SpritesheetAnimation.hpp"
 #include "../Components/SpritesheetRenderer.hpp"
 #include "../Components/Transform.hpp"
+#include "../Components/3DText.hpp"
 
 // Renderer
 #include "../Renderer/AssimpGLMHelpers.hpp"
@@ -57,6 +58,7 @@
 #include "../Renderer/Texture.hpp"
 #include "../Renderer/Timestep.hpp"
 #include "../Renderer/Batch.hpp"
+#include "../Renderer/Font.hpp"
 
 // Debugging
 #include "../Debugging/GLError.hpp"

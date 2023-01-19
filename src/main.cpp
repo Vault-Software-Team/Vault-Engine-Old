@@ -2384,6 +2384,13 @@ int main(int argc, char **argv) {
                             comp.GUI();
                     }
 
+                    if (Scene::m_Object->HasComponent<Text3D>()) {
+                        auto &comp =
+                            Scene::m_Object->GetComponent<Text3D>();
+                        if (comp.hasGUI)
+                            comp.GUI();
+                    }
+
                     if (Scene::m_Object
                             ->HasComponent<c_SpritesheetAnimation>()) {
                         auto &comp =
@@ -2531,6 +2538,11 @@ int main(int argc, char **argv) {
 
                     if (ImGui::Button("Sprite Renderer", ImVec2(200, 0))) {
                         Scene::m_Object->AddComponent<SpriteRenderer>();
+                        ImGui::CloseCurrentPopup();
+                    }
+
+                    if (ImGui::Button("3D Text", ImVec2(200, 0))) {
+                        Scene::m_Object->AddComponent<Text3D>();
                         ImGui::CloseCurrentPopup();
                     }
 
@@ -3199,12 +3211,9 @@ int main(int argc, char **argv) {
     Mesh *gridMesh = Plane(Vector4(1, 0, 0, 1)).m_Mesh;
 #endif
 
-    Batch batch;
-    Transform m_transform;
-    m_transform.position = Vector3(0, 0, 0);
-    m_transform.rotation = Vector3(0, 0, 0);
-    m_transform.scale = Vector3(1, 1, 1);
-    batch.AddMesh(*gridMesh, &m_transform);
+    Font::InitFT();
+
+    Font test_font("assets/fonts/OpenSans-Bold.ttf", 48);
 
     app.Run(
         [&](uint32_t &shadowMapTex) {
@@ -3709,6 +3718,27 @@ int main(int argc, char **argv) {
                                         m_parentTransform);
                             }
                         }
+                    }
+
+                    if (gameObject->HasComponent<Text3D>()) {
+                        auto &renderer = gameObject->GetComponent<Text3D>();
+                        renderer.Update();
+                        auto &transform = gameObject->GetComponent<Transform>();
+                        transform.Update();
+
+                        glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                        for (auto &go : Scene::m_GameObjects) {
+                            if (go->ID == gameObject->parentID &&
+                                go->HasComponent<Transform>()) {
+                                auto &parentTransform =
+                                    go->GetComponent<Transform>();
+                                parentTransform.Update();
+                                m_parentTransform = parentTransform.transform;
+                            }
+                        }
+
+                        renderer.font->Draw(*Scene::mainCamera, transform.transform * m_parentTransform, renderer.text, renderer.color, renderer.bloomColor, 0, 0, renderer.scale);
                     }
 
                     if (gameObject->HasComponent<SpriteRenderer>()) {

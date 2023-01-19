@@ -3,4 +3,5 @@
 cwd=$(pwd)
 export LD_LIBRARY_PATH="$cwd/lib"
 clear
-./build.out
+# valgrind --leak-check=yes --log-file=valgrind.rpt ./build.out
+gdb ./build.out

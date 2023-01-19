@@ -1,6 +1,7 @@
 #pragma once
 
 // Vendor Includes
+#include "../Time/Time.hpp"
 #include "../vendor/glad/include/glad/glad.h"
 #include "../vendor/GLFW/glfw3.h"
 #include "../vendor/ImGuizmo/ImSequencer.h"
@@ -89,10 +90,10 @@ namespace fs = std::experimental::filesystem;
 #define CYAN SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 11)
 #define GREY SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 8)
 #define RESET SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7)
-#define HYPER_LOG(x)                                                           \
-    RED;                                                                       \
-    std::cout << "[VAULT] - ";                                                 \
-    RESET;                                                                     \
+#define HYPER_LOG(x)           \
+    RED;                       \
+    std::cout << "[VAULT] - "; \
+    RESET;                     \
     std::cout << x << std::endl;
 #else
 #define RED "\033[0;31m"
@@ -103,7 +104,7 @@ namespace fs = std::experimental::filesystem;
 #define CYAN "\033[0;36m"
 #define WHITE "\033[0;37m"
 #define RESET "\033[0m"
-#define HYPER_LOG(x) std::cout << RED "[VAULT] - " RESET << x << std::endl;
+#define HYPER_LOG(x) std::cout << YELLOW "[" << HyperAPI::getTime() << "] - " << RED << "[VAULT] " << RESET << x << std::endl;
 #endif
 
 using json = nlohmann::json;
@@ -175,11 +176,13 @@ namespace HyperAPI {
 
         void SetTag(const std::string &str) { Tag = str; }
 
-        template <typename T> void AddComponent(T component) {
+        template <typename T>
+        void AddComponent(T component) {
             Components.push_back(std::any_cast<T>(component));
         }
 
-        template <typename T> T GetComponent() {
+        template <typename T>
+        T GetComponent() {
             for (auto component : Components) {
                 try {
                     if (typeid(T) == typeid(std::any_cast<T>(component))) {
@@ -190,7 +193,8 @@ namespace HyperAPI {
             }
         }
 
-        template <typename T> bool HasComponent() {
+        template <typename T>
+        bool HasComponent() {
             for (auto component : Components) {
                 if (typeid(T) == typeid(std::any_cast<T>(component))) {
                     return true;
@@ -199,7 +203,8 @@ namespace HyperAPI {
             return false;
         }
 
-        template <typename T> void UpdateComponent(T component) {
+        template <typename T>
+        void UpdateComponent(T component) {
             for (auto &comp : Components) {
                 if (typeid(T) == typeid(std::any_cast<T>(comp))) {
                     comp = component;
