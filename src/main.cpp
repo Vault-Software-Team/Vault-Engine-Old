@@ -3215,12 +3215,15 @@ int main(int argc, char **argv) {
 #endif
 
     Font::InitFT();
-
-    Font test_font("assets/fonts/OpenSans-Bold.ttf", 48);
     float runTime;
+
+    // Experimental::Model test_model("assets/Dancing Twerk.fbx");
+    // Animation danceAnimation("assets/Dancing Twerk.fbx", &test_model);
+    // Animator animator(&danceAnimation);
 
     app.Run(
         [&](uint32_t &shadowMapTex) {
+            // animator.UpdateAnimation(Timestep::deltaTime);
             runTime += Timestep::deltaTime;
             shader.Bind();
             shader.SetUniform1i("shadowMap", GL_TEXTURE7);

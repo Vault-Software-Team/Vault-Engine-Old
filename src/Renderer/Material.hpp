@@ -26,26 +26,6 @@ namespace HyperAPI {
 
         ~Material() {
             textures.clear();
-
-            if (diffuse != nullptr) {
-                delete diffuse;
-            }
-
-            if (specular != nullptr) {
-                delete specular;
-            }
-
-            if (normal != nullptr) {
-                delete normal;
-            }
-
-            if (height != nullptr) {
-                delete height;
-            }
-
-            if (emission != nullptr) {
-                delete emission;
-            }
         }
 
         void Bind(Shader &shader);

@@ -42,7 +42,7 @@ namespace HyperAPI::Experimental {
             if (ImGui::TreeNode("Sprite Renderer")) {
                 if (ImGui::TreeNode("Texture")) {
                     if (mesh->material.diffuse != nullptr) {
-                        ImGui::ImageButton((void *)mesh->material.diffuse->ID,
+                        ImGui::ImageButton((void *)mesh->material.diffuse->tex->ID,
                                            ImVec2(128, 128), ImVec2(0, 1),
                                            ImVec2(1, 0));
                     } else {
@@ -51,7 +51,7 @@ namespace HyperAPI::Experimental {
                     Scene::DropTargetMat(Scene::DRAG_SPRITE, mesh, nullptr);
                     if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1) &&
                         mesh->material.diffuse != nullptr) {
-                        glDeleteTextures(1, &mesh->material.diffuse->ID);
+                        glDeleteTextures(1, &mesh->material.diffuse->tex->ID);
                         delete mesh->material.diffuse;
                         mesh->material.diffuse = nullptr;
                     }

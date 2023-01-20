@@ -7,7 +7,7 @@
     },
     "diffuse": "assets/models/neco/textures/Material_baseColor.png",
     "height": "nullptr",
-    "metallic": 0.0,
+    "metallic": 0.30000001192092896,
     "normal": "nullptr",
     "roughness": 0.0,
     "specular": "nullptr",

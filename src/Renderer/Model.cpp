@@ -90,6 +90,9 @@ namespace HyperAPI {
 
         for (int i = 0; i < mesh->mNumVertices; i++) {
             Vertex vertex;
+
+            SetVertexBoneDataToDefault(vertex);
+
             vertex.position =
                 glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y,
                           mesh->mVertices[i].z);
@@ -103,6 +106,7 @@ namespace HyperAPI {
             }
             vertices.push_back(vertex);
         }
+        ExtractBoneWeightForVertices(vertices, mesh, scene);
 
         // indices
         for (uint32_t i = 0; i < mesh->mNumFaces; i++) {
@@ -158,7 +162,7 @@ namespace HyperAPI {
             bool skip = false;
             std::string texPath = directory + '/' + str.C_Str();
             for (uint32_t j = 0; j < textures_loaded.size(); j++) {
-                if (std::strcmp(textures_loaded[j].texStarterPath,
+                if (std::strcmp(textures_loaded[j].tex->texStarterPath,
                                 texPath.c_str()) == 0) {
                     textures.push_back(textures_loaded[j]);
                     skip = true;

@@ -104,7 +104,7 @@ namespace HyperAPI::Experimental {
                                 if (frame.mesh->material.diffuse != nullptr) {
                                     ImGui::ImageButton(
                                         (void *)
-                                            frame.mesh->material.diffuse->ID,
+                                            frame.mesh->material.diffuse->tex->ID,
                                         ImVec2(128, 128), ImVec2(0, 1),
                                         ImVec2(1, 0));
                                 } else {
@@ -117,7 +117,7 @@ namespace HyperAPI::Experimental {
                                     ImGui::IsMouseClicked(1) &&
                                     frame.mesh->material.diffuse != nullptr) {
                                     glDeleteTextures(
-                                        1, &frame.mesh->material.diffuse->ID);
+                                        1, &frame.mesh->material.diffuse->tex->ID);
                                     delete frame.mesh->material.diffuse;
                                 }
                                 ImGui::ColorEdit4(

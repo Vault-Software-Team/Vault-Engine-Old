@@ -37,17 +37,15 @@ namespace HyperAPI {
             }
         }
 
-        void ExtractBoneWeightForVertices(std::vector<Vertex> &vertices,
-                                          aiMesh *mesh, const aiScene *scene) {
+        void ExtractBoneWeightForVertices(std::vector<Vertex> &vertices, aiMesh *mesh, const aiScene *scene) {
             for (int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex) {
                 int boneID = -1;
                 std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
                 if (m_BoneInfoMap.find(boneName) == m_BoneInfoMap.end()) {
                     BoneInfo newBoneInfo;
                     newBoneInfo.id = m_BoneCounter;
-                    newBoneInfo.offset =
-                        AssimpGLMHelpers::ConvertMatrixToGLMFormat(
-                            mesh->mBones[boneIndex]->mOffsetMatrix);
+                    newBoneInfo.offset = AssimpGLMHelpers::ConvertMatrixToGLMFormat(
+                        mesh->mBones[boneIndex]->mOffsetMatrix);
                     m_BoneInfoMap[boneName] = newBoneInfo;
                     boneID = m_BoneCounter;
                     m_BoneCounter++;
@@ -58,8 +56,7 @@ namespace HyperAPI {
                 auto weights = mesh->mBones[boneIndex]->mWeights;
                 int numWeights = mesh->mBones[boneIndex]->mNumWeights;
 
-                for (int weightIndex = 0; weightIndex < numWeights;
-                     ++weightIndex) {
+                for (int weightIndex = 0; weightIndex < numWeights; ++weightIndex) {
                     int vertexId = weights[weightIndex].mVertexId;
                     float weight = weights[weightIndex].mWeight;
                     assert(vertexId <= vertices.size());

@@ -1,66 +1,79 @@
 #include "Texture.hpp"
+#include "libs.hpp"
 
 namespace HyperAPI {
-    Texture::Texture(const char *texturePath, uint32_t slot,
-                     const char *textureType) {
-        stbi_set_flip_vertically_on_load(true);
-        texType = textureType;
-        texStarterPath = texturePath;
-        this->slot = slot;
-        texPath = std::string(texturePath);
-        data = stbi_load(texturePath, &width, &height, &nrChannels, 0);
+    std::vector<m_Texture *> textures;
+    Texture::Texture(const char *texturePath, uint32_t slot, const char *textureType) {
+        for (auto *m_tex : textures) {
+            if (m_tex->texPath == std::string(texturePath)) {
+                tex = m_tex;
+                tex->sharing++;
+                break;
+            }
+        }
 
-        HYPER_LOG("Texture " + std::to_string(slot) + " loaded from " +
-                  texturePath)
+        if (tex == nullptr) {
+            tex = new m_Texture();
+            tex->sharing++;
 
-        glGenTextures(1, &ID);
-        glBindTexture(GL_TEXTURE_2D, ID);
+            stbi_set_flip_vertically_on_load(true);
+            tex->texType = textureType;
+            tex->texStarterPath = texturePath;
+            tex->slot = slot;
+            tex->texPath = std::string(texturePath);
+            texPath = std::string(texturePath);
+            tex->data = stbi_load(texturePath, &tex->width, &tex->height, &tex->nrChannels, 0);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            HYPER_LOG("Texture " + std::to_string(slot) + " loaded from " +
+                      texturePath)
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glGenTextures(1, &tex->ID);
+            glBindTexture(GL_TEXTURE_2D, tex->ID);
 
-        if (std::string(textureType) == "texture_normal") {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA,
-                         GL_UNSIGNED_BYTE, data);
-        } else if (std::string(textureType) == "texture_height") {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RGBA,
-                         GL_UNSIGNED_BYTE, data);
-        } else if (nrChannels >= 4)
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, width, height, 0,
-                         GL_RGBA, GL_UNSIGNED_BYTE, data);
-        else if (nrChannels == 3)
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, width, height, 0, GL_RGB,
-                         GL_UNSIGNED_BYTE, data);
-        else if (nrChannels == 1)
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, width, height, 0, GL_RED,
-                         GL_UNSIGNED_BYTE, data);
-        else
-            return;
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        // throw std::invalid_argument("Texture format not supported");
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-        glGenerateMipmap(GL_TEXTURE_2D);
+            if (std::string(textureType) == "texture_normal") {
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex->data);
+            } else if (std::string(textureType) == "texture_height") {
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, tex->width, tex->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex->data);
+            } else if (tex->nrChannels >= 4)
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, tex->width, tex->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex->data);
+            else if (tex->nrChannels == 3)
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, tex->width, tex->height, 0, GL_RGB, GL_UNSIGNED_BYTE, tex->data);
+            else if (tex->nrChannels == 1)
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, tex->width, tex->height, 0, GL_RED, GL_UNSIGNED_BYTE, tex->data);
+            else
+                return;
 
-        stbi_image_free(data);
-        glBindTexture(GL_TEXTURE_2D, 0);
+            // throw std::invalid_argument("Texture format not supported");
+
+            glGenerateMipmap(GL_TEXTURE_2D);
+
+            stbi_image_free(tex->data);
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            textures.push_back(tex);
+        }
     }
     Texture::Texture(unsigned char *m_Data, uint32_t slot,
                      const char *textureType, const char *texturePath) {
         stbi_set_flip_vertically_on_load(true);
-        texType = textureType;
-        texStarterPath = texturePath;
-        this->slot = slot;
+        tex->texType = textureType;
+        tex->texStarterPath = texturePath;
+        tex->slot = slot;
+        tex->texPath = std::string(texturePath);
         texPath = std::string(texturePath);
-        data = stbi_load_from_memory(data, 0, &width, &height, &nrChannels, 0);
+        tex->data = stbi_load_from_memory(tex->data, 0, &tex->width, &tex->height, &tex->nrChannels, 0);
 
         HYPER_LOG("Texture " + std::to_string(slot) + " loaded from " +
                   texturePath)
 
-        glGenTextures(1, &ID);
-        glBindTexture(GL_TEXTURE_2D, ID);
+        glGenTextures(1, &tex->ID);
+        glBindTexture(GL_TEXTURE_2D, tex->ID);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -69,20 +82,15 @@ namespace HyperAPI {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
         if (std::string(textureType) == "texture_normal") {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA,
-                         GL_UNSIGNED_BYTE, data);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex->data);
         } else if (std::string(textureType) == "texture_height") {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RGBA,
-                         GL_UNSIGNED_BYTE, data);
-        } else if (nrChannels >= 4)
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, width, height, 0,
-                         GL_RGBA, GL_UNSIGNED_BYTE, data);
-        else if (nrChannels == 3)
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, width, height, 0, GL_RGB,
-                         GL_UNSIGNED_BYTE, data);
-        else if (nrChannels == 1)
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, width, height, 0, GL_RED,
-                         GL_UNSIGNED_BYTE, data);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, tex->width, tex->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex->data);
+        } else if (tex->nrChannels >= 4)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, tex->width, tex->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex->data);
+        else if (tex->nrChannels == 3)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, tex->width, tex->height, 0, GL_RGB, GL_UNSIGNED_BYTE, tex->data);
+        else if (tex->nrChannels == 1)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, tex->width, tex->height, 0, GL_RED, GL_UNSIGNED_BYTE, tex->data);
         else
             return;
 
@@ -90,17 +98,17 @@ namespace HyperAPI {
 
         glGenerateMipmap(GL_TEXTURE_2D);
 
-        stbi_image_free(data);
+        stbi_image_free(tex->data);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     void Texture::Bind(uint32_t slot) {
         if (slot == -1) {
-            glActiveTexture(GL_TEXTURE0 + this->slot);
-            glBindTexture(GL_TEXTURE_2D, ID);
+            glActiveTexture(GL_TEXTURE0 + tex->slot);
+            glBindTexture(GL_TEXTURE_2D, tex->ID);
         } else {
             glActiveTexture(GL_TEXTURE0 + slot);
-            glBindTexture(GL_TEXTURE_2D, ID);
+            glBindTexture(GL_TEXTURE_2D, tex->ID);
         }
     }
 

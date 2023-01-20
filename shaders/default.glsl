@@ -48,26 +48,21 @@ uniform mat4 finalBonesMatrices[MAX_BONES];
 
 void main() {
     vec4 totalPosition = vec4(0);
-
     for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
     {
-        if(boneIds[i] == -1) {
-            continue;
-        }
+        if(boneIds[i] == -1) continue;
 
-        if(boneIds[i] >=MAX_BONES)
+        if(boneIds[i] >= MAX_BONES) 
         {
             totalPosition = vec4(position, 1.0f);
             break;
         }
-        vec4 localPosition = finalBonesMatrices[boneIds[i]] * vec4(position.x, position.y, position.z, 1.0f);
+
+        vec4 localPosition = finalBonesMatrices[boneIds[i]] * vec4(position, 1.0f);
         totalPosition += localPosition * weights[i];
         vec3 localNormal = mat3(finalBonesMatrices[boneIds[i]]) * aNormal;
     }
-    if(totalPosition == vec4(0))
-    {
-        totalPosition = vec4(position.x, position.y, position.z, 1.0f);
-    }
+    totalPosition = vec4(position, 1.0f);
 
     vec4 worldPosition = model * translation * rotation * scale * totalPosition;
     currentPosition = vec3(model * translation * rotation * scale * totalPosition);

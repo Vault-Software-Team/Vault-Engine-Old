@@ -2,8 +2,7 @@
 #include <libs.hpp>
 
 namespace HyperAPI {
-    class Texture {
-    public:
+    struct m_Texture {
         uint32_t ID;
         int width, height, nrChannels;
         unsigned char *data;
@@ -11,6 +10,14 @@ namespace HyperAPI {
         uint32_t slot;
         std::string texPath;
         const char *texStarterPath;
+        int sharing;
+    };
+
+    extern std::vector<m_Texture *> textures;
+    class Texture {
+    public:
+        std::string texPath;
+        m_Texture *tex = nullptr;
 
         Texture(const char *texturePath, uint32_t slot,
                 const char *textureType);
@@ -18,12 +25,17 @@ namespace HyperAPI {
                 const char *texturePath = "");
 
         ~Texture() {
-            HYPER_LOG("Texture " + texPath + " deleted");
-            glDeleteTextures(1, &ID);
+            if (--tex->sharing <= 0) {
+                int index = &tex - &textures[0];
+                textures.erase(textures.begin() + index);
+                delete tex;
+                HYPER_LOG("Texture " + texPath + " Deleted")
+            } else {
+                // HYPER_LOG("Texture Class " + texPath + " Removed")
+            }
         }
 
         void Bind(uint32_t slot = -1);
-
         void Unbind();
     };
 } // namespace HyperAPI

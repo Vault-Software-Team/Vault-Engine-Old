@@ -10,15 +10,18 @@ namespace HyperAPI {
 
         Sprite(const char *texPath);
 
-        template <typename T> void AddComponent(T component) {
+        template <typename T>
+        void AddComponent(T component) {
             m_Mesh->AddComponent(component);
         }
 
-        template <typename T> T GetComponent() {
+        template <typename T>
+        T GetComponent() {
             return m_Mesh->GetComponent<T>();
         }
 
-        template <typename T> void UpdateComponent(T component) {
+        template <typename T>
+        void UpdateComponent(T component) {
             m_Mesh->UpdateComponent<T>(component);
         }
 
@@ -33,22 +36,25 @@ namespace HyperAPI {
         Spritesheet(const char *texPath, Material &mat, Vector2 sheetSize,
                     Vector2 spriteSize, Vector2 spriteCoords);
 
-        template <typename T> void AddComponent(T component) {
+        template <typename T>
+        void AddComponent(T component) {
             m_Mesh->AddComponent(component);
         }
 
-        template <typename T> T GetComponent() {
+        template <typename T>
+        T GetComponent() {
             return m_Mesh->GetComponent<T>();
         }
 
-        template <typename T> void UpdateComponent(T component) {
+        template <typename T>
+        void UpdateComponent(T component) {
             m_Mesh->UpdateComponent<T>(component);
         }
 
         void Draw(Shader &shader, Camera &camera);
     };
 
-    struct Animation {
+    struct mg_Animation {
         std::vector<Spritesheet> frames;
         int currentFrame = 0;
         float delay = 0.1;
@@ -57,15 +63,15 @@ namespace HyperAPI {
 
     class SpritesheetAnimation {
     public:
-        std::vector<Animation *> animations;
-        Animation *currentAnimation = nullptr;
+        std::vector<mg_Animation *> animations;
+        mg_Animation *currentAnimation = nullptr;
 
         float time = 0.1;
         float prevTime = 0;
 
         SpritesheetAnimation() = default;
 
-        void AddAnimation(Animation *animation) {
+        void AddAnimation(mg_Animation *animation) {
             animations.push_back(animation);
         }
 
@@ -108,15 +114,18 @@ namespace HyperAPI {
 
         Graphic(Vector3 rgb);
 
-        template <typename T> void AddComponent(T component) {
+        template <typename T>
+        void AddComponent(T component) {
             m_Mesh->AddComponent(component);
         }
 
-        template <typename T> T GetComponent() {
+        template <typename T>
+        T GetComponent() {
             return m_Mesh->GetComponent<T>();
         }
 
-        template <typename T> void UpdateComponent(T component) {
+        template <typename T>
+        void UpdateComponent(T component) {
             m_Mesh->UpdateComponent<T>(component);
         }
 

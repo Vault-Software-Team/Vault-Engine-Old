@@ -11,17 +11,17 @@ namespace HyperAPI {
         this->roughness = roughness;
 
         for (auto &tex : textures) {
-            if (std::string(tex.texType) == "texture_diffuse") {
+            if (std::string(tex.tex->texType) == "texture_diffuse") {
                 this->diffuse = &tex;
-            } else if (std::string(tex.texType) == "texture_specular") {
+            } else if (std::string(tex.tex->texType) == "texture_specular") {
                 this->specular = &tex;
-            } else if (std::string(tex.texType) == "texture_normal") {
+            } else if (std::string(tex.tex->texType) == "texture_normal") {
                 this->normal = &tex;
             }
         }
 
         if (diffuse != nullptr) {
-            std::cout << "Diffuse: " << diffuse->texType << std::endl;
+            std::cout << "Diffuse: " << diffuse->tex->texType << std::endl;
         }
     }
 

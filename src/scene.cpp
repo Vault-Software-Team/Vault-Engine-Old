@@ -1506,41 +1506,23 @@ namespace HyperAPI {
                         G_END_WITH(dirPayloadData, ".jpeg")) {
                         switch (type) {
                         case DRAG_DIFFUSE: {
-                            if (currEntity->material.diffuse != nullptr) {
-                                glDeleteTextures(1, &currEntity->material.diffuse->ID);
-                            }
-
                             currEntity->material.diffuse = new Texture((char *)dirPayloadData.c_str(), 0, "texture_diffuse");
                             break;
                         }
                         case DRAG_SPECULAR: {
-                            if (currEntity->material.specular != nullptr) {
-                                glDeleteTextures(1, &currEntity->material.specular->ID);
-                            }
                             currEntity->material.specular = new Texture((char *)dirPayloadData.c_str(), 1, "texture_specular");
                             break;
                         }
                         case DRAG_NORMAL: {
-                            if (currEntity->material.normal != nullptr) {
-                                glDeleteTextures(1, &currEntity->material.normal->ID);
-                            }
                             currEntity->material.normal = new Texture((char *)dirPayloadData.c_str(), 2, "texture_normal");
                             break;
                         }
                         case DRAG_SPRITE: {
-                            if (currEntity->material.diffuse != nullptr) {
-                                glDeleteTextures(1, &currEntity->material.diffuse->ID);
-                            }
-
                             currEntity->material.diffuse = new Texture((char *)dirPayloadData.c_str(), 0, "texture_diffuse");
 
                             break;
                         }
                         case DRAG_SPRITE_NO_MESH: {
-                            if (otherData != nullptr) {
-                                glDeleteTextures(1, &otherData->ID);
-                            }
-
                             otherData = new Texture((char *)dirPayloadData.c_str(), 0, "texture_diffuse");
                         }
                         }

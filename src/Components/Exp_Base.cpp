@@ -367,8 +367,7 @@ namespace HyperAPI::Experimental {
         return animations;
     }
 
-    void Model::Draw(Shader &shader, Camera &camera,
-                     std::vector<glm::mat4> &transforms) {
+    void Model::Draw(Shader &shader, Camera &camera) {
         Transform &mainTransform = mainGameObject->GetComponent<Transform>();
         mainTransform.Update();
 
@@ -540,7 +539,7 @@ namespace HyperAPI::Experimental {
             bool skip = false;
             std::string texPath = directory + '/' + str.C_Str();
             for (uint32_t j = 0; j < textures_loaded.size(); j++) {
-                if (std::strcmp(textures_loaded[j]->texStarterPath,
+                if (std::strcmp(textures_loaded[j]->tex->texStarterPath,
                                 texPath.c_str()) == 0) {
                     textures.push_back(textures_loaded[j]);
                     skip = true;

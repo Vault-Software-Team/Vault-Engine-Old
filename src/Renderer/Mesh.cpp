@@ -77,39 +77,31 @@ namespace HyperAPI {
             glCheckError();
 
             // coords
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void *)0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);
             glEnableVertexAttribArray(0);
 
             // color
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void *)offsetof(Vertex, color));
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, color));
             glEnableVertexAttribArray(1);
 
             // normals
-            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void *)offsetof(Vertex, normal));
+            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, normal));
             glEnableVertexAttribArray(2);
 
             // texuv
-            glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void *)offsetof(Vertex, texUV));
+            glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, texUV));
             glEnableVertexAttribArray(3);
 
-            glVertexAttribPointer(4, 4, GL_INT, GL_FALSE, sizeof(Vertex),
-                                  (void *)offsetof(Vertex, m_BoneIDs));
+            glVertexAttribPointer(4, 4, GL_INT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, m_BoneIDs));
             glEnableVertexAttribArray(4);
 
-            glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void *)offsetof(Vertex, m_Weights));
+            glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, m_Weights));
             glEnableVertexAttribArray(5);
 
-            glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void *)offsetof(Vertex, tangent));
+            glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, tangent));
             glEnableVertexAttribArray(6);
 
-            glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void *)offsetof(Vertex, bitangent));
+            glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, bitangent));
             glEnableVertexAttribArray(7);
 
             glVertexAttribPointer(8, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, transformIndex));
