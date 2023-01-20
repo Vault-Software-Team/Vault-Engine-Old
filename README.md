@@ -12,44 +12,48 @@
 
 ## Supported Platforms:
 
--   **Linux**
--   **Windows**
+- **Linux**
+- **Windows**
 
 ## Features
 
--   **2D and 3D Rendering**
--   **Post-Processing Effects**
--   **Project Manager**
--   **Script Engine: Lua**
--   **Physics Engine: Box2D, Bullet Physics (3D)**
--   **Audio: SDL_mixer**
--   **Level Editor**
--   **C++ Scripting**
--   **2D Lighting**
--   **3D Lighting**
--   **More coming soon**
+- **2D and 3D Rendering**
+- **Post-Processing Effects**
+- **Project Manager**
+- **Script Engine: Lua**
+- **Physics Engine: Box2D, Bullet Physics (3D)**
+- **Audio: SDL_mixer**
+- **Level Editor**
+- **C++ Scripting**
+- **2D Lighting**
+- **3D Lighting**
+- **More coming soon**
 
 ## Used Dependencies
 
--   **Assimp**
--   **Box2D**
--   **Discord RPC**
--   **Freetype**
--   **ImGuizmo**
--   **EnTT**
--   **GLAD**
--   **GLFW**
--   **glm**
--   **IconFontCppHeaders**
--   **ImGui**
--   **ImGuiFileDialog**
--   **nlohmann json**
--   **SDL/SDL_mixer**
--   **stb_image**
--   **tinyxml**
--   **Bullet Physics**
--   **OpenAL**
--   **luajit**
+- **Assimp**
+- **Box2D**
+- **Discord RPC**
+- **Freetype**
+- **ImGuizmo**
+- **EnTT**
+- **GLAD**
+- **GLFW**
+- **glm**
+- **IconFontCppHeaders**
+- **ImGui**
+- **ImGuiFileDialog**
+- **nlohmann json**
+- **SDL/SDL_mixer**
+- **stb_image**
+- **tinyxml**
+- **Bullet Physics**
+- **OpenAL**
+- **luajit**
+
+# Huge thanks to
+
+- **Blood demon for remaking the logo and making the banner! https://twitter.com/ecto_demon**
 
 # Installation
 
@@ -98,10 +102,10 @@ NOTE: while building is implemented, it will not work as of now!
 
 # Upcoming Features
 
--   **Vulkan Rendering**
--   **JavaScript Scripting**
--   **Python Scripting**
--   **Asset Packager**
--   **Android Support**
--   **Flowchart Editor (like in Unreal Engine)**
--   **Video Player**
+- **Vulkan Rendering**
+- **JavaScript Scripting**
+- **Python Scripting**
+- **Asset Packager**
+- **Android Support**
+- **Flowchart Editor (like in Unreal Engine)**
+- **Video Player**
