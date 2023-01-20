@@ -75,7 +75,8 @@ namespace HyperAPI {
         glBindVertexArray(0);
     }
 
-    void Font::Draw(Camera camera, const glm::mat4 &model, const std::string &text, Vector3 color, Vector3 bloomColor, float x, float y, float scale) {
+    void Font::Draw(Camera camera, const glm::mat4 &model, const std::string &text, Vector3 color, Vector3 bloomColor, float x, float y, float scale, float y_offset) {
+        float saved_x = x, saved_y = y;
         glm::mat4 projection = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f);
 
         font_shader->Bind();
@@ -88,11 +89,18 @@ namespace HyperAPI {
 
         // iterate through all characters
         std::string::const_iterator c;
+        float newLine;
         for (c = text.begin(); c != text.end(); c++) {
             Character ch = Characters[*c];
 
             float xpos = x + ch.Bearing.x * scale;
             float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+            ypos += newLine;
+            if (*c == '\n') {
+                x = saved_x;
+                newLine -= (ch.Bearing.y * scale) + y_offset;
+                continue;
+            }
 
             float w = ch.Size.x * scale;
             float h = ch.Size.y * scale;

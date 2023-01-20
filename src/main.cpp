@@ -3738,7 +3738,7 @@ int main(int argc, char **argv) {
                             }
                         }
 
-                        renderer.font->Draw(*Scene::mainCamera, transform.transform * m_parentTransform, renderer.text, renderer.color, renderer.bloomColor, 0, 0, renderer.scale);
+                        renderer.font->Draw(*Scene::mainCamera, transform.transform * m_parentTransform, renderer.text, renderer.color, renderer.bloomColor, 0, 0, renderer.scale, renderer.y_offset);
                     }
 
                     if (gameObject->HasComponent<SpriteRenderer>()) {

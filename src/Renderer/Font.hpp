@@ -24,6 +24,6 @@ namespace HyperAPI {
         std::map<char, Character> Characters;
 
         Font(const char *font, uint32_t scale);
-        void Draw(Camera camera, const glm::mat4 &model, const std::string &text, Vector3 color, Vector3 bloomColor, float x, float y, float scale);
+        void Draw(Camera camera, const glm::mat4 &model, const std::string &text, Vector3 color, Vector3 bloomColor, float x, float y, float scale, float y_offset);
     };
 } // namespace HyperAPI

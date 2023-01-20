@@ -14,6 +14,7 @@ namespace HyperAPI::Experimental {
         Vector3 color = Vector3(1, 1, 1);
         Vector3 bloomColor;
         float scale = 0.01;
+        float y_offset = 0.02;
 
         Text3D() = default;
 
@@ -21,7 +22,8 @@ namespace HyperAPI::Experimental {
             if (ImGui::TreeNode("3D Text")) {
                 ImGui::InputTextMultiline("Text", text, 999);
                 ImGui::ColorEdit3("Color", &color.r);
-                ImGui::DragFloat("Scale", &scale);
+                ImGui::DragFloat("Scale", &scale, 0.001f, 0);
+                ImGui::DragFloat("Y Offset", &y_offset, 0.01f, 0);
 
                 ImGui::Selectable(font != nullptr ? ("Loaded Font: " + font->font_path).c_str() : "Drag Font Here", false);
                 if (ImGui::BeginDragDropTarget()) {
