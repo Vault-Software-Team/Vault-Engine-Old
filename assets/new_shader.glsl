@@ -1,4 +1,3 @@
-
 #shader vertex
 #version 330 core
 layout(location = 0) in vec3 position;
@@ -176,9 +175,65 @@ uniform uint u_EntityID;
 uniform int globalBloom;
 uniform float bloomThreshold;
 
-void main() {
-    FragColor = texture(texture_diffuse0, texCoords);
-    EntityID = u_EntityID;
+uniform float DeltaTime;
+vec2 uv = texCoords;
+vec2 fragCoord = gl_FragCoord.xy;
+vec2 iResolution = textureSize(texture_diffuse0, 0);
+#define iTime DeltaTime
+#define iChannel0 texture_diffuse0
+#define fragColor FragColor
+#define mainImage main
+
+const float PI = 3.14159265;
+
+float wobble_intensity = 0.002;
+float grade_intensity = 0.5;
+float line_intensity = 2.;
+float vignette_intensity = 0.2;
+
+float rand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+float sample_noise(vec2 fragCoord)
+{
+    return pow(0.1, 7.); //  sharper ramp
+}
+
+void mainImage()
+{
+    //  wobble
+    vec2 wobbl = vec2(wobble_intensity * rand(vec2(iTime, fragCoord.y)), 0.);
+    
+    //  band distortion
+    float t_val = tan(0.25 * iTime + uv.y * PI * .67);
+    vec2 tan_off = vec2(wobbl.x * min(0., t_val), 0.);
+    
+    //  chromab
+    vec4 color1 = texture(iChannel0, uv + wobbl + tan_off);
+    vec4 color2 = texture(iChannel0, (uv + (wobbl * 1.5) + (tan_off * 1.3)) * 1.005);
+    //  combine + grade
+    vec4 color = vec4(color2.rg, pow(color1.b, .67), 1.);
+    color.rgb = mix(texture(iChannel0, uv + tan_off).rgb, color.rgb, grade_intensity);
+    
+    //  scanline sim
+    float s_val = ((sin(2. * PI * uv.y + iTime * 20.) + sin(2. * PI * uv.y)) / 2.) * .015 * sin(iTime);
+    color += s_val;
+    
+    //  noise lines
+    float ival = iResolution.y / 4.;
+    float r = rand(vec2(iTime, fragCoord.y));
+    //  dirty hack to avoid conditional
+    float on = floor(float(int(fragCoord.y + (iTime * r * 1000.)) % int(ival + line_intensity)) / ival);
+    float wh = sample_noise(fragCoord) * on;
+    color = vec4(min(1., color.r + wh), 
+                 min(1., color.g + wh),
+                 min(1., color.b + wh), 1.);
+    
+    float vig = 1. - sin(PI * uv.x) * sin(PI * uv.y);
+    
+    fragColor = color - (vig * vignette_intensity);
+    BloomColor = vec4(0);
 }
 
 #shader geometry
@@ -216,7 +271,7 @@ void main() {
     reflectedVector = data_in[0].reflectedVector;
     fragPosLight = data_in[0].fragPosLight;
     texCoords = data_in[0].texCoords;
-    m_TBN = TBN;
+    m_TBN = mat3(1.0f);
     EmitVertex();
 
     gl_Position = data_in[1].projection * gl_in[1].gl_Position;
@@ -226,7 +281,7 @@ void main() {
     reflectedVector = data_in[1].reflectedVector;
     fragPosLight = data_in[1].fragPosLight;
     texCoords = data_in[1].texCoords;
-    m_TBN = TBN;
+    m_TBN = mat3(1.0f);
     EmitVertex();
 
     gl_Position = data_in[2].projection * gl_in[2].gl_Position;
@@ -236,7 +291,7 @@ void main() {
     reflectedVector = data_in[2].reflectedVector;
     fragPosLight = data_in[2].fragPosLight;
     texCoords = data_in[2].texCoords;
-    m_TBN = TBN;
+    m_TBN = mat3(1.0f);
     EmitVertex();
 
     EndPrimitive();

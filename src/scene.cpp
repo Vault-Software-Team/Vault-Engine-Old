@@ -1,4 +1,5 @@
 #include "lib/scene.hpp"
+#include "Components/3DText.hpp"
 #include "Renderer/Mesh.hpp"
 #include "Renderer/Structures.hpp"
 #include "lib/api.hpp"
@@ -306,6 +307,17 @@ namespace HyperAPI {
                     meshRenderer.m_Model = true;
                     file.close();
                 }
+            }
+
+            if (type == "Text3D") {
+                gameObject->AddComponent<Experimental::Text3D>();
+                auto &text = gameObject->GetComponent<Experimental::Text3D>();
+                strcpy(text.text, ((std::string)component["text"]).c_str());
+                text.color = Vector3(component["color"]["r"], component["color"]["g"], component["color"]["b"]);
+                text.scale = component["scale"];
+                text.y_offset = component["y_offset"];
+                delete text.font;
+                text.font = new Font(((std::string)component["font"]).c_str(), 48);
             }
 
             if (type == "DirectionalLight") {
@@ -1140,6 +1152,20 @@ namespace HyperAPI {
                 JSON[i]["components"][componentOffset]["material"] = meshRenderer.matPath;
 
                 componentOffset++;
+            }
+
+            if (gameObject->HasComponent<Experimental::Text3D>()) {
+                auto &text = gameObject->GetComponent<Experimental::Text3D>();
+                JSON[i]["components"][componentOffset]["type"] = "Text3D";
+                JSON[i]["components"][componentOffset]["text"] = text.text;
+                JSON[i]["components"][componentOffset]["color"] = {
+                    {"r", text.color.r},
+                    {"g", text.color.g},
+                    {"b", text.color.b}};
+
+                JSON[i]["components"][componentOffset]["scale"] = text.scale;
+                JSON[i]["components"][componentOffset]["y_offset"] = text.y_offset;
+                JSON[i]["components"][componentOffset]["font"] = text.font->font_path;
             }
 
             if (gameObject->HasComponent<Experimental::c_DirectionalLight>()) {

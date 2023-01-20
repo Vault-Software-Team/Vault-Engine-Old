@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <random>
 #include <memory>
+#include "Renderer/Timestep.hpp"
 #include "lib/InputEvents.hpp"
 #include "icons/icons.h"
 #include "imgui/imgui.h"
@@ -2860,6 +2861,8 @@ int main(int argc, char **argv) {
                                     uniform int globalBloom;
                                     uniform float bloomThreshold;
 
+                                    uniform float DeltaTime;
+
                                     void main() {
                                         FragColor = texture(texture_diffuse0, texCoords);
                                         EntityID = u_EntityID;
@@ -3214,9 +3217,11 @@ int main(int argc, char **argv) {
     Font::InitFT();
 
     Font test_font("assets/fonts/OpenSans-Bold.ttf", 48);
+    float runTime;
 
     app.Run(
         [&](uint32_t &shadowMapTex) {
+            runTime += Timestep::deltaTime;
             shader.Bind();
             shader.SetUniform1i("shadowMap", GL_TEXTURE7);
             shader.SetUniformMat4("lightSpaceMatrix", Scene::projection);
@@ -3698,6 +3703,11 @@ int main(int argc, char **argv) {
                             glBindTexture(GL_TEXTURE_CUBE_MAP,
                                           skybox.cubemapTexture);
 
+                            if (meshRenderer.customShader.shader != nullptr) {
+                                meshRenderer.customShader.shader->Bind();
+                                meshRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                            }
+
                             if (meshRenderer.meshType == "Plane") {
                                 glDisable(GL_CULL_FACE);
                                 meshRenderer.m_Mesh->Draw(
@@ -3770,6 +3780,12 @@ int main(int argc, char **argv) {
                         spriteRenderer.mesh->enttId =
                             (uint32_t)gameObject->entity;
                         glDisable(GL_CULL_FACE);
+
+                        if (spriteRenderer.customShader.shader != nullptr) {
+                            spriteRenderer.customShader.shader->Bind();
+                            spriteRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                        }
+
                         spriteRenderer.mesh->Draw(
                             spriteRenderer.customShader.usingCustomShader
                                 ? *spriteRenderer.customShader.shader
@@ -3812,6 +3828,12 @@ int main(int argc, char **argv) {
                         if (spritesheetRenderer.mesh != nullptr) {
                             spritesheetRenderer.mesh->enttId =
                                 (uint32_t)gameObject->entity;
+
+                            if (spritesheetRenderer.customShader.shader != nullptr) {
+                                spritesheetRenderer.customShader.shader->Bind();
+                                spritesheetRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                            }
+
                             spritesheetRenderer.mesh->Draw(
                                 spritesheetRenderer.customShader
                                         .usingCustomShader
@@ -3852,6 +3874,12 @@ int main(int argc, char **argv) {
                         if (spriteAnimation.currMesh != nullptr) {
                             spriteAnimation.currMesh->enttId =
                                 (uint32_t)gameObject->entity;
+
+                            if (spriteAnimation.customShader.shader != nullptr) {
+                                spriteAnimation.customShader.shader->Bind();
+                                spriteAnimation.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                            }
+
                             spriteAnimation.currMesh->Draw(
                                 spriteAnimation.customShader.usingCustomShader
                                     ? *spriteAnimation.customShader.shader
@@ -3897,6 +3925,12 @@ int main(int argc, char **argv) {
                         if (spritesheetAnimation.mesh != nullptr) {
                             spritesheetAnimation.mesh->enttId =
                                 (uint32_t)gameObject->entity;
+
+                            if (spritesheetAnimation.customShader.shader != nullptr) {
+                                spritesheetAnimation.customShader.shader->Bind();
+                                spritesheetAnimation.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                            }
+
                             spritesheetAnimation.mesh->Draw(
                                 spritesheetAnimation.customShader
                                         .usingCustomShader
