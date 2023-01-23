@@ -2,10 +2,13 @@
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Timestep.hpp"
+#include "csharp.hpp"
+#include "imgui/imgui.h"
 
 namespace HyperAPI::Experimental {
     struct CsharpScriptManager : public BaseComponent {
         std::unordered_map<std::string, std::string> selectedScripts;
+        std::unordered_map<std::string, MonoScriptClass *> behaviours;
 
         CsharpScriptManager() = default;
 
@@ -28,7 +31,6 @@ namespace HyperAPI::Experimental {
                         }
                     }
                 }
-
                 ImGui::ListBoxFooter();
 
                 ImGui::NewLine();
@@ -52,8 +54,10 @@ namespace HyperAPI::Experimental {
 
                 MonoScriptClass *behaviour =
                     new MonoScriptClass(tokens[0], tokens[1]);
+                behaviours[klass.first] = behaviour;
                 behaviour->CallConstructor();
                 CsharpScriptEngine::nextId = ID;
+                void *params[0] = {};
                 MonoMethod *onStart = behaviour->GetMethod("OnStart", 0);
 
                 // void *iterator = nullptr;
@@ -68,9 +72,7 @@ namespace HyperAPI::Experimental {
                 //     std::endl;
                 // }
 
-                void *params[0] = {};
-                mono_runtime_invoke(onStart, behaviour->f_GetObject(), params,
-                                    nullptr);
+                mono_runtime_invoke(onStart, behaviour->f_GetObject(), params, nullptr);
                 CsharpScriptEngine::instances[klass.first] = behaviour;
             }
         }

@@ -1166,6 +1166,8 @@ namespace HyperAPI {
                 JSON[i]["components"][componentOffset]["scale"] = text.scale;
                 JSON[i]["components"][componentOffset]["y_offset"] = text.y_offset;
                 JSON[i]["components"][componentOffset]["font"] = text.font->font_path;
+
+                componentOffset++;
             }
 
             if (gameObject->HasComponent<Experimental::c_DirectionalLight>()) {

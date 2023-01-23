@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <random>
 #include <memory>
+#include <regex>
 #include "Renderer/Timestep.hpp"
 #include "lib/InputEvents.hpp"
 #include "icons/icons.h"
@@ -630,6 +631,13 @@ int main(int argc, char **argv) {
     }
 
     CsharpScriptEngine::InitMono();
+    char m_cwd[1024];
+    getcwd(m_cwd, sizeof(m_cwd));
+
+    filewatch::FileWatch<std::string> watch("./cs-assembly", [&](const std::string &filename, const filewatch::Event change_type) {
+        HYPER_LOG(filename);
+        system("cd cs-assembly && dotnet build");
+    });
 
 #ifndef _WIN32 || GAME_BUILD
     DiscordEventHandlers handlers;
@@ -856,6 +864,8 @@ int main(int argc, char **argv) {
 
     InspectorMaterial m_InspectorMaterial;
 
+    Font::InitFT();
+
     json M_JS;
     LoadScripts();
     Scene::LoadScene(config.mainScene, M_JS);
@@ -1076,7 +1086,33 @@ int main(int argc, char **argv) {
                     }
 
                     if (ImGui::MenuItem("Reload C# Assemblies")) {
+                        bool wasRunning = false;
+                        if (HyperAPI::isRunning) {
+                            wasRunning = true;
+                            HyperAPI::isRunning = false;
+                            DeleteWorld();
+                        }
+
                         CsharpScriptEngine::ReloadAssembly();
+                        HYPER_LOG("Reloaded C# Assemblies")
+
+                        if (wasRunning) {
+                            if (HyperAPI::isStopped) {
+                                stateScene = nlohmann::json::array();
+                                Scene::SaveScene("", stateScene);
+                            }
+                            StartWorld(listener);
+
+                            HyperAPI::isRunning = true;
+                            HyperAPI::isStopped = false;
+
+                            for (auto &camera : Scene::cameras) {
+                                if (camera->mainCamera) {
+                                    Scene::mainCamera = camera;
+                                    break;
+                                }
+                            }
+                        }
                     }
 
                     if (ImGui::MenuItem("Create C# Project")) {
@@ -2055,6 +2091,8 @@ int main(int argc, char **argv) {
                                           ImVec4(buttonColor.x, buttonColor.y,
                                                  buttonColor.z, 0.7f));
                     if (ImGui::Button(ICON_FA_PLAY, ImVec2(32, 32))) {
+                        CsharpScriptEngine::ReloadAssembly();
+                        sleep(1);
                         if (HyperAPI::isStopped) {
                             stateScene = nlohmann::json::array();
                             Scene::SaveScene("", stateScene);
@@ -3214,7 +3252,6 @@ int main(int argc, char **argv) {
     Mesh *gridMesh = Plane(Vector4(1, 0, 0, 1)).m_Mesh;
 #endif
 
-    Font::InitFT();
     float runTime;
 
     // Experimental::Model test_model("assets/Dancing Twerk.fbx");
@@ -3609,6 +3646,14 @@ int main(int argc, char **argv) {
                         gameObject->GetComponent<NativeScriptManager>();
                     if (HyperAPI::isRunning) {
                         script.Update();
+                    }
+                }
+
+                if (gameObject->HasComponent<BoxCollider2D>()) {
+                    auto &component =
+                        gameObject->GetComponent<BoxCollider2D>();
+                    if (HyperAPI::isRunning) {
+                        component.Update();
                     }
                 }
             }

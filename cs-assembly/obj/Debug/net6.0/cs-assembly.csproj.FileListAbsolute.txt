@@ -10,3 +10,15 @@
 /home/koki1019/Desktop/MainProjects/Vault_Engine/cs-assembly/obj/Debug/net6.0/refint/cs-assembly.dll
 /home/koki1019/Desktop/MainProjects/Vault_Engine/cs-assembly/obj/Debug/net6.0/cs-assembly.pdb
 /home/koki1019/Desktop/MainProjects/Vault_Engine/cs-assembly/obj/Debug/net6.0/ref/cs-assembly.dll
+/home/koki1019/Desktop/Main Projects/Vault_Engine/cs-assembly/bin/Debug/net6.0/cs-assembly.deps.json
+/home/koki1019/Desktop/Main Projects/Vault_Engine/cs-assembly/bin/Debug/net6.0/cs-assembly.dll
+/home/koki1019/Desktop/Main Projects/Vault_Engine/cs-assembly/bin/Debug/net6.0/cs-assembly.pdb
+/home/koki1019/Desktop/Main Projects/Vault_Engine/cs-assembly/obj/Debug/net6.0/cs-assembly.csproj.AssemblyReference.cache
+/home/koki1019/Desktop/Main Projects/Vault_Engine/cs-assembly/obj/Debug/net6.0/cs-assembly.GeneratedMSBuildEditorConfig.editorconfig
+/home/koki1019/Desktop/Main Projects/Vault_Engine/cs-assembly/obj/Debug/net6.0/cs-assembly.AssemblyInfoInputs.cache
+/home/koki1019/Desktop/Main Projects/Vault_Engine/cs-assembly/obj/Debug/net6.0/cs-assembly.AssemblyInfo.cs
+/home/koki1019/Desktop/Main Projects/Vault_Engine/cs-assembly/obj/Debug/net6.0/cs-assembly.csproj.CoreCompileInputs.cache
+/home/koki1019/Desktop/Main Projects/Vault_Engine/cs-assembly/obj/Debug/net6.0/cs-assembly.dll
+/home/koki1019/Desktop/Main Projects/Vault_Engine/cs-assembly/obj/Debug/net6.0/refint/cs-assembly.dll
+/home/koki1019/Desktop/Main Projects/Vault_Engine/cs-assembly/obj/Debug/net6.0/cs-assembly.pdb
+/home/koki1019/Desktop/Main Projects/Vault_Engine/cs-assembly/obj/Debug/net6.0/ref/cs-assembly.dll

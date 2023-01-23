@@ -3,34 +3,39 @@ using Vault;
 
 namespace Sandbox
 {
-    public class TestVec3
-    {
-        public float x;
-        public float y;
-        public float z;
-
-        public TestVec3(float _x, float _y, float _z)
-        {
-            x = _x;
-            y = _y;
-            z = _z;
-        }
-    }
-
     public class Player : Entity
     {
-        private float speed = 5;
+        private float jump_force = 50;
+        private float speed = 1.5f;
+
+        Rigidbody2D rigidbody;
+        BoxCollider2D collider;
 
         void OnStart()
         {
-            GetID(out string result);
-            ID = result;
+            SetObjectID();
+            
+            rigidbody = GetComponent<Rigidbody2D>();
+            collider = GetComponent<BoxCollider2D>();
         }
 
+        private bool jumped = false;
         void OnUpdate(float ts)
-        {
-            MeshRenderer renderer = GetComponent<MeshRenderer>();
-            string texture = renderer.material.diffuse;
+        {  
+            if(Input.IsKeyPressed(Input.KEY_SPACE) && !jumped && rigidbody.velocity.y == 0) {
+                rigidbody.Force(0, jump_force);
+                jumped = true;
+            } else if(Input.IsKeyReleased(Input.KEY_SPACE) && jumped) {
+                jumped = false;
+            } 
+
+            if(Input.IsKeyPressed(Input.KEY_A)) {
+                rigidbody.SetVelocity(-speed, rigidbody.velocity.y);
+            } 
+
+            if(Input.IsKeyPressed(Input.KEY_D)) {
+                rigidbody.SetVelocity(speed, rigidbody.velocity.y);
+            } 
         }
     }
 }

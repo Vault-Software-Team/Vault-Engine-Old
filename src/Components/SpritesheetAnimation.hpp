@@ -68,7 +68,6 @@ namespace HyperAPI::Experimental {
                     Scene::DropTargetMat(Scene::DRAG_SPRITE, mesh, nullptr);
                     if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1) &&
                         mesh->material.diffuse != nullptr) {
-                        glDeleteTextures(1, &mesh->material.diffuse->tex->ID);
                         delete mesh->material.diffuse;
                     }
 

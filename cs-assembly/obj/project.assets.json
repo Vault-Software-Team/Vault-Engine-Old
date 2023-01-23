@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/koki1019/Desktop/MainProjects/Vault_Engine/cs-assembly/cs-assembly.csproj",
+      "projectUniqueName": "/home/koki1019/Desktop/Main Projects/Vault_Engine/cs-assembly/cs-assembly.csproj",
       "projectName": "cs-assembly",
-      "projectPath": "/home/koki1019/Desktop/MainProjects/Vault_Engine/cs-assembly/cs-assembly.csproj",
+      "projectPath": "/home/koki1019/Desktop/Main Projects/Vault_Engine/cs-assembly/cs-assembly.csproj",
       "packagesPath": "/home/koki1019/.nuget/packages/",
-      "outputPath": "/home/koki1019/Desktop/MainProjects/Vault_Engine/cs-assembly/obj/",
+      "outputPath": "/home/koki1019/Desktop/Main Projects/Vault_Engine/cs-assembly/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/koki1019/.nuget/NuGet/NuGet.Config"

@@ -6,38 +6,41 @@ namespace Vault
 {
     public class SpriteRenderer : Component
     {
-        public Vector4 color
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static void GetKey(string key, string id, out string result);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static void SetTexture(string texture, string id);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static void SetColor(float x, float y, float z, string id);
+
+        public string texture 
         {
             get
             {
-                Material.GetColor(Entity.ID, "SpriteRenderer", out string result);
-                string[] values = result.Split(" ");
-                return new Vector4(
-                    float.Parse(values[0]),
-                    float.Parse(values[1]),
-                    float.Parse(values[2]),
-                    float.Parse(values[3])
-                );
+                GetKey("texture", Entity.ID, out string result);
+                return result;
             }
             set
             {
-                Material.SetColor(Entity.ID, "SpriteRenderer", value.x, value.y, value.z, value.w);
+                SetTexture(value, Entity.ID);
             }
         }
 
-        public string texture
+        public Vector3 color
         {
-            get
+            get 
             {
-                Material.GetTexture(Entity.ID, "SpriteRenderer", "diffuse", out string texture);
-                return texture;
+                GetKey("color", Entity.ID, out string result);
+
+                string[] strValues = result.Split(" ");
+                return new Vector3(float.Parse(strValues[0]), float.Parse(strValues[1]), float.Parse(strValues[2]));
             }
-            set
+            set 
             {
-                Material.SetTexture(Entity.ID, "SpriteRenderer", "diffuse", value);
+                SetColor(value.x, value.y, value.z, Entity.ID);
             }
         }
-
-        public CustomShader customShader;
     }
 }

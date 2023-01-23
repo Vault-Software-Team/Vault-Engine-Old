@@ -14,6 +14,19 @@
 #include <sstream>
 #include <string>
 
+// Functions
+#include "InputFunctions.hpp"
+#include "LogFunctions.hpp"
+#include "AudioFunctions.hpp"
+#include "TransformFunctions.hpp"
+#include "EntityFunctions.hpp"
+#include "3DTextFunctions.hpp"
+#include "SpriteRendererFunctions.hpp"
+#include "SpriteAnimationFunctions.hpp"
+#include "BloomFunctions.hpp"
+#include "Rigidbody2DFunctions.hpp"
+#include "BoxCollider2DFunctions.hpp"
+
 namespace CsharpVariables {
     MonoDomain *rootDomain;
     MonoDomain *appDomain;
@@ -23,30 +36,6 @@ namespace CsharpVariables {
 } // namespace CsharpVariables
 
 namespace HyperAPI::CsharpScriptEngine::Functions {
-    void NativeLog(MonoString *text) {
-        std::string str(mono_string_to_utf8(text));
-        std::cout << str << std::endl;
-    }
-
-    void EditorLog(MonoString *text) {
-        std::string str(mono_string_to_utf8(text));
-        Log log(str, LOG_INFO);
-    }
-
-    void EditorWarning(MonoString *text) {
-        std::string str(mono_string_to_utf8(text));
-        Log log(str, LOG_WARNING);
-    }
-
-    void EditorError(MonoString *text) {
-        std::string str(mono_string_to_utf8(text));
-        Log log(str, LOG_ERROR);
-    }
-
-    void TestVector(glm::vec3 *parameter) {
-        std::cout << parameter->x << " " << parameter->y << " " << parameter->z << std::endl;
-    }
-
     void GetComponent(MonoString *type, void *out) {
         using namespace Experimental;
         std::string str = mono_string_to_utf8(type);
@@ -54,20 +43,6 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         if (str == "Transform") {
             out = &Scene::m_GameObjects[0]->GetComponent<Transform>();
         }
-    }
-
-    void AudioPlay(MonoString *file, float volume, bool loop, int channel = -1) {
-        using namespace Experimental;
-        std::string str = mono_string_to_utf8(file);
-
-        AudioEngine::PlaySound(str, volume, loop, channel);
-    }
-
-    void AudioMusic(MonoString *file, float volume, bool loop) {
-        using namespace Experimental;
-        std::string str = mono_string_to_utf8(file);
-
-        AudioEngine::PlayMusic(str, volume, loop);
     }
 
     struct m_Vec3 {
@@ -81,442 +56,6 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
             this->z = z;
         }
     };
-
-    // Transform Component Function
-    void Transform_GetKey(MonoString *key, MonoString *id, MonoString **result) {
-        using namespace Experimental;
-
-        const std::string keyStr = mono_string_to_utf8(key);
-        const std::string idStr = mono_string_to_utf8(id);
-
-        auto *gameObject = f_GameObject::FindGameObjectByID(idStr);
-        auto &transform = gameObject->GetComponent<Transform>();
-
-        if (keyStr == "position") {
-            *result = mono_string_new(CsharpVariables::appDomain, (
-                                                                      std::to_string(transform.position.x) + " " + std::to_string(transform.position.y) + " " + std::to_string(transform.position.z))
-                                                                      .c_str());
-        }
-
-        if (keyStr == "rotation") {
-            *result = mono_string_new(CsharpVariables::appDomain, (
-                                                                      std::to_string(transform.rotation.x) + " " + std::to_string(transform.rotation.y) + " " + std::to_string(transform.rotation.z))
-                                                                      .c_str());
-        }
-
-        if (keyStr == "scale") {
-            *result = mono_string_new(CsharpVariables::appDomain, (
-                                                                      std::to_string(transform.scale.x) + " " + std::to_string(transform.scale.y) + " " + std::to_string(transform.scale.z))
-                                                                      .c_str());
-        }
-    }
-
-    void Transform_SetKey(MonoString *key, MonoString *id, float x, float y, float z) {
-        using namespace Experimental;
-        const std::string keyStr = mono_string_to_utf8(key);
-        const std::string idStr = mono_string_to_utf8(id);
-
-        auto *gameObject = f_GameObject::FindGameObjectByID(idStr);
-        auto &transform = gameObject->GetComponent<Transform>();
-
-        if (keyStr == "position") {
-            transform.position.x = x;
-            transform.position.y = y;
-            transform.position.z = z;
-        }
-
-        if (keyStr == "rotation") {
-            transform.rotation.x = x;
-            transform.rotation.y = y;
-            transform.rotation.z = z;
-        }
-
-        if (keyStr == "scale") {
-            transform.scale.x = x;
-            transform.scale.y = y;
-            transform.scale.z = z;
-        }
-    }
-
-    // Entity Shit
-    void Entity_GetID(MonoString **result) {
-        *result = mono_string_new(CsharpVariables::appDomain, nextId.c_str());
-    }
-
-    // Inputs
-    bool Input_IsKeyPressed(int key) {
-        return Input::IsKeyPressed(key);
-    }
-
-    bool Input_IsKeyReleased(int key) {
-        return Input::IsKeyReleased(key);
-    }
-
-    bool Input_IsMouseButtonPressed(int button) {
-        return Input::IsMouseButtonPressed(button);
-    }
-
-    bool Input_IsMouseButtonReleased(int button) {
-        return Input::IsMouseButtonReleased(button);
-    }
-
-    int Input_GetHorizontalAxis() {
-        return Input::GetHorizontalAxis();
-    }
-
-    int Input_GetVerticalAxis() {
-        return Input::GetVerticalAxis();
-    }
-
-    int Input_GetMouseXAxis() {
-        return Input::GetMouseXAxis();
-    }
-
-    int Input_GetMouseYAxis() {
-        return Input::GetMouseYAxis();
-    }
-
-    void Input_SetMouseHidden(bool hidden) {
-        Input::SetMouseHidden(hidden);
-    }
-
-    void Input_SetMousePosition(float x, float y) {
-        Input::SetMousePosition(x, y);
-    }
-
-    // Material Stuff
-    void Material_GetTexture(MonoString *ID, MonoString *Component, MonoString *type, MonoString **texture) {
-        using namespace Experimental;
-
-        const std::string id = mono_string_to_utf8(ID);
-        const std::string component = mono_string_to_utf8(Component);
-        const std::string Type = mono_string_to_utf8(type);
-
-        auto *gameObject = f_GameObject::FindGameObjectByID(id);
-
-        if (component == "MeshRenderer") {
-            auto &renderer = gameObject->GetComponent<MeshRenderer>();
-
-            if (Type == "diffuse") {
-                *texture = mono_string_new(CsharpVariables::appDomain, renderer.m_Mesh->material.diffuse != nullptr ? renderer.m_Mesh->material.diffuse->texPath.c_str() : "null");
-            } else if (Type == "specular") {
-                *texture = mono_string_new(CsharpVariables::appDomain, renderer.m_Mesh->material.specular != nullptr ? renderer.m_Mesh->material.specular->texPath.c_str() : "null");
-            } else if (Type == "normal") {
-                *texture = mono_string_new(CsharpVariables::appDomain, renderer.m_Mesh->material.normal != nullptr ? renderer.m_Mesh->material.normal->texPath.c_str() : "null");
-            } else if (Type == "emission") {
-                *texture = mono_string_new(CsharpVariables::appDomain, renderer.m_Mesh->material.emission != nullptr ? renderer.m_Mesh->material.emission->texPath.c_str() : "null");
-            }
-        } else if (component == "SpriteRenderer") {
-            auto &renderer = gameObject->GetComponent<SpriteRenderer>();
-
-            if (Type == "diffuse") {
-                *texture = mono_string_new(CsharpVariables::appDomain, renderer.mesh->material.diffuse != nullptr ? renderer.mesh->material.diffuse->texPath.c_str() : "null");
-            } else if (Type == "specular") {
-                *texture = mono_string_new(CsharpVariables::appDomain, renderer.mesh->material.specular != nullptr ? renderer.mesh->material.specular->texPath.c_str() : "null");
-            } else if (Type == "normal") {
-                *texture = mono_string_new(CsharpVariables::appDomain, renderer.mesh->material.normal != nullptr ? renderer.mesh->material.normal->texPath.c_str() : "null");
-            } else if (Type == "emission") {
-                *texture = mono_string_new(CsharpVariables::appDomain, renderer.mesh->material.emission != nullptr ? renderer.mesh->material.emission->texPath.c_str() : "null");
-            }
-        } else if (component == "SpritesheetAnimation") {
-            auto &renderer = gameObject->GetComponent<c_SpritesheetAnimation>();
-
-            if (Type == "diffuse") {
-                *texture = mono_string_new(CsharpVariables::appDomain, renderer.mesh->material.diffuse != nullptr ? renderer.mesh->material.diffuse->texPath.c_str() : "null");
-            } else if (Type == "specular") {
-                *texture = mono_string_new(CsharpVariables::appDomain, renderer.mesh->material.specular != nullptr ? renderer.mesh->material.specular->texPath.c_str() : "null");
-            } else if (Type == "normal") {
-                *texture = mono_string_new(CsharpVariables::appDomain, renderer.mesh->material.normal != nullptr ? renderer.mesh->material.normal->texPath.c_str() : "null");
-            } else if (Type == "emission") {
-                *texture = mono_string_new(CsharpVariables::appDomain, renderer.mesh->material.emission != nullptr ? renderer.mesh->material.emission->texPath.c_str() : "null");
-            }
-        }
-    }
-
-    void Material_SetTexture(MonoString *ID, MonoString *Component, MonoString *type, MonoString *texture) {
-        using namespace Experimental;
-
-        const std::string id = mono_string_to_utf8(ID);
-        const std::string component = mono_string_to_utf8(Component);
-        const std::string Type = mono_string_to_utf8(type);
-        const std::string tex = mono_string_to_utf8(texture);
-
-        auto *gameObject = f_GameObject::FindGameObjectByID(id);
-
-        if (component == "MeshRenderer") {
-            auto &renderer = gameObject->GetComponent<MeshRenderer>();
-
-            if (Type == "diffuse") {
-                if (renderer.m_Mesh->material.diffuse == nullptr) {
-                    renderer.m_Mesh->material.diffuse = new Texture(tex.c_str(), 0, "texture_diffuse");
-                } else {
-                    delete renderer.m_Mesh->material.diffuse;
-                    renderer.m_Mesh->material.diffuse = new Texture(tex.c_str(), 0, "texture_diffuse");
-                }
-            } else if (Type == "specular") {
-                if (renderer.m_Mesh->material.specular == nullptr) {
-                    renderer.m_Mesh->material.specular = new Texture(tex.c_str(), 0, "texture_specular");
-                } else {
-                    delete renderer.m_Mesh->material.specular;
-                    renderer.m_Mesh->material.specular = new Texture(tex.c_str(), 0, "texture_specular");
-                }
-            } else if (Type == "normal") {
-                if (renderer.m_Mesh->material.normal == nullptr) {
-                    renderer.m_Mesh->material.normal = new Texture(tex.c_str(), 0, "texture_normal");
-                } else {
-                    delete renderer.m_Mesh->material.normal;
-                    renderer.m_Mesh->material.normal = new Texture(tex.c_str(), 0, "texture_normal");
-                }
-            } else if (Type == "emission") {
-                if (renderer.m_Mesh->material.emission == nullptr) {
-                    renderer.m_Mesh->material.emission = new Texture(tex.c_str(), 0, "texture_emission");
-                } else {
-                    delete renderer.m_Mesh->material.emission;
-                    renderer.m_Mesh->material.emission = new Texture(tex.c_str(), 0, "texture_emission");
-                }
-            }
-        } else if (component == "SpriteRenderer") {
-            auto &renderer = gameObject->GetComponent<SpriteRenderer>();
-
-            if (Type == "diffuse") {
-                if (renderer.mesh->material.diffuse == nullptr) {
-                    renderer.mesh->material.diffuse = new Texture(tex.c_str(), 0, "texture_diffuse");
-                } else {
-                    delete renderer.mesh->material.diffuse;
-                    renderer.mesh->material.diffuse = new Texture(tex.c_str(), 0, "texture_diffuse");
-                }
-            } else if (Type == "specular") {
-                if (renderer.mesh->material.specular == nullptr) {
-                    renderer.mesh->material.specular = new Texture(tex.c_str(), 0, "texture_specular");
-                } else {
-                    delete renderer.mesh->material.specular;
-                    renderer.mesh->material.specular = new Texture(tex.c_str(), 0, "texture_specular");
-                }
-            } else if (Type == "normal") {
-                if (renderer.mesh->material.normal == nullptr) {
-                    renderer.mesh->material.normal = new Texture(tex.c_str(), 0, "texture_normal");
-                } else {
-                    delete renderer.mesh->material.normal;
-                    renderer.mesh->material.normal = new Texture(tex.c_str(), 0, "texture_normal");
-                }
-            } else if (Type == "emission") {
-                if (renderer.mesh->material.emission == nullptr) {
-                    renderer.mesh->material.emission = new Texture(tex.c_str(), 0, "texture_emission");
-                } else {
-                    delete renderer.mesh->material.emission;
-                    renderer.mesh->material.emission = new Texture(tex.c_str(), 0, "texture_emission");
-                }
-            }
-        } else if (component == "SpritesheetAnimation") {
-            auto &renderer = gameObject->GetComponent<c_SpritesheetAnimation>();
-
-            if (Type == "diffuse") {
-                if (renderer.mesh->material.diffuse == nullptr) {
-                    renderer.mesh->material.diffuse = new Texture(tex.c_str(), 0, "texture_diffuse");
-                } else {
-                    delete renderer.mesh->material.diffuse;
-                    renderer.mesh->material.diffuse = new Texture(tex.c_str(), 0, "texture_diffuse");
-                }
-            } else if (Type == "specular") {
-                if (renderer.mesh->material.specular == nullptr) {
-                    renderer.mesh->material.specular = new Texture(tex.c_str(), 0, "texture_specular");
-                } else {
-                    delete renderer.mesh->material.specular;
-                    renderer.mesh->material.specular = new Texture(tex.c_str(), 0, "texture_specular");
-                }
-            } else if (Type == "normal") {
-                if (renderer.mesh->material.normal == nullptr) {
-                    renderer.mesh->material.normal = new Texture(tex.c_str(), 0, "texture_normal");
-                } else {
-                    delete renderer.mesh->material.normal;
-                    renderer.mesh->material.normal = new Texture(tex.c_str(), 0, "texture_normal");
-                }
-            } else if (Type == "emission") {
-                if (renderer.mesh->material.emission == nullptr) {
-                    renderer.mesh->material.emission = new Texture(tex.c_str(), 0, "texture_emission");
-                } else {
-                    delete renderer.mesh->material.emission;
-                    renderer.mesh->material.emission = new Texture(tex.c_str(), 0, "texture_emission");
-                }
-            }
-        }
-    }
-
-    void Material_GetColor(MonoString *ID, MonoString *Component, MonoString **out) {
-        using namespace Experimental;
-
-        const std::string id = mono_string_to_utf8(ID);
-        const std::string component = mono_string_to_utf8(Component);
-
-        auto *gameObject = f_GameObject::FindGameObjectByID(id);
-        Vector4 color;
-
-        if (component == "MeshRenderer") {
-            auto &renderer = gameObject->GetComponent<MeshRenderer>();
-
-            color = renderer.m_Mesh->material.baseColor;
-        } else if (component == "SpriteRenderer") {
-            auto &renderer = gameObject->GetComponent<SpriteRenderer>();
-
-            color = renderer.mesh->material.baseColor;
-        } else if (component == "SpritesheetAnimation") {
-            auto &renderer = gameObject->GetComponent<c_SpritesheetAnimation>();
-
-            color = renderer.mesh->material.baseColor;
-        }
-
-        *out = mono_string_new(CsharpVariables::appDomain, (
-                                                               std::to_string(color.r) + " " + std::to_string(color.g) + " " + std::to_string(color.b) + " " + std::to_string(color.a))
-                                                               .c_str());
-    }
-
-    void Material_SetColor(MonoString *ID, MonoString *Component, float r, float g, float b, float a) {
-        using namespace Experimental;
-
-        const std::string id = mono_string_to_utf8(ID);
-        const std::string component = mono_string_to_utf8(Component);
-
-        auto *gameObject = f_GameObject::FindGameObjectByID(id);
-        Vector4 *color;
-
-        if (component == "MeshRenderer") {
-            auto &renderer = gameObject->GetComponent<MeshRenderer>();
-
-            color = &renderer.m_Mesh->material.baseColor;
-        } else if (component == "SpriteRenderer") {
-            auto &renderer = gameObject->GetComponent<SpriteRenderer>();
-
-            color = &renderer.mesh->material.baseColor;
-        } else if (component == "SpritesheetAnimation") {
-            auto &renderer = gameObject->GetComponent<c_SpritesheetAnimation>();
-
-            color = &renderer.mesh->material.baseColor;
-        }
-
-        color->r = r;
-        color->g = g;
-        color->b = b;
-        color->a = a;
-    }
-
-    void SpritesheetAnimation_GetCurrentAnimation(MonoString *ID, MonoString **out) {
-        using namespace CsharpVariables;
-        using namespace Experimental;
-
-        const std::string id = mono_string_to_utf8(ID);
-
-        auto *gameObject = f_GameObject::FindGameObjectByID(id);
-        auto &renderer = gameObject->GetComponent<c_SpritesheetAnimation>();
-
-        *out = mono_string_new(appDomain, renderer.currAnim);
-    }
-
-    void SpritesheetAnimation_SetCurrentAnimation(MonoString *ID, MonoString *value) {
-        using namespace CsharpVariables;
-        using namespace Experimental;
-
-        const std::string id = mono_string_to_utf8(ID);
-        const std::string Value = mono_string_to_utf8(value);
-
-        auto *gameObject = f_GameObject::FindGameObjectByID(id);
-        auto &renderer = gameObject->GetComponent<c_SpritesheetAnimation>();
-
-        strcpy(renderer.currAnim, Value.c_str());
-    }
-
-    void Material_GetTextureScale(MonoString *ID, MonoString **result) {
-        using namespace CsharpVariables;
-        using namespace Experimental;
-
-        const std::string id = mono_string_to_utf8(ID);
-        auto *gameObject = f_GameObject::FindGameObjectByID(id);
-
-        auto &renderer = gameObject->GetComponent<MeshRenderer>();
-
-        if (renderer.m_Mesh) {
-            *result = mono_string_new(appDomain, (
-                                                     std::to_string(renderer.m_Mesh->material.texUVs.x) + " " +
-                                                     std::to_string(renderer.m_Mesh->material.texUVs.y))
-                                                     .c_str());
-        }
-    }
-
-    void Material_SetTextureScale(MonoString *ID, float x, float y) {
-        using namespace CsharpVariables;
-        using namespace Experimental;
-
-        const std::string id = mono_string_to_utf8(ID);
-        auto *gameObject = f_GameObject::FindGameObjectByID(id);
-
-        auto &renderer = gameObject->GetComponent<MeshRenderer>();
-
-        if (renderer.m_Mesh) {
-            renderer.m_Mesh->material.texUVs.x = x;
-            renderer.m_Mesh->material.texUVs.y = y;
-        }
-    }
-
-    void Material_GetMetallic(MonoString *ID, MonoString **result) {
-        using namespace CsharpVariables;
-        using namespace Experimental;
-
-        const std::string id = mono_string_to_utf8(ID);
-        auto *gameObject = f_GameObject::FindGameObjectByID(id);
-
-        auto &renderer = gameObject->GetComponent<MeshRenderer>();
-
-        if (renderer.m_Mesh) {
-            *result = mono_string_new(appDomain, (
-                                                     std::to_string(renderer.m_Mesh->material.metallic))
-                                                     .c_str());
-        }
-    }
-
-    void Material_SetMetallic(MonoString *ID, float value) {
-        using namespace CsharpVariables;
-        using namespace Experimental;
-
-        std::cout << value << std::endl;
-
-        const std::string id = mono_string_to_utf8(ID);
-        auto *gameObject = f_GameObject::FindGameObjectByID(id);
-
-        auto &renderer = gameObject->GetComponent<MeshRenderer>();
-
-        if (renderer.m_Mesh) {
-            renderer.m_Mesh->material.metallic = value;
-        }
-    }
-
-    void Material_GetRoughness(MonoString *ID, MonoString **result) {
-        using namespace CsharpVariables;
-        using namespace Experimental;
-
-        const std::string id = mono_string_to_utf8(ID);
-        auto *gameObject = f_GameObject::FindGameObjectByID(id);
-
-        auto &renderer = gameObject->GetComponent<MeshRenderer>();
-
-        if (renderer.m_Mesh) {
-            *result = mono_string_new(appDomain, (
-                                                     std::to_string(renderer.m_Mesh->material.roughness))
-                                                     .c_str());
-        }
-    }
-
-    void Material_SetRoughness(MonoString *ID, float value) {
-        using namespace CsharpVariables;
-        using namespace Experimental;
-
-        const std::string id = mono_string_to_utf8(ID);
-        auto *gameObject = f_GameObject::FindGameObjectByID(id);
-
-        auto &renderer = gameObject->GetComponent<MeshRenderer>();
-
-        if (renderer.m_Mesh) {
-            renderer.m_Mesh->material.roughness = value;
-        }
-    }
 
     void RegisterFunctions() {
         mono_add_internal_call("Vault.Terminal::Log", reinterpret_cast<void *(*)>(NativeLog));
@@ -553,22 +92,38 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("Vault.Input::SetMouseHidden", reinterpret_cast<void *(*)>(Input_SetMouseHidden));
         mono_add_internal_call("Vault.Input::SetMousePosition", reinterpret_cast<void *(*)>(Input_SetMousePosition));
 
-        // Material Component
-        mono_add_internal_call("Vault.Material::GetTexture", reinterpret_cast<void *(*)>(Material_GetTexture));
-        mono_add_internal_call("Vault.Material::SetTexture", reinterpret_cast<void *(*)>(Material_SetTexture));
-        mono_add_internal_call("Vault.Material::GetTextureScale", reinterpret_cast<void *(*)>(Material_GetTextureScale));
-        mono_add_internal_call("Vault.Material::SetTextureScale", reinterpret_cast<void *(*)>(Material_SetTextureScale));
-        mono_add_internal_call("Vault.Material::GetMetallic", reinterpret_cast<void *(*)>(Material_GetMetallic));
-        mono_add_internal_call("Vault.Material::SetMetallic", reinterpret_cast<void *(*)>(Material_SetMetallic));
-        mono_add_internal_call("Vault.Material::GetRoughness", reinterpret_cast<void *(*)>(Material_GetRoughness));
-        mono_add_internal_call("Vault.Material::SetRoughness", reinterpret_cast<void *(*)>(Material_SetRoughness));
+        // Text3D Component
+        mono_add_internal_call("Vault.Text3D::GetKey", reinterpret_cast<void *(*)>(Text3D_GetKey));
+        mono_add_internal_call("Vault.Text3D::SetText", reinterpret_cast<void *(*)>(Text3D_SetText));
+        mono_add_internal_call("Vault.Text3D::SetOthers", reinterpret_cast<void *(*)>(Text3D_SetOthers));
 
-        mono_add_internal_call("Vault.Material::GetColor", reinterpret_cast<void *(*)>(Material_GetColor));
-        mono_add_internal_call("Vault.Material::SetColor", reinterpret_cast<void *(*)>(Material_SetColor));
+        // SpriteRenderer Component
+        mono_add_internal_call("Vault.SpriteRenderer::GetKey", reinterpret_cast<void *(*)>(SpriteRenderer_GetKey));
+        mono_add_internal_call("Vault.SpriteRenderer::SetTexture", reinterpret_cast<void *(*)>(SpriteRenderer_SetTexture));
+        mono_add_internal_call("Vault.SpriteRenderer::SetColor", reinterpret_cast<void *(*)>(SpriteRenderer_SetColor));
 
-        // SpritesheetAnimation Component
-        mono_add_internal_call("Vault.SpritesheetAnimation::GetCurrentAnimation", reinterpret_cast<void *(*)>(SpritesheetAnimation_GetCurrentAnimation));
-        mono_add_internal_call("Vault.SpritesheetAnimation::SetCurrentAnimation", reinterpret_cast<void *(*)>(SpritesheetAnimation_SetCurrentAnimation));
+        // SpriteAnimation Component
+        mono_add_internal_call("Vault.SpriteAnimation::GetKey", reinterpret_cast<void *(*)>(SpriteAnimation_GetKey));
+        mono_add_internal_call("Vault.SpriteAnimation::SetCurrAnimation", reinterpret_cast<void *(*)>(SpriteAnimation_SetCurrAnimation));
+
+        // Bloom Component
+        mono_add_internal_call("Vault.Bloom::GetColor", reinterpret_cast<void *(*)>(Bloom_GetColor));
+        mono_add_internal_call("Vault.Bloom::SetColor", reinterpret_cast<void *(*)>(Bloom_SetColor));
+
+        // Rigidbody2D Component
+        mono_add_internal_call("Vault.Rigidbody2D::cpp_GetKey", reinterpret_cast<void *(*)>(Rigidbody2D_GetKey));
+        mono_add_internal_call("Vault.Rigidbody2D::cpp_SetVelocity", reinterpret_cast<void *(*)>(Rigidbody2D_SetVelocity));
+        mono_add_internal_call("Vault.Rigidbody2D::cpp_SetAngularVelocity", reinterpret_cast<void *(*)>(Rigidbody2D_SetAngularVelocity));
+        mono_add_internal_call("Vault.Rigidbody2D::cpp_SetPosition", reinterpret_cast<void *(*)>(Rigidbody2D_SetPosition));
+        mono_add_internal_call("Vault.Rigidbody2D::cpp_Force", reinterpret_cast<void *(*)>(Rigidbody2D_Force));
+        mono_add_internal_call("Vault.Rigidbody2D::cpp_Torque", reinterpret_cast<void *(*)>(Rigidbody2D_Torque));
+
+        mono_add_internal_call("Vault.BoxCollider2D::cpp_GetKey", reinterpret_cast<void *(*)>(BoxCollider2D_GetKey));
+        mono_add_internal_call("Vault.BoxCollider2D::cpp_SetKey", reinterpret_cast<void *(*)>(BoxCollider2D_SetKey));
+        mono_add_internal_call("Vault.BoxCollider2D::cpp_SetOffset", reinterpret_cast<void *(*)>(BoxCollider2D_SetOffset));
+        mono_add_internal_call("Vault.BoxCollider2D::cpp_SetSize", reinterpret_cast<void *(*)>(BoxCollider2D_SetSize));
+        mono_add_internal_call("Vault.BoxCollider2D::cpp_GetTrigger", reinterpret_cast<void *(*)>(BoxCollider2D_GetTrigger));
+        mono_add_internal_call("Vault.BoxCollider2D::cpp_SetTrigger", reinterpret_cast<void *(*)>(BoxCollider2D_SetTrigger));
     }
 } // namespace HyperAPI::CsharpScriptEngine::Functions
 
@@ -671,16 +226,23 @@ namespace HyperAPI::CsharpScriptEngine {
         }
     }
 
+    void RuntimeInit() {
+        using namespace CsharpVariables;
+        if (rootDomain == nullptr) {
+            rootDomain = mono_jit_init("VaultJITRuntime");
+
+            if (rootDomain == nullptr)
+                exit(1);
+        }
+    }
+
     void InitMono() {
         using namespace Functions;
         using namespace CsharpVariables;
 
         if (fs::exists("cs-assembly/bin/Debug/net6.0/cs-assembly.dll")) {
             mono_set_assemblies_path(std::string(cwd + "/mono/lib").c_str());
-            rootDomain = mono_jit_init("VaultJITRuntime");
-
-            if (rootDomain == nullptr)
-                exit(1);
+            RuntimeInit();
 
             appDomain = mono_domain_create_appdomain("VaultScriptRuntime", nullptr);
             mono_domain_set(appDomain, true);
@@ -707,66 +269,44 @@ namespace HyperAPI::CsharpScriptEngine {
         using namespace CsharpVariables;
 
         mono_domain_set(mono_get_root_domain(), false);
-
-        // TODO: mono_domain_unload crashes. fix this
         mono_domain_unload(appDomain);
 
-        appDomain = mono_domain_create_appdomain("VaultScriptRuntime", nullptr);
-        mono_domain_set(appDomain, true);
-
-        coreAssembly = LoadCSharpAssembly("cs-assembly/bin/Debug/net6.0/cs-assembly.dll");
-        PrintAssemblyTypes(coreAssembly);
-        LoadAssemblyClasses(coreAssembly);
-
-        MonoScriptClass mainClass("Vault", "Terminal");
-        mainClass.CallConstructor();
-
-        MonoScriptClass debugClass("Vault", "Debug");
-        debugClass.CallConstructor();
-
-        MonoScriptClass audioClass("Vault", "Audio");
-        mainClass.CallConstructor();
+        InitMono();
     }
-
-    namespace Utils {
-        void exec(const char *cmd) {
-            std::thread *compilerThread = new std::thread([&] {
-                std::array<char, 1000> buffer;
-                std::string result;
-                std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-
-                if (!pipe) {
-                    throw std::runtime_error("popen() failed!");
-                }
-
-                while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-                    using namespace HyperAPI;
-                    const std::string output = buffer.data();
-
-                    if (output.find("error") != std::string::npos) {
-                        Log errorLog(output, LOG_ERROR);
-                    } else if (output.find("warning") != std::string::npos) {
-                        Log warningLog(output, LOG_WARNING);
-                    } else if (output.find("no warning") != std::string::npos) {
-                        Log log(output, LOG_INFO);
-                    } else {
-                        Log log(output, LOG_INFO);
-                    }
-
-                    if (output.find("Build succeeded.") != std::string::npos) {
-                        CsharpVariables::compiledAssembly = true;
-                    }
-                }
-
-                using namespace CsharpVariables;
-                // TODO: hot reload scripts when it's done
-            });
-        }
-    } // namespace Utils
 
     void CompileAssemblies() {
         Scene::logs.clear();
-        Utils::exec("cd cs-assembly && dotnet build");
+        std::thread *compilerThread = new std::thread([&] {
+            std::array<char, 1000> buffer;
+            std::string result;
+            std::unique_ptr<FILE, decltype(&pclose)> pipe(popen("cd cs-assembly && dotnet build", "r"), pclose);
+
+            if (!pipe) {
+                throw std::runtime_error("popen() failed!");
+            }
+
+            while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+                using namespace HyperAPI;
+                const std::string output = buffer.data();
+
+                if (output.find("error") != std::string::npos) {
+                    Log errorLog(output, LOG_ERROR);
+                } else if (output.find("warning") != std::string::npos) {
+                    Log warningLog(output, LOG_WARNING);
+                } else if (output.find("no warning") != std::string::npos) {
+                    Log log(output, LOG_INFO);
+                } else {
+                    Log log(output, LOG_INFO);
+                }
+
+                if (output.find("Build succeeded.") != std::string::npos) {
+                    CsharpVariables::compiledAssembly = true;
+                }
+            }
+
+            using namespace CsharpVariables;
+            // TODO: hot reload scripts when it's done
+        });
     }
 
     void CreateCsharpProject() {
@@ -779,7 +319,37 @@ namespace HyperAPI::CsharpScriptEngine {
             fs::copy("/home/koki1019/Desktop/MainProjects/Vault_Engine/cs-assembly/Main.cs", "cs-assembly/API.cs");
         }
 
-        Utils::exec("cd cs-assembly && dotnet new classlib");
+        std::thread *compilerThread = new std::thread([&] {
+            std::array<char, 1000> buffer;
+            std::string result;
+            std::unique_ptr<FILE, decltype(&pclose)> pipe(popen("cd cs-assembly && dotnet new classlib", "r"), pclose);
+
+            if (!pipe) {
+                throw std::runtime_error("popen() failed!");
+            }
+
+            while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+                using namespace HyperAPI;
+                const std::string output = buffer.data();
+
+                if (output.find("error") != std::string::npos) {
+                    Log errorLog(output, LOG_ERROR);
+                } else if (output.find("warning") != std::string::npos) {
+                    Log warningLog(output, LOG_WARNING);
+                } else if (output.find("no warning") != std::string::npos) {
+                    Log log(output, LOG_INFO);
+                } else {
+                    Log log(output, LOG_INFO);
+                }
+
+                if (output.find("Build succeeded.") != std::string::npos) {
+                    CsharpVariables::compiledAssembly = true;
+                }
+            }
+
+            using namespace CsharpVariables;
+            // TODO: hot reload scripts when it's done
+        });
     }
 } // namespace HyperAPI::CsharpScriptEngine
 

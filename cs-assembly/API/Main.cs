@@ -227,62 +227,19 @@ namespace Vault
 
         protected virtual void OnStart() { }
         protected virtual void OnUpdate(float ts) { }
-
-        protected void SetObjectID(string m_ID)
+        
+        protected void SetObjectID()
         {
-            ID = m_ID;
+            GetID(out string result);
+            ID = result;
         }
 
         public T GetComponent<T>() where T : Component, new()
         {
-            if (typeof(T) == typeof(Transform))
-            {
-                Transform comp = new Transform() { Entity = this };
-                return (T)(object)comp;
-            }
-
-            if (typeof(T) == typeof(MeshRenderer))
-            {
-                MeshRenderer comp = new MeshRenderer() { Entity = this };
-                return (T)(object)comp;
-            }
-
-            if (typeof(T) == typeof(SpriteRenderer))
-            {
-                SpriteRenderer comp = new SpriteRenderer() { Entity = this };
-                return (T)(object)comp;
-            }
-
-            if (typeof(T) == typeof(SpritesheetAnimation))
-            {
-                SpritesheetAnimation comp = new SpritesheetAnimation() { Entity = this };
-                return (T)(object)comp;
-            }
-
-            if (typeof(T) == typeof(MeshRenderer))
-            {
-                MeshRenderer comp = new MeshRenderer() { Entity = this };
-                return (T)(object)comp;
-            }
+            T component = new T() { Entity = this };
+            return (T)(object)component;
 
             return null;
         }
-
-        // [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        // extern private static bool HasScriptClass(string name_space, string name);
-
-        // [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        // extern private static bool ScriptClass(string name_space, string name);
-
-        // public T GetScriptComponent<T>() where T : Entity
-        // {
-        //     Type type = typeof(T);
-        //     if (HasScriptClass(type.Namespace, type.Name))
-        //     {
-
-        //     }
-
-        //     return null;
-        // }
     }
 }

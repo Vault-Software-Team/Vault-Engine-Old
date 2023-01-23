@@ -32,7 +32,7 @@ api += $(wildcard src/*/*/*.c)
 api += $(wildcard src/*/*/*/*.c)
 api += $(wildcard src/InputEvents.cpp)
 api += $(wildcard src/scene.cpp)
-api += $(wildcard src/ScriptEngine.cpp)
+api += $(wildcard src/Scripting/Lua/ScriptEngine.cpp)
 api += $(wildcard src/networking.cpp)
 api += $(wildcard src/nativeScripts.cpp)
 
@@ -182,4 +182,4 @@ clean:
 	-rm *.o
 
 # mono:
-# 	g++ -c $(flags) src/ScriptEngine/ScriptEngine.cpp -o src/ScriptEngine/ScriptEngine.o
+# 	g++ -c $(flags) src/ScriptEngine/Scripting/Lua/ScriptEngine.cpp -o src/ScriptEngine/ScriptEngine.o

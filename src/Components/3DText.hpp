@@ -18,7 +18,15 @@ namespace HyperAPI::Experimental {
 
         Text3D() = default;
 
-        void GUI() {
+        void DeleteComp() override {
+            for (auto &c : font->Characters) {
+                glDeleteTextures(1, &c.second.TextureID);
+            }
+
+            delete font;
+        }
+
+        void GUI() override {
             if (ImGui::TreeNode("3D Text")) {
                 ImGui::InputTextMultiline("Text", text, 999);
                 ImGui::ColorEdit3("Color", &color.r);

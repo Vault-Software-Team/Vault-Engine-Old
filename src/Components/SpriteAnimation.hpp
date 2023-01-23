@@ -116,8 +116,6 @@ namespace HyperAPI::Experimental {
                                 if (ImGui::IsItemHovered() &&
                                     ImGui::IsMouseClicked(1) &&
                                     frame.mesh->material.diffuse != nullptr) {
-                                    glDeleteTextures(
-                                        1, &frame.mesh->material.diffuse->tex->ID);
                                     delete frame.mesh->material.diffuse;
                                 }
                                 ImGui::ColorEdit4(

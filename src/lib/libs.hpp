@@ -13,6 +13,7 @@
 #include "../vendor/glm/gtx/quaternion.hpp"
 #include "../vendor/stb_image/stb_image.h"
 #include "../vendor/tinyxml/tinyxml2.h"
+#include <FileWatch/FileWatch.hpp>
 #include "ImGuizmo/ImGuizmo.h"
 #include "LinearMath/btTransform.h"
 #include "mono/metadata/class.h"

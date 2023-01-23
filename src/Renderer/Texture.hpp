@@ -26,10 +26,10 @@ namespace HyperAPI {
 
         ~Texture() {
             if (--tex->sharing <= 0) {
-                int index = &tex - &textures[0];
-                textures.erase(textures.begin() + index);
-                delete tex;
-                HYPER_LOG("Texture " + texPath + " Deleted")
+                // int index = &tex - &textures[0];
+                // textures.erase(textures.begin() + index);
+                // delete tex;
+                // HYPER_LOG("Texture " + texPath + " Deleted")
             } else {
                 // HYPER_LOG("Texture Class " + texPath + " Removed")
             }

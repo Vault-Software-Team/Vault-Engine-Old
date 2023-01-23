@@ -3,6 +3,7 @@
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
 #include "../Renderer/OldStuff.hpp"
+#include "box2d/b2_fixture.h"
 
 namespace HyperAPI::Experimental {
     struct BoxCollider2D : public BaseComponent {
@@ -36,6 +37,17 @@ namespace HyperAPI::Experimental {
                     Scene::m_Registry.remove<BoxCollider2D>(entity);
                 }
                 ImGui::TreePop();
+            }
+        }
+
+        void Update() {
+            if (fixture != nullptr) {
+                b2Fixture *m_fixture = (b2Fixture *)fixture;
+
+                m_fixture->SetDensity(density);
+                m_fixture->SetFriction(friction);
+                m_fixture->SetRestitution(restitution);
+                m_fixture->SetRestitutionThreshold(restitutionThreshold);
             }
         }
     };
