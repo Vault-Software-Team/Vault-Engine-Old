@@ -225,12 +225,18 @@ namespace Vault
         extern public static string GetIDByTag(string tag);
     }
 
+    public class Lerp {
+        public static float Float(float a, float b, float t) {
+            return a + t * (b - a);
+        }
+    }
+
     public class Entity
     {
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static void GetID(out string result);
 
-        public string parentID;
+        public string parentID = "NO_PARENT";
         public string ID;
 
         protected virtual void OnStart() { }
