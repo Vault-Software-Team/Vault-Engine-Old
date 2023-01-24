@@ -3,8 +3,8 @@
 
 ---
 
-<h3>An Open Source 2D and 3D Game Engine</h3>
-<p align="center">Built with C++</p>
+<h2 style="font-size: 28px">An Open Source 2D and 3D Game Engine</h2>
+<h3 align="center">Built with C++</h3>
 </div>
 
 <br>
@@ -20,11 +20,10 @@
 - **2D and 3D Rendering**
 - **Post-Processing Effects**
 - **Project Manager**
-- **Script Engine: Lua**
+- **Multi language scripting: C#, Lua, C++ (Linux Only)**
 - **Physics Engine: Box2D, Bullet Physics (3D)**
-- **Audio: SDL_mixer**
+- **Audio**
 - **Level Editor**
-- **C++ Scripting**
 - **2D Lighting**
 - **3D Lighting**
 - **More coming soon**
@@ -49,6 +48,8 @@
 - **tinyxml**
 - **Bullet Physics**
 - **OpenAL**
+- **FileWatch**
+- **Freetype**
 - **luajit**
 
 # Huge thanks to
@@ -87,7 +88,7 @@ make win
 
 ### C++ Scripting
 
-To make cross-platform games with C++ Scripting, you must have MinGW installed and linux C++ compiler (GCC) installed and paths set.
+C++ Scripting is not Cross-Platform as of now
 
 ### **Bundling**
 
@@ -102,8 +103,8 @@ NOTE: while building is implemented, it will not work as of now!
 
 # Upcoming Features
 
-- **Vulkan Rendering**
-- **JavaScript Scripting**
+- **Ruby Scripting**
+- **Java Scripting**
 - **Python Scripting**
 - **Asset Packager**
 - **Android Support**
