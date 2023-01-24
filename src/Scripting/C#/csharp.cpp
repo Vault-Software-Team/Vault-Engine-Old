@@ -27,6 +27,7 @@
 #include "Rigidbody2DFunctions.hpp"
 #include "BoxCollider2DFunctions.hpp"
 #include "GameObjectFunctions.hpp"
+#include "CameraFunctions.hpp"
 
 namespace CsharpVariables {
     MonoDomain *rootDomain;
@@ -129,6 +130,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("Vault.BoxCollider2D::cpp_SetSize", reinterpret_cast<void *(*)>(BoxCollider2D_SetSize));
         mono_add_internal_call("Vault.BoxCollider2D::cpp_GetTrigger", reinterpret_cast<void *(*)>(BoxCollider2D_GetTrigger));
         mono_add_internal_call("Vault.BoxCollider2D::cpp_SetTrigger", reinterpret_cast<void *(*)>(BoxCollider2D_SetTrigger));
+
+        // Camera Component
+        mono_add_internal_call("Vault.CameraComponent::cpp_GetKey", reinterpret_cast<void *(*)>(Camera_GetKey));
+        mono_add_internal_call("Vault.CameraComponent::cpp_SetKey", reinterpret_cast<void *(*)>(Camera_SetKey));
+        mono_add_internal_call("Vault.CameraComponent::cpp_Set2D", reinterpret_cast<void *(*)>(Camera_Set2D));
     }
 } // namespace HyperAPI::CsharpScriptEngine::Functions
 
