@@ -26,6 +26,7 @@
 #include "BloomFunctions.hpp"
 #include "Rigidbody2DFunctions.hpp"
 #include "BoxCollider2DFunctions.hpp"
+#include "GameObjectFunctions.hpp"
 
 namespace CsharpVariables {
     MonoDomain *rootDomain;
@@ -91,6 +92,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("Vault.Input::GetMouseYAxis", reinterpret_cast<void *(*)>(Input_GetMouseYAxis));
         mono_add_internal_call("Vault.Input::SetMouseHidden", reinterpret_cast<void *(*)>(Input_SetMouseHidden));
         mono_add_internal_call("Vault.Input::SetMousePosition", reinterpret_cast<void *(*)>(Input_SetMousePosition));
+
+        // GameObject Functions
+        mono_add_internal_call("Vault.GameObject::GetIDByName", reinterpret_cast<void *(*)>(GameObject_GetIDByName));
+        mono_add_internal_call("Vault.GameObject::GetIDByTag", reinterpret_cast<void *(*)>(GameObject_GetIDByTag));
 
         // Text3D Component
         mono_add_internal_call("Vault.Text3D::GetKey", reinterpret_cast<void *(*)>(Text3D_GetKey));

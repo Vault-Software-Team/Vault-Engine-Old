@@ -217,6 +217,14 @@ namespace Vault
         extern public static void SetMousePosition(float x, float y);
     }
 
+    public class GameObject {
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static string GetIDByName(string name);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static string GetIDByTag(string tag);
+    }
+
     public class Entity
     {
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -227,11 +235,19 @@ namespace Vault
 
         protected virtual void OnStart() { }
         protected virtual void OnUpdate(float ts) { }
-        
+        protected virtual void OnCollision2D(string ID) {}
+        protected virtual void OnCollision3D(string ID) {}
+        protected virtual void OnMouseEnter(string ID) {}
+        protected virtual void OnMouseExit(string ID) {}
+
         protected void SetObjectID()
         {
             GetID(out string result);
             ID = result;
+        }
+
+        public Entity GetEntity(string m_id) {
+            return new Entity() { ID = m_id };
         }
 
         public T GetComponent<T>() where T : Component, new()
