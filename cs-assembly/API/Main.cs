@@ -217,14 +217,6 @@ namespace Vault
         extern public static void SetMousePosition(float x, float y);
     }
 
-    public class GameObject {
-        [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        extern public static string GetIDByName(string name);
-
-        [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        extern public static string GetIDByTag(string tag);
-    }
-
     public class Lerp {
         public static float Float(float a, float b, float t) {
             return a + t * (b - a);
@@ -235,6 +227,9 @@ namespace Vault
     {
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static void GetID(out string result);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static void cpp_AddComponent(string id, string type);
 
         public string parentID = "NO_PARENT";
         public string ID;
@@ -263,5 +258,35 @@ namespace Vault
 
             return null;
         }
+
+        public T AddComponent<T>() where T : Component, new()
+        {
+            cpp_AddComponent(ID, typeof(T).Name);
+            return GetComponent<T>();
+        }
+    }
+
+    public class GameObject {
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static string GetIDByName(string name);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static string GetIDByTag(string tag);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static string cpp_AddGameObject(string name, string tag, out string m_id);
+    
+        public string name;
+        public string tag;
+        public string id;
+        public Entity entity;
+
+        public GameObject(string m_name = "GameObject (C#)", string m_tag = "Default") {
+            cpp_AddGameObject(m_name, m_tag, out string m_id);
+            name = m_name;
+            tag = m_tag;
+            id = m_id;
+            entity = new Entity() { ID = id };
+        } 
     }
 }

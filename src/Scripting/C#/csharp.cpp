@@ -81,6 +81,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         // ID Shit
         mono_add_internal_call("Vault.Entity::GetID", reinterpret_cast<void *(*)>(Entity_GetID));
+        mono_add_internal_call("Vault.Entity::cpp_AddComponent", reinterpret_cast<void *(*)>(Entity_AddComponent));
 
         // Input Keyboard
         mono_add_internal_call("Vault.Input::IsKeyPressed", reinterpret_cast<void *(*)>(Input_IsKeyPressed));
@@ -97,6 +98,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         // GameObject Functions
         mono_add_internal_call("Vault.GameObject::GetIDByName", reinterpret_cast<void *(*)>(GameObject_GetIDByName));
         mono_add_internal_call("Vault.GameObject::GetIDByTag", reinterpret_cast<void *(*)>(GameObject_GetIDByTag));
+        mono_add_internal_call("Vault.GameObject::cpp_AddGameObject", reinterpret_cast<void *(*)>(GameObject_AddGameObject));
 
         // Text3D Component
         mono_add_internal_call("Vault.Text3D::GetKey", reinterpret_cast<void *(*)>(Text3D_GetKey));

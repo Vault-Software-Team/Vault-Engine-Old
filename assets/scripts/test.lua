@@ -1,8 +1,9 @@
-hover = {}
+test = {}
 
-function hover:OnStart()
+function test:OnStart()
+    Log("Added")
 end
 
-function hover:OnUpdate()
+function test:OnUpdate()
 
 end

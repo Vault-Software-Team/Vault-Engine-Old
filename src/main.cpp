@@ -612,8 +612,8 @@ using namespace CppScripting;
 int main(int argc, char **argv) {
 #ifndef _WIN32
     unsetenv("TERM");
-    setenv("MONO_LOG_LEVEL", "debug", 0);
-    setenv("MONO_LOG_MASK", "dll", 0);
+    // setenv("MONO_LOG_LEVEL", "debug", 0);
+    // setenv("MONO_LOG_MASK", "dll", 0);
 #endif
 
     if (argc > 1) {

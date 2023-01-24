@@ -18,6 +18,10 @@ namespace Sandbox
             
             rigidbody = GetComponent<Rigidbody2D>();
             collider = GetComponent<BoxCollider2D>();
+
+            GameObject go = new GameObject();
+            SpriteRenderer renderer = go.entity.AddComponent<SpriteRenderer>();
+            renderer.texture = "assets/textures/logo_github.png";
         }
 
         private bool jumped = false;

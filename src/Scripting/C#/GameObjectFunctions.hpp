@@ -17,4 +17,5 @@
 namespace HyperAPI::CsharpScriptEngine::Functions {
     MonoString *GameObject_GetIDByName(MonoString *name);
     MonoString *GameObject_GetIDByTag(MonoString *tag);
+    void GameObject_AddGameObject(MonoString *name, MonoString *tag, MonoString **m_id);
 } // namespace HyperAPI::CsharpScriptEngine::Functions
