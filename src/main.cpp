@@ -610,6 +610,12 @@ void UpdatePresence(const std::string &details = "",
 using namespace CppScripting;
 
 int main(int argc, char **argv) {
+    {
+        char cwd[1024];
+        getcwd(cwd, sizeof(cwd));
+        CsharpVariables::oldCwd = cwd;
+    }
+
 #ifndef _WIN32
     unsetenv("TERM");
     // setenv("MONO_LOG_LEVEL", "debug", 0);
@@ -633,6 +639,9 @@ int main(int argc, char **argv) {
     CsharpScriptEngine::InitMono();
     char m_cwd[1024];
     getcwd(m_cwd, sizeof(m_cwd));
+
+    if (!fs::exists("cs-assembly"))
+        fs::create_directory("cs-assembly");
 
     filewatch::FileWatch<std::string> watch("./cs-assembly", [&](const std::string &filename, const filewatch::Event change_type) {
         HYPER_LOG(filename);
@@ -2091,7 +2100,6 @@ int main(int argc, char **argv) {
                                           ImVec4(buttonColor.x, buttonColor.y,
                                                  buttonColor.z, 0.7f));
                     if (ImGui::Button(ICON_FA_PLAY, ImVec2(32, 32))) {
-                        CsharpScriptEngine::ReloadAssembly();
                         sleep(1);
                         if (HyperAPI::isStopped) {
                             stateScene = nlohmann::json::array();

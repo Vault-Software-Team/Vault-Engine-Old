@@ -23,6 +23,7 @@
 #include "3DTextFunctions.hpp"
 #include "SpriteRendererFunctions.hpp"
 #include "SpriteAnimationFunctions.hpp"
+#include "SpritesheetAnimationFunctions.hpp"
 #include "BloomFunctions.hpp"
 #include "Rigidbody2DFunctions.hpp"
 #include "BoxCollider2DFunctions.hpp"
@@ -35,6 +36,7 @@ namespace CsharpVariables {
     MonoAssembly *coreAssembly;
 
     bool compiledAssembly = false;
+    std::string oldCwd;
 } // namespace CsharpVariables
 
 namespace HyperAPI::CsharpScriptEngine::Functions {
@@ -82,6 +84,8 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         // ID Shit
         mono_add_internal_call("Vault.Entity::GetID", reinterpret_cast<void *(*)>(Entity_GetID));
         mono_add_internal_call("Vault.Entity::cpp_AddComponent", reinterpret_cast<void *(*)>(Entity_AddComponent));
+        mono_add_internal_call("Vault.Entity::cpp_GetEnabled", reinterpret_cast<void *(*)>(Entity_GetEnabled));
+        mono_add_internal_call("Vault.Entity::cpp_SetEnabled", reinterpret_cast<void *(*)>(Entity_SetEnabled));
 
         // Input Keyboard
         mono_add_internal_call("Vault.Input::IsKeyPressed", reinterpret_cast<void *(*)>(Input_IsKeyPressed));
@@ -113,6 +117,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         // SpriteAnimation Component
         mono_add_internal_call("Vault.SpriteAnimation::GetKey", reinterpret_cast<void *(*)>(SpriteAnimation_GetKey));
         mono_add_internal_call("Vault.SpriteAnimation::SetCurrAnimation", reinterpret_cast<void *(*)>(SpriteAnimation_SetCurrAnimation));
+
+        // SpritesheetAnimation Component
+        mono_add_internal_call("Vault.SpritesheetAnimation::GetKey", reinterpret_cast<void *(*)>(SpritesheetAnimation_GetKey));
+        mono_add_internal_call("Vault.SpritesheetAnimation::SetCurrAnimation", reinterpret_cast<void *(*)>(SpritesheetAnimation_SetCurrAnimation));
 
         // Bloom Component
         mono_add_internal_call("Vault.Bloom::GetColor", reinterpret_cast<void *(*)>(Bloom_GetColor));
@@ -327,9 +335,9 @@ namespace HyperAPI::CsharpScriptEngine {
 
         Scene::logs.clear();
         system("mkdir cs-assembly");
-
-        if (fs::exists("cs-assembly")) {
-            fs::copy("/home/koki1019/Desktop/MainProjects/Vault_Engine/cs-assembly/Main.cs", "cs-assembly/API.cs");
+        HYPER_LOG(CsharpVariables::oldCwd)
+        if (fs::exists(CsharpVariables::oldCwd + "/cs-assembly")) {
+            fs::copy(CsharpVariables::oldCwd + "/cs-assembly", "cs-assembly");
         }
 
         std::thread *compilerThread = new std::thread([&] {

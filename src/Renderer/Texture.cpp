@@ -4,6 +4,7 @@
 namespace HyperAPI {
     std::vector<m_Texture *> textures;
     Texture::Texture(const char *texturePath, uint32_t slot, const char *textureType) {
+        texPath = std::string(texturePath);
         for (auto *m_tex : textures) {
             if (m_tex->texPath == std::string(texturePath)) {
                 tex = m_tex;
@@ -21,7 +22,6 @@ namespace HyperAPI {
             tex->texStarterPath = texturePath;
             tex->slot = slot;
             tex->texPath = std::string(texturePath);
-            texPath = std::string(texturePath);
             tex->data = stbi_load(texturePath, &tex->width, &tex->height, &tex->nrChannels, 0);
 
             HYPER_LOG("Texture " + std::to_string(slot) + " loaded from " +

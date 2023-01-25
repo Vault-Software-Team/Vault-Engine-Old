@@ -15,6 +15,7 @@ namespace CsharpVariables {
     extern MonoDomain *appDomain;
     extern MonoAssembly *coreAssembly;
     extern bool compiledAssembly;
+    extern std::string oldCwd;
 } // namespace CsharpVariables
 
 class MonoScriptClass {

@@ -15,8 +15,6 @@
 #include <string>
 
 namespace HyperAPI::CsharpScriptEngine::Functions {
-    void Entity_GetID(MonoString **result);
-    bool Entity_GetEnabled(MonoString *id);
-    void Entity_SetEnabled(MonoString *id, bool value);
-    void Entity_AddComponent(MonoString *id, MonoString *type);
+    void SpritesheetAnimation_GetKey(MonoString *key, MonoString *id, MonoString **result);
+    void SpritesheetAnimation_SetCurrAnimation(MonoString *anim, MonoString *id);
 } // namespace HyperAPI::CsharpScriptEngine::Functions

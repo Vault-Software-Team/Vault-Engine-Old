@@ -6,6 +6,18 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         *result = mono_string_new(CsharpVariables::appDomain, nextId.c_str());
     }
 
+    bool Entity_GetEnabled(MonoString *id) {
+        using namespace Experimental;
+        auto *gameObject = f_GameObject::FindGameObjectByID(mono_string_to_utf8(id));
+        return gameObject->enabled;
+    }
+
+    void Entity_SetEnabled(MonoString *id, bool value) {
+        using namespace Experimental;
+        auto *gameObject = f_GameObject::FindGameObjectByID(mono_string_to_utf8(id));
+        gameObject->SetActive(value);
+    }
+
     void Entity_AddComponent(MonoString *id, MonoString *type) {
         using namespace Experimental;
         auto *gameObject = f_GameObject::FindGameObjectByID(mono_string_to_utf8(id));

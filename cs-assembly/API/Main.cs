@@ -101,76 +101,76 @@ namespace Vault
         public static int KEY_WORLD_2 = 62; /* non-US #2 */
 
         /* Function keys */
-        public static int KEY_ESCAPE = 56;
-        public static int KEY_ENTER = 57;
-        public static int KEY_TAB = 58;
-        public static int KEY_BACKSPACE = 59;
-        public static int KEY_INSERT = 60;
-        public static int KEY_DELETE = 61;
-        public static int KEY_RIGHT = 62;
-        public static int KEY_LEFT = 63;
-        public static int KEY_DOWN = 64;
-        public static int KEY_UP = 65;
-        public static int KEY_PAGE_UP = 66;
-        public static int KEY_PAGE_DOWN = 67;
-        public static int KEY_HOME = 68;
-        public static int KEY_END = 69;
-        public static int KEY_CAPS_LOCK = 80;
-        public static int KEY_SCROLL_LOCK = 81;
-        public static int KEY_NUM_LOCK = 82;
-        public static int KEY_PRINT_SCREEN = 83;
-        public static int KEY_PAUSE = 84;
-        public static int KEY_F1 = 90;
-        public static int KEY_F2 = 91;
-        public static int KEY_F3 = 92;
-        public static int KEY_F4 = 93;
-        public static int KEY_F5 = 94;
-        public static int KEY_F6 = 95;
-        public static int KEY_F7 = 96;
-        public static int KEY_F8 = 97;
-        public static int KEY_F9 = 98;
-        public static int KEY_F10 = 99;
-        public static int KEY_F11 = 00;
-        public static int KEY_F12 = 01;
-        public static int KEY_F13 = 02;
-        public static int KEY_F14 = 03;
-        public static int KEY_F15 = 04;
-        public static int KEY_F16 = 05;
-        public static int KEY_F17 = 06;
-        public static int KEY_F18 = 07;
-        public static int KEY_F19 = 08;
-        public static int KEY_F20 = 09;
-        public static int KEY_F21 = 10;
-        public static int KEY_F22 = 11;
-        public static int KEY_F23 = 12;
-        public static int KEY_F24 = 13;
-        public static int KEY_F25 = 14;
-        public static int KEY_KP_0 = 20;
-        public static int KEY_KP_1 = 21;
-        public static int KEY_KP_2 = 22;
-        public static int KEY_KP_3 = 23;
-        public static int KEY_KP_4 = 24;
-        public static int KEY_KP_5 = 25;
-        public static int KEY_KP_6 = 26;
-        public static int KEY_KP_7 = 27;
-        public static int KEY_KP_8 = 28;
-        public static int KEY_KP_9 = 29;
-        public static int KEY_KP_DECIMAL = 30;
-        public static int KEY_KP_DIVIDE = 31;
-        public static int KEY_KP_MULTIPLY = 32;
-        public static int KEY_KP_SUBTRACT = 33;
-        public static int KEY_KP_ADD = 34;
-        public static int KEY_KP_ENTER = 35;
-        public static int KEY_KP_EQUAL = 36;
-        public static int KEY_LEFT_SHIFT = 40;
-        public static int KEY_LEFT_CONTROL = 41;
-        public static int KEY_LEFT_ALT = 42;
-        public static int KEY_LEFT_SUPER = 43;
-        public static int KEY_RIGHT_SHIFT = 44;
-        public static int KEY_RIGHT_CONTROL = 45;
-        public static int KEY_RIGHT_ALT = 46;
-        public static int KEY_RIGHT_SUPER = 47;
-        public static int KEY_MENU = 48;
+        public static int KEY_ESCAPE = 256;
+        public static int KEY_ENTER = 257;
+        public static int KEY_TAB = 258;
+        public static int KEY_BACKSPACE = 259;
+        public static int KEY_INSERT = 260;
+        public static int KEY_DELETE = 261;
+        public static int KEY_RIGHT = 262;
+        public static int KEY_LEFT = 263;
+        public static int KEY_DOWN = 264;
+        public static int KEY_UP = 265;
+        public static int KEY_PAGE_UP = 266;
+        public static int KEY_PAGE_DOWN = 267;
+        public static int KEY_HOME = 268;
+        public static int KEY_END = 269;
+        public static int KEY_CAPS_LOCK = 280;
+        public static int KEY_SCROLL_LOCK = 281;
+        public static int KEY_NUM_LOCK = 282;
+        public static int KEY_PRINT_SCREEN = 283;
+        public static int KEY_PAUSE = 284;
+        public static int KEY_F1 = 290;
+        public static int KEY_F2 = 291;
+        public static int KEY_F3 = 292;
+        public static int KEY_F4 = 293;
+        public static int KEY_F5 = 294;
+        public static int KEY_F6 = 295;
+        public static int KEY_F7 = 296;
+        public static int KEY_F8 = 297;
+        public static int KEY_F9 = 298;
+        public static int KEY_F10 = 299;
+        public static int KEY_F11 = 300;
+        public static int KEY_F12 = 301;
+        public static int KEY_F13 = 302;
+        public static int KEY_F14 = 303;
+        public static int KEY_F15 = 304;
+        public static int KEY_F16 = 305;
+        public static int KEY_F17 = 306;
+        public static int KEY_F18 = 307;
+        public static int KEY_F19 = 308;
+        public static int KEY_F20 = 309;
+        public static int KEY_F21 = 310;
+        public static int KEY_F22 = 311;
+        public static int KEY_F23 = 312;
+        public static int KEY_F24 = 313;
+        public static int KEY_F25 = 314;
+        public static int KEY_KP_0 = 320;
+        public static int KEY_KP_1 = 321;
+        public static int KEY_KP_2 = 322;
+        public static int KEY_KP_3 = 323;
+        public static int KEY_KP_4 = 324;
+        public static int KEY_KP_5 = 325;
+        public static int KEY_KP_6 = 326;
+        public static int KEY_KP_7 = 327;
+        public static int KEY_KP_8 = 328;
+        public static int KEY_KP_9 = 329;
+        public static int KEY_KP_DECIMAL = 330;
+        public static int KEY_KP_DIVIDE = 331;
+        public static int KEY_KP_MULTIPLY = 332;
+        public static int KEY_KP_SUBTRACT = 333;
+        public static int KEY_KP_ADD = 334;
+        public static int KEY_KP_ENTER = 335;
+        public static int KEY_KP_EQUAL = 336;
+        public static int KEY_LEFT_SHIFT = 340;
+        public static int KEY_LEFT_CONTROL = 341;
+        public static int KEY_LEFT_ALT = 342;
+        public static int KEY_LEFT_SUPER = 343;
+        public static int KEY_RIGHT_SHIFT = 344;
+        public static int KEY_RIGHT_CONTROL = 345;
+        public static int KEY_RIGHT_ALT = 346;
+        public static int KEY_RIGHT_SUPER = 347;
+        public static int KEY_MENU = 348;
 
         public static int KEY_LAST = 348;
 
@@ -217,8 +217,10 @@ namespace Vault
         extern public static void SetMousePosition(float x, float y);
     }
 
-    public class Lerp {
-        public static float Float(float a, float b, float t) {
+    public class Lerp
+    {
+        public static float Float(float a, float b, float t)
+        {
             return a + t * (b - a);
         }
     }
@@ -229,17 +231,35 @@ namespace Vault
         extern public static void GetID(out string result);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static bool cpp_GetEnabled(string id);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static void cpp_SetEnabled(string id, bool value);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static void cpp_AddComponent(string id, string type);
 
         public string parentID = "NO_PARENT";
         public string ID;
 
+        public bool enabled
+        {
+            get
+            {
+                return cpp_GetEnabled(ID);
+            }
+            set
+            {
+                cpp_SetEnabled(ID, enabled);
+            }
+        }
+
         protected virtual void OnStart() { }
         protected virtual void OnUpdate(float ts) { }
-        protected virtual void OnCollision2D(string ID) {}
-        protected virtual void OnCollision3D(string ID) {}
-        protected virtual void OnMouseEnter(string ID) {}
-        protected virtual void OnMouseExit(string ID) {}
+        protected virtual void OnCollision2D(string ID) { }
+        protected virtual void OnCollision3D(string ID) { }
+        protected virtual void OnMouseEnter(string ID) { }
+        protected virtual void OnMouseExit(string ID) { }
 
         protected void SetObjectID()
         {
@@ -247,7 +267,8 @@ namespace Vault
             ID = result;
         }
 
-        public Entity GetEntity(string m_id) {
+        public Entity GetEntity(string m_id)
+        {
             return new Entity() { ID = m_id };
         }
 
@@ -266,7 +287,8 @@ namespace Vault
         }
     }
 
-    public class GameObject {
+    public class GameObject
+    {
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static string GetIDByName(string name);
 
@@ -275,18 +297,19 @@ namespace Vault
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static string cpp_AddGameObject(string name, string tag, out string m_id);
-    
+
         public string name;
         public string tag;
         public string id;
         public Entity entity;
 
-        public GameObject(string m_name = "GameObject (C#)", string m_tag = "Default") {
+        public GameObject(string m_name = "GameObject (C#)", string m_tag = "Default")
+        {
             cpp_AddGameObject(m_name, m_tag, out string m_id);
             name = m_name;
             tag = m_tag;
             id = m_id;
             entity = new Entity() { ID = id };
-        } 
+        }
     }
 }
