@@ -6,6 +6,7 @@
 
 #include "Transform.hpp"
 #include "Lights.hpp"
+#include "scene.hpp"
 
 namespace HyperAPI::Experimental {
     class GameObject : public ComponentEntity {
@@ -19,7 +20,9 @@ namespace HyperAPI::Experimental {
 
         GameObject() { ID = uuid::generate_uuid_v4(); }
 
-        void SetActive(bool active) { enabled = active; }
+        void SetActive(bool active) {
+            enabled = active;
+        }
 
         void Update() {
             for (auto &childObject : Scene::m_GameObjects) {
@@ -30,6 +33,15 @@ namespace HyperAPI::Experimental {
 
                     childTransform.parentTransform = &transform;
                 }
+            }
+        }
+
+        void UpdateEnabled() {
+            for (auto &childObject : Scene::m_GameObjects) {
+                if (childObject->parentID != ID)
+                    continue;
+
+                childObject->SetActive(enabled);
             }
         }
 
@@ -97,7 +109,7 @@ namespace HyperAPI::Experimental {
                 if (gameObject->parentID == ID) {
                     hasChildren = true;
                     // if enabled is false make the text grey
-                    if (!gameObject->enabled) {
+                    if (!enabled) {
                         ImGui::PushStyleColor(ImGuiCol_Text,
                                               ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
                         item = ImGui::TreeNode(

@@ -250,7 +250,7 @@ namespace Vault
             }
             set
             {
-                cpp_SetEnabled(ID, enabled);
+                cpp_SetEnabled(ID, value);
             }
         }
 

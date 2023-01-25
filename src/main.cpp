@@ -3583,6 +3583,9 @@ int main(int argc, char **argv) {
             for (auto &gameObject : Scene::m_GameObjects) {
                 if (!gameObject)
                     continue;
+
+                gameObject->UpdateEnabled();
+
                 if (!gameObject->enabled)
                     continue;
                 if (gameObject->prefab)

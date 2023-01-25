@@ -806,6 +806,11 @@ namespace HyperAPI {
                 gameObject->ID = ID;
                 gameObject->parentID = parentID;
                 gameObject->layer = layer;
+
+                if (JSON[i].contains("active")) {
+                    gameObject->SetActive(JSON[i]["active"]);
+                }
+
                 nlohmann::json components = JSON[i]["components"];
 
                 std::string meshType = "";
@@ -1467,6 +1472,7 @@ namespace HyperAPI {
                 JSON[i]["parentID"] = parentID;
                 JSON[i]["layer"] = layer;
                 JSON[i]["components"] = nlohmann::json::array();
+                JSON[i]["active"] = gameObject->enabled;
 
                 int componentOffset = 0;
                 SaveComponents(JSON, gameObject, i, componentOffset);
