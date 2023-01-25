@@ -2100,7 +2100,7 @@ int main(int argc, char **argv) {
                                           ImVec4(buttonColor.x, buttonColor.y,
                                                  buttonColor.z, 0.7f));
                     if (ImGui::Button(ICON_FA_PLAY, ImVec2(32, 32))) {
-                        sleep(1);
+                        CsharpScriptEngine::ReloadAssembly();
                         if (HyperAPI::isStopped) {
                             stateScene = nlohmann::json::array();
                             Scene::SaveScene("", stateScene);
@@ -4607,7 +4607,6 @@ int selected = -1;
 
 void DisplayProject(GLFWwindow *window, const std::string &name,
                     const std::string &path, int index) {
-    selected = index;
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.05f, 0.055f, 0.051f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
                           ImVec4(0.07f, 0.075f, 0.071f, 1.0f));
@@ -4642,6 +4641,7 @@ void DisplayProject(GLFWwindow *window, const std::string &name,
     }
 
     if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1)) {
+        selected = index;
         ImGui::OpenPopup("Project Options");
     }
 
@@ -4652,6 +4652,10 @@ void DisplayProject(GLFWwindow *window, const std::string &name,
 }
 
 int main() {
+    char m_cwd[1024];
+    getcwd(m_cwd, 1024);
+    CsharpVariables::oldCwd = m_cwd;
+
     Hyper::Application app(
         1280, 720, "Vault Engine", false, true, false, [&]() {
             // get io
@@ -4778,7 +4782,7 @@ int main() {
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(25, 25));
             if (ImGui::Begin(ICON_FA_LAYER_GROUP " Projects", nullptr, flags)) {
                 if (ImGui::BeginChild("##icon stuff", ImVec2(0, 150))) {
-                    ImGui::Image((void *)logo->ID, ImVec2(150, 150),
+                    ImGui::Image((void *)logo->tex->ID, ImVec2(150, 150),
                                  ImVec2(0, 1), ImVec2(1, 0));
                     ImGui::EndChild();
                 }
@@ -4886,8 +4890,6 @@ int main() {
                                  fs::copy_options::recursive);
                         fs::copy(fs::absolute("shaders"),
                                  projectPath / "shaders",
-                                 fs::copy_options::recursive);
-                        fs::copy(fs::absolute("build"), projectPath / "build",
                                  fs::copy_options::recursive);
                         fs::copy_file(fs::absolute("imgui.ini"),
                                       projectPath / "imgui.ini",

@@ -1,5 +1,6 @@
 #include "Renderer.hpp"
 #include "Shader.hpp"
+#include "csharp.hpp"
 
 namespace HyperAPI {
     Renderer::Renderer(int width, int height, const char *title,
@@ -57,7 +58,7 @@ namespace HyperAPI {
 
         // add icon to window
         GLFWimage images[1];
-        images[0].pixels = stbi_load("build/logo2.png", &images[0].width,
+        images[0].pixels = stbi_load((CsharpVariables::oldCwd + "/build/logo2.png").c_str(), &images[0].width,
                                      &images[0].height, 0, 4);
         glfwSetWindowIcon(window, 1, images);
 
