@@ -27,6 +27,8 @@ if [ "$PLATFORM" = "windows" ]; then
     cp -r imgui.ini dist/windows/imgui.ini
     cp -r shaders dist/windows/shaders
     cp -r build dist/windows/build 
+    cp -r cs-assembly dist/windows/cs-assembly 
+    cp -r mono dist/windows/mono
 else 
     if [ -d dist/linux ]; then
         rm -r dist/linux
@@ -44,4 +46,6 @@ else
     cp -r imgui.ini dist/linux/imgui.ini
     cp -r shaders dist/linux/shaders
     cp -r build dist/linux/build
+    cp -r cs-assembly dist/linux/cs-assembly
+    cp -r mono dist/linux/mono
 fi
