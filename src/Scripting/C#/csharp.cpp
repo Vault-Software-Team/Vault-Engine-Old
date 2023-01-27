@@ -326,13 +326,10 @@ namespace HyperAPI::CsharpScriptEngine {
             }
 
             using namespace CsharpVariables;
-            // TODO: hot reload scripts when it's done
         });
     }
 
     void CreateCsharpProject() {
-        // TODO: Create a C# project using dotnet
-
         Scene::logs.clear();
         system("mkdir cs-assembly");
         HYPER_LOG(CsharpVariables::oldCwd)
@@ -369,7 +366,6 @@ namespace HyperAPI::CsharpScriptEngine {
             }
 
             using namespace CsharpVariables;
-            // TODO: hot reload scripts when it's done
         });
     }
 } // namespace HyperAPI::CsharpScriptEngine
