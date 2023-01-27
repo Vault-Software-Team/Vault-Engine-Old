@@ -1,0 +1,38 @@
+[
+	{
+		"ID": "075a034f-c095-4fdb-91a4-9fa9581993a8",
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": -3.141592025756836,
+					"y": -0.9913676381111145,
+					"z": -3.141592502593994
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/big boobs/obj1.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/big boobs/scene.gltf",
+					"meshPath": "assets/models/Object_0.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Object_0",
+		"parentID": "NO_PARENT",
+		"tag": "Untagged"
+	}
+]
