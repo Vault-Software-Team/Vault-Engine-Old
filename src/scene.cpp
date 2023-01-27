@@ -1097,7 +1097,7 @@ namespace HyperAPI {
                 if (meshRenderer.m_Model) {
                     if (!fs::exists("assets/models"))
                         fs::create_directory("assets/models");
-                    std::ofstream modelFile("assets/models/" + gameObject->name + ".vault.model");
+                    std::ofstream modelFile("assets/models/" + gameObject->ID + ".vault.model");
 
                     nlohmann::json modelJSON = nlohmann::json::parse("{\"vertices\": [], \"indices\": []}");
 
@@ -1149,7 +1149,7 @@ namespace HyperAPI {
 
                     modelFile << modelJSON.dump(4);
                     modelFile.close();
-                    JSON[i]["components"][componentOffset]["mesh"]["meshPath"] = "assets/models/" + gameObject->name + ".vault.model";
+                    JSON[i]["components"][componentOffset]["mesh"]["meshPath"] = "assets/models/" + gameObject->ID + ".vault.model";
                 }
 
                 JSON[i]["components"][componentOffset]["type"] = "MeshRenderer";

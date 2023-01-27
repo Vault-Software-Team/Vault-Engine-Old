@@ -340,6 +340,9 @@ void DirIter(const std::string &path) {
             } else if (ends_with(entry.path().string(), ".material")) {
                 ImGui::Button(ICON_FA_PAINTBRUSH,
                               ImVec2(buttonSize, buttonSize - 30));
+            } else if (ends_with(entry.path().string(), ".vault.model")) {
+                ImGui::Button(ICON_FA_CUBES,
+                              ImVec2(buttonSize, buttonSize - 30));
             } else {
                 ImGui::Button(ICON_FA_FILE,
                               ImVec2(buttonSize, buttonSize - 30));
