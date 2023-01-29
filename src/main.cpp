@@ -3268,7 +3268,6 @@ int main(int argc, char **argv) {
     // Experimental::Model test_model("assets/Dancing Twerk.fbx");
     // Animation danceAnimation("assets/Dancing Twerk.fbx", &test_model);
     // Animator animator(&danceAnimation);
-
     app.Run(
         [&](uint32_t &shadowMapTex) {
             // animator.UpdateAnimation(Timestep::deltaTime);

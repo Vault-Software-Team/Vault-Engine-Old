@@ -1,0 +1,18 @@
+{
+    "baseColor": {
+        "a": 1.0,
+        "b": 0.29019609093666077,
+        "g": 0.23137255012989044,
+        "r": 0.125490203499794
+    },
+    "diffuse": "nullptr",
+    "height": "nullptr",
+    "metallic": 0.2199999988079071,
+    "normal": "nullptr",
+    "roughness": 0.0,
+    "specular": "nullptr",
+    "texUV": {
+        "x": 0.0,
+        "y": 0.0
+    }
+}

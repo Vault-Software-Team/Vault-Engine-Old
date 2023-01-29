@@ -212,47 +212,11 @@ namespace HyperAPI {
                 } else {
                     meshType = meshConfig["mesh"];
 
-                    std::ifstream file("assets/models/" + gameObject->name + ".vault.model");
+                    std::ifstream file("assets/models/" + gameObject->ID + ".vault.model");
                     nlohmann::json modelJSON = json::parse(file);
 
                     std::vector<Vertex> vertices;
                     std::vector<uint32_t> indices;
-
-                    for (auto vertex : modelJSON["vertices"]) {
-                        Vertex vert = {
-                            Vector3(
-                                vertex["position"]["x"],
-                                vertex["position"]["y"],
-                                vertex["position"]["z"]),
-                            Vector3(
-                                vertex["color"]["x"],
-                                vertex["color"]["y"],
-                                vertex["color"]["z"]),
-                            Vector3(
-                                vertex["normal"]["x"],
-                                vertex["normal"]["y"],
-                                vertex["normal"]["z"]),
-                            Vector2(
-                                vertex["texUV"]["x"],
-                                vertex["texUV"]["y"]),
-                            {-1},
-                            {0.0f},
-                            Vector3(
-                                vertex["tangent"]["x"],
-                                vertex["tangent"]["y"],
-                                vertex["tangent"]["z"]),
-                            Vector3(
-                                vertex["bitangent"]["x"],
-                                vertex["bitangent"]["y"],
-                                vertex["bitangent"]["z"]),
-                            1};
-
-                        vertices.push_back(vert);
-                    }
-
-                    for (auto index : modelJSON["indices"]) {
-                        indices.push_back((uint32_t)index);
-                    }
 
                     if (meshRenderer.m_Mesh)
                         delete meshRenderer.m_Mesh;
@@ -1097,59 +1061,61 @@ namespace HyperAPI {
                 if (meshRenderer.m_Model) {
                     if (!fs::exists("assets/models"))
                         fs::create_directory("assets/models");
-                    std::ofstream modelFile("assets/models/" + gameObject->ID + ".vault.model");
+                    if (!fs::exists("assets/models/" + gameObject->ID + ".vault.model")) {
+                        std::ofstream modelFile("assets/models/" + gameObject->ID + ".vault.model");
 
-                    nlohmann::json modelJSON = nlohmann::json::parse("{\"vertices\": [], \"indices\": []}");
+                        nlohmann::json modelJSON = nlohmann::json::parse("{\"vertices\": [], \"indices\": []}");
 
-                    std::vector<float> vertices;
-                    std::vector<uint32_t> indices;
+                        std::vector<float> vertices;
+                        std::vector<uint32_t> indices;
 
-                    for (int gb = 0; gb < meshRenderer.m_Mesh->vertices.size(); gb++) {
-                        auto &vertex = meshRenderer.m_Mesh->vertices[gb];
-                        std::cout << vertex.position.x << " " << vertex.position.y << " " << vertex.position.z << std::endl;
-                        modelJSON["vertices"][gb]["position"] = {
-                            {"x", std::isnan(vertex.position.x) ? 0 : vertex.position.x},
-                            {"y", std::isnan(vertex.position.y) ? 0 : vertex.position.y},
-                            {"z", std::isnan(vertex.position.z) ? 0 : vertex.position.z},
-                        };
+                        for (int gb = 0; gb < meshRenderer.m_Mesh->vertices.size(); gb++) {
+                            auto &vertex = meshRenderer.m_Mesh->vertices[gb];
+                            std::cout << vertex.position.x << " " << vertex.position.y << " " << vertex.position.z << std::endl;
+                            modelJSON["vertices"][gb]["position"] = {
+                                {"x", std::isnan(vertex.position.x) ? 0 : vertex.position.x},
+                                {"y", std::isnan(vertex.position.y) ? 0 : vertex.position.y},
+                                {"z", std::isnan(vertex.position.z) ? 0 : vertex.position.z},
+                            };
 
-                        modelJSON["vertices"][gb]["color"] = {
-                            {"x", std::isnan(vertex.color.x) ? 0 : vertex.color.x},
-                            {"y", std::isnan(vertex.color.y) ? 0 : vertex.color.y},
-                            {"z", std::isnan(vertex.color.z) ? 0 : vertex.color.z},
-                        };
+                            modelJSON["vertices"][gb]["color"] = {
+                                {"x", std::isnan(vertex.color.x) ? 0 : vertex.color.x},
+                                {"y", std::isnan(vertex.color.y) ? 0 : vertex.color.y},
+                                {"z", std::isnan(vertex.color.z) ? 0 : vertex.color.z},
+                            };
 
-                        modelJSON["vertices"][gb]["normal"] = {
-                            {"x", std::isnan(vertex.normal.x) ? 0 : vertex.normal.x},
-                            {"y", std::isnan(vertex.normal.y) ? 0 : vertex.normal.y},
-                            {"z", std::isnan(vertex.normal.z) ? 0 : vertex.normal.z},
-                        };
+                            modelJSON["vertices"][gb]["normal"] = {
+                                {"x", std::isnan(vertex.normal.x) ? 0 : vertex.normal.x},
+                                {"y", std::isnan(vertex.normal.y) ? 0 : vertex.normal.y},
+                                {"z", std::isnan(vertex.normal.z) ? 0 : vertex.normal.z},
+                            };
 
-                        modelJSON["vertices"][gb]["texUV"] = {
-                            {"x", std::isnan(vertex.texUV.x) ? 0 : vertex.texUV.x},
-                            {"y", std::isnan(vertex.texUV.y) ? 0 : vertex.texUV.y},
-                        };
+                            modelJSON["vertices"][gb]["texUV"] = {
+                                {"x", std::isnan(vertex.texUV.x) ? 0 : vertex.texUV.x},
+                                {"y", std::isnan(vertex.texUV.y) ? 0 : vertex.texUV.y},
+                            };
 
-                        modelJSON["vertices"][gb]["tangent"] = {
-                            {"x", std::isnan(vertex.tangent.x) ? 0 : vertex.tangent.x},
-                            {"y", std::isnan(vertex.tangent.y) ? 0 : vertex.tangent.y},
-                            {"z", std::isnan(vertex.tangent.z) ? 0 : vertex.tangent.z},
-                        };
+                            modelJSON["vertices"][gb]["tangent"] = {
+                                {"x", std::isnan(vertex.tangent.x) ? 0 : vertex.tangent.x},
+                                {"y", std::isnan(vertex.tangent.y) ? 0 : vertex.tangent.y},
+                                {"z", std::isnan(vertex.tangent.z) ? 0 : vertex.tangent.z},
+                            };
 
-                        modelJSON["vertices"][gb]["bitangent"] = {
-                            {"x", std::isnan(vertex.bitangent.x) ? 0 : vertex.bitangent.x},
-                            {"y", std::isnan(vertex.bitangent.y) ? 0 : vertex.bitangent.y},
-                            {"z", std::isnan(vertex.bitangent.z) ? 0 : vertex.bitangent.z},
-                        };
+                            modelJSON["vertices"][gb]["bitangent"] = {
+                                {"x", std::isnan(vertex.bitangent.x) ? 0 : vertex.bitangent.x},
+                                {"y", std::isnan(vertex.bitangent.y) ? 0 : vertex.bitangent.y},
+                                {"z", std::isnan(vertex.bitangent.z) ? 0 : vertex.bitangent.z},
+                            };
+                        }
+
+                        for (int ind = 0; ind < meshRenderer.m_Mesh->indices.size(); ind++) {
+                            modelJSON["indices"][ind] = meshRenderer.m_Mesh->indices[ind];
+                        }
+
+                        modelFile << modelJSON.dump(4);
+                        modelFile.close();
+                        JSON[i]["components"][componentOffset]["mesh"]["meshPath"] = "assets/models/" + gameObject->ID + ".vault.model";
                     }
-
-                    for (int ind = 0; ind < meshRenderer.m_Mesh->indices.size(); ind++) {
-                        modelJSON["indices"][ind] = meshRenderer.m_Mesh->indices[ind];
-                    }
-
-                    modelFile << modelJSON.dump(4);
-                    modelFile.close();
-                    JSON[i]["components"][componentOffset]["mesh"]["meshPath"] = "assets/models/" + gameObject->ID + ".vault.model";
                 }
 
                 JSON[i]["components"][componentOffset]["type"] = "MeshRenderer";
