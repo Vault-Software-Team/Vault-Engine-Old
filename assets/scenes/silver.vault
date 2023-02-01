@@ -1,1 +1,929 @@
-[{"ID":"9cae8fb3-c10c-4ba8-ac68-0182fce6e3d3","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":5.599999904632568},"rotation":{"x":0.0,"y":0.0,"z":-0.01745329238474369},"scale":{"x":0.20000000298023224,"y":0.20000000298023224,"z":1.0},"type":"Transform"},{"depthCamera":false,"far":100.0,"fov":45.0,"layers":["Default"],"mainCamera":true,"mode2D":true,"near":0.10000000149011612,"type":"CameraComponent"}],"layer":"Default","name":"Camera","parentID":"NO_PARENT","tag":"Untagged"},{"ID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":4.599999904632568},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":3.8899996280670166,"y":3.8899996280670166,"z":3.890000104904175},"type":"Transform"}],"layer":"Default","name":"Model","parentID":"NO_PARENT","tag":"Untagged"},{"ID":"f8646dca-8df1-41da-a0c8-bd508a6790c0","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_sil.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/f8646dca-8df1-41da-a0c8-bd508a6790c0.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Roundcube","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"66652b20-62fd-469a-be54-7449808ac17e","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_blu.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/66652b20-62fd-469a-be54-7449808ac17e.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Roundcube.016","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"64288d32-759a-499e-8058-f957a8d9550d","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_blu.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/64288d32-759a-499e-8058-f957a8d9550d.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Material.003","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"49ded85e-5416-4197-bc0b-351a182373e6","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/49ded85e-5416-4197-bc0b-351a182373e6.vault.model"},"type":"MeshRenderer"},{"bloomColor":{"x":0.25806450843811035,"y":0.9640999436378479,"z":1.0},"type":"Bloom"}],"layer":"Default","name":"Circle","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"9e222fbe-8ba8-4a07-8bbb-8387f9494603","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/full_black.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/9e222fbe-8ba8-4a07-8bbb-8387f9494603.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Material.005","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"13dfa26a-8ba2-47f9-bbb1-3d93c9a765df","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/full_black.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/13dfa26a-8ba2-47f9-bbb1-3d93c9a765df.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Material.006","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"2cdfc013-e914-4819-a0d4-4ecf7810450e","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_blu.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/2cdfc013-e914-4819-a0d4-4ecf7810450e.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Material.007","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"782d2cc5-0ca2-4c21-9a72-f87677bcc598","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_blu.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/782d2cc5-0ca2-4c21-9a72-f87677bcc598.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Material.008","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"1f91fcd4-666e-4f40-8c16-55858999ae22","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_blau.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/1f91fcd4-666e-4f40-8c16-55858999ae22.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Roundcube.007","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"ed049d91-e00c-4bb8-9920-fdf337b0fb6a","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_blau.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/ed049d91-e00c-4bb8-9920-fdf337b0fb6a.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Roundcube.001","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"43679f1a-0184-4dca-ba5a-a762fdd7f522","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_black.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/43679f1a-0184-4dca-ba5a-a762fdd7f522.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Roundcube.013","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"eee31a45-5d75-415e-9647-d1c9bb7ac199","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_black.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/eee31a45-5d75-415e-9647-d1c9bb7ac199.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Roundcube.012","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"71ac222e-f6f1-407e-8438-a88aab8c3d31","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_black.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/71ac222e-f6f1-407e-8438-a88aab8c3d31.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Roundcube.017","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"86b0247e-662f-4034-a08b-c4cc12110f81","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_black.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/86b0247e-662f-4034-a08b-c4cc12110f81.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Roundcube.010","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"d6dbfe65-8221-4946-8118-36502617c1fa","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_black.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/d6dbfe65-8221-4946-8118-36502617c1fa.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Roundcube.018","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"f51d396e-c51e-4fba-a1ec-26e63645cbe3","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_black.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/f51d396e-c51e-4fba-a1ec-26e63645cbe3.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Roundcube.011","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"44f314b6-c108-4dc3-9195-fd1e3b4c8aa0","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_black.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/44f314b6-c108-4dc3-9195-fd1e3b4c8aa0.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Roundcube.003","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"2edb92ec-ffcf-4176-bbf9-5e9263c58612","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_black.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/2edb92ec-ffcf-4176-bbf9-5e9263c58612.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Roundcube.004","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"094416f3-581f-4e90-913b-660185951480","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_black.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/094416f3-581f-4e90-913b-660185951480.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Roundcube.006","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"6a8c4613-d5cc-4d2a-b484-729ddc1f976a","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_black.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/6a8c4613-d5cc-4d2a-b484-729ddc1f976a.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Roundcube.005","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"160d6aa6-b066-40c8-82f3-0071e77b8a8e","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_black.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/160d6aa6-b066-40c8-82f3-0071e77b8a8e.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Roundcube.019","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"1e4cec3c-5b24-492d-a8d5-43c11a734eb3","active":true,"components":[{"position":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"material":"assets/models/silver_mat/mat_black.material","mesh":{"custom":true,"mesh":"assets/models/silver_oc.obj","meshPath":"assets/models/1e4cec3c-5b24-492d-a8d5-43c11a734eb3.vault.model"},"type":"MeshRenderer"}],"layer":"Default","name":"Roundcube.020","parentID":"a292bac6-c4cd-47cd-8feb-cb59074cb7a2","tag":"Untagged"},{"ID":"cc40b8da-16e0-4cf7-b9ce-ec8951e2f505","active":true,"components":[{"position":{"x":2.288458824157715,"y":2.1431221961975098,"z":7.540509223937988},"rotation":{"x":0.0,"y":0.0,"z":0.0},"scale":{"x":1.0,"y":1.0,"z":1.0},"type":"Transform"},{"color":{"b":1.0,"g":1.0,"r":1.0},"intensity":4.53000020980835,"type":"PointLight"}],"layer":"Default","name":"GameObject","parentID":"NO_PARENT","tag":"Untagged"}]
+[
+	{
+		"ID": "9cae8fb3-c10c-4ba8-ac68-0182fce6e3d3",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 5.599999904632568
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": -0.01745329238474369
+				},
+				"scale": {
+					"x": 0.20000000298023224,
+					"y": 0.20000000298023224,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"depthCamera": false,
+				"far": 100.0,
+				"fov": 45.0,
+				"layers": [
+					"Default"
+				],
+				"mainCamera": true,
+				"mode2D": true,
+				"near": 0.10000000149011612,
+				"type": "CameraComponent"
+			}
+		],
+		"layer": "Default",
+		"name": "Camera",
+		"parentID": "NO_PARENT",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 4.599999904632568
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 3.8899996280670166,
+					"y": 3.8899996280670166,
+					"z": 3.890000104904175
+				},
+				"type": "Transform"
+			}
+		],
+		"layer": "Default",
+		"name": "Model",
+		"parentID": "NO_PARENT",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "f8646dca-8df1-41da-a0c8-bd508a6790c0",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_sil.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/f8646dca-8df1-41da-a0c8-bd508a6790c0.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Roundcube",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "66652b20-62fd-469a-be54-7449808ac17e",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_blu.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/66652b20-62fd-469a-be54-7449808ac17e.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Roundcube.016",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "64288d32-759a-499e-8058-f957a8d9550d",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_blu.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/64288d32-759a-499e-8058-f957a8d9550d.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Material.003",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "49ded85e-5416-4197-bc0b-351a182373e6",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/49ded85e-5416-4197-bc0b-351a182373e6.vault.model"
+				},
+				"type": "MeshRenderer"
+			},
+			{
+				"bloomColor": {
+					"x": 0.25806450843811035,
+					"y": 0.9640999436378479,
+					"z": 1.0
+				},
+				"type": "Bloom"
+			}
+		],
+		"layer": "Default",
+		"name": "Circle",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "9e222fbe-8ba8-4a07-8bbb-8387f9494603",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/full_black.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/9e222fbe-8ba8-4a07-8bbb-8387f9494603.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Material.005",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "13dfa26a-8ba2-47f9-bbb1-3d93c9a765df",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/full_black.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/13dfa26a-8ba2-47f9-bbb1-3d93c9a765df.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Material.006",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "2cdfc013-e914-4819-a0d4-4ecf7810450e",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_blu.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/2cdfc013-e914-4819-a0d4-4ecf7810450e.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Material.007",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "782d2cc5-0ca2-4c21-9a72-f87677bcc598",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_blu.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/782d2cc5-0ca2-4c21-9a72-f87677bcc598.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Material.008",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "1f91fcd4-666e-4f40-8c16-55858999ae22",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_blau.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/1f91fcd4-666e-4f40-8c16-55858999ae22.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Roundcube.007",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "ed049d91-e00c-4bb8-9920-fdf337b0fb6a",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_blau.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/ed049d91-e00c-4bb8-9920-fdf337b0fb6a.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Roundcube.001",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "43679f1a-0184-4dca-ba5a-a762fdd7f522",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_black.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/43679f1a-0184-4dca-ba5a-a762fdd7f522.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Roundcube.013",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "eee31a45-5d75-415e-9647-d1c9bb7ac199",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_black.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/eee31a45-5d75-415e-9647-d1c9bb7ac199.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Roundcube.012",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "71ac222e-f6f1-407e-8438-a88aab8c3d31",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_black.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/71ac222e-f6f1-407e-8438-a88aab8c3d31.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Roundcube.017",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "86b0247e-662f-4034-a08b-c4cc12110f81",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_black.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/86b0247e-662f-4034-a08b-c4cc12110f81.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Roundcube.010",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "d6dbfe65-8221-4946-8118-36502617c1fa",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_black.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/d6dbfe65-8221-4946-8118-36502617c1fa.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Roundcube.018",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "f51d396e-c51e-4fba-a1ec-26e63645cbe3",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_black.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/f51d396e-c51e-4fba-a1ec-26e63645cbe3.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Roundcube.011",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "44f314b6-c108-4dc3-9195-fd1e3b4c8aa0",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_black.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/44f314b6-c108-4dc3-9195-fd1e3b4c8aa0.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Roundcube.003",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "2edb92ec-ffcf-4176-bbf9-5e9263c58612",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_black.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/2edb92ec-ffcf-4176-bbf9-5e9263c58612.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Roundcube.004",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "094416f3-581f-4e90-913b-660185951480",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_black.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/094416f3-581f-4e90-913b-660185951480.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Roundcube.006",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "6a8c4613-d5cc-4d2a-b484-729ddc1f976a",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_black.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/6a8c4613-d5cc-4d2a-b484-729ddc1f976a.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Roundcube.005",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "160d6aa6-b066-40c8-82f3-0071e77b8a8e",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_black.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/160d6aa6-b066-40c8-82f3-0071e77b8a8e.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Roundcube.019",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "1e4cec3c-5b24-492d-a8d5-43c11a734eb3",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"material": "assets/models/silver_mat/mat_black.material",
+				"mesh": {
+					"custom": true,
+					"mesh": "assets/models/silver_oc.obj",
+					"meshPath": "assets/models/1e4cec3c-5b24-492d-a8d5-43c11a734eb3.vault.model"
+				},
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Roundcube.020",
+		"parentID": "a292bac6-c4cd-47cd-8feb-cb59074cb7a2",
+		"tag": "Untagged"
+	},
+	{
+		"ID": "cc40b8da-16e0-4cf7-b9ce-ec8951e2f505",
+		"active": true,
+		"components": [
+			{
+				"position": {
+					"x": 1.4369193315505981,
+					"y": 2.1431221961975098,
+					"z": 7.540509223937988
+				},
+				"rotation": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"scale": {
+					"x": 1.0,
+					"y": 1.0,
+					"z": 1.0
+				},
+				"type": "Transform"
+			},
+			{
+				"color": {
+					"b": 1.0,
+					"g": 1.0,
+					"r": 1.0
+				},
+				"intensity": 1.0,
+				"type": "DirectionalLight"
+			}
+		],
+		"layer": "Default",
+		"name": "GameObject",
+		"parentID": "NO_PARENT",
+		"tag": "Untagged"
+	}
+]

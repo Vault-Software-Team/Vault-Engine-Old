@@ -2,6 +2,7 @@
 #include <random>
 #include <memory>
 #include <regex>
+#include "ImGuizmo/ImGuizmo.h"
 #include "Renderer/Timestep.hpp"
 #include "lib/InputEvents.hpp"
 #include "icons/icons.h"
@@ -27,6 +28,15 @@
 
 using namespace HyperAPI;
 using namespace HyperAPI::Experimental;
+
+static float m_grid_size = 100;
+static bool drawGrid = true;
+static int m_GuizmoMode = -1;
+static int m_GuizmoWorld = -1;
+static float bounds[] = {-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f};
+static float boundsSnap[] = {0.1f, 0.1f, 0.1f};
+static bool boundSizing = false;
+static bool boundSizingSnap = false;
 
 void *operator new(size_t size) {
     void *p = malloc(size);
@@ -511,6 +521,23 @@ bool editingText = false;
 
 void ShortcutManager(bool &openConfig) {
     if (ImGui::IsKeyDown(GLFW_KEY_LEFT_CONTROL) &&
+        ImGui::IsKeyPressed(GLFW_KEY_G)) {
+        drawGrid = !drawGrid;
+    }
+
+    if (ImGui::IsKeyPressed(GLFW_KEY_T)) {
+        m_GuizmoMode = ImGuizmo::OPERATION::TRANSLATE;
+    }
+
+    if (ImGui::IsKeyPressed(GLFW_KEY_R)) {
+        m_GuizmoMode = ImGuizmo::OPERATION::ROTATE;
+    }
+
+    if (ImGui::IsKeyPressed(GLFW_KEY_S)) {
+        m_GuizmoMode = ImGuizmo::OPERATION::SCALE;
+    }
+
+    if (ImGui::IsKeyDown(GLFW_KEY_LEFT_CONTROL) &&
         ImGui::IsKeyPressed(GLFW_KEY_S) &&
         !ImGui::IsKeyDown(GLFW_KEY_LEFT_SHIFT)) {
         if (!editingText) {
@@ -904,8 +931,6 @@ int main(int argc, char **argv) {
     float timeElapsed = 0.0f;
     int fps = 0;
     std::string fpsText;
-
-    int m_GuizmoMode = -1;
 
     bool usingImGuizmo = false;
 
@@ -1699,6 +1724,8 @@ int main(int argc, char **argv) {
                 ImGui::Checkbox("Resizable", &config.resizable);
                 ImGui::DragInt("Width", &config.width, 1, 0, 1920);
                 ImGui::DragInt("Height", &config.height, 1, 0, 1080);
+                ImGui::DragFloat("Grid Size", &m_grid_size, 5, 1);
+                ImGui::Checkbox("Draw Grid", &drawGrid);
 
                 if (ImGui::TreeNode("Post Processing")) {
                     ImGui::Checkbox("Enabled", &config.postProcessing.enabled);
@@ -1847,6 +1874,17 @@ int main(int argc, char **argv) {
             if (ImGui::Begin(ICON_FA_GAMEPAD " Scene", nullptr,
                              ImGuiWindowFlags_NoScrollbar |
                                  ImGuiWindowFlags_NoScrollWithMouse)) {
+
+                ImVec2 m_size = ImGui::GetWindowSize();
+                float viewManipulateRight = ImGui::GetWindowPos().x + m_size.x;
+                float viewManipulateTop = ImGui::GetWindowPos().y + m_size.y;
+                static glm::mat4 m_cube = glm::mat4(1.0f);
+                // ImGuizmo::ViewManipulate(
+                //     &Scene::mainCamera->view[0][0],
+                //     8.0f, ImVec2(viewManipulateRight - 128, viewManipulateTop - 128),
+                //     ImVec2(128, 128),
+                //     0x10101010);
+
                 bool complete =
                     Scene::DropTargetMat(Scene::DRAG_SCENE, nullptr, nullptr);
                 ImVec2 w_s = ImGui::GetWindowSize();
@@ -1903,17 +1941,17 @@ int main(int argc, char **argv) {
                 app.sceneMouseX = m_mouseX;
                 app.sceneMouseY = m_mouseY;
 
-                auto selectedObject = Scene::m_Object;
+                ImGuizmo::SetOrthographic(Scene::mainCamera->mode2D);
+                ImGuizmo::SetDrawlist();
+                ImGuizmo::SetRect(viewX, viewY, viewWidth, viewHeight);
 
+                auto selectedObject = Scene::m_Object;
+                // ImGuizmo::ViewManipulate(glm::value_ptr(Scene::mainCamera->view), )
                 //                    m_GuizmoMode = ImGuizmo::OPERATION::ROTATE
                 // if (Scene::mainCamera != camera) m_GuizmoMode = -1;
                 if (m_GuizmoMode == -1)
                     m_GuizmoMode = ImGuizmo::OPERATION::TRANSLATE;
                 if (selectedObject && m_GuizmoMode != -1) {
-                    ImGuizmo::SetOrthographic(Scene::mainCamera->mode2D);
-                    ImGuizmo::SetDrawlist();
-                    ImGuizmo::SetRect(viewX, viewY, viewWidth, viewHeight);
-
                     // check if ImGuizmo is hovered
 
                     glm::mat4 view = Scene::mainCamera->view;
@@ -1923,6 +1961,7 @@ int main(int argc, char **argv) {
                     transform.Update();
                     glm::mat4 transformMat = transform.transform;
                     glm::vec3 originalRot = transform.rotation;
+                    glm::vec3 originalScal = transform.scale;
 
                     bool snap = Input::IsKeyPressed(KEY_LEFT_CONTROL);
                     float snapValue = 0.5f;
@@ -1934,9 +1973,11 @@ int main(int argc, char **argv) {
 
                     ImGuizmo::Manipulate(
                         glm::value_ptr(view), glm::value_ptr(projection),
-                        (ImGuizmo::OPERATION)m_GuizmoMode, ImGuizmo::WORLD,
+                        (ImGuizmo::OPERATION)m_GuizmoMode, (ImGuizmo::MODE)m_GuizmoWorld,
                         glm::value_ptr(transformMat), nullptr,
-                        snap ? snapValues : nullptr);
+                        snap ? snapValues : nullptr,
+                        m_GuizmoMode == ImGuizmo::BOUNDS ? bounds : nullptr,
+                        snap ? boundsSnap : nullptr);
 
                     if (ImGuizmo::IsOver()) {
                         usingImGuizmo = true;
@@ -2029,10 +2070,15 @@ int main(int argc, char **argv) {
                                 Vector3(scale.x * 2, scale.y * 2, scale.z * 2);
                             break;
                         }
+                        case ImGuizmo::OPERATION::BOUNDS: {
+                            transform.position = translation;
+                            transform.scale =
+                                Vector3(scale.x * 2, scale.y * 2, scale.z * 2);
+                            break;
+                        }
                         }
                     }
                 }
-                //                    ImGui::EndChild();
 
                 if (Scene::LoadingScene) {
                     Scene::m_Object = nullptr;
@@ -2042,6 +2088,10 @@ int main(int argc, char **argv) {
                     Scene::mainCamera = nullptr;
                 }
 
+                if (Scene::mainCamera == camera && drawGrid) {
+                    ImGuizmo::DrawGrid(glm::value_ptr(Scene::mainCamera->view), glm::value_ptr(Scene::mainCamera->projection), glm::value_ptr(glm::mat4(1.0f)), m_grid_size);
+                }
+
                 ImGui::SetCursorPosY(28);
                 ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10);
 
@@ -2049,16 +2099,18 @@ int main(int argc, char **argv) {
                     ImGuiCol_ChildBg,
                     (ImVec4)ImColor::HSV(0.0f, 0.0f, 0.0f, 0.6f));
                 ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 3.5f);
-                ImGui::BeginChild("##Gizmo", ImVec2(97, 32));
+                ImGui::BeginChild("##Gizmo", ImVec2(97 + 34, 32));
                 ImVec2 gizmoSize = ImGui::GetWindowSize();
                 ImVec2 centerCalc = ImGui::GetCursorPos();
                 centerCalc.x += gizmoSize.x / 2;
                 centerCalc.y += gizmoSize.y / 2;
 
-                float offset = 30;
+                float objOffset = 24;
+                float offset = 34;
+                float blockSize = 32;
 
                 ImGui::SetCursorPos(
-                    ImVec2(centerCalc.x - 12 - offset, centerCalc.y - 12));
+                    ImVec2(7, centerCalc.y - 12));
                 if (ImGui::Button(ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT)) {
                     m_GuizmoMode = ImGuizmo::OPERATION::TRANSLATE;
                 }
@@ -2068,17 +2120,25 @@ int main(int argc, char **argv) {
                 }
                 ImGui::SameLine();
                 ImGui::SetCursorPos(
-                    ImVec2(centerCalc.x - 12, centerCalc.y - 12));
+                    ImVec2(7 + (blockSize), centerCalc.y - 12));
                 if (ImGui::Button(ICON_FA_ARROWS_ROTATE)) {
                     m_GuizmoMode = ImGuizmo::OPERATION::ROTATE;
                 }
 
                 ImGui::SameLine();
                 ImGui::SetCursorPos(
-                    ImVec2(centerCalc.x - 12 + offset, centerCalc.y - 12));
+                    ImVec2(7 + (blockSize * 2), centerCalc.y - 12));
                 if (ImGui::Button(ICON_FA_MAXIMIZE)) {
                     m_GuizmoMode = ImGuizmo::OPERATION::SCALE;
                 }
+
+                ImGui::SameLine();
+                ImGui::SetCursorPos(
+                    ImVec2(7 + (blockSize * 3), centerCalc.y - 12));
+                if (ImGui::Button(ICON_FA_SQUARE)) {
+                    m_GuizmoMode = ImGuizmo::OPERATION::BOUNDS;
+                }
+
                 if (ImGui::IsItemHovered()) {
                     focusedOnScene = false;
                     hoveredScene = false;
@@ -2086,6 +2146,42 @@ int main(int argc, char **argv) {
                 ImGui::EndChild();
                 ImGui::PopStyleColor();
                 ImGui::PopStyleVar();
+
+                {
+                    ImGui::SetCursorPosY((28 * 2) + 10);
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10);
+
+                    ImGui::PushStyleColor(
+                        ImGuiCol_ChildBg,
+                        (ImVec4)ImColor::HSV(0.0f, 0.0f, 0.0f, 0.6f));
+                    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 3.5f);
+                    ImGui::BeginChild("##Gizmo_Mode", ImVec2(97 / 1.4, 32));
+                    ImVec2 gizmoSize = ImGui::GetWindowSize();
+                    ImVec2 centerCalc = ImGui::GetCursorPos();
+                    centerCalc.x += gizmoSize.x / 2;
+                    centerCalc.y += gizmoSize.y / 2;
+
+                    float offset = 30;
+
+                    ImGui::SetCursorPos(
+                        ImVec2(centerCalc.x + 2 - offset, centerCalc.y - 12));
+                    if (ImGui::Button(ICON_FA_GLOBE)) {
+                        m_GuizmoWorld = ImGuizmo::MODE::WORLD;
+                    }
+                    if (ImGui::IsItemHovered()) {
+                        focusedOnScene = false;
+                        hoveredScene = false;
+                    }
+                    ImGui::SameLine();
+                    ImGui::SetCursorPos(
+                        ImVec2(centerCalc.x - 26 + offset, centerCalc.y - 12));
+                    if (ImGui::Button(ICON_FA_SQUARE)) {
+                        m_GuizmoWorld = ImGuizmo::MODE::LOCAL;
+                    }
+                    ImGui::EndChild();
+                    ImGui::PopStyleColor();
+                    ImGui::PopStyleVar();
+                }
 
                 ImGui::SameLine();
 

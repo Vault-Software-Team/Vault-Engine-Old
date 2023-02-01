@@ -14,10 +14,6 @@ namespace HyperAPI::Experimental {
         glm::vec3 up;
         glm::vec3 right;
 
-    private:
-        glm::vec3 actual_rot;
-
-    public:
         void GUI() {
             ImGui::PushStyleColor(ImGuiCol_Header,
                                   ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
@@ -40,10 +36,8 @@ namespace HyperAPI::Experimental {
             right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
             up = glm::normalize(glm::cross(right, forward));
 
-            actual_rot = position * rotation;
-
             transform = glm::translate(glm::mat4(1.0f), position) *
-                        glm::toMat4(glm::quat(actual_rot)) *
+                        glm::toMat4(glm::quat(rotation)) *
                         glm::scale(glm::mat4(1.0f),
                                    Vector3(scale.x * 0.5, scale.y * 0.5,
                                            scale.z * 0.5));
@@ -63,9 +57,5 @@ namespace HyperAPI::Experimental {
         void Rotate(glm::vec3 rotation) { this->rotation += rotation; }
 
         void Scale(glm::vec3 scale) { this->scale += scale; }
-
-        void RotateAround(glm::vec3 position) {
-            actual_rot = position * rotation;
-        }
     };
 } // namespace HyperAPI::Experimental
