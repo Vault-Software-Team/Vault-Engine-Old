@@ -7,6 +7,7 @@
 #include "mono/metadata/loader.h"
 #include "mono/metadata/object-forward.h"
 #include "mono/metadata/object.h"
+#include "mono/metadata/mono-debug.h"
 #include <cstddef>
 #include <cstring>
 #include <experimental/bits/fs_ops.h>
@@ -263,7 +264,15 @@ namespace HyperAPI::CsharpScriptEngine {
 
         if (fs::exists("cs-assembly/bin/Debug/net6.0/cs-assembly.dll")) {
             mono_set_assemblies_path(std::string(cwd + "/mono/lib").c_str());
+            // const char *argv[2] = {
+            // "--debugger-agent=transport=dt_socket,address=127.0.0.1:2550,server=y,suspend=n,loglevel=3,logfile=logs/VaultMonoDebugger.log",
+            // "--soft-breakpoints"};
+
+            // mono_jit_parse_options(2, (char **)argv);
             RuntimeInit();
+
+            // mono_debug_init(MONO_DEBUG_FORMAT_MONO);
+            // mono_debug_domain_create(rootDomain);
 
             appDomain = mono_domain_create_appdomain("VaultScriptRuntime", nullptr);
             mono_domain_set(appDomain, true);

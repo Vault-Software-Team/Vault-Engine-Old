@@ -4,6 +4,9 @@
 #include "../Renderer/Timestep.hpp"
 #include "csharp.hpp"
 #include "imgui/imgui.h"
+#include "mono/metadata/exception.h"
+#include "mono/metadata/object-forward.h"
+#include "mono/metadata/object.h"
 
 namespace HyperAPI::Experimental {
     struct CsharpScriptManager : public BaseComponent {
@@ -44,6 +47,7 @@ namespace HyperAPI::Experimental {
 
         void Start() {
             for (auto klass : selectedScripts) {
+                MonoObject *exception = nullptr;
                 std::istringstream iss(klass.first);
                 std::vector<std::string> tokens;
                 std::string token;
@@ -72,20 +76,21 @@ namespace HyperAPI::Experimental {
                 //     std::endl;
                 // }
 
-                mono_runtime_invoke(onStart, behaviour->f_GetObject(), params, nullptr);
+                mono_runtime_invoke(onStart, behaviour->f_GetObject(), params, &exception);
                 CsharpScriptEngine::instances[klass.first] = behaviour;
             }
         }
 
         void Update() {
             for (auto klass : selectedScripts) {
+                MonoObject *exception = nullptr;
                 MonoScriptClass *behaviour =
                     CsharpScriptEngine::instances[klass.first];
                 MonoMethod *onUpdate = behaviour->GetMethod("OnUpdate", 1);
 
                 void *params = &Timestep::deltaTime;
-                mono_runtime_invoke(onUpdate, behaviour->f_GetObject(), &params,
-                                    nullptr);
+                // TODO: Get the exception if theres one and print it in the editor console, mono_runtime_invoke(onUpdate, behaviour->f_GetObject(), &params, &exception);
+                mono_runtime_invoke(onUpdate, behaviour->f_GetObject(), &params, nullptr);
             }
         }
     };

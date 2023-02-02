@@ -16,6 +16,7 @@ namespace HyperAPI::Experimental {
         bool isFolder = false;
         std::string NODE_ID = uuid::generate_uuid_v4();
         std::string layer = "Default";
+        std::string type = "Entity";
         char layerData[32] = "Default";
 
         GameObject() { ID = uuid::generate_uuid_v4(); }

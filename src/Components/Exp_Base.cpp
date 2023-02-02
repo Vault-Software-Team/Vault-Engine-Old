@@ -425,6 +425,7 @@ namespace HyperAPI::Experimental {
             m_gameObjects.push_back(processMesh(mesh, scene, name));
             auto &meshRenderer = m_gameObjects[i]->GetComponent<MeshRenderer>();
             meshRenderer.extraMatrix = transform;
+            meshRenderer.mesh_index = i;
         }
         // then do the same for each of its children
         for (uint32_t i = 0; i < node->mNumChildren; i++) {

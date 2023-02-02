@@ -1112,6 +1112,20 @@ int main(int argc, char **argv) {
     std::function<void(uint32_t & PPT, uint32_t & PPFBO, uint32_t & gui_gui)>
         GUI_EXP = [&](uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui) {
             ShortcutManager(openConfig);
+            if (ImGui::IsMouseClicked(1)) {
+                ImGui::OpenPopup("Context Menu");
+            }
+
+            if (ImGui::BeginPopup("Context Menu")) {
+                if (ImGui::Button(ICON_FA_PLUS " Add GameObject", ImVec2(200, 25))) {
+                    GameObject *go = new GameObject();
+                    go->AddComponent<Transform>();
+                    Scene::m_GameObjects.push_back(go);
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
+            }
+
             if (ImGui::BeginMainMenuBar()) {
                 if (ImGui::BeginMenu("File")) {
                     if (ImGui::MenuItem("Compile C++ Scripts (Linux)")) {
@@ -2345,18 +2359,21 @@ int main(int argc, char **argv) {
                 Scene::DropTargetMat(Scene::DRAG_MODEL, nullptr, nullptr);
                 ImVec2 win_size = ImGui::GetWindowSize();
 
-                if (ImGui::Button(ICON_FA_PLUS " Add GameObject", ImVec2(win_size.x - 15, 25))) {
-                    GameObject *go = new GameObject();
-                    go->AddComponent<Transform>();
-                    Scene::m_GameObjects.push_back(go);
-                }
-
                 // if (ImGui::Button(ICON_FA_FOLDER " Add Folder", ImVec2(win_size.x - 15, 25))) {
                 //     GameObject *go = new GameObject();
                 //     go->AddComponent<Transform>();
                 //     Scene::m_GameObjects.push_back(go);
                 // }
+                // ImGui::Columns(3);
+                // // ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 16, ImGui::GetCursorPos().y));
+                // ImGui::Text("Label");
+                // ImGui::NextColumn();
+                // ImGui::Text("Type");
+                // ImGui::NextColumn();
+                // ImGui::Text("Active");
+                // ImGui::Columns();
 
+                // ImGui::Columns(3);
                 for (int i = 0; i < Scene::m_GameObjects.size(); i++) {
                     if (Scene::m_GameObjects[i]->parentID != "NO_PARENT") {
                         bool parentFound;
@@ -2385,6 +2402,24 @@ int main(int argc, char **argv) {
                     }
                     Scene::m_GameObjects[i]->GUI();
                 }
+                // ImGui::NextColumn();
+                // for (auto *go : Scene::m_GameObjects) {
+                //     if (go->type == "Prefab") {
+                //         ImVec4 col(0.1294, 0.58039, 1, 1);
+                //         ImGui::TextColored(col, "%s", go->type.c_str());
+                //     } else {
+                //         ImGui::Text("%s", go->type.c_str());
+                //     }
+                // }
+                // ImGui::NextColumn();
+                // for (auto *go : Scene::m_GameObjects) {
+                //     if (go->enabled) {
+                //         ImGui::Text("True");
+                //     } else {
+                //         ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "False");
+                //     }
+                // }
+                // ImGui::Columns();
 
                 if (ImGui::IsWindowHovered() &&
                     ImGui::IsMouseDoubleClicked(0)) {
@@ -3860,10 +3895,10 @@ int main(int argc, char **argv) {
                             glBindTexture(GL_TEXTURE_CUBE_MAP,
                                           skybox.cubemapTexture);
 
-                            if (meshRenderer.customShader.shader != nullptr) {
-                                meshRenderer.customShader.shader->Bind();
-                                meshRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
-                            }
+                            // if (meshRenderer.customShader.shader != nullptr) {
+                            //     meshRenderer.customShader.shader->Bind();
+                            //     meshRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                            // }
 
                             if (meshRenderer.meshType == "Plane") {
                                 glDisable(GL_CULL_FACE);

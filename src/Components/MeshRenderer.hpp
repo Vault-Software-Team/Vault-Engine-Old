@@ -14,6 +14,7 @@ namespace HyperAPI::Experimental {
         glm::mat4 extraMatrix = glm::mat4(1.0f);
         std::string matPath = "";
         std::string meshType = "";
+        int mesh_index = -1;
 
         struct CustomShader {
             bool usingCustomShader = false;
