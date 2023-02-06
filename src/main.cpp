@@ -30,7 +30,7 @@ using namespace HyperAPI;
 using namespace HyperAPI::Experimental;
 
 static float m_grid_size = 100;
-static bool drawGrid = true;
+static bool drawGrid = false;
 static int m_GuizmoMode = -1;
 static int m_GuizmoWorld = -1;
 static float bounds[] = {-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f};
@@ -1112,19 +1112,6 @@ int main(int argc, char **argv) {
     std::function<void(uint32_t & PPT, uint32_t & PPFBO, uint32_t & gui_gui)>
         GUI_EXP = [&](uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui) {
             ShortcutManager(openConfig);
-            if (ImGui::IsMouseClicked(1)) {
-                ImGui::OpenPopup("Context Menu");
-            }
-
-            if (ImGui::BeginPopup("Context Menu")) {
-                if (ImGui::Button(ICON_FA_PLUS " Add GameObject", ImVec2(200, 25))) {
-                    GameObject *go = new GameObject();
-                    go->AddComponent<Transform>();
-                    Scene::m_GameObjects.push_back(go);
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::EndPopup();
-            }
 
             if (ImGui::BeginMainMenuBar()) {
                 if (ImGui::BeginMenu("File")) {
@@ -1738,8 +1725,8 @@ int main(int argc, char **argv) {
                 ImGui::Checkbox("Resizable", &config.resizable);
                 ImGui::DragInt("Width", &config.width, 1, 0, 1920);
                 ImGui::DragInt("Height", &config.height, 1, 0, 1080);
-                ImGui::DragFloat("Grid Size", &m_grid_size, 5, 1);
-                ImGui::Checkbox("Draw Grid", &drawGrid);
+                // ImGui::DragFloat("Grid Size", &m_grid_size, 5, 1);
+                // ImGui::Checkbox("Draw Grid", &drawGrid);
 
                 if (ImGui::TreeNode("Post Processing")) {
                     ImGui::Checkbox("Enabled", &config.postProcessing.enabled);
@@ -2338,6 +2325,22 @@ int main(int argc, char **argv) {
             ImGui::PopStyleVar();
 
             if (ImGui::Begin(ICON_FA_CUBES " Hierarchy")) {
+                if (ImGui::IsWindowHovered()) {
+                    if (ImGui::IsMouseClicked(1)) {
+                        ImGui::OpenPopup("Context Menu");
+                    }
+                }
+
+                if (ImGui::BeginPopup("Context Menu")) {
+                    if (ImGui::Button(ICON_FA_PLUS " Add GameObject", ImVec2(200, 25))) {
+                        GameObject *go = new GameObject();
+                        go->AddComponent<Transform>();
+                        Scene::m_GameObjects.push_back(go);
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::EndPopup();
+                }
+
                 if (ImGui::BeginDragDropTarget()) {
                     if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("game_object")) {
                         for (auto &gameObject : Scene::m_GameObjects) {
@@ -3314,54 +3317,47 @@ int main(int argc, char **argv) {
                     std::string filePath =
                         ImGuiFileDialog::Instance()->GetCurrentPath();
 
-#ifdef _WIN32
-                    system(("rmdir /s /q " + filePathName).c_str());
-                    system(("mkdir " + filePathName).c_str());
-                    // mark xcopy as directory
-                    system(("xcopy /s /e /y  \"" + cwd + "\\assets\" \"" +
-                            filePathName + "\\assets\\\"")
-                               .c_str());
-                    system(("xcopy /s /e /y \"" + cwd + "\\build\" \"" +
-                            filePathName + "\\build\\\"")
-                               .c_str());
-                    system(("xcopy /s /e /y \"" + cwd + "\\shaders\" \"" +
-                            filePathName + "\\shaders/\"")
-                               .c_str());
-                    system(("xcopy /s /e /y \"" + cwd + "\\lib\" \"" +
-                            filePathName + "\\lib\\\"")
-                               .c_str());
-                    system(("xcopy /s /e /y \"" + cwd + "\\game.out\" \"" +
-                            filePathName + "\"")
-                               .c_str());
-                    system(("xcopy /s /e /y \"" + cwd + "\\LaunchGame.sh\" \"" +
-                            filePathName + "\"")
-                               .c_str());
-                    system(("rename \"" + filePathName +
-                            "\\LaunchGame.sh\" \"" + config.name + ".sh\"")
-                               .c_str());
-#else
-                    system(
-                        std::string("rm -r \"" + filePathName + "\"").c_str());
-                    system(
-                        std::string("mkdir \"" + filePathName + "\"").c_str());
-                    system(std::string("cp assets \"" + filePathName +
-                                       "/assets\" -r")
-                               .c_str());
-                    system(std::string("cp build \"" + filePathName +
-                                       "/build\" -r")
-                               .c_str());
-                    system(std::string("cp shaders \"" + filePathName +
-                                       "/shaders\" -r")
-                               .c_str());
-                    system(std::string("cp lib \"" + filePathName + "/lib\" -r")
-                               .c_str());
-                    system(std::string("cp game.out \"" + filePathName +
-                                       "/game.out\"")
-                               .c_str());
-                    system(std::string("cp LaunchGame.sh \"" + filePathName +
-                                       "/" + config.name + ".sh\"")
-                               .c_str());
-#endif
+                    if (fs::exists(filePathName + "/shaders"))
+                        fs::remove_all(filePathName + "/shaders");
+
+                    if (fs::exists(filePathName + "/assets"))
+                        fs::remove_all(filePathName + "/assets");
+
+                    if (fs::exists(filePathName + "/lib"))
+                        fs::remove_all(filePathName + "/lib");
+
+                    if (fs::exists(filePathName + "/build"))
+                        fs::remove_all(filePathName + "/build");
+
+                    if (fs::exists(filePathName + "/cs-assembly"))
+                        fs::remove_all(filePathName + "/cs-assembly");
+
+                    if (fs::exists(filePathName + "/mono"))
+                        fs::remove_all(filePathName + "/mono");
+
+                    if (fs::exists(filePathName + "/imgui.ini"))
+                        fs::remove(filePathName + "/imgui.ini");
+
+                    if (fs::exists(filePathName + "/" + config.name + ".sh"))
+                        fs::remove(filePathName + "/" + config.name + ".sh");
+
+                    std::string m_cwd = CsharpVariables::oldCwd;
+                    fs::copy("./assets", filePathName + "/assets", fs::copy_options::recursive);
+                    fs::copy("./shaders", filePathName + "/shaders", fs::copy_options::recursive);
+                    fs::copy("./linux_lib", filePathName + "/linux_lib", fs::copy_options::recursive);
+                    fs::copy(m_cwd + "/game.out", filePathName + "/lib/game.out", fs::copy_options::recursive);
+                    fs::copy(m_cwd + "/LaunchGame.sh", filePathName + "/" + config.name + ".sh", fs::copy_options::recursive);
+                    fs::copy("./build", filePathName + "/build", fs::copy_options::recursive);
+                    fs::copy("./cs-assembly", filePathName + "/cs-assembly", fs::copy_options::recursive);
+                    fs::copy(m_cwd + "/lib", filePathName + "/lib", fs::copy_options::recursive);
+                    fs::copy("./imgui.ini", filePathName + "/imgui.ini", fs::copy_options::recursive);
+
+                    for (const auto &iter : std::filesystem::directory_iterator(filePathName + "/cs-assembly")) {
+                        if (iter.path().extension() == ".cs") {
+                            std::filesystem::remove(iter.path());
+                        }
+                    }
+                    fs::remove_all(filePathName + "/cs-assembly/API");
                 }
 
                 // close
@@ -3396,11 +3392,30 @@ int main(int argc, char **argv) {
 
     float runTime;
 
-    // Experimental::Model test_model("assets/Dancing Twerk.fbx");
-    // Animation danceAnimation("assets/Dancing Twerk.fbx", &test_model);
-    // Animator animator(&danceAnimation);
+    // Transform batch_trans;
+    // batch_trans.position = Vector3(0, 0, 0);
+    // batch_trans.rotation = Vector3(0, 0, 0);
+    // batch_trans.scale = Vector3(1, 1, 1);
+
+    // Plane batch_plane;
+    // Batch batch_layer;
+    // Material batch_mat;
+    // Shader batch_shader("shaders/batch.glsl");
+
+    // batch_layer.AddMesh(batch_plane.m_Mesh->vertices, batch_plane.m_Mesh->indices, &batch_trans);
+
     app.Run(
         [&](uint32_t &shadowMapTex) {
+            // glEnable(GL_CULL_FACE);
+            // glCullFace(GL_BACK);
+            // glFrontFace(GL_CCW);
+
+            // glEnable(GL_BLEND);
+            // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            // glEnable(GL_DEPTH_TEST);
+            // glDepthFunc(GL_LEQUAL);
+            // batch_layer.Draw(batch_shader, *Scene::mainCamera, batch_mat);
+
             // animator.UpdateAnimation(Timestep::deltaTime);
             runTime += Timestep::deltaTime;
             shader.Bind();
@@ -4421,9 +4436,11 @@ int main(int argc, char **argv) {
                     t.LookAt(camTransform.position);
                     t.Update();
 
+                    glDisable(GL_DEPTH_TEST);
                     glDepthFunc(GL_LEQUAL);
                     dirLightIconMesh.enttId = (uint32_t)gameObject->entity;
                     dirLightIconMesh.Draw(workerShader, *camera, t.transform);
+                    glEnable(GL_DEPTH_TEST);
                 }
 
                 if (gameObject->HasComponent<c_PointLight>()) {
@@ -4445,9 +4462,11 @@ int main(int argc, char **argv) {
                     t.LookAt(camTransform.position);
                     t.Update();
 
+                    glDisable(GL_DEPTH_TEST);
                     glDepthFunc(GL_LEQUAL);
                     pointLightIconMesh.enttId = (uint32_t)gameObject->entity;
                     pointLightIconMesh.Draw(workerShader, *camera, t.transform);
+                    glEnable(GL_DEPTH_TEST);
                 }
 
                 if (gameObject->HasComponent<c_SpotLight>()) {
@@ -4469,9 +4488,11 @@ int main(int argc, char **argv) {
                     t.LookAt(camTransform.position);
                     t.Update();
 
+                    glDisable(GL_DEPTH_TEST);
                     glDepthFunc(GL_LEQUAL);
                     spotLightIconMesh.enttId = (uint32_t)gameObject->entity;
                     spotLightIconMesh.Draw(workerShader, *camera, t.transform);
+                    glEnable(GL_DEPTH_TEST);
                 }
 
                 if (gameObject->HasComponent<CameraComponent>()) {
@@ -4493,9 +4514,11 @@ int main(int argc, char **argv) {
                     t.LookAt(camTransform.position);
                     t.Update();
 
+                    glDisable(GL_DEPTH_TEST);
                     glDepthFunc(GL_LEQUAL);
                     cameraIconMesh.enttId = (uint32_t)gameObject->entity;
                     cameraIconMesh.Draw(workerShader, *camera, t.transform);
+                    glEnable(GL_DEPTH_TEST);
                 }
             }
 #endif

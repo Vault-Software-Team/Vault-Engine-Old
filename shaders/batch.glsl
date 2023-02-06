@@ -8,19 +8,31 @@ layout(location = 4) in ivec4 boneIds;
 layout(location = 5) in vec4 weights;
 layout(location = 6) in vec3 tangent;
 layout(location = 7) in vec3 bitangent;
-layout(location = 8) in float transformIndex;
 
 uniform mat4 camera;
-uniform mat4 translation;
-uniform mat4 rotation;
-uniform mat4 scale;
+mat4 translation = mat4(1);
+mat4 rotation = mat4(1);
+mat4 scale = mat4(1);
 uniform mat4 model;
-uniform mat4 lightSpaceMatrix;
+mat4 lightSpaceMatrix = mat4(1);
 uniform vec3 cameraPosition;
 uniform vec2 texUvOffset;
 
 uniform float time;
 
+// out DATA {
+//     vec2 texCoords;
+//     vec3 Color;
+//     vec3 Normal;
+//     vec3 currentPosition;
+//     vec3 reflectedVector;
+//     vec4 fragPosLight;
+//     mat4 projection;
+//     mat4 model;
+//     vec3 T;
+//     vec3 B;
+//     vec3 N;
+// } data_out;
 out vec2 texCoords;
 out vec3 Color;
 out vec3 Normal;
@@ -34,13 +46,25 @@ const int MAX_BONES = 100;
 const int MAX_BONE_INFLUENCE = 4;
 uniform mat4 finalBonesMatrices[MAX_BONES];
 
-const int MAX_TRANSFORMS = 16;
-uniform mat4 transforms[MAX_TRANSFORMS];
-
 void main() {
-    int transform_index = int(transformIndex);
-    vec4 worldPosition = transforms[transform_index] * translation * rotation * scale * vec4(position.x, position.y, position.z, 1.0f);
-    gl_Position = camera * vec4(currentPosition, 1.0);
+    vec4 totalPosition = vec4(0);
+    totalPosition = camera * mat4(1) * vec4(position, 1.0f);
+
+    vec4 worldPosition = totalPosition;
+    currentPosition = vec3(totalPosition);
+    projection = camera;
+    
+    gl_Position = vec4(currentPosition, 1.0f);
+
+    // vec2 finalCoords = g_texCoords;
+
+    // if(finalCoords.x > 0) {
+    //     finalCoords.x = finalCoords.x + texUvOffset.x;
+    // }
+
+    // if(finalCoords.y > 0) {
+    //     finalCoords.y = finalCoords.y + texUvOffset.y;
+    // }
 
     texCoords = g_texCoords;
     if(texUvOffset.x > 0) {

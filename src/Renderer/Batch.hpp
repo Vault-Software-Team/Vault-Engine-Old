@@ -4,6 +4,7 @@
 #include "Texture.hpp"
 #include "scene.hpp"
 #include "Mesh.hpp"
+#include "Camera.hpp"
 #include <cstdint>
 #include <libs.hpp>
 
@@ -23,7 +24,7 @@ namespace HyperAPI {
         Batch();
 
         void AddTexture(const char *path, const uint32_t slot, const std::string &textureType);
-        void AddMesh(Mesh &mesh, Experimental::Transform *transform);
-        void Draw(Shader &shader);
+        void AddMesh(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, Experimental::Transform *transform);
+        void Draw(Shader &shader, Camera &camera, Material &mat);
     };
 } // namespace HyperAPI

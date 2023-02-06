@@ -18,8 +18,6 @@ if [ "$PLATFORM" = "windows" ]; then
     #     mkdir dist/windows/cpp_headers
     # fi
     
-    cp -r src/lib dist/windows/cpp_headers/lib
-    cp -r src/vendor dist/windows/cpp_headers/vendor
     cp windows/win_build.exe dist/windows/win_build.exe
     cp windows/win_proj.exe dist/windows/Vault\ Engine.exe
     cp windows/*.dll dist/windows/
@@ -37,7 +35,7 @@ else
         mkdir dist/linux
     fi
 
-    cp -r lib dist/linux/lib
+    cp -r linux_lib dist/linux/linux_lib
     cp -r build.out dist/linux/build.out
     cp -r build_proj.out dist/linux/build_proj.out
     cp -r Vault\ Engine.sh dist/linux/Vault\ Engine
@@ -47,5 +45,5 @@ else
     cp -r shaders dist/linux/shaders
     cp -r build dist/linux/build
     cp -r cs-assembly dist/linux/cs-assembly
-    cp -r mono dist/linux/mono
+    cp -r lib dist/linux/lib
 fi

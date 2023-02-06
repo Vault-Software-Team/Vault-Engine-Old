@@ -68,16 +68,29 @@ namespace HyperAPI {
         glBindVertexArray(0);
     };
 
-    void Batch::AddMesh(Mesh &mesh, Experimental::Transform *transform) {
+    void Batch::AddMesh(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices, Experimental::Transform *transform) {
         transforms.push_back(transform);
-        for (auto index : mesh.indices) {
-            const uint32_t offset = vertices.size() - 1;
-            indices.push_back(index);
+        uint32_t offset = 0;
+        for (auto &index : this->indices) {
+            if (index > offset) {
+                offset = index;
+            }
         }
 
-        for (auto vertex : mesh.vertices) {
+        if (offset == 0)
+            offset = 0;
+        else
+            offset++;
+
+        for (auto index : indices) {
+            HYPER_LOG(std::string("Index: ") + std::to_string(offset + index))
+            this->indices.push_back(offset + index);
+        }
+
+        for (auto vertex : vertices) {
+            std::cout << vertex.position.x << " " << vertex.position.y << " " << vertex.position.y << std::endl;
             vertex.transformIndex = transforms.size() - 1;
-            vertices.push_back(vertex);
+            this->vertices.push_back(vertex);
         }
     }
 
@@ -85,7 +98,37 @@ namespace HyperAPI {
         textures.push_back(new Texture(path, slot, textureType.c_str()));
     }
 
-    void Batch::Draw(Shader &shader) {
+    void Batch::Draw(Shader &shader, Camera &cam, Material &mat) {
+        int index;
+        shader.Bind();
+        for (auto &transform : transforms) {
+            transform->Update();
+
+            shader.SetUniformMat4((std::string("transforms[") + std::to_string(index) + "]").c_str(), transform->transform);
+            index++;
+        }
+
+        mat.Bind(shader);
+        cam.Matrix(shader, "camera");
+        transforms[0]->Update();
+        shader.SetUniformMat4("model", transforms[0]->transform);
+
+        if (cam.EnttComp) {
+            auto &camTransform =
+                Scene::m_Registry.get<Experimental::Transform>(cam.entity);
+            shader.SetUniform3f("cameraPosition", camTransform.position.x,
+                                camTransform.position.y,
+                                camTransform.position.z);
+        } else {
+            TransformComponent camTransform =
+                cam.GetComponent<TransformComponent>();
+            shader.SetUniform3f("cameraPosition", camTransform.position.x,
+                                camTransform.position.y,
+                                camTransform.position.z);
+        }
+        shader.SetUniform1i("cubeMap", 20);
+        shader.SetUniform1ui("u_EntityID", 0);
+
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * vertices.size(),
@@ -102,12 +145,6 @@ namespace HyperAPI {
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        int index;
-        for (auto &transform : transforms) {
-            transform->Update();
-
-            shader.SetUniformMat4((std::string("transforms[") + std::to_string(index) + "]").c_str(), transform->transform);
-            index++;
-        }
+        shader.Unbind();
     }
 } // namespace HyperAPI

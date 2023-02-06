@@ -57,7 +57,7 @@ MONO_LIB=-I"$(cwd)/mono/include/mono-2.0" -D_REENTRANT  -L"$(cwd)/mono/lib" -lmo
 bullet_physics_linker_flags = -lBulletDynamics -lBulletCollision -lLinearMath
 bullet_physics_linker_flags_windows = -lBulletDynamics.dll -lBulletCollision.dll -lLinearMath.dll
 flags = -fno-stack-protector -std=c++20 -lstdc++fs -g -L"./lib" -lluajit-5.1 -I"./src/vendor" -I"./src/vendor/bullet/bullet" -I"./src/vendor/NoesisGUI" -I"./src/lib" -lmono-2.0 -lbacktrace -lfreetype -lGL -lbox2d -lGLU -lglfw -lm -lSDL2_mixer -lassimp -ltinyxml2 -lXrandr -lXi -lbox2d -lX11 -lXxf86vm -lpthread -ldl -lXinerama -lzlib -lXcursor -lGLEW -ldiscord-rpc $(bullet_physics_linker_flags) -rdynamic
-win_flags = -lstdc++fs -L"./win_libs" -I"./src/lib" -I"./src/vendor/NoesisGUI" -I"./src/vendor" -I"./src/vendor/bullet/bullet" -lmono-2.0 -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype -lSDL2.dll -lSDL2_mixer.dll -ldiscord-rpc -ltinyxml2 $(bullet_physics_linker_flags_windows)
+win_flags = -lstdc++fs -L"./win_libs" -I"./src/lib" -I"./src/vendor/NoesisGUI" -I"./src/vendor" -I"./src/vendor/bullet/bullet" -lmono-2.0.dll -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype.dll -lSDL2.dll -lSDL2_mixer.dll -ldiscord-rpc -ltinyxml2 $(bullet_physics_linker_flags_windows)
 
 all:
 	$(GNU_LINUX_COMPILER) $(sources) src/api.cpp -o $(exec) $(flags)
@@ -149,12 +149,12 @@ linux:
 	make app
 
 linux_game:
-	g++ -c $(api) $(flags)
-	mv *.o bin
+	# g++ -c $(api) $(flags)
+	# mv *.o bin
 
 	g++ -c src/main.cpp -DGAME_BUILD $(flags)
 	mv *.o bin
-
+	
 	g++ bin/*.o -o $(exec_game) -DGAME_BUILD $(flags)
 	# ./LaunchGame.sh
 # compile to object files
@@ -172,10 +172,60 @@ $(exec): $(objects)
 	g++ -c -I"./src/vendor" $(flags) $< -o $@
 
 win:
-	$(MINGW_COMPILER) -static -g -std=c++20 $(sources) $(win_flags) -o $(win_exec)
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(sources) $(win_flags)
+
+win_assemble:
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags)
+	mv *.o bin_win
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) $(win_flags)
+
+win_components:
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(components) $(win_flags)
+	mv *.o bin_win
+
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags)
+	mv *.o bin_win
+
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(exec) $(flags)
+
+win_other:
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(other_stuff) $(win_flags)
+	mv *.o bin_win
+
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags)
+	mv *.o bin_win
+
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(exec) $(win_flags)
+
+win_renderer:
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(renderer) $(win_flags)
+	mv *.o bin_win
+
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags)
+	mv *.o bin_win
+
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(exec) $(win_flags)
+
+win_debugging:
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(debugging) $(win_flags)
+	mv *.o bin_win
+
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags)
+	mv *.o bin_win
+
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(exec) $(win_flags)
+
+win_scripting:
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(scripting) $(win_flags)
+	mv *.o bin_win
+
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags)
+	mv *.o bin_win
+
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(exec) $(win_flags)
 
 win_game:
-	$(MINGW_COMPILER) -static -g -std=c++20 $(sources) -DGAME_BUILD $(win_flags) -o $(exec_win_game)
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj $(sources) -DGAME_BUILD $(win_flags) -o $(exec_win_game)
 
 clean:
 	-rm src/*.o

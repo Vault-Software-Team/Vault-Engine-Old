@@ -263,6 +263,7 @@ namespace HyperAPI::CsharpScriptEngine {
         using namespace CsharpVariables;
 
         if (fs::exists("cs-assembly/bin/Debug/net6.0/cs-assembly.dll")) {
+            HYPER_LOG(cwd);
             mono_set_assemblies_path(std::string(cwd + "/mono/lib").c_str());
             // const char *argv[2] = {
             // "--debugger-agent=transport=dt_socket,address=127.0.0.1:2550,server=y,suspend=n,loglevel=3,logfile=logs/VaultMonoDebugger.log",
