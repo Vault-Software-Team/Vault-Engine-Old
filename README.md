@@ -20,7 +20,7 @@
 - **2D and 3D Rendering**
 - **Post-Processing Effects**
 - **Project Manager**
-- **Multi language scripting: C#, Lua, C++ (Linux Only)**
+- **Multi language scripting: C#, Lua, C++ (C++ is Linux Only)**
 - **Physics Engine: Box2D, Bullet Physics (3D)**
 - **Audio**
 - **Level Editor**
@@ -92,21 +92,19 @@ C++ Scripting is not Cross-Platform as of now
 
 ### **Bundling**
 
-Bundling the application is very easy, this only works on linux since i do not have .bat file for this created
+Bundling the application is very easy, this only works on bash since i do not have .bat file for this created
 
 ```bash
 ./bundle.sh # this will bundle for linux, in dist/linux
 ./bundle.sh windows # this will bundle for windows, in dist/windows
 ```
 
-NOTE: while building is implemented, it will not work as of now!
+NOTE: Building is still being worked on!
 
 # Upcoming Features
 
-- **Ruby Scripting**
-- **Java Scripting**
-- **Python Scripting**
 - **Asset Packager**
 - **Android Support**
 - **Flowchart Editor (like in Unreal Engine)**
 - **Video Player**
+- **Batch Renderer**

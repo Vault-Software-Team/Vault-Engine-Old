@@ -140,7 +140,10 @@ projects:
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec_proj) $(flags)
 
 projects_win:
-	$(MINGW_COMPILER) -static -g -std=c++20 $(sources) -o $(exec_win_proj) $(win_flags) -DPROJECT_MENU
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(sources) $(win_flags) -DPROJECT_MENU
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags) -DPROJECT_MENU
+	mv *.o bin_win
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) $(win_flags) -DPROJECT_MENU
 
 bundle:
 	mv src/*.o bin
@@ -173,6 +176,9 @@ $(exec): $(objects)
 
 win:
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(sources) $(win_flags)
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags)
+	mv *.o bin_win
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) $(win_flags)
 
 win_assemble:
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags)
