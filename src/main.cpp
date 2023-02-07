@@ -4,6 +4,7 @@
 #include <regex>
 #include "Audio/SoundDevice.hpp"
 #include "Audio/SoundSource.hpp"
+#include "Components/CsharpScriptManager.hpp"
 #include "ImGuizmo/ImGuizmo.h"
 #include "Renderer/Timestep.hpp"
 #include "glm/ext/matrix_transform.hpp"
@@ -61,6 +62,16 @@ public:
                 script->Collision2D(gameObjectB);
             }
         }
+
+        if (gameObjectB->HasComponent<NativeScriptManager>()) {
+            auto &scriptManager =
+                gameObjectB->GetComponent<NativeScriptManager>();
+            for (auto script : scriptManager.m_StaticScripts) {
+                script->Collision2D(gameObjectA);
+            }
+        }
+
+        // TODO: C# Events (Collision2D)
 
         if (gameObjectB->HasComponent<NativeScriptManager>()) {
             auto &scriptManager =
