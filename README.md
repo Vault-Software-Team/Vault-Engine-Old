@@ -58,6 +58,8 @@
 
 # Installation
 
+Create folders: **bin** and **bin_win** first!
+
 ## **Linux**
 
 ```bash
