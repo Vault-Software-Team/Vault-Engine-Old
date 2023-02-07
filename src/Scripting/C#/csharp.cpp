@@ -30,6 +30,7 @@
 #include "BoxCollider2DFunctions.hpp"
 #include "GameObjectFunctions.hpp"
 #include "CameraFunctions.hpp"
+#include "Audio3DFunctions.hpp"
 
 namespace CsharpVariables {
     MonoDomain *rootDomain;
@@ -146,6 +147,15 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("Vault.CameraComponent::cpp_GetKey", reinterpret_cast<void *(*)>(Camera_GetKey));
         mono_add_internal_call("Vault.CameraComponent::cpp_SetKey", reinterpret_cast<void *(*)>(Camera_SetKey));
         mono_add_internal_call("Vault.CameraComponent::cpp_Set2D", reinterpret_cast<void *(*)>(Camera_Set2D));
+
+        // Audio3D Component
+        mono_add_internal_call("Vault.Audio3D::cpp_GetKey", reinterpret_cast<void *(*)>(Audio3D_GetKey));
+        mono_add_internal_call("Vault.Audio3D::cpp_SetFloatKey", reinterpret_cast<void *(*)>(Audio3D_SetFloatKey));
+        mono_add_internal_call("Vault.Audio3D::cpp_SetVelocity", reinterpret_cast<void *(*)>(Audio3D_SetVelocity));
+        mono_add_internal_call("Vault.Audio3D::cpp_GetLoop", reinterpret_cast<void *(*)>(Audio3D_GetLoop));
+        mono_add_internal_call("Vault.Audio3D::cpp_SetLoop", reinterpret_cast<void *(*)>(Audio3D_SetLoop));
+        mono_add_internal_call("Vault.Audio3D::cpp_Play", reinterpret_cast<void *(*)>(Audio3D_Play));
+        mono_add_internal_call("Vault.Audio3D::cpp_Stop", reinterpret_cast<void *(*)>(Audio3D_Stop));
     }
 } // namespace HyperAPI::CsharpScriptEngine::Functions
 

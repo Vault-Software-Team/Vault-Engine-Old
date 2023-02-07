@@ -1,5 +1,6 @@
 #include "lib/scene.hpp"
 #include "Components/3DText.hpp"
+#include "Components/AudioListener.hpp"
 #include "Renderer/Mesh.hpp"
 #include "Renderer/Structures.hpp"
 #include "lib/api.hpp"
@@ -132,6 +133,27 @@ namespace HyperAPI {
                 transform.position = gameObject->GetComponent<Experimental::Transform>().position;
                 transform.rotation = gameObject->GetComponent<Experimental::Transform>().rotation;
                 transform.scale = gameObject->GetComponent<Experimental::Transform>().scale;
+            }
+
+            if (type == "AudioListener") {
+                gameObject->AddComponent<Experimental::AudioListener>();
+                auto &comp = gameObject->GetComponent<Experimental::AudioListener>();
+            }
+
+            if (type == "Audio3D") {
+                gameObject->AddComponent<Experimental::Audio3D>();
+
+                auto &comp = gameObject->GetComponent<Experimental::Audio3D>();
+                comp.src.pitch = component["pitch"];
+                comp.src.volume = component["volume"];
+                comp.src.max_distance = component["max_distance"];
+                comp.src.loop = component["loop"];
+                comp.on_start = component["on_start"];
+                comp.file = component["file"];
+                comp.src.velocity = Vector3(
+                    component["velocity"]["x"],
+                    component["velocity"]["y"],
+                    component["velocity"]["z"]);
             }
 
             if (type == "MeshRenderer") {
@@ -1077,6 +1099,28 @@ namespace HyperAPI {
                 JSON[i]["components"][componentOffset]["mesh"]["mesh"] = meshRenderer.meshType;
                 JSON[i]["components"][componentOffset]["material"] = meshRenderer.matPath;
 
+                componentOffset++;
+            }
+
+            if (gameObject->HasComponent<Experimental::AudioListener>()) {
+                JSON[i]["components"][componentOffset]["type"] = "AudioListener";
+                componentOffset++;
+            }
+
+            if (gameObject->HasComponent<Experimental::Audio3D>()) {
+                auto &aud = gameObject->GetComponent<Experimental::Audio3D>();
+                JSON[i]["components"][componentOffset]["type"] = "Audio3D";
+                JSON[i]["components"][componentOffset]["pitch"] = aud.src.pitch;
+                JSON[i]["components"][componentOffset]["volume"] = aud.src.volume;
+                JSON[i]["components"][componentOffset]["on_start"] = aud.on_start;
+                JSON[i]["components"][componentOffset]["max_distance"] = aud.src.max_distance;
+                JSON[i]["components"][componentOffset]["loop"] = aud.src.loop;
+                JSON[i]["components"][componentOffset]["file"] = aud.file;
+                JSON[i]["components"][componentOffset]["velocity"] = {
+                    {"x", aud.src.velocity.x},
+                    {"y", aud.src.velocity.y},
+                    {"z", aud.src.velocity.z},
+                };
                 componentOffset++;
             }
 

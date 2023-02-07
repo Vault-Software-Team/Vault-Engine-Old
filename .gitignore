@@ -2,6 +2,7 @@
 .idea
 .fleet
 bin/*.o
+bin_win/*.o
 GameJam
 api/*.o
 *.exe

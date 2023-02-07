@@ -33,9 +33,11 @@ namespace Vault
         public Audio() { }
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        [Obsolete("Audio.Play is obselete (it is 2D only), use Audio3D Component instead to play audio")]
         extern public static void Play(string file, float volume, bool loop, int channel = -1);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        [Obsolete("Audio.Music is obselete (it is 2D only), use Audio3D Component instead to play audio")]
         extern public static void Music(string file, float volume, bool loop);
     }
 

@@ -2,6 +2,8 @@
 #include <random>
 #include <memory>
 #include <regex>
+#include "Audio/SoundDevice.hpp"
+#include "Audio/SoundSource.hpp"
 #include "ImGuizmo/ImGuizmo.h"
 #include "Renderer/Timestep.hpp"
 #include "glm/ext/matrix_transform.hpp"
@@ -1102,6 +1104,14 @@ int main(int argc, char **argv) {
     editor.SetShowWhitespaces(false);
 
 #ifndef GAME_BUILD
+    // SoundDevice *alDevice = SoundDevice::get();
+    // uint32_t audio = SoundBuffer::get()->AddSoundEffect("assets/wrld.mp3");
+
+    // SoundSource speaker;
+    // speaker.Play(audio);
+
+    // glm::vec3 list, aud;
+
     std::function<void(uint32_t & PPT, uint32_t & PPFBO, uint32_t & gui_gui)>
         GUI_EXP = [&](uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui) {
             ShortcutManager(openConfig);
@@ -2520,6 +2530,18 @@ int main(int argc, char **argv) {
                             comp.GUI();
                     }
 
+                    if (Scene::m_Object->HasComponent<Audio3D>()) {
+                        auto &comp = Scene::m_Object->GetComponent<Audio3D>();
+                        if (comp.hasGUI)
+                            comp.GUI();
+                    }
+
+                    if (Scene::m_Object->HasComponent<AudioListener>()) {
+                        auto &comp = Scene::m_Object->GetComponent<AudioListener>();
+                        if (comp.hasGUI)
+                            comp.GUI();
+                    }
+
                     if (Scene::m_Object->HasComponent<c_PointLight>()) {
                         auto &comp =
                             Scene::m_Object->GetComponent<c_PointLight>();
@@ -2690,6 +2712,16 @@ int main(int argc, char **argv) {
                     if (ImGui::Button("Camera", ImVec2(200, 0))) {
                         // CameraComponent has one argument of type entt::entity
                         Scene::m_Object->AddComponent<CameraComponent>();
+                        ImGui::CloseCurrentPopup();
+                    }
+
+                    if (ImGui::Button("3D Audio", ImVec2(200, 0))) {
+                        Scene::m_Object->AddComponent<Audio3D>();
+                        ImGui::CloseCurrentPopup();
+                    }
+
+                    if (ImGui::Button("Audio Listener", ImVec2(200, 0))) {
+                        Scene::m_Object->AddComponent<AudioListener>();
                         ImGui::CloseCurrentPopup();
                     }
 
@@ -3676,6 +3708,12 @@ int main(int argc, char **argv) {
                     transform.position.y = position.y;
                     transform.rotation.z = glm::degrees(body->GetAngle());
                 }
+
+                for (auto *gameObject : Scene::m_GameObjects) {
+                    if (gameObject->HasComponent<Audio3D>()) {
+                        gameObject->GetComponent<Audio3D>().Update();
+                    }
+                }
             }
 
             if (bulletPhysicsStarted) {
@@ -3766,6 +3804,10 @@ int main(int argc, char **argv) {
 
                 if (gameObject->HasComponent<MeshRenderer>()) {
                     gameObject->GetComponent<MeshRenderer>().Update();
+                }
+
+                if (gameObject->HasComponent<AudioListener>()) {
+                    gameObject->GetComponent<AudioListener>().Update();
                 }
 
                 if (gameObject->HasComponent<m_LuaScriptComponent>()) {

@@ -36,6 +36,8 @@
 #include "../Components/SpritesheetRenderer.hpp"
 #include "../Components/Transform.hpp"
 #include "../Components/3DText.hpp"
+#include "../Components/AudioListener.hpp"
+#include "../Components/Audio3D.hpp"
 
 // Renderer
 #include "../Renderer/AssimpGLMHelpers.hpp"
@@ -60,6 +62,11 @@
 #include "../Renderer/Batch.hpp"
 #include "../Renderer/Font.hpp"
 #include "../Renderer/Terrain.hpp"
+
+// Audio
+#include "../Audio/SoundBuffer.hpp"
+#include "../Audio/SoundSource.hpp"
+#include "../Audio/SoundDevice.hpp"
 
 // Debugging
 #include "../Debugging/GLError.hpp"

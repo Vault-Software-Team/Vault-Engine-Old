@@ -12,6 +12,7 @@
 #include "PathfindingAI.hpp"
 #include "SpriteAnimation.hpp"
 #include "SpritesheetAnimation.hpp"
+#include "Audio3D.hpp"
 
 namespace HyperAPI::Experimental {
     nlohmann::json stateScene = nlohmann::json::array();
@@ -38,6 +39,10 @@ namespace HyperAPI::Experimental {
 
             if (gameObject->HasComponent<CsharpScriptManager>()) {
                 gameObject->GetComponent<CsharpScriptManager>().Start();
+            }
+
+            if (gameObject->HasComponent<Audio3D>()) {
+                gameObject->GetComponent<Audio3D>().Start();
             }
         }
 

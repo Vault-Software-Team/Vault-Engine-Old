@@ -38,6 +38,7 @@ api += $(wildcard src/nativeScripts.cpp)
 
 components = $(wildcard src/Components/*.cpp)
 renderer = $(wildcard src/Renderer/*.cpp)
+audio = $(wildcard src/Audio/*.cpp)
 other_stuff = $(wildcard src/Application/*.cpp)
 other_stuff += $(wildcard src/Bloom/*.cpp)
 other_stuff += $(wildcard src/f_GameObject/*.cpp)
@@ -56,8 +57,8 @@ api_obj = $(api:.cpp=.o)
 MONO_LIB=-I"$(cwd)/mono/include/mono-2.0" -D_REENTRANT  -L"$(cwd)/mono/lib" -lmono-2.0
 bullet_physics_linker_flags = -lBulletDynamics -lBulletCollision -lLinearMath
 bullet_physics_linker_flags_windows = -lBulletDynamics.dll -lBulletCollision.dll -lLinearMath.dll
-flags = -fno-stack-protector -std=c++20 -lstdc++fs -g -L"./lib" -lluajit-5.1 -I"./src/vendor" -I"./src/vendor/bullet/bullet" -I"./src/vendor/NoesisGUI" -I"./src/lib" -lmono-2.0 -lbacktrace -lfreetype -lGL -lbox2d -lGLU -lglfw -lm -lSDL2_mixer -lassimp -ltinyxml2 -lXrandr -lXi -lbox2d -lX11 -lXxf86vm -lpthread -ldl -lXinerama -lzlib -lXcursor -lGLEW -ldiscord-rpc $(bullet_physics_linker_flags) -rdynamic
-win_flags = -lstdc++fs -L"./win_libs" -I"./src/lib" -I"./src/vendor/NoesisGUI" -I"./src/vendor" -I"./src/vendor/bullet/bullet" -lmono-2.0.dll -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype.dll -lSDL2.dll -lSDL2_mixer.dll -ldiscord-rpc -ltinyxml2 $(bullet_physics_linker_flags_windows)
+flags = -fno-stack-protector -std=c++20 -lstdc++fs -g -L"./lib" -lluajit-5.1 -I"./src/vendor" -I"./src/vendor/bullet/bullet" -I"./src/vendor/NoesisGUI" -I"./src/lib" -lmono-2.0 -lbacktrace -lfreetype -lGL -lbox2d -lGLU -lglfw -lm -lSDL2_mixer -lassimp -ltinyxml2 -lXrandr -lXi -lbox2d -lX11 -lXxf86vm -lpthread -ldl -lsndfile -lopenal -lXinerama -lzlib -lXcursor -lGLEW -ldiscord-rpc $(bullet_physics_linker_flags) -rdynamic
+win_flags = -lstdc++fs -L"./win_libs" -I"./src/lib" -I"./src/vendor/NoesisGUI" -I"./src/vendor" -I"./src/vendor/bullet/bullet" -lsndfile.dll -lopenal.dll -lmono-2.0.dll -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype.dll -lSDL2.dll -lSDL2_mixer.dll -ldiscord-rpc  -ltinyxml2 $(bullet_physics_linker_flags_windows)
 
 all:
 	$(GNU_LINUX_COMPILER) $(sources) src/api.cpp -o $(exec) $(flags)
@@ -69,6 +70,15 @@ eng:
 
 components:
 	$(GNU_LINUX_COMPILER) -c $(components) $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
+
+audio:
+	$(GNU_LINUX_COMPILER) -c $(audio) $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
@@ -191,7 +201,7 @@ win_components:
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags)
 	mv *.o bin_win
 
-	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(exec) $(flags)
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) $(win_flags)
 
 win_other:
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(other_stuff) $(win_flags)
@@ -200,7 +210,7 @@ win_other:
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags)
 	mv *.o bin_win
 
-	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(exec) $(win_flags)
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) $(win_flags)
 
 win_renderer:
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(renderer) $(win_flags)
@@ -209,7 +219,7 @@ win_renderer:
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags)
 	mv *.o bin_win
 
-	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(exec) $(win_flags)
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) $(win_flags)
 
 win_debugging:
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(debugging) $(win_flags)
@@ -218,7 +228,7 @@ win_debugging:
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags)
 	mv *.o bin_win
 
-	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(exec) $(win_flags)
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) $(win_flags)
 
 win_scripting:
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(scripting) $(win_flags)
@@ -227,12 +237,20 @@ win_scripting:
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags)
 	mv *.o bin_win
 
-	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(exec) $(win_flags)
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) $(win_flags)
 
 win_game:
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp -DGAME_BUILD $(win_flags)
 	mv *.o bin_win
 	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(exec_win_game) $(win_flags)
+
+win_audio:
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(audio) $(win_flags)
+	mv *.o bin_win
+
+	# $(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags)
+	# mv *.o bin_win
+	# $(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) $(win_flags)
 
 clean:
 	-rm src/*.o
