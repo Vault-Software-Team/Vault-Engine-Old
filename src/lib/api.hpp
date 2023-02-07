@@ -59,6 +59,7 @@
 #include "../Renderer/Timestep.hpp"
 #include "../Renderer/Batch.hpp"
 #include "../Renderer/Font.hpp"
+#include "../Renderer/Terrain.hpp"
 
 // Debugging
 #include "../Debugging/GLError.hpp"

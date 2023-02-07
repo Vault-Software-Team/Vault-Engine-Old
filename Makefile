@@ -140,10 +140,9 @@ projects:
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec_proj) $(flags)
 
 projects_win:
-	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(sources) $(win_flags) -DPROJECT_MENU
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags) -DPROJECT_MENU
 	mv *.o bin_win
-	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) $(win_flags) -DPROJECT_MENU
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(exec_win_proj) $(win_flags) -DPROJECT_MENU
 
 bundle:
 	mv src/*.o bin
@@ -231,7 +230,9 @@ win_scripting:
 	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(exec) $(win_flags)
 
 win_game:
-	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj $(sources) -DGAME_BUILD $(win_flags) -o $(exec_win_game)
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp -DGAME_BUILD $(win_flags)
+	mv *.o bin_win
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(exec_win_game) $(win_flags)
 
 clean:
 	-rm src/*.o

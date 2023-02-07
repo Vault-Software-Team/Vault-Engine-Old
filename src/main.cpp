@@ -4,6 +4,7 @@
 #include <regex>
 #include "ImGuizmo/ImGuizmo.h"
 #include "Renderer/Timestep.hpp"
+#include "glm/ext/matrix_transform.hpp"
 #include "lib/InputEvents.hpp"
 #include "icons/icons.h"
 #include "imgui/imgui.h"
@@ -37,14 +38,6 @@ static float bounds[] = {-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f};
 static float boundsSnap[] = {0.1f, 0.1f, 0.1f};
 static bool boundSizing = false;
 static bool boundSizingSnap = false;
-
-void *operator new(size_t size) {
-    void *p = malloc(size);
-    if (!p) {
-        throw std::bad_alloc();
-    }
-    return p;
-}
 
 class CollisionListener : public b2ContactListener {
 public:
@@ -525,15 +518,15 @@ void ShortcutManager(bool &openConfig) {
         drawGrid = !drawGrid;
     }
 
-    if (ImGui::IsKeyPressed(GLFW_KEY_T)) {
+    if (ImGui::IsKeyPressed(ImGuiKey_LeftAlt) && ImGui::IsKeyPressed(GLFW_KEY_T)) {
         m_GuizmoMode = ImGuizmo::OPERATION::TRANSLATE;
     }
 
-    if (ImGui::IsKeyPressed(GLFW_KEY_R)) {
+    if (ImGui::IsKeyPressed(ImGuiKey_LeftAlt) && ImGui::IsKeyPressed(GLFW_KEY_R)) {
         m_GuizmoMode = ImGuizmo::OPERATION::ROTATE;
     }
 
-    if (ImGui::IsKeyPressed(GLFW_KEY_S)) {
+    if (ImGui::IsKeyPressed(ImGuiKey_LeftAlt) && ImGui::IsKeyPressed(GLFW_KEY_S)) {
         m_GuizmoMode = ImGuizmo::OPERATION::SCALE;
     }
 
@@ -3401,8 +3394,9 @@ int main(int argc, char **argv) {
     // Batch batch_layer;
     // Material batch_mat;
     // Shader batch_shader("shaders/batch.glsl");
-
     // batch_layer.AddMesh(batch_plane.m_Mesh->vertices, batch_plane.m_Mesh->indices, &batch_trans);
+
+    // Terrain terrain;
 
     app.Run(
         [&](uint32_t &shadowMapTex) {
@@ -3410,11 +3404,8 @@ int main(int argc, char **argv) {
             // glCullFace(GL_BACK);
             // glFrontFace(GL_CCW);
 
-            // glEnable(GL_BLEND);
-            // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             // glEnable(GL_DEPTH_TEST);
-            // glDepthFunc(GL_LEQUAL);
-            // batch_layer.Draw(batch_shader, *Scene::mainCamera, batch_mat);
+            // batch_layer.Draw(shader, *Scene::mainCamera, batch_mat);
 
             // animator.UpdateAnimation(Timestep::deltaTime);
             runTime += Timestep::deltaTime;

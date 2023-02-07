@@ -88,7 +88,7 @@ namespace HyperAPI {
         }
 
         for (auto vertex : vertices) {
-            std::cout << vertex.position.x << " " << vertex.position.y << " " << vertex.position.y << std::endl;
+            std::cout << vertex.position.x << " " << vertex.position.y << " " << vertex.position.z << std::endl;
             vertex.transformIndex = transforms.size() - 1;
             this->vertices.push_back(vertex);
         }

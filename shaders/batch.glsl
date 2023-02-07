@@ -51,7 +51,7 @@ void main() {
     totalPosition = camera * mat4(1) * vec4(position, 1.0f);
 
     vec4 worldPosition = totalPosition;
-    currentPosition = vec3(totalPosition);
+    currentPosition = camera * model * vec3(totalPosition);
     projection = camera;
     
     gl_Position = vec4(currentPosition, 1.0f);
