@@ -4823,9 +4823,9 @@ void DisplayProject(GLFWwindow *window, const std::string &name,
         _getcwd(cwd, sizeof(cwd));
         std::string s_Cwd = cwd;
 
-        std::cout << s_Cwd + "\\win_build.exe \"" + path + "\"" << std::endl;
+        std::cout << s_Cwd + "\\bin\\win_build.exe \"" + path + "\"" << std::endl;
         std::thread t(
-            [&]() { system((".\\win_build.exe \"" + path + "\"").c_str()); });
+            [&]() { system((".\\bin\\win_build.exe \"" + path + "\"").c_str()); });
 
         t.detach();
 #else
@@ -4834,7 +4834,7 @@ void DisplayProject(GLFWwindow *window, const std::string &name,
         std::string s_Cwd = cwd;
 
         std::thread t([&]() {
-            system(std::string("./build.out \"" + path + "\"").c_str());
+            system(std::string("./bin/build.out \"" + path + "\"").c_str());
         });
         t.detach();
 #endif

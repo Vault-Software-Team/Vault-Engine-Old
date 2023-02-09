@@ -3,13 +3,13 @@ MINGW_COMPILER = x86_64-w64-mingw32-g++
 GNU_LINUX_COMPILER = g++
 # SET THESE VARIABLES TO MATCH YOUR ENVIRONMENT
 
-exec = build.out
-exec_game = game.out
-exec_win_game = windows/game.exe
-win_exec = windows/win_build.exe
+exec = bin/build.out
+exec_game = bin/game.out
+exec_win_game = windows/bin/game.exe
+win_exec = windows/bin/win_build.exe
 
-exec_proj = build_proj.out
-exec_win_proj = windows/win_proj.exe
+exec_proj = bin/build_proj.out
+exec_win_proj = windows/bin/win_proj.exe
 
 cwd=$(shell pwd)
 sources = $(wildcard src/*.cpp)
