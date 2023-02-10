@@ -95,11 +95,20 @@ C++ Scripting is not Cross-Platform as of now
 
 ### **Bundling**
 
-Bundling the application is very easy, this only works on bash since i do not have .bat file for this created
+Bundling the application is very easy! just use the bash/batch script!
+
+On Linux
 
 ```bash
 ./bundle.sh # this will bundle for linux, in dist/linux
 ./bundle.sh windows # this will bundle for windows, in dist/windows
+```
+
+On Windows
+
+```bash
+./bundle.bat # this will bundle for linux, in dist/linux
+./bundle.bat windows # this will bundle for windows, in dist/windows
 ```
 
 NOTE: Building is still being worked on!
