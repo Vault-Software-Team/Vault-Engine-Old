@@ -1,5 +1,6 @@
 #include "Audio3DFunctions.hpp"
 #include "csharp.hpp"
+#include "mono/metadata/object.h"
 
 namespace HyperAPI::CsharpScriptEngine::Functions {
     void Audio3D_GetKey(MonoString *key, MonoString *id, MonoString **result) {
@@ -95,5 +96,28 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         auto &component = gameObject->GetComponent<Audio3D>();
 
         component.Stop();
+    }
+
+    void Audio3D_SetClip(MonoString *id, MonoString *path) {
+        using namespace Experimental;
+        using namespace CsharpVariables;
+
+        const std::string m_id = mono_string_to_utf8(id);
+        auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        auto &component = gameObject->GetComponent<Audio3D>();
+
+        component.file = mono_string_to_utf8(path);
+        component.audio = SoundBuffer::get()->AddSoundEffect(component.file.c_str());
+    }
+
+    void Audio3D_GetClip(MonoString *id, MonoString **result) {
+        using namespace Experimental;
+        using namespace CsharpVariables;
+
+        const std::string m_id = mono_string_to_utf8(id);
+        auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        auto &component = gameObject->GetComponent<Audio3D>();
+
+        *result = mono_string_new(appDomain, component.file.c_str());
     }
 } // namespace HyperAPI::CsharpScriptEngine::Functions

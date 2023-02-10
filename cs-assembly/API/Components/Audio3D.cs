@@ -24,6 +24,11 @@ namespace Vault
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static void cpp_Stop(string id);
 
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static void cpp_SetClip(string id, string clip);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static void cpp_GetClip(string id, out string result);
+
 
         public float volume
         {
@@ -87,6 +92,19 @@ namespace Vault
             set
             {
                 cpp_SetVelocity(Entity.ID, value.x, value.y, value.z);
+            }
+        }
+
+        public string audioClip
+        {
+            get
+            {
+                cpp_GetClip(Entity.ID, out string result);
+                return result;
+            }
+            set
+            {
+                cpp_SetClip(Entity.ID, value);
             }
         }
     }

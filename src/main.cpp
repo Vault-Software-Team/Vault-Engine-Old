@@ -1013,6 +1013,7 @@ int main(int argc, char **argv) {
     auto *cameraIcon_texture =
         new Texture("assets\\icons\\camera.png", 0, "texture_diffuse");
     auto *engineLogo = new Texture("build\\logo2.png", 0, "texture_diffuse");
+    auto *audioIcon_texture = new Texture("assets\\icons\\audio_icon.png", 0, "texture_diffuse");
 #else
     auto *dirLightIcon_texture =
         new Texture("assets/icons/directional_light.png", 0, "texture_diffuse");
@@ -1023,6 +1024,7 @@ int main(int argc, char **argv) {
     auto *cameraIcon_texture =
         new Texture("assets/icons/camera.png", 0, "texture_diffuse");
     auto *engineLogo = new Texture("build/logo2.png", 0, "texture_diffuse");
+    auto *audioIcon_texture = new Texture("assets/icons/audio_icon.png", 0, "texture_diffuse");
 #endif
 
     Material dirLightIconMaterial(Vector4(1, 1, 1, 1));
@@ -1043,6 +1045,10 @@ int main(int argc, char **argv) {
     Material cameraIconMaterial(Vector4(1, 1, 1, 1));
     cameraIconMaterial.diffuse = cameraIcon_texture;
     Mesh cameraIconMesh(sprite_vertices, sprite_indices, cameraIconMaterial);
+
+    Material audioIconMaterial(Vector4(1, 1, 1, 1));
+    audioIconMaterial.diffuse = audioIcon_texture;
+    Mesh audioMesh(sprite_vertices, sprite_indices, audioIconMaterial);
 
 #endif
 
@@ -4485,6 +4491,32 @@ int main(int argc, char **argv) {
                     glDepthFunc(GL_LEQUAL);
                     dirLightIconMesh.enttId = (uint32_t)gameObject->entity;
                     dirLightIconMesh.Draw(workerShader, *camera, t.transform);
+                    glEnable(GL_DEPTH_TEST);
+                }
+
+                if (gameObject->HasComponent<Audio3D>()) {
+                    for (auto &game_object : Scene::m_GameObjects) {
+                        if (game_object->HasComponent<MeshRenderer>()) {
+                            auto &meshRenderer =
+                                game_object->GetComponent<MeshRenderer>();
+                            if (meshRenderer.m_Mesh)
+                                meshRenderer.m_Mesh->material.Unbind(shader);
+                        }
+                    }
+
+                    auto &transform = gameObject->GetComponent<Transform>();
+                    Transform t = transform;
+                    t.scale = glm::vec3(-0.5f, 0.5f, 0.5f);
+
+                    auto camTransform =
+                        camera->GetComponent<TransformComponent>();
+                    t.LookAt(camTransform.position);
+                    t.Update();
+
+                    glDisable(GL_DEPTH_TEST);
+                    glDepthFunc(GL_LEQUAL);
+                    audioMesh.enttId = (uint32_t)gameObject->entity;
+                    audioMesh.Draw(workerShader, *camera, t.transform);
                     glEnable(GL_DEPTH_TEST);
                 }
 

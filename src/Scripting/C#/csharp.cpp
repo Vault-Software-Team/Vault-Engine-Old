@@ -157,6 +157,8 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("Vault.Audio3D::cpp_SetLoop", reinterpret_cast<void *(*)>(Audio3D_SetLoop));
         mono_add_internal_call("Vault.Audio3D::cpp_Play", reinterpret_cast<void *(*)>(Audio3D_Play));
         mono_add_internal_call("Vault.Audio3D::cpp_Stop", reinterpret_cast<void *(*)>(Audio3D_Stop));
+        mono_add_internal_call("Vault.Audio3D::cpp_SetClip", reinterpret_cast<void *(*)>(Audio3D_SetClip));
+        mono_add_internal_call("Vault.Audio3D::cpp_GetClip", reinterpret_cast<void *(*)>(Audio3D_GetClip));
     }
 } // namespace HyperAPI::CsharpScriptEngine::Functions
 

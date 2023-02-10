@@ -22,4 +22,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
     void Audio3D_SetLoop(MonoString *id, bool val);
     void Audio3D_Play(MonoString *id);
     void Audio3D_Stop(MonoString *id);
+
+    void Audio3D_SetClip(MonoString *id, MonoString *path);
+    void Audio3D_GetClip(MonoString *id, MonoString **result);
 } // namespace HyperAPI::CsharpScriptEngine::Functions
