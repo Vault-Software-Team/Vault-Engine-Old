@@ -672,6 +672,7 @@ int main(int argc, char **argv) {
         std::cout << "Current working dir: " << cwd << std::endl;
     }
 
+    std::cout << "WHAHAA" << std::endl;
     CsharpScriptEngine::InitMono();
     char m_cwd[1024];
     getcwd(m_cwd, sizeof(m_cwd));

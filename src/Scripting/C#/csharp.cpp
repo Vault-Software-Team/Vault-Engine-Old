@@ -10,6 +10,7 @@
 #include "mono/metadata/mono-debug.h"
 #include <cstddef>
 #include <cstring>
+#include <experimental/bits/fs_fwd.h>
 #include <experimental/bits/fs_ops.h>
 #include <functional>
 #include <sstream>
@@ -273,8 +274,12 @@ namespace HyperAPI::CsharpScriptEngine {
         using namespace CsharpVariables;
 
         if (fs::exists("cs-assembly/bin/Debug/net6.0/cs-assembly.dll")) {
-            HYPER_LOG(cwd);
-            mono_set_assemblies_path(std::string(cwd + "/mono/lib").c_str());
+            std::cout << "Does this exist?" << std::endl;
+#ifdef _WIN32
+            mono_set_assemblies_path((std::string(CsharpVariables::oldCwd) + "\\mono\\lib").c_str());
+#else
+            mono_set_assemblies_path((std::string(CsharpVariables::oldCwd) + "/mono/lib").c_str());
+#endif
             // const char *argv[2] = {
             // "--debugger-agent=transport=dt_socket,address=127.0.0.1:2550,server=y,suspend=n,loglevel=3,logfile=logs/VaultMonoDebugger.log",
             // "--soft-breakpoints"};
@@ -308,6 +313,9 @@ namespace HyperAPI::CsharpScriptEngine {
     void ReloadAssembly() {
         using namespace Functions;
         using namespace CsharpVariables;
+
+        if (!fs::exists("cs-assembly/bin/Debug/net6.0/cs-assembly.dll"))
+            return;
 
         mono_domain_set(mono_get_root_domain(), false);
         mono_domain_unload(appDomain);
@@ -354,7 +362,7 @@ namespace HyperAPI::CsharpScriptEngine {
         system("mkdir cs-assembly");
         HYPER_LOG(CsharpVariables::oldCwd)
         if (fs::exists(CsharpVariables::oldCwd + "/cs-assembly")) {
-            fs::copy(CsharpVariables::oldCwd + "/cs-assembly", "cs-assembly");
+            fs::copy(CsharpVariables::oldCwd + "/cs-assembly", "cs-assembly", fs::copy_options::recursive);
         }
 
         std::thread *compilerThread = new std::thread([&] {

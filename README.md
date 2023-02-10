@@ -51,6 +51,7 @@
 - **FileWatch**
 - **Freetype**
 - **luajit**
+- **sndfile**
 
 # Huge thanks to
 
@@ -102,6 +103,10 @@ Bundling the application is very easy, this only works on bash since i do not ha
 ```
 
 NOTE: Building is still being worked on!
+
+# **Cross-Platform Issues**
+
+- 3D Audio - Linux build is able load mp3 files while windows build can only load WAV files. (this is an issue with sndfile)
 
 # Upcoming Features
 

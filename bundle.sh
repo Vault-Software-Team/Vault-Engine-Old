@@ -23,8 +23,8 @@ if [ "$PLATFORM" = "windows" ]; then
     cp -r shaders dist/windows/shaders
     cp -r build dist/windows/build 
     cp -r cs-assembly dist/windows/cs-assembly 
-    cp -r mono dist/windows/mono
     cp -r windows/lib dist/windows/lib
+    cp -r mono/lib dist/windows/lib/mono
     cp -r windows/bin dist/windows/bin
     cp windows/Vault\ Engine.bat dist/windows/Vault\ Engine.bat
 else 
