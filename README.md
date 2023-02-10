@@ -108,6 +108,10 @@ NOTE: Building is still being worked on!
 
 - 3D Audio - Linux build is able load mp3 files while windows build can only load WAV files. (this is an issue with sndfile)
 
+# **C# Scripting**
+
+If you want to use C# for scripting **you need to have dotnet and the sdk installed!** and the path set!
+
 # Upcoming Features
 
 - **Asset Packager**
