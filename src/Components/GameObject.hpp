@@ -12,6 +12,8 @@ namespace HyperAPI::Experimental {
     class GameObject : public ComponentEntity {
     public:
         bool enabled = true;
+        bool schedule = false;
+        bool setted_schedule = false;
         bool keyDown = false;
         bool isFolder = false;
         std::string NODE_ID = uuid::generate_uuid_v4();
@@ -42,7 +44,24 @@ namespace HyperAPI::Experimental {
                 if (childObject->parentID != ID)
                     continue;
 
-                childObject->SetActive(enabled);
+                if (enabled) {
+                    if (childObject->setted_schedule) {
+                        childObject->SetActive(childObject->schedule);
+                        childObject->setted_schedule = false;
+                    }
+                }
+
+                if (!childObject->enabled && enabled) {
+                    childObject->SetActive(false);
+                } else if (!enabled) {
+                    if (!childObject->setted_schedule) {
+                        childObject->schedule = childObject->enabled;
+                        childObject->setted_schedule = true;
+                    }
+                    childObject->SetActive(false);
+                } else if (childObject->enabled && enabled) {
+                    childObject->SetActive(true);
+                }
             }
         }
 

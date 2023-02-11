@@ -804,6 +804,14 @@ namespace HyperAPI {
                 gameObject->parentID = parentID;
                 gameObject->layer = layer;
 
+                if (JSON[i].contains("schedule")) {
+                    gameObject->schedule = JSON[i]["schedule"];
+                }
+
+                if (JSON[i].contains("setted_schedule")) {
+                    gameObject->setted_schedule = JSON[i]["setted_schedule"];
+                }
+
                 if (JSON[i].contains("active")) {
                     gameObject->SetActive(JSON[i]["active"]);
                 }
@@ -1436,6 +1444,8 @@ namespace HyperAPI {
                 JSON[i]["tag"] = tag;
                 JSON[i]["parentID"] = parentID;
                 JSON[i]["layer"] = layer;
+                JSON[i]["schedule"] = gameObject->schedule;
+                JSON[i]["setted_schedule"] = gameObject->setted_schedule;
                 JSON[i]["components"] = nlohmann::json::array();
                 JSON[i]["active"] = gameObject->enabled;
 
