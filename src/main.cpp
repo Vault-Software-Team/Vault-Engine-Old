@@ -1136,9 +1136,9 @@ int main(int argc, char **argv) {
 
             if (ImGui::BeginMainMenuBar()) {
                 if (ImGui::BeginMenu("File")) {
-                    if (ImGui::MenuItem("Compile C++ Scripts (Linux)")) {
-                        CompileLinuxScripts();
-                    }
+                    // if (ImGui::MenuItem("Compile C++ Scripts (Linux)")) {
+                    //     CompileLinuxScripts();
+                    // }
 
                     if (ImGui::MenuItem("Compile C# Assemblies")) {
                         CsharpScriptEngine::CompileAssemblies();
@@ -2717,10 +2717,10 @@ int main(int argc, char **argv) {
                         ImGui::CloseCurrentPopup();
                     }
 
-                    if (ImGui::Button("C++ Scripts", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<CppScriptManager>();
-                        ImGui::CloseCurrentPopup();
-                    }
+                    // if (ImGui::Button("C++ Scripts", ImVec2(200, 0))) {
+                    //     Scene::m_Object->AddComponent<CppScriptManager>();
+                    //     ImGui::CloseCurrentPopup();
+                    // }
 
                     if (ImGui::Button("C# Scripts", ImVec2(200, 0))) {
                         Scene::m_Object->AddComponent<CsharpScriptManager>();

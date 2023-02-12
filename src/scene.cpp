@@ -110,7 +110,7 @@ namespace HyperAPI {
 
                 std::string name = gameObject->name;
                 std::string ID = gameObject->ID;
-                std::string parentID = gameObject->parentID;
+                std::string parentID = "NO_PARENT";
                 std::string tag = gameObject->tag;
                 std::string layer = gameObject->layer;
 
