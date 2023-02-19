@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <experimental/bits/fs_fwd.h>
 #include <random>
 #include <memory>
 #include <regex>
@@ -13,6 +14,7 @@
 #include "imgui/imgui.h"
 #include "lib/api.hpp"
 #include "lib/scene.hpp"
+#include "libs.hpp"
 #include "mono/metadata/appdomain.h"
 #include "mono/metadata/assembly.h"
 #include "mono/metadata/class.h"
@@ -96,6 +98,38 @@ public:
                 script.Collision2D(gameObjectA);
             }
         }
+
+        if (gameObjectA->HasComponent<CsharpScriptManager>()) {
+            auto &scriptManager = gameObjectA->GetComponent<CsharpScriptManager>();
+
+            for (auto klass : scriptManager.selectedScripts) {
+                MonoObject *exception = nullptr;
+                MonoScriptClass *behaviour =
+                    CsharpScriptEngine::instances[klass.first];
+                MonoMethod *method = behaviour->GetMethod("OnCollisionEnter2D", 1);
+                if (!method)
+                    continue;
+
+                void *params = mono_string_new(CsharpVariables::appDomain, gameObjectB->ID.c_str());
+                mono_runtime_invoke(method, behaviour->f_GetObject(), &params, &exception);
+            }
+        }
+
+        if (gameObjectB->HasComponent<CsharpScriptManager>()) {
+            auto &scriptManager = gameObjectB->GetComponent<CsharpScriptManager>();
+
+            for (auto klass : scriptManager.selectedScripts) {
+                MonoObject *exception = nullptr;
+                MonoScriptClass *behaviour =
+                    CsharpScriptEngine::instances[klass.first];
+                MonoMethod *method = behaviour->GetMethod("OnCollisionEnter2D", 1);
+                if (!method)
+                    continue;
+
+                void *params = mono_string_new(CsharpVariables::appDomain, gameObjectA->ID.c_str());
+                mono_runtime_invoke(method, behaviour->f_GetObject(), &params, &exception);
+            }
+        }
     }
 
     void EndContact(b2Contact *contact) override {
@@ -137,6 +171,38 @@ public:
                 gameObjectB->GetComponent<m_LuaScriptComponent>();
             for (auto script : scriptManager.scripts) {
                 script.CollisionExit2D(gameObjectA);
+            }
+        }
+
+        if (gameObjectA->HasComponent<CsharpScriptManager>()) {
+            auto &scriptManager = gameObjectA->GetComponent<CsharpScriptManager>();
+
+            for (auto klass : scriptManager.selectedScripts) {
+                MonoObject *exception = nullptr;
+                MonoScriptClass *behaviour =
+                    CsharpScriptEngine::instances[klass.first];
+                MonoMethod *method = behaviour->GetMethod("OnCollisionExit2D", 1);
+                if (!method)
+                    continue;
+
+                void *params = mono_string_new(CsharpVariables::appDomain, gameObjectB->ID.c_str());
+                mono_runtime_invoke(method, behaviour->f_GetObject(), &params, &exception);
+            }
+        }
+
+        if (gameObjectB->HasComponent<CsharpScriptManager>()) {
+            auto &scriptManager = gameObjectB->GetComponent<CsharpScriptManager>();
+
+            for (auto klass : scriptManager.selectedScripts) {
+                MonoObject *exception = nullptr;
+                MonoScriptClass *behaviour =
+                    CsharpScriptEngine::instances[klass.first];
+                MonoMethod *method = behaviour->GetMethod("OnCollisionExit2D", 1);
+                if (!method)
+                    continue;
+
+                void *params = mono_string_new(CsharpVariables::appDomain, gameObjectA->ID.c_str());
+                mono_runtime_invoke(method, behaviour->f_GetObject(), &params, &exception);
             }
         }
     }
@@ -672,10 +738,18 @@ int main(int argc, char **argv) {
         std::cout << "Current working dir: " << cwd << std::endl;
     }
 
-    std::cout << "WHAHAA" << std::endl;
-    CsharpScriptEngine::InitMono();
     char m_cwd[1024];
     getcwd(m_cwd, sizeof(m_cwd));
+    std::cout << m_cwd << std::endl;
+    std::cout << CsharpVariables::oldCwd << std::endl;
+    if (CsharpVariables::oldCwd != std::string(m_cwd)) {
+        if (fs::exists("cs-assembly/API")) {
+            fs::remove_all("cs-assembly/API");
+        }
+        fs::copy(CsharpVariables::oldCwd + "/cs-assembly/API", "cs-assembly/API", fs::copy_options::recursive);
+    }
+
+    CsharpScriptEngine::InitMono();
 
     if (!fs::exists("cs-assembly"))
         fs::create_directory("cs-assembly");
@@ -2290,6 +2364,7 @@ int main(int argc, char **argv) {
                         if (stateJSON != "[]") {
                             Scene::LoadScene("", stateScene);
                         }
+                        stateScene.clear();
                         Scene::mainCamera = camera;
                     }
                     ImGui::PopStyleColor();
@@ -3306,48 +3381,59 @@ int main(int argc, char **argv) {
                         ImGuiFileDialog::Instance()->GetFilePathName();
                     std::string filePath =
                         ImGuiFileDialog::Instance()->GetCurrentPath();
+
+                    if (fs::exists(filePathName + "/assets"))
+                        fs::remove_all(filePathName + "/assets");
+
+                    if (fs::exists(filePathName + "/imgui.ini"))
+                        fs::remove(filePathName + "/imgui.ini");
+
+                    if (fs::exists(filePathName + "/shaders"))
+                        fs::remove_all(filePathName + "/shaders");
+
+                    if (fs::exists(filePathName + "/build"))
+                        fs::remove_all(filePathName + "/build");
+
+                    if (fs::exists(filePathName + "/cs-assembly"))
+                        fs::remove_all(filePathName + "/cs-assembly");
+
+                    if (fs::exists(filePathName + "/lib"))
+                        fs::remove_all(filePathName + "/lib");
+
+                    if (fs::exists(filePathName + "/mono"))
+                        fs::remove_all(filePathName + "/mono");
+
+                    if (fs::exists(filePathName + "/" + config.name + ".bat"))
+                        fs::remove(filePathName + "/" + config.name + ".bat");
+
+                    std::string m_cwd = CsharpVariables::oldCwd;
 #ifdef _WIN32
-                    system(("rmdir /s /q " + filePathName).c_str());
-                    system(("mkdir " + filePathName).c_str());
-                    system(("xcopy /s /e /y \"" + cwd + "\\assets\" \"" +
-                            filePathName + "\\assets\\\"")
-                               .c_str());
-                    system(("xcopy /s /e /y \"" + cwd + "\\build\" \"" +
-                            filePathName + "\\build\\\"")
-                               .c_str());
-                    system(("xcopy /s /e /y \"" + cwd + "\\shaders\" \"" +
-                            filePathName + "\\shaders/\"")
-                               .c_str());
-                    system(("xcopy /s /e /y \"" + cwd + "\\dlls\\*.dll\" \"" +
-                            filePathName + "\"")
-                               .c_str());
-                    system(("xcopy /s /e /y \"" + cwd + "\\game.exe\" \"" +
-                            filePathName + "\"")
-                               .c_str());
-                    // rename game.exe to game name
-                    system(("rename " + filePathName + "\\game.exe " +
-                            config.name + ".exe")
-                               .c_str());
+                    fs::copy("./assets", filePathName + "/assets", fs::copy_options::recursive);
+                    fs::copy("./shaders", filePathName + "/shaders", fs::copy_options::recursive);
+                    fs::copy("./lib", filePathName + "/lib", fs::copy_options::recursive);
+                    fs::copy(m_cwd + "/bin/game.exe", filePathName + "/lib/game.exe", fs::copy_options::recursive);
+                    fs::copy(m_cwd + "/bin/LaunchGame.bat", filePathName + "/" + config.name + ".bat", fs::copy_options::recursive);
+                    fs::copy("./build", filePathName + "/build", fs::copy_options::recursive);
+                    fs::copy("./cs-assembly", filePathName + "/cs-assembly", fs::copy_options::recursive);
+                    fs::copy("./imgui.ini", filePathName + "/imgui.ini", fs::copy_options::recursive);
 #else
-                    system(
-                        std::string("rm -r \"" + filePathName + "\"").c_str());
-                    system(
-                        std::string("mkdir \"" + filePathName + "\"").c_str());
-                    system(std::string("cp assets \"" + filePathName +
-                                       "/assets\" -r")
-                               .c_str());
-                    system(std::string("cp build \"" + filePathName +
-                                       "/build\" -r")
-                               .c_str());
-                    system(std::string("cp shaders \"" + filePathName +
-                                       "/shaders\" -r")
-                               .c_str());
-                    system(std::string("cp dlls/*.dll \"" + filePathName + "\"")
-                               .c_str());
-                    system(std::string("cp game.exe \"" + filePathName + "/" +
-                                       config.name + ".exe\"")
-                               .c_str());
+                    fs::copy("./assets", filePathName + "/assets", fs::copy_options::recursive);
+                    fs::copy("./shaders", filePathName + "/shaders", fs::copy_options::recursive);
+                    fs::copy("./bin/dlls", filePathName + "/lib", fs::copy_options::recursive);
+                    fs::copy(m_cwd + "/bin/game.exe", filePathName + "/lib/game.exe", fs::copy_options::recursive);
+                    fs::copy(m_cwd + "/bin/LaunchGame.bat", filePathName + "/" + config.name + ".bat", fs::copy_options::recursive);
+                    fs::copy("./build", filePathName + "/build", fs::copy_options::recursive);
+                    fs::copy("./cs-assembly", filePathName + "/cs-assembly", fs::copy_options::recursive);
+                    fs::copy(m_cwd + "/mono/lib", filePathName + "/lib/mono", fs::copy_options::recursive);
+                    fs::copy("./imgui.ini", filePathName + "/imgui.ini", fs::copy_options::recursive);
 #endif
+
+                    for (const auto &iter : std::filesystem::directory_iterator(filePathName + "/cs-assembly")) {
+                        if (iter.path().extension() == ".cs") {
+                            std::filesystem::remove(iter.path());
+                        }
+                    }
+                    fs::remove_all(filePathName + "/cs-assembly/API");
                 }
                 ImGuiFileDialog::Instance()->Close();
             }
@@ -3387,12 +3473,12 @@ int main(int argc, char **argv) {
                     std::string m_cwd = CsharpVariables::oldCwd;
                     fs::copy("./assets", filePathName + "/assets", fs::copy_options::recursive);
                     fs::copy("./shaders", filePathName + "/shaders", fs::copy_options::recursive);
-                    fs::copy("./linux_lib", filePathName + "/linux_lib", fs::copy_options::recursive);
-                    fs::copy(m_cwd + "/game.out", filePathName + "/lib/game.out", fs::copy_options::recursive);
-                    fs::copy(m_cwd + "/LaunchGame.sh", filePathName + "/" + config.name + ".sh", fs::copy_options::recursive);
+                    fs::copy("./lib", filePathName + "/lib", fs::copy_options::recursive);
+                    fs::copy(m_cwd + "/bin/game.out", filePathName + "/lib/game.out", fs::copy_options::recursive);
+                    fs::copy(m_cwd + "/bin/LaunchGame.sh", filePathName + "/" + config.name + ".sh", fs::copy_options::recursive);
                     fs::copy("./build", filePathName + "/build", fs::copy_options::recursive);
                     fs::copy("./cs-assembly", filePathName + "/cs-assembly", fs::copy_options::recursive);
-                    fs::copy(m_cwd + "/lib", filePathName + "/lib", fs::copy_options::recursive);
+                    fs::copy(m_cwd + "/mono", filePathName + "/mono", fs::copy_options::recursive);
                     fs::copy("./imgui.ini", filePathName + "/imgui.ini", fs::copy_options::recursive);
 
                     for (const auto &iter : std::filesystem::directory_iterator(filePathName + "/cs-assembly")) {
@@ -3523,6 +3609,38 @@ int main(int argc, char **argv) {
                             gameObjectB->GetComponent<m_LuaScriptComponent>();
                         for (auto script : scriptManager.scripts) {
                             script.Collision3D(gameObjectA);
+                        }
+                    }
+
+                    if (gameObjectA->HasComponent<CsharpScriptManager>()) {
+                        auto &scriptManager = gameObjectA->GetComponent<CsharpScriptManager>();
+
+                        for (auto klass : scriptManager.selectedScripts) {
+                            MonoObject *exception = nullptr;
+                            MonoScriptClass *behaviour =
+                                CsharpScriptEngine::instances[klass.first];
+                            MonoMethod *method = behaviour->GetMethod("OnCollisionEnter3D", 1);
+                            if (!method)
+                                continue;
+
+                            void *params = mono_string_new(CsharpVariables::appDomain, gameObjectB->ID.c_str());
+                            mono_runtime_invoke(method, behaviour->f_GetObject(), &params, &exception);
+                        }
+                    }
+
+                    if (gameObjectB->HasComponent<CsharpScriptManager>()) {
+                        auto &scriptManager = gameObjectB->GetComponent<CsharpScriptManager>();
+
+                        for (auto klass : scriptManager.selectedScripts) {
+                            MonoObject *exception = nullptr;
+                            MonoScriptClass *behaviour =
+                                CsharpScriptEngine::instances[klass.first];
+                            MonoMethod *method = behaviour->GetMethod("OnCollisionEnter3D", 1);
+                            if (!method)
+                                continue;
+
+                            void *params = mono_string_new(CsharpVariables::appDomain, gameObjectA->ID.c_str());
+                            mono_runtime_invoke(method, behaviour->f_GetObject(), &params, &exception);
                         }
                     }
                 });

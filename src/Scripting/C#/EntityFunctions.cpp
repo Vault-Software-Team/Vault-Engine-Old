@@ -3,7 +3,14 @@
 
 namespace HyperAPI::CsharpScriptEngine::Functions {
     void Entity_GetID(MonoString **result) {
-        *result = mono_string_new(CsharpVariables::appDomain, nextId.c_str());
+        auto *obj = f_GameObject::FindGameObjectByID(nextId);
+        *result = mono_string_new(CsharpVariables::appDomain, (obj->ID + "," + obj->name + "," + obj->tag).c_str());
+    }
+
+    void Entity_GetDataFromID(MonoString *id, MonoString **result) {
+        const std::string m_id = mono_string_to_utf8(id);
+        auto *obj = f_GameObject::FindGameObjectByID(m_id);
+        *result = mono_string_new(CsharpVariables::appDomain, (obj->ID + "," + obj->name + "," + obj->tag).c_str());
     }
 
     bool Entity_GetEnabled(MonoString *id) {

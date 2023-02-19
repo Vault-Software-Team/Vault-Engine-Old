@@ -86,6 +86,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         // ID Shit
         mono_add_internal_call("Vault.Entity::GetID", reinterpret_cast<void *(*)>(Entity_GetID));
+        mono_add_internal_call("Vault.Entity::cpp_GetDataFromID", reinterpret_cast<void *(*)>(Entity_GetDataFromID));
         mono_add_internal_call("Vault.Entity::cpp_AddComponent", reinterpret_cast<void *(*)>(Entity_AddComponent));
         mono_add_internal_call("Vault.Entity::cpp_GetEnabled", reinterpret_cast<void *(*)>(Entity_GetEnabled));
         mono_add_internal_call("Vault.Entity::cpp_SetEnabled", reinterpret_cast<void *(*)>(Entity_SetEnabled));

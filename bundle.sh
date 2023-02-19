@@ -26,6 +26,8 @@ if [ "$PLATFORM" = "windows" ]; then
     cp -r windows/lib dist/windows/lib
     cp -r mono/lib dist/windows/lib/mono
     cp -r windows/bin dist/windows/bin
+    cp -r bin/game.out dist/windows/bin/game.out
+    cp -r LaunchGame.sh dist/windows/bin/LaunchGame.sh
     cp windows/Vault\ Engine.bat dist/windows/Vault\ Engine.bat
 else 
     if [ -d dist/linux ]; then
@@ -44,7 +46,12 @@ else
 
     cp -r lib dist/linux/lib
     cp -r bin/build.out dist/linux/bin/build.out
+    cp -r bin/game.out dist/linux/bin/game.out
     cp -r bin/build_proj.out dist/linux/bin/build_proj.out
+    cp -r windows/lib dist/linux/bin/dlls
+    cp -r windows/bin/game.exe dist/linux/bin/game.exe
+    cp -r windows/LaunchGame.bat dist/linux/bin/LaunchGame.bat
+    cp -r LaunchGame.sh dist/linux/bin/LaunchGame.sh
     cp -r Vault\ Engine.sh dist/linux/Vault\ Engine.sh
 
     cp -r assets dist/linux/assets

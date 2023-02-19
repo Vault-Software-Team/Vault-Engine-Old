@@ -59,7 +59,8 @@
 
 # Installation
 
-Create folders: **bin** and **bin_win** first!
+Create folders: **bin** and **bin_win** first! \
+Remember: **You need to compile linux and windows game binaries if you want cross-platform building to work!**
 
 ## **Linux**
 
@@ -68,6 +69,7 @@ git clone https://github.com/koki10190/Vault-Engine.git
 cd Vault-Engine
 make projects
 make linux
+make linux_game
 ./Vault\ Engine.sh
 ```
 
@@ -86,6 +88,7 @@ git clone https://github.com/koki10190/Vault-Engine.git
 cd Vault-Engine
 make projects_win
 make win
+make win_game
 .\windows\win_proj.exe
 ```
 

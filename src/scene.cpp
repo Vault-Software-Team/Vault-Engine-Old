@@ -828,59 +828,6 @@ namespace HyperAPI {
 
                     LoadComponents(component, gameObject, type, meshType, transform);
                 }
-                //                if(parentID != "NO_PARENT") {
-                //                    Experimental::Transform childTransform;
-                //
-                //                    delete gameObject;
-                //                    //erase back
-                //                    m_GameObjects.erase(m_GameObjects.begin() + m_GameObjects.size() - 1);
-                //                    int amountOfChildren = 0;
-                //                    std::vector<std::string> childNames;
-                //                    for(int j = 0; j < m_GameObjects.size(); j++) {
-                //                        if(m_GameObjects[j]->ID == parentID) {
-                //                            Experimental::Model *newEntity = new Experimental::Model((char*)meshType.c_str(), false);
-                //                            auto &m_Transform = newEntity->mainGameObject->GetComponent<Experimental::Transform>();
-                //
-                //                            for(int g = 0; g < JSON.size(); g++) {
-                //                                std::string p_ID = JSON[g]["ID"];
-                //                                std::string name = JSON[g]["name"];
-                //
-                //                                if(parentID == p_ID) {
-                //                                    for(int b = 0; b < JSON.size(); b++) {
-                //                                        std::string c_ID = JSON[b]["parentID"];
-                //                                        std::string c_name = JSON[b]["name"];
-                //
-                //                                        if(p_ID == c_ID) {
-                //                                            childNames.push_back(c_name);
-                //                                            amountOfChildren++;
-                //                                        }
-                //                                    }
-                //
-                //                                    for(auto &component : JSON[g]["components"]) {
-                //                                        std::string type = component["type"];
-                //
-                //                                        if(type == "Transform") {
-                //                                            ApplyTransform(m_Transform, component);
-                //                                            newEntity->mainGameObject->name = name;
-                //                                        }
-                //                                    }
-                //                                }
-                //                            }
-                //
-                //                            for(int a = 0; a < amountOfChildren; a++) {
-                //                                newEntity->m_gameObjects[a]->name = childNames[a];
-                //                                newEntity->m_gameObjects[a]->GetComponent<Experimental::Transform>().position = transform.position;
-                //                                newEntity->m_gameObjects[a]->GetComponent<Experimental::Transform>().rotation = transform.rotation;
-                //                                newEntity->m_gameObjects[a]->GetComponent<Experimental::Transform>().scale = transform.scale;
-                //                            }
-                //
-                //                            delete m_GameObjects[j];
-                //                            m_GameObjects.erase(m_GameObjects.begin() + j);
-                //
-                //                            break;
-                //                        }
-                //                    }
-                //                }
             }
 
             file.close();

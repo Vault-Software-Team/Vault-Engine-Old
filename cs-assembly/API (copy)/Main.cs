@@ -231,8 +231,6 @@ namespace Vault
     {
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static void GetID(out string result);
-        [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        extern public static void cpp_GetDataFromID(string id, out string result);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static bool cpp_GetEnabled(string id);
@@ -280,14 +278,7 @@ namespace Vault
 
         public Entity GetEntity(string m_id)
         {
-            cpp_GetDataFromID(m_id, out string result);
-            string[] data = result.Split(",");
-            return new Entity()
-            {
-                ID = data[0],
-                name = data[1],
-                tag = data[2],
-            };
+            return new Entity() { ID = m_id };
         }
 
         public T GetComponent<T>() where T : Component, new()
