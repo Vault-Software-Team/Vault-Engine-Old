@@ -243,6 +243,9 @@ namespace Vault
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static void cpp_AddComponent(string id, string type);
 
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static void cpp_RemoveGO(string id);
+
         public string parentID = "NO_PARENT";
         public string ID;
         public string name;
@@ -288,6 +291,11 @@ namespace Vault
                 name = data[1],
                 tag = data[2],
             };
+        }
+
+        public void RemoveEntity(string m_id)
+        {
+            cpp_RemoveGO(m_id);
         }
 
         public T GetComponent<T>() where T : Component, new()

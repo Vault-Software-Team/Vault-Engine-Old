@@ -13,6 +13,12 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         *result = mono_string_new(CsharpVariables::appDomain, (obj->ID + "," + obj->name + "," + obj->tag).c_str());
     }
 
+    void Entity_RemoveGO(MonoString *id) {
+        const std::string m_id = mono_string_to_utf8(id);
+        auto *obj = f_GameObject::FindGameObjectByID(nextId);
+        obj->DeleteGameObject();
+    }
+
     bool Entity_GetEnabled(MonoString *id) {
         using namespace Experimental;
         auto *gameObject = f_GameObject::FindGameObjectByID(mono_string_to_utf8(id));

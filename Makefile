@@ -57,6 +57,7 @@ api_obj = $(api:.cpp=.o)
 MONO_LIB=-I"$(cwd)/mono/include/mono-2.0" -D_REENTRANT  -L"$(cwd)/mono/lib" -lmono-2.0
 bullet_physics_linker_flags = -lBulletDynamics -lBulletCollision -lLinearMath
 bullet_physics_linker_flags_windows = -lBulletDynamics.dll -lBulletCollision.dll -lLinearMath.dll
+rusty = -lrusty_vault
 flags = -fno-stack-protector -std=c++20 -lstdc++fs -g -L"./lib" -lluajit-5.1 -I"./src/vendor" -I"./src/vendor/bullet/bullet" -I"./src/vendor/NoesisGUI" -I"./src/lib" -lmono-2.0 -lbacktrace -lfreetype -lGL -lbox2d -lGLU -lglfw -lm -lSDL2_mixer -lassimp -ltinyxml2 -lXrandr -lXi -lbox2d -lX11 -lXxf86vm -lpthread -ldl -lsndfile -lopenal -lXinerama -lzlib -lXcursor -lGLEW -ldiscord-rpc $(bullet_physics_linker_flags) -rdynamic
 win_flags = -lstdc++fs -L"./win_libs" -I"./src/lib" -I"./src/vendor/NoesisGUI" -I"./src/vendor" -I"./src/vendor/bullet/bullet" -lsndfile.dll -lopenal.dll -lmono-2.0.dll -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype.dll -lSDL2.dll -lSDL2_mixer.dll -ldiscord-rpc  -ltinyxml2 $(bullet_physics_linker_flags_windows)
 
@@ -142,7 +143,7 @@ app:
 	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
 	mv *.o bin
 
-	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
+	$(GNU_LINUX_COMPILER) -Wall -O0 bin/*.o -o $(exec) $(flags)
 
 projects:
 	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags) -DPROJECT_MENU
