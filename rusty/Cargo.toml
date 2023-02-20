@@ -7,7 +7,7 @@ edition = "2021"
 
 [lib]
 name = "rusty_vault"
-crate-type = ["rlib", "cdylib"]
+crate-type = ["rlib", "cdylib", "staticlib"]
 
 [dependencies]
 libc = "0.2.85"

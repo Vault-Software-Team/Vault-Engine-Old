@@ -8,6 +8,7 @@
 #include "Components/CsharpScriptManager.hpp"
 #include "ImGuizmo/ImGuizmo.h"
 #include "Renderer/AudioEngine.hpp"
+#include "Rusty/hyperlog.hpp"
 #include "rusty_vault.hpp"
 #include "Renderer/Timestep.hpp"
 #include "glm/ext/matrix_transform.hpp"
@@ -3530,21 +3531,18 @@ int main(int argc, char **argv) {
 
     float runTime;
 
-// Transform batch_trans;
-// batch_trans.position = Vector3(0, 0, 0);
-// batch_trans.rotation = Vector3(0, 0, 0);
-// batch_trans.scale = Vector3(1, 1, 1);
+    // Transform batch_trans;
+    // batch_trans.position = Vector3(0, 0, 0);
+    // batch_trans.rotation = Vector3(0, 0, 0);
+    // batch_trans.scale = Vector3(1, 1, 1);
 
-// Plane batch_plane;
-// Batch batch_layer;
-// Material batch_mat;
-// Shader batch_shader("shaders/batch.glsl");
-// batch_layer.AddMesh(batch_plane.m_Mesh->vertices, batch_plane.m_Mesh->indices, &batch_trans);
+    // Plane batch_plane;
+    // Batch batch_layer;
+    // Material batch_mat;
+    // Shader batch_shader("shaders/batch.glsl");
+    // batch_layer.AddMesh(batch_plane.m_Mesh->vertices, batch_plane.m_Mesh->indices, &batch_trans);
 
-// Terrain terrain;
-#ifdef RUSTY_BUILD
-    rusty_play_audio((char *)"assets/wrld.mp3");
-#endif
+    // Terrain terrain;
 
     app.Run(
         [&](uint32_t &shadowMapTex) {

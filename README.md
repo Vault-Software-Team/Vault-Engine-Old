@@ -124,10 +124,6 @@ NOTE: Building is still being worked on!
 
 If you want to use C# for scripting **you need to have dotnet and the sdk installed!** and the path set!
 
-# **Rusty Build**
-
-Rusty build basically means having rust code compiled and added to the game engine, this is just an experiment! only works on linux builds.
-
 # Upcoming Features
 
 - **Asset Packager**
