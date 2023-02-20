@@ -1,7 +1,7 @@
-# [target.x86_64-unknown-linux-gnu]
-[target.x86_64-pc-windows-gnu]
+[target.x86_64-unknown-linux-gnu]
+# [target.x86_64-pc-windows-gnu]
 
 [build]
 rustflags = ["-g"]
-target="x86_64-pc-windows-gnu"
-# target="x86_64-unknown-linux-gnu"
+# target="x86_64-pc-windows-gnu"
+target="x86_64-unknown-linux-gnu"

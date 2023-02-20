@@ -5,7 +5,7 @@ use std::os::raw::{c_char, c_void};
 
 mod engine_logs;
 
-#[link(name = "cppvault")]
+// #[link(name = "cppvault")]
 extern "C" {
     fn hyper_log(str: *mut c_char);
     fn play_audio(file: *mut c_char);
