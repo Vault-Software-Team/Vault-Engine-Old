@@ -2987,8 +2987,7 @@ int main(int argc, char **argv) {
 
                         if (!fs::exists(hpp)) {
                             std::ofstream file(hpp);
-                            std::string str = R"(
-#pragma once
+                            std::string str = R"(#pragma once
 #include <api.hpp>
 
 using namespace HyperAPI;
@@ -3023,8 +3022,7 @@ VAULT_API NewScript *create_object();
                         }
                         if (!fs::exists(cpp)) {
                             std::ofstream file(cpp);
-                            std::string str = R"(
-#include "NewScript.hpp"
+                            std::string str = R"(#include "NewScript.hpp"
 NewScript *create_object() {
     return new NewScript;
 }
