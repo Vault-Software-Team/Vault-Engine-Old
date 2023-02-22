@@ -201,6 +201,11 @@ win_rusty:
 	mv *.o bin_win
 	ar rcs ./win_libs/libcppvault.a bin_win/*.o
 
+win_cxx:
+	mv bin_win/main.o ./main.o
+	ar rcs cxx/windows/libvault_api.a bin_win/*.o
+	mv main.o bin_win/main.o
+
 win_assemble:
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags) -lrusty_vault
 	mv *.o bin_win

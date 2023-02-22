@@ -7,6 +7,7 @@ GameJam
 api/*.o
 *.exe
 *.out
+cxx/windows/libvault_api.a
 windows/*.exe
 website/node_modules
 BASDGKAFSGL.ggg
