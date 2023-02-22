@@ -1,13 +1,14 @@
 #include <cstdio>
-#include <experimental/bits/fs_fwd.h>
 #include <random>
 #include <memory>
 #include <regex>
 #include "Audio/SoundDevice.hpp"
 #include "Audio/SoundSource.hpp"
 #include "Components/CsharpScriptManager.hpp"
+#include "ImGuiColorTextEdit/TextEditor.h"
 #include "ImGuizmo/ImGuizmo.h"
 #include "Renderer/AudioEngine.hpp"
+#include "Scripting/CXX/CppScripting.hpp"
 #include "Rusty/hyperlog.hpp"
 #include "rusty_vault.hpp"
 #include "Renderer/Timestep.hpp"
@@ -388,6 +389,23 @@ void DirIter(const std::string &path) {
                     editor.SetLanguageDefinition(langDef);
                     currentFilePath = entry.path().string();
                 }
+            } else if (ends_with(entry.path().string(), ".cpp") || ends_with(entry.path().string(), ".cc") || ends_with(entry.path().string(), ".cxx") || ends_with(entry.path().string(), ".hpp")) {
+                ImGui::Button(ICON_FA_CODE,
+                              ImVec2(buttonSize, buttonSize - 30));
+                if (item) {
+                    std::ifstream file(entry.path().string());
+                    std::string str((std::istreambuf_iterator<char>(file)),
+                                    std::istreambuf_iterator<char>());
+                    editor.SetText(str);
+                    editor.SetLanguageDefinition(TextEditor::LanguageDefinition::CPlusPlus());
+                    currentFilePath = entry.path().string();
+                }
+            } else if (ends_with(entry.path().string(), ".dll") || ends_with(entry.path().string(), ".so")) {
+                ImGui::Button(ICON_FA_GEARS,
+                              ImVec2(buttonSize, buttonSize - 30));
+            } else if (ends_with(entry.path().string(), ".o")) {
+                ImGui::Button(ICON_FA_WRENCH,
+                              ImVec2(buttonSize, buttonSize - 30));
             } else if (ends_with(entry.path().string(), ".glsl")) {
                 ImGui::Button(ICON_FA_PAINT_ROLLER,
                               ImVec2(buttonSize, buttonSize - 30));
@@ -720,6 +738,11 @@ int cpp_play_audio(char *audio_file) {
     AudioEngine::PlaySound(audio_file);
 }
 #endif
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
+typedef CppScripting::Script *(*f_create_object)();
 
 int main(int argc, char **argv) {
     {
@@ -1220,7 +1243,6 @@ int main(int argc, char **argv) {
 
             if (ImGui::BeginMainMenuBar()) {
                 if (ImGui::BeginMenu("File")) {
-
                     if (ImGui::MenuItem("Compile C# Assemblies")) {
                         CsharpScriptEngine::CompileAssemblies();
                     }
@@ -2803,10 +2825,10 @@ int main(int argc, char **argv) {
                         ImGui::CloseCurrentPopup();
                     }
 
-                    // if (ImGui::Button("C++ Scripts", ImVec2(200, 0))) {
-                    //     Scene::m_Object->AddComponent<CppScriptManager>();
-                    //     ImGui::CloseCurrentPopup();
-                    // }
+                    if (ImGui::Button("C++ Scripts", ImVec2(200, 0))) {
+                        Scene::m_Object->AddComponent<CppScriptManager>();
+                        ImGui::CloseCurrentPopup();
+                    }
 
                     if (ImGui::Button("C# Scripts", ImVec2(200, 0))) {
                         Scene::m_Object->AddComponent<CsharpScriptManager>();
@@ -2945,6 +2967,73 @@ int main(int argc, char **argv) {
                             file << "function new_script:OnUpdate()\n";
                             file << "end";
 
+                            file.close();
+                        }
+                        ImGui::CloseCurrentPopup();
+                    }
+                    if (ImGui::Button(ICON_FA_CODE " C++ Script",
+                                      ImVec2(200, 0))) {
+#ifdef _WIN32
+                        fs::path cpp = fs::path(currentDirectory.string() +
+                                                "\\NewScript.cpp");
+                        fs::path hpp = fs::path(currentDirectory.string() +
+                                                "\\NewScript.hpp");
+#else
+                        fs::path cpp = fs::path(currentDirectory.string() +
+                                                "/NewScript.cpp");
+                        fs::path hpp = fs::path(currentDirectory.string() +
+                                                "/NewScript.hpp");
+#endif
+
+                        if (!fs::exists(hpp)) {
+                            std::ofstream file(hpp);
+                            std::string str = R"(
+#pragma once
+#include <api.hpp>
+
+using namespace HyperAPI;
+using namespace HyperAPI::Experimental;
+
+#ifdef _WIN32
+#ifdef BUILD_DLL
+#define VAULT_API __declspec(dllexport)
+#else
+#define VAULT_API __declspec(dllimport)
+#endif
+#else
+#define VAULT_API
+#endif
+
+extern "C" {
+class NewScript : CppScripting::Script {
+public:
+    NewScript() = default;
+    ~NewScript() = default;
+
+    void Start() override;
+    void Update() override;
+};
+
+VAULT_API NewScript *create_object();
+}
+                            )";
+
+                            file << str;
+                            file.close();
+                        }
+                        if (!fs::exists(cpp)) {
+                            std::ofstream file(cpp);
+                            std::string str = R"(
+#include "NewScript.hpp"
+NewScript *create_object() {
+    return new NewScript;
+}
+
+void NewScript::Start() {}
+void NewScript::Update() {}
+                            )";
+
+                            file << str;
                             file.close();
                         }
                         ImGui::CloseCurrentPopup();
