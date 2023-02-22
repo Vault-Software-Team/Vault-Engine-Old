@@ -70,6 +70,9 @@ cd Vault-Engine
 make projects
 make linux
 make linux_game
+make win
+make win_game
+make win_cxx
 ./Vault\ Engine.sh
 ```
 
@@ -82,6 +85,7 @@ To make cross-platform games you must have x86_64-w64-mingw32 and g++ installed 
 ## **Windows**
 
 Go to **Makefile** and edit **MINGW_COMPILER**
+NOTE: You need to have **ar** on windows installed! (I do not know if it is on windows tho I am sure it is)
 
 ```bash
 git clone https://github.com/koki10190/Vault-Engine.git
@@ -89,12 +93,9 @@ cd Vault-Engine
 make projects_win
 make win
 make win_game
+make win_cxx
 .\windows\win_proj.exe
 ```
-
-### C++ Scripting
-
-C++ Scripting is not Cross-Platform as of now
 
 ### **Bundling**
 
@@ -119,6 +120,7 @@ NOTE: Building is still being worked on!
 # **Cross-Platform Issues**
 
 - 3D Audio - Linux build is able load mp3 files while windows build can only load WAV files. (this is an issue with sndfile)
+- C++ Scripts on windows work but the global variables that the EXE File uses for GameObjects and Logs and what not are not shared between the DLL Files.
 
 # **C# Scripting**
 
