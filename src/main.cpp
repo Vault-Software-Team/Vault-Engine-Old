@@ -1220,9 +1220,6 @@ int main(int argc, char **argv) {
 
             if (ImGui::BeginMainMenuBar()) {
                 if (ImGui::BeginMenu("File")) {
-                    // if (ImGui::MenuItem("Compile C++ Scripts (Linux)")) {
-                    //     CompileLinuxScripts();
-                    // }
 
                     if (ImGui::MenuItem("Compile C# Assemblies")) {
                         CsharpScriptEngine::CompileAssemblies();
@@ -1260,6 +1257,10 @@ int main(int argc, char **argv) {
 
                     if (ImGui::MenuItem("Create C# Project")) {
                         CsharpScriptEngine::CreateCsharpProject();
+                    }
+
+                    if (ImGui::MenuItem("Compile C++ Scripts (Linux)")) {
+                        CompileLinuxScripts();
                     }
 
                     if (ImGui::MenuItem("Compile C++ Scripts (Windows)")) {

@@ -2,7 +2,7 @@
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Timestep.hpp"
-#include "../Renderer/CppScripting.hpp"
+#include "../Scripting/CXX/CppScripting.hpp"
 
 namespace HyperAPI::Experimental {
     struct CppScriptManager : public BaseComponent {
