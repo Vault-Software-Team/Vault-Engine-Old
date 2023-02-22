@@ -11,7 +11,8 @@ IF "%PLATFORM%" == "windows" (
     COPY  "windows\lib" "dist\windows\lib"
     COPY  "mono\lib" "dist\windows\lib\mono"
     COPY  "windows\bin" "dist\windows\bin"
-    COPY  "windows/Vault Engine.bat" "dist/windows/Vault Engine.bat"
+    COPY  "windows\Vault Engine.bat" "dist\windows\Vault Engine.bat"
+    COPY  "cxx" "dist\windows\cxx"
 ) ELSE (
     echo Bundling Linux...
     COPY  "lib" "dist\linux\lib"
@@ -24,4 +25,5 @@ IF "%PLATFORM%" == "windows" (
     COPY  "build" "dist\linux\build"
     COPY  "mono" "dist\linux\mono"
     COPY  "cs-assembly" "dist\linux\cs-assembly"
+    COPY  "cxx" "dist\linux\cxx"
 )

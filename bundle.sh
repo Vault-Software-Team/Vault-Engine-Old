@@ -29,6 +29,7 @@ if [ "$PLATFORM" = "windows" ]; then
     cp -r bin/game.out dist/windows/bin/game.out
     cp -r LaunchGame.sh dist/windows/bin/LaunchGame.sh
     cp windows/Vault\ Engine.bat dist/windows/Vault\ Engine.bat
+    cp -r cxx dist/windows/cxx
 else 
     if [ -d dist/linux ]; then
         rm -r dist/linux
@@ -60,4 +61,5 @@ else
     cp -r build dist/linux/build
     cp -r mono dist/linux/mono
     cp -r cs-assembly dist/linux/cs-assembly
+    cp -r cxx dist/linux/cxx
 fi
