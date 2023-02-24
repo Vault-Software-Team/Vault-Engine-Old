@@ -18,4 +18,6 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
     MonoString *GameObject_GetIDByName(MonoString *name);
     MonoString *GameObject_GetIDByTag(MonoString *tag);
     void GameObject_AddGameObject(MonoString *name, MonoString *tag, MonoString **m_id);
+    void GameObject_RemoveGameObject(MonoString *id);
+    void GameObject_InstantiatePrefab(MonoString *prefab_path);
 } // namespace HyperAPI::CsharpScriptEngine::Functions

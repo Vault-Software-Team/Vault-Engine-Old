@@ -862,6 +862,7 @@ namespace HyperAPI {
                     parentObject = gameObject;
                 }
                 gameObject->layer = layer;
+                gameObject->entity = Scene::m_Registry.create();
                 nlohmann::json components = JSON[i]["components"];
 
                 std::string meshType = "";

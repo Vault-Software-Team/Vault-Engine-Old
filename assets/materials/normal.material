@@ -5,10 +5,10 @@
         "g": 1.0,
         "r": 1.0
     },
-    "diffuse": "assets/textures/diffuse.png",
+    "diffuse": "assets/textures/bricks2.jpg",
     "height": "nullptr",
     "metallic": 0.0,
-    "normal": "assets/textures/normal.png",
+    "normal": "nullptr",
     "roughness": 0.0,
     "specular": "nullptr",
     "texUV": {

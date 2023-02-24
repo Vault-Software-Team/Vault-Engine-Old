@@ -23,7 +23,7 @@ namespace HyperAPI::Experimental {
 
         void CreateShape() override {
             shape =
-                new btBoxShape(btVector3(size.x / 2, size.y / 2, size.z / 2));
+                new btBoxShape(btVector3((size.x / 2) / 2, (size.y / 2) / 2, (size.z / 2) / 2));
             shape->setMargin(0.05f);
         }
 

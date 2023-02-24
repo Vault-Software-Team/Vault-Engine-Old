@@ -324,6 +324,27 @@ namespace Vault
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static string cpp_AddGameObject(string name, string tag, out string m_id);
 
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static string cpp_RemoveGameObject(string m_id);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static string cpp_InstantiatePrefab(string prefab_path);
+
+        public static void RemoveGameObject(GameObject game_object)
+        {
+            cpp_RemoveGameObject(game_object.id);
+        }
+
+        public static void RemoveGameObject(string id)
+        {
+            cpp_RemoveGameObject(id);
+        }
+
+        public static void InstantiatePrefab(string prefab_path)
+        {
+            cpp_InstantiatePrefab(prefab_path);
+        }
+
         public string name;
         public string tag;
         public string id;

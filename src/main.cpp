@@ -2328,7 +2328,7 @@ int main(int argc, char **argv) {
                                           ImVec4(buttonColor.x, buttonColor.y,
                                                  buttonColor.z, 0.7f));
                     if (ImGui::Button(ICON_FA_PLAY, ImVec2(32, 32))) {
-                        CsharpScriptEngine::ReloadAssembly();
+                        // CsharpScriptEngine::ReloadAssembly();
                         if (HyperAPI::isStopped) {
                             stateScene = nlohmann::json::array();
                             Scene::SaveScene("", stateScene);
@@ -3677,6 +3677,8 @@ void NewScript::Update() {}
                                                               &idB) {
                     auto gameObjectA = f_GameObject::FindGameObjectByID(idA);
                     auto gameObjectB = f_GameObject::FindGameObjectByID(idB);
+                    if (!gameObjectA || !gameObjectB)
+                        return;
 
                     if (gameObjectA->HasComponent<NativeScriptManager>()) {
                         auto &scriptManager =
@@ -4001,6 +4003,9 @@ void NewScript::Update() {}
                     continue;
                 if (gameObject->prefab)
                     continue;
+
+                if (!gameObject)
+                    return;
 
                 gameObject->Update();
 

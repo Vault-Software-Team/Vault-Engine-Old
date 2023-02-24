@@ -1,4 +1,6 @@
 #pragma once
+#include <cstddef>
+#include <exception>
 #include <libs.hpp>
 
 namespace HyperAPI::Experimental {
@@ -29,7 +31,8 @@ namespace HyperAPI::Experimental {
             }
         }
 
-        template <typename T> T &GetComponent() {
+        template <typename T>
+        T &GetComponent() {
             if (HasComponent<T>()) {
                 return Scene::m_Registry.get<T>(entity);
             } else {
@@ -38,15 +41,21 @@ namespace HyperAPI::Experimental {
             }
         }
 
-        template <typename T> bool HasComponent() {
-            if (Scene::m_Registry.valid(entity)) {
-                return Scene::m_Registry.has<T>(entity);
+        template <typename T>
+        bool HasComponent() {
+            try {
+                if (Scene::m_Registry.valid(entity)) {
+                    return Scene::m_Registry.has<T>(entity);
+                }
+            } catch (std::exception &e) {
+                HYPER_LOG("Caught Exception in HasComponent: " << e.what() << ", Returning false");
             }
 
             return false;
         }
 
-        template <typename T> void RemoveComponent() {
+        template <typename T>
+        void RemoveComponent() {
             Scene::m_Registry.remove<T>(entity);
         }
     };
