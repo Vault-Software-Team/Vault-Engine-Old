@@ -777,10 +777,10 @@ int main(int argc, char **argv) {
     std::cout << m_cwd << std::endl;
     std::cout << CsharpVariables::oldCwd << std::endl;
     if (CsharpVariables::oldCwd != std::string(m_cwd)) {
-        if (fs::exists("cs-assembly/API")) {
+        if (fs::exists("cs-assembly/API") && fs::exists("cs-assembly")) {
             fs::remove_all("cs-assembly/API");
+            fs::copy(CsharpVariables::oldCwd + "/cs-assembly/API", "cs-assembly/API", fs::copy_options::recursive);
         }
-        fs::copy(CsharpVariables::oldCwd + "/cs-assembly/API", "cs-assembly/API", fs::copy_options::recursive);
     }
 
     CsharpScriptEngine::InitMono();
