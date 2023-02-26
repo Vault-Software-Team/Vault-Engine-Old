@@ -2329,7 +2329,7 @@ int main(int argc, char **argv) {
                                           ImVec4(buttonColor.x, buttonColor.y,
                                                  buttonColor.z, 0.7f));
                     if (ImGui::Button(ICON_FA_PLAY, ImVec2(32, 32))) {
-                        // CsharpScriptEngine::ReloadAssembly();
+                        CsharpScriptEngine::ReloadAssembly();
                         if (HyperAPI::isStopped) {
                             stateScene = nlohmann::json::array();
                             Scene::SaveScene("", stateScene);
