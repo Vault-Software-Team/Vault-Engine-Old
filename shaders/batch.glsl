@@ -10,11 +10,11 @@ layout(location = 6) in vec3 tangent;
 layout(location = 7) in vec3 bitangent;
 
 uniform mat4 camera;
-mat4 translation = mat4(1);
-mat4 rotation = mat4(1);
-mat4 scale = mat4(1);
+uniform mat4 translation;
+uniform mat4 rotation;
+uniform mat4 scale;
 uniform mat4 model;
-mat4 lightSpaceMatrix = mat4(1);
+uniform mat4 lightSpaceMatrix;
 uniform vec3 cameraPosition;
 uniform vec2 texUvOffset;
 
@@ -48,13 +48,27 @@ uniform mat4 finalBonesMatrices[MAX_BONES];
 
 void main() {
     vec4 totalPosition = vec4(0);
-    totalPosition = camera * mat4(1) * vec4(position, 1.0f);
+    for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
+    {
+        if(boneIds[i] == -1) continue;
 
-    vec4 worldPosition = totalPosition;
-    currentPosition = camera * model * vec3(totalPosition);
+        if(boneIds[i] >= MAX_BONES) 
+        {
+            totalPosition = vec4(position, 1.0f);
+            break;
+        }
+
+        vec4 localPosition = finalBonesMatrices[boneIds[i]] * vec4(position, 1.0f);
+        totalPosition += localPosition * weights[i];
+        vec3 localNormal = mat3(finalBonesMatrices[boneIds[i]]) * aNormal;
+    }
+    totalPosition = vec4(position, 1.0f);
+
+    vec4 worldPosition = model * translation * rotation * scale * totalPosition;
+    currentPosition = vec3(model * translation * rotation * scale * totalPosition);
     projection = camera;
     
-    gl_Position = vec4(currentPosition, 1.0f);
+    gl_Position = camera * vec4(currentPosition, 1.0);
 
     // vec2 finalCoords = g_texCoords;
 

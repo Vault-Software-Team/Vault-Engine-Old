@@ -10,6 +10,7 @@
 #include "Renderer/AudioEngine.hpp"
 #include "Scripting/CXX/CppScripting.hpp"
 #include "Rusty/hyperlog.hpp"
+#include "f_GameObject/f_GameObject.hpp"
 #include "rusty_vault.hpp"
 #include "Renderer/Timestep.hpp"
 #include "glm/ext/matrix_transform.hpp"
@@ -3627,10 +3628,13 @@ void NewScript::Update() {}
     // Plane batch_plane;
     // Batch batch_layer;
     // Material batch_mat;
-    // Shader batch_shader("shaders/batch.glsl");
+    Shader batch_shader("shaders/batch.glsl");
     // batch_layer.AddMesh(batch_plane.m_Mesh->vertices, batch_plane.m_Mesh->indices, &batch_trans);
 
     // Terrain terrain;
+
+    Plane batch_plane;
+    BatchLayer layer(batch_plane.m_Mesh->vertices, batch_plane.m_Mesh->indices);
 
     app.Run(
         [&](uint32_t &shadowMapTex) {
@@ -4108,6 +4112,17 @@ void NewScript::Update() {}
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             // disable wireframe mode
             // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+            glEnable(GL_DEPTH_TEST);
+            glDisable(GL_CULL_FACE);
+            Material material(Vector4(1, 1, 1, 1));
+            shader.Bind();
+            glActiveTexture(GL_TEXTURE21);
+            glBindTexture(GL_TEXTURE_CUBE_MAP,
+                          skybox.cubemapTexture);
+            shader.SetUniformMat4("lightSpaceMatrix",
+                                  Scene::projection);
+            // layer.Draw(shader, *Scene::mainCamera, material);
 
             for (auto &layer : Scene::layers) {
                 bool notInCameraLayer = true;

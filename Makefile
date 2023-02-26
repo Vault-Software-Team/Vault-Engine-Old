@@ -49,6 +49,7 @@ debugging = $(wildcard src/Debugging/*.cpp)
 scripting = $(wildcard src/Scripting/*/*.cpp)
 
 scripts = $(wildcard src/scripts/*.cpp)
+batch = $(wildcard src/Batch/*.cpp)
 rusty_cpp = $(wildcard src/Rusty/*.cpp)
 
 api_obj = $(api:.cpp=.o)
@@ -122,6 +123,15 @@ debugging:
 
 scripting:
 	$(GNU_LINUX_COMPILER) -c $(scripting) $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
+
+batch:
+	$(GNU_LINUX_COMPILER) -c $(batch) $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
