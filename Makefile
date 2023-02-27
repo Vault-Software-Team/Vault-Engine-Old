@@ -71,6 +71,10 @@ eng:
 	$(GNU_LINUX_COMPILER) -c $(api) src/scripts.cpp  $(flags)
 	mv *.o bin
 
+deez:
+	$(GNU_LINUX_COMPILER) -c src/vendor/imgui/imgui_impl_glfw.cpp $(flags)
+	mv *.o bin
+
 components:
 	$(GNU_LINUX_COMPILER) -c $(components) $(flags)
 	mv *.o bin
@@ -122,7 +126,7 @@ debugging:
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
 
 scripting:
-	$(GNU_LINUX_COMPILER) -c $(scripting) $(flags)
+	$(GNU_LINUX_COMPILER) -c src/Scripting/C#/csharp.cpp $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)

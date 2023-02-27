@@ -16,6 +16,10 @@
 #include <sstream>
 #include <string>
 
+#ifdef _WIN32
+#include <winbase.h>
+#endif
+
 // Functions
 #include "InputFunctions.hpp"
 #include "LogFunctions.hpp"
@@ -280,11 +284,12 @@ namespace HyperAPI::CsharpScriptEngine {
         using namespace CsharpVariables;
 
         if (fs::exists("cs-assembly/bin/Debug/net6.0/cs-assembly.dll")) {
-            std::cout << "Does this exist?" << std::endl;
+
 #ifdef _WIN32
             mono_set_assemblies_path((std::string(CsharpVariables::oldCwd) + "\\mono\\lib").c_str());
 #else
             mono_set_assemblies_path((std::string(CsharpVariables::oldCwd) + "/mono/lib").c_str());
+            setenv("MONO_PATH", (std::string(CsharpVariables::oldCwd) + "/mono/lib").c_str(), 0);
 #endif
             // const char *argv[2] = {
             // "--debugger-agent=transport=dt_socket,address=127.0.0.1:2550,server=y,suspend=n,loglevel=3,logfile=logs/VaultMonoDebugger.log",
