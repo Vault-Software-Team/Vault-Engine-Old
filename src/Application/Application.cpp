@@ -158,8 +158,8 @@ namespace Hyper {
         uint32_t SRBO;
         glGenRenderbuffers(1, &SRBO);
         glBindRenderbuffer(GL_RENDERBUFFER, SRBO);
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, renderer->samples,
-                                         GL_DEPTH24_STENCIL8, width, height);
+        glRenderbufferStorage(GL_RENDERBUFFER,
+                              GL_DEPTH24_STENCIL8, width, height);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
                                   GL_RENDERBUFFER, SRBO);
         glCheckError();
@@ -348,8 +348,8 @@ namespace Hyper {
 
                 glGenRenderbuffers(1, &rbo);
                 glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-                glRenderbufferStorageMultisample(
-                    GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8,
+                glRenderbufferStorage(
+                    GL_RENDERBUFFER, GL_DEPTH24_STENCIL8,
                     width, height);
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER,
                                           GL_DEPTH_STENCIL_ATTACHMENT,
@@ -399,8 +399,8 @@ namespace Hyper {
 
                 glGenRenderbuffers(1, &SRBO);
                 glBindRenderbuffer(GL_RENDERBUFFER, SRBO);
-                glRenderbufferStorageMultisample(
-                    GL_RENDERBUFFER, renderer->samples, GL_DEPTH24_STENCIL8,
+                glRenderbufferStorage(
+                    GL_RENDERBUFFER, GL_DEPTH24_STENCIL8,
                     width, height);
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER,
                                           GL_DEPTH_STENCIL_ATTACHMENT,
