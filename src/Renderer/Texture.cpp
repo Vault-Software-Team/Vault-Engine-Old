@@ -3,6 +3,13 @@
 
 namespace HyperAPI {
     std::vector<m_Texture *> textures;
+
+    m_Texture::~m_Texture() {
+        HYPER_LOG("Texture " + texPath + " unloaded");
+        glDeleteTextures(1, &ID);
+        textures.erase(std::remove(textures.begin(), textures.end(), this), textures.end());
+    }
+
     Texture::Texture(const char *texturePath, uint32_t slot, const char *textureType) {
         texPath = std::string(texturePath);
         for (auto *m_tex : textures) {
@@ -57,6 +64,13 @@ namespace HyperAPI {
             glBindTexture(GL_TEXTURE_2D, 0);
 
             textures.push_back(tex);
+        }
+    }
+    Texture::~Texture() {
+        if (!tex)
+            return;
+        if (--tex->sharing <= 0) {
+            delete tex;
         }
     }
     Texture::Texture(unsigned char *m_Data, uint32_t slot,

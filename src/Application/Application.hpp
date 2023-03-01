@@ -30,11 +30,11 @@ namespace Hyper {
             bool fullscreen = false, bool resizable = true,
             bool wireframe = false, std::function<void()> ioConf = []() {})
             : width(width), height(height), title(std::string(gameTitle)) {
-            HYPER_LOG("Initializing Static Engine");
+            HYPER_LOG("Initializing Vault Engine");
             renderer =
                 new HyperAPI::Renderer(width, height, title.c_str(), {0, -1}, 8,
                                        fullscreen, resizable, wireframe);
-            HYPER_LOG("Initialized Static Engine");
+            HYPER_LOG("Initialized Vault Engine");
 
             // HYPER_LOG("Initializing Audio Engine");
             // HyperAPI::AudioEngine::Init();

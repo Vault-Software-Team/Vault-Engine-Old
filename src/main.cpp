@@ -785,11 +785,11 @@ int main(int argc, char **argv) {
 
     CsharpScriptEngine::InitMono();
 
-    if (!fs::exists("cs-assembly"))
-        fs::create_directory("cs-assembly");
+    // if (!fs::exists("cs-assembly"))
+    // fs::create_directory("cs-assembly");
 
     filewatch::FileWatch<std::string> watch("./cs-assembly", [&](const std::string &filename, const filewatch::Event change_type) {
-        HYPER_LOG(filename);
+        // std::cout << filename << std::endl;
         system("cd cs-assembly && dotnet build");
     });
 

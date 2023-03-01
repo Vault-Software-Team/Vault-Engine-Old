@@ -11,6 +11,8 @@ namespace HyperAPI {
         std::string texPath;
         const char *texStarterPath;
         int sharing;
+
+        ~m_Texture();
     };
 
     extern std::vector<m_Texture *> textures;
@@ -24,8 +26,7 @@ namespace HyperAPI {
         Texture(unsigned char *m_Data, uint32_t slot, const char *textureType,
                 const char *texturePath = "");
 
-        ~Texture() {
-        }
+        ~Texture();
 
         void Bind(uint32_t slot = -1);
         void Unbind();

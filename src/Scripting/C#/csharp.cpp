@@ -372,9 +372,15 @@ namespace HyperAPI::CsharpScriptEngine {
         Scene::logs.clear();
         system("mkdir cs-assembly");
         HYPER_LOG(CsharpVariables::oldCwd)
+#ifdef _WIN32
+        if (fs::exists(CsharpVariables::oldCwd + "\\cs-assembly")) {
+            fs::copy(CsharpVariables::oldCwd + "\\cs-assembly", "cs-assembly", fs::copy_options::recursive);
+        }
+#else
         if (fs::exists(CsharpVariables::oldCwd + "/cs-assembly")) {
             fs::copy(CsharpVariables::oldCwd + "/cs-assembly", "cs-assembly", fs::copy_options::recursive);
         }
+#endif
 
         std::thread *compilerThread = new std::thread([&] {
             std::array<char, 1000> buffer;
