@@ -8,6 +8,7 @@ layout(location = 4) in ivec4 boneIds;
 layout(location = 5) in vec4 weights;
 layout(location = 6) in vec3 tangent;
 layout(location = 7) in vec3 bitangent;
+layout(location = 8) in float transform_index;
 
 uniform mat4 camera;
 uniform mat4 translation;
@@ -17,6 +18,9 @@ uniform mat4 model;
 uniform mat4 lightSpaceMatrix;
 uniform vec3 cameraPosition;
 uniform vec2 texUvOffset;
+uniform bool isBatch;
+#define MAX_TRANSFORMS 32
+uniform mat4 transforms[MAX_TRANSFORMS];
 
 uniform float time;
 
@@ -64,8 +68,16 @@ void main() {
     }
     totalPosition = vec4(position, 1.0f);
 
-    vec4 worldPosition = model * translation * rotation * scale * totalPosition;
-    currentPosition = vec3(model * translation * rotation * scale * totalPosition);
+    vec4 worldPosition = vec4(0);
+    currentPosition = vec3(0);
+    if(isBatch) {
+        mat4 m_trans = transforms[int(transform_index)];
+        worldPosition = m_trans * translation * rotation * scale * totalPosition;
+        currentPosition = vec3(m_trans * translation * rotation * scale * totalPosition);
+    } else {
+        worldPosition = model * translation * rotation * scale * totalPosition;
+        currentPosition = vec3(model * translation * rotation * scale * totalPosition);
+    }
     projection = camera;
     
     gl_Position = camera * vec4(currentPosition, 1.0);

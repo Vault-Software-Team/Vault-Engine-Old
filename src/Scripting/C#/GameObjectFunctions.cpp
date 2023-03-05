@@ -10,6 +10,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         const std::string m_name = mono_string_to_utf8(name);
 
         auto *gameObject = f_GameObject::FindGameObjectByName(m_name);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with name: " + m_name), LOG_ERROR);
+            return mono_string_new(appDomain, "null");
+        }
 
         if (gameObject != nullptr) {
             return mono_string_new(appDomain, gameObject->ID.c_str());
@@ -24,6 +28,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         const std::string m_tag = mono_string_to_utf8(tag);
 
         auto *gameObject = f_GameObject::FindGameObjectByTag(m_tag);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with tag: " + m_tag), LOG_ERROR);
+            return mono_string_new(appDomain, "null");
+        }
 
         if (gameObject != nullptr) {
             return mono_string_new(appDomain, gameObject->ID.c_str());

@@ -126,7 +126,16 @@ debugging:
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
 
 scripting:
-	$(GNU_LINUX_COMPILER) -c src/Scripting/C#/csharp.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c $(scripting) $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
+
+cxxln:
+	$(GNU_LINUX_COMPILER) -c src/Scripting/CXX/CppScripting.cpp $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)

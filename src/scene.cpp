@@ -626,6 +626,9 @@ namespace HyperAPI {
 
         void LoadScene(const std::string &scenePath, nlohmann::json &StateScene) {
             LoadingScene = true;
+            bool was_running = HyperAPI::isRunning;
+            HyperAPI::isRunning = false;
+
             if (scenePath != "")
                 currentScenePath = scenePath;
 
@@ -836,6 +839,7 @@ namespace HyperAPI {
 
             LoadingScene = false;
             HYPER_LOG("Loaded scene: " + scenePath);
+            isRunning = was_running;
         }
         Experimental::GameObject *LoadPrefab(const std::string &scenePath) {
             std::ifstream file(scenePath);

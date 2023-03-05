@@ -185,6 +185,10 @@ namespace HyperAPI::Experimental {
                                 delete m_Mesh->material.normal;
                             }
 
+                            if (m_Mesh->material.emission != nullptr) {
+                                delete m_Mesh->material.emission;
+                            }
+
                             m_Mesh->material.roughness = 0.0f;
                             m_Mesh->material.metallic = 0.0f;
                             m_Mesh->material.texUVs = Vector2(0, 0);

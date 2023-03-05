@@ -1,4 +1,5 @@
 #include "TransformFunctions.hpp"
+#include "csharp.hpp"
 
 namespace HyperAPI::CsharpScriptEngine::Functions {
     void Transform_GetKey(MonoString *key, MonoString *id, MonoString **result) {
@@ -8,6 +9,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         const std::string idStr = mono_string_to_utf8(id);
 
         auto *gameObject = f_GameObject::FindGameObjectByID(idStr);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + idStr), LOG_ERROR);
+            *result = mono_string_new(CsharpVariables::appDomain, "0, 0, 0");
+            return;
+        }
         auto &transform = gameObject->GetComponent<Transform>();
 
         if (keyStr == "position") {
@@ -35,6 +41,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         const std::string idStr = mono_string_to_utf8(id);
 
         auto *gameObject = f_GameObject::FindGameObjectByID(idStr);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + idStr), LOG_ERROR);
+            return;
+        }
         auto &transform = gameObject->GetComponent<Transform>();
 
         if (keyStr == "position") {

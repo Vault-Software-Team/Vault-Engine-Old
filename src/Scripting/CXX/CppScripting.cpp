@@ -1,5 +1,9 @@
 #include "CppScripting.hpp"
 #include "csharp.hpp"
+#include "scene.hpp"
+#include "../../Components/CppScriptManager.hpp"
+#include "../../Components/GameObject.hpp"
+#include "../../f_GameObject/f_GameObject.hpp"
 
 namespace HyperAPI::CppScripting {
     std::vector<SharedObject> cpp_scripts;
@@ -21,6 +25,23 @@ namespace HyperAPI::CppScripting {
                     (Script * (*)()) dlsym(sharedObj.handle, "create_object");
                 sharedObj.name = dirEntry.path().filename().string();
                 cpp_scripts.push_back(sharedObj);
+
+                auto view = Scene::m_Registry.view<Experimental::CppScriptManager>();
+                for (auto e : view) {
+                    auto *go = f_GameObject::FindGameObjectByEntt(e);
+                    auto &comp = go->GetComponent<Experimental::CppScriptManager>();
+
+                    for (auto *script : comp.addedScripts) {
+                        for (auto scrpt : cpp_scripts) {
+                            if (scrpt.name == script->name) {
+                                if (script)
+                                    delete script;
+                                script = scrpt.create();
+                                script->name = scrpt.name;
+                            }
+                        }
+                    }
+                }
             }
         }
 #else
@@ -68,6 +89,7 @@ namespace HyperAPI::CppScripting {
                                                                     "-I\"" +
                     cxx + "/headers/vendor/NoesisGUI\" -I\"" + cxx + "/headers/lib\"";
 #endif
+                std::cout << headers << std::endl;
                 system((std::string(config.linuxCompiler) + " -c -fPIC " +
                         dirEntry.path().string() + " " + headers +
                         " -rdynamic -o " + objFile)

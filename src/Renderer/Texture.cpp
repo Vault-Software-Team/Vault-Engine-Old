@@ -81,7 +81,7 @@ namespace HyperAPI {
         tex->slot = slot;
         tex->texPath = std::string(texturePath);
         texPath = std::string(texturePath);
-        tex->data = stbi_load_from_memory(tex->data, 0, &tex->width, &tex->height, &tex->nrChannels, 0);
+        tex->data = stbi_load_from_memory(tex->data, 0, &tex->width, &tex->height, &tex->nrChannels, 4);
 
         HYPER_LOG("Texture " + std::to_string(slot) + " loaded from " +
                   texturePath)

@@ -24,6 +24,7 @@ namespace Hyper {
         std::function<void()> m_update;
 
         HyperAPI::Renderer *renderer;
+        HyperAPI::Experimental::GameObject *currently_hovering_over;
 
         Application(
             const int width, const int height, const char *gameTitle,

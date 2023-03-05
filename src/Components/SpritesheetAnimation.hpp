@@ -110,9 +110,10 @@ namespace HyperAPI::Experimental {
 
                 if (ImGui::TreeNode("Animations")) {
                     for (auto &animation : anims) {
+                        static const std::string m_id = uuid::generate_uuid_v4();
                         int index = &animation - &anims[0];
 
-                        if (ImGui::TreeNode(animation.name)) {
+                        if (ImGui::TreeNode(m_id.c_str(), "%s", animation.name)) {
                             ImGui::InputText("Name", animation.name, 499);
                             ImGui::DragFloat("Delay", &animation.delay, 0.01f);
                             ImGui::Checkbox("Loop", &animation.loop);

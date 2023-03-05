@@ -1,10 +1,12 @@
 #include <cstdio>
+#include <fstream>
 #include <random>
 #include <memory>
 #include <regex>
 #include "Audio/SoundDevice.hpp"
 #include "Audio/SoundSource.hpp"
 #include "Components/CsharpScriptManager.hpp"
+#include "Components/SpritesheetAnimation.hpp"
 #include "ImGuiColorTextEdit/TextEditor.h"
 #include "ImGuizmo/ImGuizmo.h"
 #include "Renderer/AudioEngine.hpp"
@@ -788,10 +790,12 @@ int main(int argc, char **argv) {
     // if (!fs::exists("cs-assembly"))
     // fs::create_directory("cs-assembly");
 
-    filewatch::FileWatch<std::string> watch("./cs-assembly", [&](const std::string &filename, const filewatch::Event change_type) {
-        // std::cout << filename << std::endl;
-        system("cd cs-assembly && dotnet build");
-    });
+    if (fs::exists("cs-assembly")) {
+        filewatch::FileWatch<std::string> watch("./cs-assembly", [&](const std::string &filename, const filewatch::Event change_type) {
+            // std::cout << filename << std::endl;
+            system("cd cs-assembly && dotnet build");
+        });
+    }
 
 #ifndef _WIN32 || GAME_BUILD
     DiscordEventHandlers handlers;
@@ -2043,6 +2047,129 @@ int main(int argc, char **argv) {
 
                     ImGui::Image((void *)PPT, ImVec2(w_s.x, w_s.y),
                                  ImVec2(0, 1), ImVec2(1, 0));
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("file")) {
+                            auto *go = app.currently_hovering_over;
+                            if (go) {
+                                if (dirPayloadData.ends_with(".material")) {
+
+                                    if (go->HasComponent<MeshRenderer>()) {
+                                        auto &component = go->GetComponent<MeshRenderer>();
+                                        std::string filePathName = dirPayloadData;
+
+                                        filePathName.erase(0, cwd.length() + 1);
+                                        std::string filePath = dirPayloadData;
+
+                                        std::ifstream file(filePathName);
+                                        nlohmann::json JSON = nlohmann::json::parse(file);
+
+                                        const std::string diffuseTexture = JSON["diffuse"];
+                                        const std::string specularTexture = JSON["specular"];
+                                        const std::string normalTexture = JSON["normal"];
+                                        std::string heightTexture = "nullptr";
+                                        if (JSON.contains("height")) {
+                                            heightTexture = JSON["height"];
+                                        }
+
+                                        if (diffuseTexture != "nullptr") {
+                                            if (component.m_Mesh->material.diffuse != nullptr) {
+                                                delete component.m_Mesh->material.diffuse;
+                                            }
+
+                                            component.m_Mesh->material.diffuse = new Texture(
+                                                diffuseTexture.c_str(), 0, "texture_diffuse");
+                                        }
+
+                                        if (specularTexture != "nullptr") {
+                                            if (component.m_Mesh->material.specular != nullptr) {
+                                                delete component.m_Mesh->material.specular;
+                                            }
+
+                                            component.m_Mesh->material.specular = new Texture(
+                                                specularTexture.c_str(), 1, "texture_specular");
+                                        }
+
+                                        if (normalTexture != "nullptr") {
+                                            if (component.m_Mesh->material.normal != nullptr) {
+                                                delete component.m_Mesh->material.normal;
+                                            }
+
+                                            component.m_Mesh->material.normal = new Texture(
+                                                normalTexture.c_str(), 2, "texture_normal");
+                                        }
+
+                                        if (heightTexture != "nullptr") {
+                                            if (component.m_Mesh->material.height != nullptr) {
+                                                delete component.m_Mesh->material.height;
+                                            }
+
+                                            component.m_Mesh->material.height = new Texture(
+                                                heightTexture.c_str(), 2, "texture_normal");
+                                        }
+
+                                        component.m_Mesh->material.baseColor = Vector4(
+                                            JSON["baseColor"]["r"], JSON["baseColor"]["g"],
+                                            JSON["baseColor"]["b"], JSON["baseColor"]["a"]);
+
+                                        component.m_Mesh->material.roughness = JSON["roughness"];
+                                        component.m_Mesh->material.metallic = JSON["metallic"];
+                                        component.m_Mesh->material.texUVs =
+                                            Vector2(JSON["texUV"]["x"], JSON["texUV"]["y"]);
+
+                                        component.matPath = filePathName;
+                                        file.close();
+                                    }
+                                }
+
+                                if (dirPayloadData.ends_with(".glsl")) {
+                                    if (go->HasComponent<MeshRenderer>()) {
+                                        auto &component = go->GetComponent<MeshRenderer>();
+                                        component.customShader.shader = new Shader(dirPayloadData.c_str());
+                                        component.customShader.usingCustomShader = true;
+                                    }
+
+                                    if (go->HasComponent<SpriteRenderer>()) {
+                                        auto &component = go->GetComponent<SpriteRenderer>();
+                                        component.customShader.shader = new Shader(dirPayloadData.c_str());
+                                        component.customShader.usingCustomShader = true;
+                                    }
+
+                                    if (go->HasComponent<SpritesheetRenderer>()) {
+                                        auto &component = go->GetComponent<SpritesheetRenderer>();
+                                        component.customShader.shader = new Shader(dirPayloadData.c_str());
+                                        component.customShader.usingCustomShader = true;
+                                    }
+                                }
+
+                                if (dirPayloadData.ends_with(".png") || dirPayloadData.ends_with(".jpg") || dirPayloadData.ends_with(".jpeg")) {
+                                    if (go->HasComponent<SpriteRenderer>()) {
+                                        auto &component = go->GetComponent<SpriteRenderer>();
+                                        if (component.mesh->material.diffuse)
+                                            delete component.mesh->material.diffuse;
+
+                                        component.mesh->material.diffuse = new Texture(dirPayloadData.c_str(), 0, "texture_diffuse");
+                                    }
+
+                                    if (go->HasComponent<SpritesheetRenderer>()) {
+                                        auto &component = go->GetComponent<SpritesheetRenderer>();
+                                        if (component.mesh->material.diffuse)
+                                            delete component.mesh->material.diffuse;
+
+                                        component.mesh->material.diffuse = new Texture(dirPayloadData.c_str(), 0, "texture_diffuse");
+                                    }
+
+                                    if (go->HasComponent<c_SpritesheetAnimation>()) {
+                                        auto &component = go->GetComponent<c_SpritesheetAnimation>();
+                                        if (component.mesh->material.diffuse)
+                                            delete component.mesh->material.diffuse;
+
+                                        component.mesh->material.diffuse = new Texture(dirPayloadData.c_str(), 0, "texture_diffuse");
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     if (ImGui::IsItemHovered() && ImGui::IsMouseDragging(0)) {
                         focusedOnScene = true;
                     } else if (!ImGui::IsMouseDragging(0)) {
@@ -2329,7 +2456,7 @@ int main(int argc, char **argv) {
                                           ImVec4(buttonColor.x, buttonColor.y,
                                                  buttonColor.z, 0.7f));
                     if (ImGui::Button(ICON_FA_PLAY, ImVec2(32, 32))) {
-                        CsharpScriptEngine::ReloadAssembly();
+                        // CsharpScriptEngine::ReloadAssembly();
                         if (HyperAPI::isStopped) {
                             stateScene = nlohmann::json::array();
                             Scene::SaveScene("", stateScene);
@@ -3433,6 +3560,22 @@ void NewScript::Update() {}
                                 m_originalName.substr(
                                     0, m_originalName.find_last_of("\\")) +
                                 "\\" + newName);
+
+                            // if (newP.string().ends_with(".cpp") || newP.string().ends_with(".hpp") || newP.string().ends_with(".lua")) {
+                            //     std::ifstream read_file(p);
+
+                            //     std::string line, contents;
+                            //     while (getline(read_file, line))
+                            //         contents += line += "\n";
+
+                            //     contents = std::regex_replace(contents, std::regex(std::regex_replace(contents, std::regex(".cpp|.hpp|.lua"), "")), newName);
+                            //     read_file.close();
+
+                            //     std::ofstream write_file(newP.string());
+                            //     write_file << contents;
+                            //     write_file.close();
+                            // }
+
                             fs::rename(p, newP);
 #else
                             fs::path p = fs::path(m_originalName);
@@ -3440,6 +3583,27 @@ void NewScript::Update() {}
                                 m_originalName.substr(
                                     0, m_originalName.find_last_of("/")) +
                                 "/" + newName);
+
+                            // if (newP.string().ends_with(".cpp") || newP.string().ends_with(".hpp") || newP.string().ends_with(".lua")) {
+                            //     std::ifstream read_file(p);
+
+                            //     std::string line, contents;
+                            //     while (getline(read_file, line))
+                            //         contents += line += "\n";
+
+                            //     std::cout << contents << std::endl;
+
+                            //     contents = std::regex_replace(
+                            //         contents,
+                            //         std::regex(std::regex_replace(contents, std::regex(".cpp|.hpp|.lua"), "").c_str()),
+                            //         std::regex_replace(newName, std::regex(".cpp|.hpp|.lua"), "").c_str());
+                            //     read_file.close();
+
+                            //     std::ofstream write_file(p.string());
+                            //     write_file << contents;
+                            //     write_file.close();
+                            // }
+
                             fs::rename(p, newP);
 #endif
                             renameWindow = false;
@@ -3627,14 +3791,17 @@ void NewScript::Update() {}
 
     // Plane batch_plane;
     // Batch batch_layer;
-    // Material batch_mat;
+    Material batch_mat;
     Shader batch_shader("shaders/batch.glsl");
     // batch_layer.AddMesh(batch_plane.m_Mesh->vertices, batch_plane.m_Mesh->indices, &batch_trans);
 
     // Terrain terrain;
 
-    Plane batch_plane;
-    BatchLayer layer(batch_plane.m_Mesh->vertices, batch_plane.m_Mesh->indices);
+    // Plane batch_plane;
+    // std::vector<Vertex> v;
+    // std::vector<uint32_t> ii;
+    // BatchLayer batch_layer(v, ii);
+    // batch_layer.AddToBatch(batch_plane.m_Mesh, &batch_trans);
 
     app.Run(
         [&](uint32_t &shadowMapTex) {

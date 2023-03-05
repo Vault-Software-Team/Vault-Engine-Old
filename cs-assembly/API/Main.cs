@@ -313,6 +313,12 @@ namespace Vault
         }
     }
 
+    public class Scene
+    {
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static string LoadScene(string file_path);
+    }
+
     public class GameObject
     {
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

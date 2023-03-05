@@ -499,6 +499,7 @@ namespace Hyper {
                 }
 
                 if (gameObject->entity == (entt::entity)entityId) {
+                    currently_hovering_over = gameObject;
                     if (HyperAPI::isRunning) {
                         if (gameObject->HasComponent<NativeScriptManager>()) {
                             auto &nativeManager =

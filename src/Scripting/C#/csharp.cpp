@@ -33,6 +33,7 @@
 #include "BloomFunctions.hpp"
 #include "Rigidbody2DFunctions.hpp"
 #include "BoxCollider2DFunctions.hpp"
+#include "SceneFunctions.hpp"
 #include "GameObjectFunctions.hpp"
 #include "CameraFunctions.hpp"
 #include "Audio3DFunctions.hpp"
@@ -167,6 +168,9 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("Vault.Audio3D::cpp_Stop", reinterpret_cast<void *(*)>(Audio3D_Stop));
         mono_add_internal_call("Vault.Audio3D::cpp_SetClip", reinterpret_cast<void *(*)>(Audio3D_SetClip));
         mono_add_internal_call("Vault.Audio3D::cpp_GetClip", reinterpret_cast<void *(*)>(Audio3D_GetClip));
+
+        // Scene Functions
+        mono_add_internal_call("Vault.Scene::LoadScene", reinterpret_cast<void *(*)>(Scene_LoadScene));
     }
 } // namespace HyperAPI::CsharpScriptEngine::Functions
 
@@ -317,7 +321,10 @@ namespace HyperAPI::CsharpScriptEngine {
             debugClass.CallConstructor();
 
             MonoScriptClass audioClass("Vault", "Audio");
-            mainClass.CallConstructor();
+            audioClass.CallConstructor();
+
+            // MonoScriptClass sceneClass("Vault", "Scene");
+            // sceneClass.CallConstructor();
         }
     }
 
@@ -370,16 +377,18 @@ namespace HyperAPI::CsharpScriptEngine {
 
     void CreateCsharpProject() {
         Scene::logs.clear();
-        system("mkdir cs-assembly");
         HYPER_LOG(CsharpVariables::oldCwd)
+        if (fs::exists("cs-assembly"))
+            fs::remove_all("cs-assmebly");
+
 #ifdef _WIN32
-        if (fs::exists(CsharpVariables::oldCwd + "\\cs-assembly")) {
-            fs::copy(CsharpVariables::oldCwd + "\\cs-assembly", "cs-assembly", fs::copy_options::recursive);
-        }
+        if (!fs::exists("cs-assembly"))
+            fs::remove_all("cs-assmebly");
+
+        fs::copy(CsharpVariables::oldCwd + "\\cs-assembly", "cs-assembly", fs::copy_options::recursive);
 #else
-        if (fs::exists(CsharpVariables::oldCwd + "/cs-assembly")) {
-            fs::copy(CsharpVariables::oldCwd + "/cs-assembly", "cs-assembly", fs::copy_options::recursive);
-        }
+
+        fs::copy(CsharpVariables::oldCwd + "/cs-assembly", "cs-assembly", fs::copy_options::recursive);
 #endif
 
         std::thread *compilerThread = new std::thread([&] {

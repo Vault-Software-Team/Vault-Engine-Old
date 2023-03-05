@@ -15,7 +15,8 @@ namespace Sandbox
         {
             if (Input.IsKeyPressed(Input.KEY_Q) && !clicked)
             {
-                GameObject.RemoveGameObject(GameObject.GetIDByName("Cone"));
+                Scene.LoadScene("assets/scenes/silver.vault");
+                clicked = true;
             }
 
             if (Input.IsKeyReleased(Input.KEY_Q) && clicked) clicked = false;

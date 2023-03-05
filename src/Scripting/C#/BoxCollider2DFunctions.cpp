@@ -11,6 +11,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         const std::string m_id = mono_string_to_utf8(id);
 
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
         auto &component = gameObject->GetComponent<BoxCollider2D>();
 
         if (m_key == "density") {
@@ -32,6 +36,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         const std::string m_id = mono_string_to_utf8(id);
 
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
         auto &component = gameObject->GetComponent<BoxCollider2D>();
 
         if (m_key == "density") {
@@ -51,6 +59,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
         auto &component = gameObject->GetComponent<BoxCollider2D>();
 
         component.offset.x = x;
@@ -63,6 +75,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
         auto &component = gameObject->GetComponent<BoxCollider2D>();
 
         component.size.x = x;
@@ -75,6 +91,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return false;
+        }
         auto &component = gameObject->GetComponent<BoxCollider2D>();
 
         return component.trigger;
@@ -86,6 +106,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
         auto &component = gameObject->GetComponent<BoxCollider2D>();
         component.trigger = val;
     }

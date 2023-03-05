@@ -12,6 +12,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         const std::string m_id = mono_string_to_utf8(id);
 
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
         auto &rigidbody = gameObject->GetComponent<Rigidbody2D>();
 
         if (m_key == "velocity") {
@@ -24,6 +29,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
         auto &rigidbody = gameObject->GetComponent<Rigidbody2D>();
 
         rigidbody.SetVelocity(x, y);
@@ -34,6 +44,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
         auto &rigidbody = gameObject->GetComponent<Rigidbody2D>();
 
         rigidbody.SetAngularVelocity(velocity);
@@ -44,6 +59,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
         auto &rigidbody = gameObject->GetComponent<Rigidbody2D>();
 
         rigidbody.SetPosition(x, y);
@@ -54,6 +74,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
         auto &rigidbody = gameObject->GetComponent<Rigidbody2D>();
 
         rigidbody.Force(x, y);
@@ -64,6 +89,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
         auto &rigidbody = gameObject->GetComponent<Rigidbody2D>();
 
         rigidbody.Torque(torque);

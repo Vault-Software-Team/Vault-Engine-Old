@@ -4,6 +4,7 @@
 #include "glm/fwd.hpp"
 #include <cstdint>
 
+using namespace HyperAPI::Experimental;
 namespace HyperAPI {
     BatchLayer::BatchLayer(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices) {
         m_vertices = vertices;
@@ -197,19 +198,52 @@ namespace HyperAPI {
             }
         }
 
+        for (int i = 0; i < transforms.size(); i++) {
+            shader.SetUniformMat4(("transforms[" + std::to_string(i) + "]").c_str(), transforms[i]->transform);
+        }
+        shader.SetUniform1i("isBatch", true);
+
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * m_vertices.size(),
                         m_vertices.data());
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(uint32_t) * BATCH_INDEX_AMOUNT, m_indices.data());
 
-        glDrawElements(GL_TRIANGLES, static_cast<uint32_t>(m_indices.size()),
+        glDrawElements(GL_TRIANGLES, BATCH_INDEX_AMOUNT,
                        GL_UNSIGNED_INT, 0);
 
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+        shader.SetUniform1i("isBatch", false);
+
         material.Unbind(shader);
+    }
+
+    void BatchLayer::AddToBatch(Mesh *mesh, Transform *obj) {
+        auto &transform = *obj;
+        transform.Update();
+        transforms.push_back(&transform);
+
+        for (auto &vertex : mesh->vertices) {
+            vertex.transformIndex = transforms.size() - 1;
+            m_vertices.push_back(vertex);
+        }
+
+        // one mesh: 0 2 3 4 6 5
+        // highest: 6
+        // other mesh: 0 1 3
+        // offsetted by 6: 0 + 6, 1 + 6, 3 + 6;
+        // this should FUCKING WORK
+        uint32_t highest = 0;
+        for (auto index : m_indices) {
+            if (index > highest)
+                highest = index;
+        }
+        for (auto indices : mesh->indices) {
+
+            m_indices.push_back(indices + highest);
+            std::cout << indices + highest << std::endl;
+        }
     }
 } // namespace HyperAPI

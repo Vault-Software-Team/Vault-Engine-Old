@@ -11,6 +11,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         const std::string m_id = mono_string_to_utf8(id);
 
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
         auto &component = gameObject->GetComponent<Audio3D>();
 
         if (m_key == "volume") {
@@ -35,6 +40,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         const std::string m_id = mono_string_to_utf8(id);
 
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
         auto &component = gameObject->GetComponent<Audio3D>();
 
         if (m_key == "volume") {
@@ -51,6 +61,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
         auto &component = gameObject->GetComponent<Audio3D>();
 
         component.src.velocity.x = x;
@@ -63,6 +78,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return false;
+        }
+
         auto &component = gameObject->GetComponent<Audio3D>();
 
         return component.src.loop;
@@ -73,6 +93,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
         auto &component = gameObject->GetComponent<Audio3D>();
 
         component.src.loop = val;
@@ -83,6 +108,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
         auto &component = gameObject->GetComponent<Audio3D>();
 
         component.Play();
@@ -93,6 +123,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
         auto &component = gameObject->GetComponent<Audio3D>();
 
         component.Stop();
@@ -104,6 +139,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
         auto &component = gameObject->GetComponent<Audio3D>();
 
         component.file = mono_string_to_utf8(path);
@@ -116,6 +156,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
         auto &component = gameObject->GetComponent<Audio3D>();
 
         *result = mono_string_new(appDomain, component.file.c_str());

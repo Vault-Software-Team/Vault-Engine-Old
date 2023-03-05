@@ -12,6 +12,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         const std::string m_id = mono_string_to_utf8(id);
 
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
         auto &component = gameObject->GetComponent<CameraComponent>();
 
         if (m_key == "fov") {
@@ -31,6 +35,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         const std::string m_id = mono_string_to_utf8(id);
 
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
         auto &component = gameObject->GetComponent<CameraComponent>();
 
         if (m_key == "fov") {
@@ -48,6 +56,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         const std::string m_id = mono_string_to_utf8(id);
         auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
         auto &component = gameObject->GetComponent<CameraComponent>();
 
         component.camera->mode2D = value;
