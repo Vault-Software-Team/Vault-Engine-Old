@@ -72,7 +72,7 @@ eng:
 	mv *.o bin
 
 deez:
-	$(GNU_LINUX_COMPILER) -c src/vendor/imgui/imgui_impl_glfw.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c src/Renderer/Mesh.cpp $(flags)
 	mv *.o bin
 
 components:
@@ -191,9 +191,6 @@ linux:
 	make app
 
 linux_game:
-	# g++ -c $(api) $(flags)
-	# mv *.o bin
-
 	g++ -c src/main.cpp -DGAME_BUILD $(flags)
 	mv *.o bin
 	

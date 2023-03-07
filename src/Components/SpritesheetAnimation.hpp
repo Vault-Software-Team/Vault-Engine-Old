@@ -237,6 +237,7 @@ namespace HyperAPI::Experimental {
                 mesh->material.bloomColor = Vector3(0, 0, 0);
             }
 
+            bool trulyChanged;
             for (auto &vertex : mesh->vertices) {
                 m_SpritesheetAnimationData::Frame currFrame;
                 for (auto &animation : anims) {
@@ -266,7 +267,17 @@ namespace HyperAPI::Experimental {
                             yCoord / spritesheetSize.y),
                     Vector2(currFrame.offset.x / spritesheetSize.x,
                             yCoord / spritesheetSize.y)};
+
+                trulyChanged = !(vertex.texUV.x == texCoords[index].x && vertex.texUV.y == texCoords[index].y);
+
                 vertex.texUV = texCoords[index];
+            }
+
+            if (trulyChanged) {
+                glBindVertexArray(mesh->VAO);
+                glBindBuffer(GL_ARRAY_BUFFER, mesh->VBO);
+                glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * mesh->vertices.size(),
+                                mesh->vertices.data());
             }
         }
     };

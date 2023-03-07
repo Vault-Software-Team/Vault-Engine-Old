@@ -67,7 +67,7 @@ namespace HyperAPI {
         if (!batched) {
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex),
-                         nullptr, GL_DYNAMIC_DRAW);
+                         vertices.data(), GL_DYNAMIC_DRAW);
             glCheckError();
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
@@ -208,6 +208,7 @@ namespace HyperAPI {
                                 cameraTransform.position.y,
                                 cameraTransform.position.z);
         }
+
         shader.SetUniform1i("cubeMap", 20);
         shader.SetUniform1ui("u_EntityID", enttId);
 
@@ -253,6 +254,10 @@ namespace HyperAPI {
         shader.SetUniformMat4("rotation", rot);
         shader.SetUniformMat4("scale", sca);
 
+        static bool unsetted_pl = false;
+        static bool unsetted_dl = false;
+        static bool unsetted_sl = false;
+        static bool unsetted_2dl = false;
         for (int i = 0; i < Scene::PointLights.size(); i++) {
             shader.SetUniform3f(
                 ("pointLights[" + std::to_string(i) + "].lightPos").c_str(),
@@ -266,8 +271,10 @@ namespace HyperAPI {
             shader.SetUniform1f(
                 ("pointLights[" + std::to_string(i) + "].intensity").c_str(),
                 Scene::PointLights[i]->intensity);
+
+            unsetted_pl = false;
         }
-        if (Scene::PointLights.size() == 0) {
+        if (Scene::PointLights.size() == 0 && !unsetted_pl) {
             for (int i = 0; i < 100; i++) {
                 shader.SetUniform3f(
                     ("pointLights[" + std::to_string(i) + "].lightPos").c_str(),
@@ -280,6 +287,7 @@ namespace HyperAPI {
                         .c_str(),
                     0);
             }
+            unsetted_pl = true;
         }
 
         for (int i = 0; i < Scene::SpotLights.size(); i++) {
@@ -301,8 +309,10 @@ namespace HyperAPI {
                 ("spotLights[" + std::to_string(i) + "].angle").c_str(),
                 Scene::SpotLights[i]->angle.x, Scene::SpotLights[i]->angle.y,
                 Scene::SpotLights[i]->angle.z);
+
+            unsetted_sl = false;
         }
-        if (Scene::SpotLights.size() == 0) {
+        if (Scene::SpotLights.size() == 0 && !unsetted_sl) {
             for (int i = 0; i < 100; i++) {
                 shader.SetUniform3f(
                     ("spotLights[" + std::to_string(i) + "].lightPos").c_str(),
@@ -317,6 +327,8 @@ namespace HyperAPI {
                     ("spotLights[" + std::to_string(i) + "].innerCone").c_str(),
                     0);
             }
+
+            unsetted_sl = true;
         }
 
         for (int i = 0; i < Scene::DirLights.size(); i++) {
@@ -333,8 +345,10 @@ namespace HyperAPI {
             shader.SetUniform1f(
                 ("dirLights[" + std::to_string(i) + "].intensity").c_str(),
                 Scene::DirLights[i]->intensity);
+
+            unsetted_dl = false;
         }
-        if (Scene::DirLights.size() == 0) {
+        if (Scene::DirLights.size() == 0 && !unsetted_dl) {
             for (int i = 0; i < 100; i++) {
                 shader.SetUniform3f(
                     ("dirLights[" + std::to_string(i) + "].lightPos").c_str(),
@@ -346,6 +360,8 @@ namespace HyperAPI {
                     ("dirLights[" + std::to_string(i) + "].intensity").c_str(),
                     0);
             }
+
+            unsetted_dl = true;
         }
 
         for (int i = 0; i < Scene::Lights2D.size(); i++) {
@@ -359,8 +375,10 @@ namespace HyperAPI {
             shader.SetUniform1f(
                 ("light2ds[" + std::to_string(i) + "].range").c_str(),
                 Scene::Lights2D[i]->range);
+
+            unsetted_2dl = false;
         }
-        if (Scene::Lights2D.size() == 0) {
+        if (Scene::Lights2D.size() == 0 && !unsetted_2dl) {
             for (int i = 0; i < 100; i++) {
                 shader.SetUniform2f(
                     ("light2ds[" + std::to_string(i) + "].lightPos").c_str(), 0,
@@ -371,12 +389,11 @@ namespace HyperAPI {
                 shader.SetUniform1f(
                     ("light2ds[" + std::to_string(i) + "].range").c_str(), 0);
             }
+            unsetted_2dl = true;
         }
 
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * vertices.size(),
-                        vertices.data());
         glDrawElements(GL_TRIANGLES, static_cast<uint32_t>(indices.size()),
                        GL_UNSIGNED_INT, 0);
 

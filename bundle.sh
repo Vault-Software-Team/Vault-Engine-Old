@@ -18,7 +18,7 @@ if [ "$PLATFORM" = "windows" ]; then
     #     mkdir dist/windows/cpp_headers
     # fi
     
-    cp -r assets dist/windows/assets
+    cp -r dist/distribute_assets dist/windows/assets
     cp -r imgui.ini dist/windows/imgui.ini
     cp -r shaders dist/windows/shaders
     cp -r build dist/windows/build 
@@ -55,7 +55,7 @@ else
     cp -r LaunchGame.sh dist/linux/bin/LaunchGame.sh
     cp -r Vault\ Engine.sh dist/linux/Vault\ Engine.sh
 
-    cp -r assets dist/linux/assets
+    cp -r dist/distribute_assets dist/linux/assets
     cp -r imgui.ini dist/linux/imgui.ini
     cp -r shaders dist/linux/shaders
     cp -r build dist/linux/build

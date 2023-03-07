@@ -5,6 +5,7 @@
 #include <regex>
 #include "Audio/SoundDevice.hpp"
 #include "Audio/SoundSource.hpp"
+#include "Components/CppScriptManager.hpp"
 #include "Components/CsharpScriptManager.hpp"
 #include "Components/SpritesheetAnimation.hpp"
 #include "ImGuiColorTextEdit/TextEditor.h"
@@ -106,6 +107,22 @@ public:
             }
         }
 
+        if (gameObjectB->HasComponent<CppScriptManager>()) {
+            auto &scriptManager =
+                gameObjectB->GetComponent<CppScriptManager>();
+            for (auto script : scriptManager.addedScripts) {
+                script->OnCollisionEnter2D(gameObjectA);
+            }
+        }
+
+        if (gameObjectA->HasComponent<CppScriptManager>()) {
+            auto &scriptManager =
+                gameObjectA->GetComponent<CppScriptManager>();
+            for (auto script : scriptManager.addedScripts) {
+                script->OnCollisionEnter2D(gameObjectB);
+            }
+        }
+
         if (gameObjectA->HasComponent<CsharpScriptManager>()) {
             auto &scriptManager = gameObjectA->GetComponent<CsharpScriptManager>();
 
@@ -178,6 +195,22 @@ public:
                 gameObjectB->GetComponent<m_LuaScriptComponent>();
             for (auto script : scriptManager.scripts) {
                 script.CollisionExit2D(gameObjectA);
+            }
+        }
+
+        if (gameObjectB->HasComponent<CppScriptManager>()) {
+            auto &scriptManager =
+                gameObjectB->GetComponent<CppScriptManager>();
+            for (auto script : scriptManager.addedScripts) {
+                script->OnCollisionExit2D(gameObjectA);
+            }
+        }
+
+        if (gameObjectA->HasComponent<CppScriptManager>()) {
+            auto &scriptManager =
+                gameObjectA->GetComponent<CppScriptManager>();
+            for (auto script : scriptManager.addedScripts) {
+                script->OnCollisionExit2D(gameObjectB);
             }
         }
 
@@ -3880,6 +3913,22 @@ void NewScript::Update() {}
                             gameObjectB->GetComponent<m_LuaScriptComponent>();
                         for (auto script : scriptManager.scripts) {
                             script.Collision3D(gameObjectA);
+                        }
+                    }
+
+                    if (gameObjectB->HasComponent<CppScriptManager>()) {
+                        auto &scriptManager =
+                            gameObjectB->GetComponent<CppScriptManager>();
+                        for (auto script : scriptManager.addedScripts) {
+                            script->OnCollisionEnter3D(gameObjectA);
+                        }
+                    }
+
+                    if (gameObjectA->HasComponent<CppScriptManager>()) {
+                        auto &scriptManager =
+                            gameObjectA->GetComponent<CppScriptManager>();
+                        for (auto script : scriptManager.addedScripts) {
+                            script->OnCollisionEnter3D(gameObjectB);
                         }
                     }
 
