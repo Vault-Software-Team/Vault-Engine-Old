@@ -236,7 +236,11 @@ namespace HyperAPI {
                     if (!fs::exists("assets/models/scene_files"))
                         fs::create_directory("assets/models/scene_files");
 
+#ifdef _WIN32
+                    std::ifstream file("assets\\models\\scene_files\\" + gameObject->ID + ".vault.model");
+#else
                     std::ifstream file("assets/models/scene_files/" + gameObject->ID + ".vault.model");
+#endif
                     json modelJSON = json::parse(std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>()));
 
                     std::vector<Vertex> vertices;
@@ -1078,7 +1082,12 @@ namespace HyperAPI {
                 if (meshRenderer.m_Model) {
                     auto *pvert = &meshRenderer.m_Mesh->vertices;
                     auto *pind = &meshRenderer.m_Mesh->indices;
+                    std::cout << "what" << std::endl;
+#ifdef _WIN32
+                    std::ofstream file("assets\\models\\scene_files\\" + gameObject->ID + ".vault.model");
+#else
                     std::ofstream file("assets/models/scene_files/" + gameObject->ID + ".vault.model");
+#endif
                     nlohmann::json j = json::object();
                     j["vertices"] = json::array();
                     j["indices"] = json::array();

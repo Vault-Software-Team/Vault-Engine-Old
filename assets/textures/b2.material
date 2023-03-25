@@ -5,14 +5,14 @@
         "g": 1.0,
         "r": 1.0
     },
-    "diffuse": "assets/container2.png",
+    "diffuse": "assets/textures/bricks2.jpg",
     "height": "nullptr",
     "metallic": 0.0,
-    "normal": "nullptr",
-    "roughness": -6.019999980926514,
-    "specular": "assets/container2_specular.png",
+    "normal": "assets/textures/bricks2_normal.jpg",
+    "roughness": 0.0,
+    "specular": "assets/textures/bricks2.jpg",
     "texUV": {
-        "x": 0.0,
-        "y": 0.0
+        "x": 5.0,
+        "y": 5.0
     }
 }
