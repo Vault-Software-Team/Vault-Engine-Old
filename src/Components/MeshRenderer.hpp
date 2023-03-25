@@ -1,4 +1,5 @@
 #pragma once
+#include <fstream>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
@@ -100,6 +101,33 @@ namespace HyperAPI::Experimental {
                     if (ImGui::BeginDragDropTarget()) {
                         if (const ImGuiPayload *payload =
                                 ImGui::AcceptDragDropPayload("file")) {
+
+                            if (G_END_WITH(dirPayloadData, ".png") || G_END_WITH(dirPayloadData, ".jpg") || G_END_WITH(dirPayloadData, ".jpeg")) {
+                                if (!fs::exists("assets/materials"))
+                                    fs::create_directory("assets/materials");
+
+                                std::ofstream mat_file("assets/materials/" + dirPayloadData + ".material");
+                                nlohmann::json j = {
+                                    {"diffuse", dirPayloadData},
+                                    {"specular", "nullptr"},
+                                    {"normal", "nullptr"},
+                                    {"height", "nullptr"},
+                                    {"roughness", 0},
+                                    {"metallic", 0},
+                                    {"baseColor",
+                                     {
+                                         {"r", 1},
+                                         {"g", 1},
+                                         {"b", 1},
+                                         {"a", 1},
+                                     }},
+                                    {"texUV",
+                                     {{"x", 0},
+                                      {"y", 0}}}};
+
+                                mat_file << j.dump(4);
+                            }
+
                             if (G_END_WITH(dirPayloadData, ".material")) {
                                 std::string filePathName = dirPayloadData;
                                 // remove cwd from filePathName

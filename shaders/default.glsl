@@ -111,10 +111,11 @@ void main() {
     reflectedVector = reflect(viewVector, Normal);
 
     // calculate tangent/bitangent of the current vertex
-    vec3 T = normalize(vec3(model * vec4(tangent, 0.0)));
-    vec3 N = normalize(vec3(model * vec4(aNormal, 0.0)));
+    mat4 fullM = model * translation * rotation * scale;
+    vec3 T = normalize(vec3(fullM * vec4(tangent, 0.0)));
+    vec3 N = normalize(vec3(fullM * vec4(aNormal, 0.0)));
     T = normalize(T - dot(T, N) * N);
-    // vec3 B = normalize(vec3(model * vec4(bitangent, 0.0)));
+    // vec3 B =  normalize(vec3(fullM * vec4(bitangent, 0.0)));
     vec3 B = cross(N, T);
 
     m_TBN = mat3(T, B, N);
@@ -223,18 +224,41 @@ vec4 pointLight(PointLight light) {
     float constant = 1.0;
     float linear = 0.09;
     float quadratic = 0.032;
+    vec2 UVs = texCoords;
 
-    vec3 lightVec = light.lightPos - currentPosition;
-    if(hasNormalMap == 1) {
-        // tbn
-        // lightVec = m_TBN * normalize(light.lightPos - currentPosition);
-    } else {
-        lightVec = light.lightPos - currentPosition;
-    }
+    vec3 lightVec = (light.lightPos - currentPosition);
+    vec3 viewDirection = normalize(cameraPosition - currentPosition);
+    // float height_scale = 0.05;
+    // const float minLayers = 8.0;
+    // const float maxLayers = 64.0 * 2;
+    // float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0,0,1), viewDirection)));
+    // float layerDepth = 1.0 / numLayers;
+    // float currentLayerDepth = 0.0;
+
+    // vec2 S = viewDirection.xy / viewDirection.z * height_scale;
+    // vec2 deltaUVs = S / numLayers;
+
+    // vec2 UVs = texCoords;
+    // float currentDepthMapValue = 1.0 - texture(texture_emission0, UVs).r;
+
+    // while(currentLayerDepth < currentDepthMapValue) {
+    //     UVs -= deltaUVs;
+    //     currentDepthMapValue = 1.0 - texture(texture_emission0, UVs).r;
+    //     currentLayerDepth += layerDepth;
+    // }
+
+    // vec2 prevTexCoords = UVs + deltaUVs;
+    // float afterDepth = currentDepthMapValue - currentLayerDepth;
+    // float beforeDepth = 1.0 - texture(texture_emission0, texCoords).r - currentLayerDepth + layerDepth;
+    // float weight = afterDepth / (afterDepth - beforeDepth);
+    // UVs = prevTexCoords * weight + UVs * (1.0 - weight);
+
+    // if(UVs.x > 1.0 || UVs.y > 1.0 || UVs.x < 0.0 || UVs.y < 0.0)
+    //     discard;
 
     vec3 normal;
     if(isTex == 1 && hasNormalMap == 1) {
-        vec4 normalTex = texture(texture_normal0, texCoords);
+        vec4 normalTex = texture(texture_normal0, UVs);
         normal = normalTex.rgb * 2.0 - 1.0;
         normal = normalize(m_TBN * normal);
     } else {
@@ -272,7 +296,7 @@ vec4 pointLight(PointLight light) {
     specular = specular * _smoothness;
 
     if(isTex == 1) {
-        return (mix(texture(texture_diffuse0, texCoords), reflectedColor, metallic) * baseColor * (diffuse * inten) + specularTexture * ((specular * inten) * vec4(light.color, 1)))  * vec4(light.color, 1);
+        return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * baseColor * (diffuse * inten) + specularTexture * ((specular * inten) * vec4(light.color, 1)))  * vec4(light.color, 1);
     } else {
         return (mix(baseColor, reflectedColor, metallic) * (diffuse * inten) * ((specular * inten) * vec4(light.color, 1))) * vec4(light.color, 1);
     }
@@ -283,37 +307,11 @@ vec4 directionalLight(DirectionalLight light) {
     vec3 viewDirection = normalize(cameraPosition - currentPosition);
     vec2 UVs = texCoords;
 
-    // if(hasHeightMap == 1 && hasNormalMap == 1) {
-    //     float heightScale = 0.05;
-    //     const float minLayers = 8;
-    //     const float maxLayers = 64;
-    //     float numLayers = mix(minLayers, maxLayers, abs(dot(vec3(0,0,1), viewDirection)));
-    //     float layerDepth = 1 / numLayers;
-    //     float currentLayerDepth = 0.0;
-
-    //     vec2 S = viewDirection.xy / viewDirection.z * heightScale;
-    //     vec2 deltaUVs = S / numLayers;
-
-    //     float currentDepthMapValue = 1 - texture(texture_height0, UVs).r;
-
-    //     while(currentLayerDepth < currentDepthMapValue) {
-    //         UVs -= deltaUVs;
-    //         currentDepthMapValue = 1 - texture(texture_height0, UVs).r;
-    //         currentLayerDepth += layerDepth;
-    //     }
-
-    //     vec2 prevTexCoords = UVs + deltaUVs;
-    //     float afterDepth = currentDepthMapValue - currentLayerDepth;
-    //     float beforeDepth = 1 - texture(texture_height0, prevTexCoords).r - currentLayerDepth + layerDepth;
-    //     float weight = afterDepth / (afterDepth - beforeDepth);
-    //     UVs = prevTexCoords * weight + UVs * (1 - weight);
-    // }
-
     vec3 normal;
     if(isTex == 1 && hasNormalMap == 1) {
-        vec4 normalTex = texture(texture_normal0, texCoords);
-        normal = normalTex.rgb * 2.0 - 1.0;
-        normal = normalize(m_TBN * normal);
+        normal = texture(texture_normal0, texCoords).rgb;
+        normal = normal * 2.0 - 1.0;
+        normal = normalize(m_TBN * normal);   
     } else {
         normal = normalize(Normal);
     }
@@ -332,7 +330,6 @@ vec4 directionalLight(DirectionalLight light) {
         float specAmount = pow(max(dot(normal, halfwayVec), 0.0), 16);
         specular = specAmount * specularLight;
     }
-
     float _smoothness = 1 - roughness;
     if(_smoothness == 0) {
         specular = 0;
@@ -340,7 +337,7 @@ vec4 directionalLight(DirectionalLight light) {
     specular = specular * _smoothness;
 
     if(isTex == 1) {
-        return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * baseColor * vec4(light.color, 1) * (diffuse) + specularTexture * (((specular) * vec4(light.color, 1)) * light.intensity));
+        return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * baseColor * vec4(light.color, 1) * (diffuse) + specularTexture * (((specular) * vec4(light.color, 1)) * light.intensity)) + texture(texture_emission0, UVs).r;
     } else {
         return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * (diffuse) + vec4(1,1,1,1)  * (((specular) * vec4(light.color, 1)) * light.intensity));
     }
@@ -456,7 +453,7 @@ void main() {
 
     float shadow = ShadowCalculation(fragPosLight);
     if(specularTexture == 0) {
-        specularTexture = texture(texture_diffuse0, texCoords).r;
+        specularTexture = texture(texture_specular0, texCoords).r;
     }
 
     vec4 result = vec4(0);

@@ -30,6 +30,39 @@ if [ "$PLATFORM" = "windows" ]; then
     cp -r LaunchGame.sh dist/windows/bin/LaunchGame.sh
     cp windows/Vault\ Engine.bat dist/windows/Vault\ Engine.bat
     cp -r cxx dist/windows/cxx
+elif [ "$PLATFORM" == "linux_install" ]; then
+     if [ -d /opt/vault-engine ]; then
+        rm -r /opt/vault-engine
+        mkdir /opt/vault-engine
+    else
+        mkdir /opt/vault-engine
+    fi
+
+    if [ -d /opt/vault-engine/bin ]; then
+        rm -r /opt/vault-engine/bin
+        mkdir /opt/vault-engine/bin
+    else
+        mkdir /opt/vault-engine/bin
+    fi
+
+    cp -r lib /opt/vault-engine/lib
+    cp -r bin/build.out /opt/vault-engine/bin/build.out
+    cp -r bin/game.out /opt/vault-engine/bin/game.out
+    cp -r bin/build_proj.out /opt/vault-engine/bin/build_proj.out
+    cp -r windows/lib /opt/vault-engine/bin/dlls
+    cp -r windows/bin/game.exe /opt/vault-engine/bin/game.exe
+    cp -r windows/LaunchGame.bat /opt/vault-engine/bin/LaunchGame.bat
+    cp -r LaunchGame.sh /opt/vault-engine/bin/LaunchGame.sh
+    cp -r Vault\ Engine.sh /opt/vault-engine/vault.sh
+    cp -r vault.desktop /usr/share/applications/vault.desktop
+
+    cp -r dist/distribute_assets /opt/vault-engine/assets
+    cp -r imgui.ini /opt/vault-engine/imgui.ini
+    cp -r shaders /opt/vault-engine/shaders
+    cp -r build /opt/vault-engine/build
+    cp -r mono /opt/vault-engine/mono
+    cp -r cs-assembly /opt/vault-engine/cs-assembly
+    cp -r cxx /opt/vault-engine/cxx
 else 
     if [ -d dist/linux ]; then
         rm -r dist/linux

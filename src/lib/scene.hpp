@@ -23,7 +23,7 @@
 #include <experimental/filesystem>
 #include "../vendor/assimp/Importer.hpp"
 #include "../vendor/assimp/scene.h"
-//import glm helpers
+// import glm helpers
 #include "../vendor/box2d/box2d.h"
 #include "../vendor/box2d/b2_world.h"
 #include "../vendor/box2d/b2_body.h"
@@ -36,7 +36,7 @@
 #include "scene.hpp"
 #include <memory>
 
-bool G_END_WITH(std::string const & value, std::string const & ending);
+bool G_END_WITH(std::string const &value, std::string const &ending);
 
 namespace HyperAPI {
     class Mesh;
@@ -54,12 +54,11 @@ namespace HyperAPI {
     namespace Experimental {
         class GameObject;
         struct m_AnimationData;
-        
-    }
 
+    } // namespace Experimental
 
     namespace Scene {
-        extern std::map<std::string, Texture*> Textures;
+        extern std::map<std::string, Texture *> Textures;
 
         enum DragType {
             DRAG_DIFFUSE,
@@ -80,8 +79,8 @@ namespace HyperAPI {
         };
 
         extern bool LoadingScene;
-        extern std::vector<Experimental::GameObject*> m_GameObjects;
-        extern std::vector<Experimental::GameObject*> m_UIObjects;
+        extern std::vector<Experimental::GameObject *> m_GameObjects;
+        extern std::vector<Experimental::GameObject *> m_UIObjects;
         extern std::map<std::string, bool> layers;
         extern std::map<std::string, std::map<std::string, int>> currFrames;
         extern std::map<std::string, std::map<std::string, float>> currDelays;
@@ -89,36 +88,43 @@ namespace HyperAPI {
         void SaveComponents(nlohmann::json &JSON, Experimental::GameObject *gameObject, const int i, int &componentOffset);
 
         void LoadScene(const std::string &scenePath, nlohmann::json &StateScene);
-        Experimental::GameObject* LoadPrefab(const std::string &scenePath);
-        Experimental::GameObject* LoadJSONPrefab(const nlohmann::json &JSON);
-        void SavePrefab(const std::string &path, Experimental::GameObject* gameObject);
-        void SaveJSONPrefab(nlohmann::json &JSON, Experimental::GameObject* gameObject);
+        Experimental::GameObject *LoadPrefab(const std::string &scenePath);
+        Experimental::GameObject *LoadJSONPrefab(const nlohmann::json &JSON);
+        void SavePrefab(const std::string &path, Experimental::GameObject *gameObject);
+        void SaveJSONPrefab(nlohmann::json &JSON, Experimental::GameObject *gameObject);
 
         void SaveScene(const std::string &path, nlohmann::json &StateScene);
 
         bool DropTargetMat(DragType type, Mesh *currEntity, Texture *otherData = nullptr);
 
-        extern Experimental::GameObject* m_Object;
+        extern Experimental::GameObject *m_Object;
         extern char name[499];
         extern char tag[499];
         extern char layer[32];
         extern entt::registry m_Registry;
 
-        extern std::vector<Mesh*> entities;
+        extern std::vector<Mesh *> entities;
         extern std::vector<Model> models;
         extern Camera *mainCamera;
-        extern std::vector<Camera*> cameras;
+        extern std::vector<Camera *> cameras;
         extern std::vector<Log> logs;
+#ifdef _WIN32
+#ifdef BUILD_DLL
+        extern "C" __declspec(dllimport) std::vector<Log> *GetLogs();
+#else
+        extern "C" __declspec(dllexport) std::vector<Log> *GetLogs();
+#endif
+#endif
         extern glm::mat4 projection;
 
         extern std::vector<entt::entity> backup_entities;
 
-        extern std::vector<HyperAPI::PointLight*> PointLights;
-        extern std::vector<HyperAPI::Light2D*> Lights2D;
-        extern std::vector<HyperAPI::SpotLight*> SpotLights;
-        extern std::vector<HyperAPI::DirectionalLight*> DirLights;
-        extern std::vector<HyperAPI::Mesh*> hyperEntities;
+        extern std::vector<HyperAPI::PointLight *> PointLights;
+        extern std::vector<HyperAPI::Light2D *> Lights2D;
+        extern std::vector<HyperAPI::SpotLight *> SpotLights;
+        extern std::vector<HyperAPI::DirectionalLight *> DirLights;
+        extern std::vector<HyperAPI::Mesh *> hyperEntities;
 
         extern b2World *world;
-    }
-}
+    } // namespace Scene
+} // namespace HyperAPI

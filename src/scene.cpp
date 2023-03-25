@@ -233,22 +233,53 @@ namespace HyperAPI {
                     }
                 } else {
                     meshType = meshConfig["mesh"];
-                    Experimental::Model model((char *)meshType.c_str(), false);
+                    if (!fs::exists("assets/models/scene_files"))
+                        fs::create_directory("assets/models/scene_files");
+
+                    std::ifstream file("assets/models/scene_files/" + gameObject->ID + ".vault.model");
+                    json modelJSON = json::parse(std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>()));
 
                     std::vector<Vertex> vertices;
                     std::vector<uint32_t> indices;
 
-                    auto &mesh_comp = model.m_gameObjects[meshConfig["mesh_index"]]->GetComponent<Experimental::MeshRenderer>();
-                    for (auto vert : mesh_comp.m_Mesh->vertices) {
-                        vertices.push_back(vert);
+                    for (int im = 0; im < modelJSON["vertices"].size(); im++) {
+                        auto &vert = modelJSON["vertices"][im];
+                        if (vert["normal"]["x"].is_null())
+                            vert["normal"]["x"] = 0;
+                        if (vert["normal"]["y"].is_null())
+                            vert["normal"]["y"] = 0;
+                        if (vert["normal"]["z"].is_null())
+                            vert["normal"]["z"] = 0;
+
+                        if (vert["bitangent"]["x"].is_null())
+                            vert["bitangent"]["x"] = 0;
+                        if (vert["bitangent"]["y"].is_null())
+                            vert["bitangent"]["y"] = 0;
+                        if (vert["bitangent"]["z"].is_null())
+                            vert["bitangent"]["z"] = 0;
+
+                        if (vert["tangent"]["x"].is_null())
+                            vert["tangent"]["x"] = 0;
+                        if (vert["tangent"]["y"].is_null())
+                            vert["tangent"]["y"] = 0;
+                        if (vert["tangent"]["z"].is_null())
+                            vert["tangent"]["z"] = 0;
+
+                        Vertex vertex;
+                        vertex.position = glm::vec3(vert["position"]["x"], vert["position"]["y"], vert["position"]["z"]);
+                        vertex.bitangent = glm::vec3(0, 0, 0);
+                        vertex.tangent = glm::vec3(0, 0, 0);
+
+                        vertex.normal = glm::vec3(vert["normal"]["x"], vert["normal"]["y"], vert["normal"]["z"]);
+                        vertex.color = glm::vec3(vert["color"]["x"], vert["color"]["y"], vert["color"]["z"]);
+                        vertex.texUV = glm::vec2(vert["texUV"]["x"], vert["texUV"]["y"]);
+                        vertices.push_back(vertex);
                     }
 
-                    for (auto ind : mesh_comp.m_Mesh->indices) {
+                    for (auto ind : modelJSON["indices"]) {
                         indices.push_back(ind);
                     }
 
-                    if (meshRenderer.m_Mesh)
-                        delete meshRenderer.m_Mesh;
                     Material baseMaterial;
                     meshRenderer.m_Mesh = new Mesh(vertices, indices, baseMaterial);
 
@@ -298,11 +329,6 @@ namespace HyperAPI {
                     }
 
                     meshRenderer.m_Model = true;
-
-                    for (auto &model_go : model.m_gameObjects) {
-                        delete model_go;
-                    }
-                    model.m_gameObjects.clear();
                 }
             }
 
@@ -627,7 +653,6 @@ namespace HyperAPI {
         void LoadScene(const std::string &scenePath, nlohmann::json &StateScene) {
             LoadingScene = true;
             bool was_running = HyperAPI::isRunning;
-            HyperAPI::isRunning = false;
 
             if (scenePath != "")
                 currentScenePath = scenePath;
@@ -839,7 +864,6 @@ namespace HyperAPI {
 
             LoadingScene = false;
             HYPER_LOG("Loaded scene: " + scenePath);
-            isRunning = was_running;
         }
         Experimental::GameObject *LoadPrefab(const std::string &scenePath) {
             std::ifstream file(scenePath);
@@ -1052,7 +1076,30 @@ namespace HyperAPI {
 
                 JSON[i]["components"][componentOffset]["mesh"]["custom"] = meshRenderer.m_Model;
                 if (meshRenderer.m_Model) {
-                    JSON[i]["components"][componentOffset]["mesh"]["mesh_index"] = meshRenderer.mesh_index;
+                    auto *pvert = &meshRenderer.m_Mesh->vertices;
+                    auto *pind = &meshRenderer.m_Mesh->indices;
+                    std::ofstream file("assets/models/scene_files/" + gameObject->ID + ".vault.model");
+                    nlohmann::json j = json::object();
+                    j["vertices"] = json::array();
+                    j["indices"] = json::array();
+                    for (int vi = 0; vi < (*pvert).size(); vi++) {
+                        auto &vertex = (*pvert)[vi];
+                        j["vertices"][vi] = {
+                            {"position", {{"x", vertex.position.x}, {"y", vertex.position.y}, {"z", vertex.position.z}}},
+                            {"bitangent", {{"x", vertex.bitangent.x}, {"y", vertex.bitangent.y}, {"z", vertex.bitangent.z}}},
+                            {"tangent", {{"x", vertex.tangent.x}, {"y", vertex.tangent.y}, {"z", vertex.tangent.z}}},
+                            {"color", {{"x", vertex.color.x}, {"y", vertex.color.y}, {"z", vertex.color.z}}},
+                            {"normal", {{"x", vertex.normal.x}, {"y", vertex.normal.y}, {"z", vertex.normal.z}}},
+                            {"texUV", {{"x", vertex.texUV.x}, {"y", vertex.texUV.y}}},
+                        };
+                    }
+
+                    for (int ii = 0; ii < (*pind).size(); ii++) {
+                        auto &index = (*pind)[ii];
+                        j["indices"][ii] = index;
+                    }
+
+                    file << j.dump(4);
                 }
 
                 JSON[i]["components"][componentOffset]["type"] = "MeshRenderer";
@@ -1526,6 +1573,13 @@ namespace HyperAPI {
         Camera *mainCamera;
         std::vector<Camera *> cameras = {};
         std::vector<Log> logs = {};
+#ifdef _WIN32
+#ifndef BUILD_DLL
+        std::vector<Log> *GetLogs() {
+            return &logs;
+        }
+#endif
+#endif
         glm::mat4 projection = glm::mat4(1.0f);
 
         std::vector<entt::entity> backup_entities = {};

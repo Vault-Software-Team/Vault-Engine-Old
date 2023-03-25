@@ -1,0 +1,18 @@
+{
+    "baseColor": {
+        "a": 1.0,
+        "b": 1.0,
+        "g": 1.0,
+        "r": 1.0
+    },
+    "diffuse": "assets/container2.png",
+    "height": "nullptr",
+    "metallic": 0.0,
+    "normal": "nullptr",
+    "roughness": -6.019999980926514,
+    "specular": "assets/container2_specular.png",
+    "texUV": {
+        "x": 0.0,
+        "y": 0.0
+    }
+}

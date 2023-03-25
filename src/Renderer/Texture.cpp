@@ -43,10 +43,15 @@ namespace HyperAPI {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-            if (std::string(textureType) == "texture_normal") {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex->data);
-            } else if (std::string(textureType) == "texture_height") {
+            if (std::string(textureType) == "texture_height") {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, tex->width, tex->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex->data);
+            } else if (std::string(textureType) == "texture_normal") {
+                if (tex->nrChannels >= 4)
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex->width, tex->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex->data);
+                else if (tex->nrChannels == 3)
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGB, GL_UNSIGNED_BYTE, tex->data);
+                else if (tex->nrChannels == 1)
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RED, GL_UNSIGNED_BYTE, tex->data);
             } else if (tex->nrChannels >= 4)
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, tex->width, tex->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex->data);
             else if (tex->nrChannels == 3)
@@ -96,7 +101,11 @@ namespace HyperAPI {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
         if (std::string(textureType) == "texture_normal") {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex->data);
+            if (tex->nrChannels >= 4) {
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex->data);
+            } else {
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGB, GL_UNSIGNED_BYTE, tex->data);
+            }
         } else if (std::string(textureType) == "texture_height") {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, tex->width, tex->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex->data);
         } else if (tex->nrChannels >= 4)

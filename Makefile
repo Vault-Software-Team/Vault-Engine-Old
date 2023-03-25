@@ -72,8 +72,9 @@ eng:
 	mv *.o bin
 
 deez:
-	$(GNU_LINUX_COMPILER) -c src/Renderer/Mesh.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c src/Renderer/Texture.cpp $(flags)
 	mv *.o bin
+	make app
 
 components:
 	$(GNU_LINUX_COMPILER) -c $(components) $(flags)
@@ -222,6 +223,7 @@ win_rusty:
 	ar rcs ./win_libs/libcppvault.a bin_win/*.o
 
 win_cxx:
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/scene.cpp $(win_flags)
 	mv bin_win/main.o ./main.o
 	ar rcs cxx/windows/libvault_api.a bin_win/*.o
 	mv main.o bin_win/main.o

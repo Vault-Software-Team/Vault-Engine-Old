@@ -13,6 +13,9 @@
 #include "SpriteAnimation.hpp"
 #include "SpritesheetAnimation.hpp"
 #include "Audio3D.hpp"
+#include "box2d/b2_types.h"
+#include "glm/fwd.hpp"
+#include "glm/geometric.hpp"
 
 namespace HyperAPI::Experimental {
     nlohmann::json stateScene = nlohmann::json::array();
@@ -438,43 +441,116 @@ namespace HyperAPI::Experimental {
         }
     }
 
+    glm::vec3 computeFaceNormal(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3) {
+        // Uses p2 as a new origin for p1,p3
+        auto a = p3 - p2;
+        auto b = p1 - p2;
+        // Compute the cross product a X b to get the face normal
+        return glm::normalize(glm::cross(a, b));
+    }
+
+    void Model::ExtractBoneWeightForVertices(std::vector<Vertex> &vertices, aiMesh *mesh, const aiScene *scene) {
+        for (int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex) {
+            int boneID = -1;
+            std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
+            if (m_BoneInfoMap.find(boneName) == m_BoneInfoMap.end()) {
+                std::cout << boneName << std::endl;
+                BoneInfo newBoneInfo;
+                newBoneInfo.id = m_BoneCounter;
+                newBoneInfo.offset = AssimpGLMHelpers::ConvertMatrixToGLMFormat(
+                    mesh->mBones[boneIndex]->mOffsetMatrix);
+                m_BoneInfoMap[boneName] = newBoneInfo;
+                boneID = m_BoneCounter;
+                m_BoneCounter++;
+            } else {
+                boneID = m_BoneInfoMap[boneName].id;
+            }
+            assert(boneID != -1);
+            auto weights = mesh->mBones[boneIndex]->mWeights;
+            int numWeights = mesh->mBones[boneIndex]->mNumWeights;
+
+            for (int weightIndex = 0; weightIndex < numWeights; ++weightIndex) {
+                int vertexId = weights[weightIndex].mVertexId;
+                float weight = weights[weightIndex].mWeight;
+                assert(vertexId <= vertices.size());
+                SetVertexBoneData(vertices[vertexId], boneID, weight);
+            }
+        }
+    }
+
     GameObject *Model::processMesh(aiMesh *mesh, const aiScene *scene,
                                    const std::string &name) {
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
         std::vector<Texture *> textures;
 
-        for (uint32_t i = 0; i < mesh->mNumVertices; i++) {
-            Vertex vertex;
-            SetVertexBoneDataToDefault(vertex);
-            vertex.position =
-                glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y,
-                          mesh->mVertices[i].z);
-            vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y,
-                                      mesh->mNormals[i].z);
-            if (mesh->mTextureCoords[0]) {
-                vertex.texUV = glm::vec2(mesh->mTextureCoords[0][i].x,
-                                         mesh->mTextureCoords[0][i].y);
-            } else {
-                vertex.texUV = glm::vec2(0.0f, 0.0f);
-            }
-            vertex.tangent =
-                glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y,
-                          mesh->mTangents[i].z);
-            vertex.bitangent =
-                glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y,
-                          mesh->mBitangents[i].z);
-            vertices.push_back(vertex);
-        }
-        ExtractBoneWeightForVertices(vertices, mesh, scene);
-
-        // indices
         for (uint32_t i = 0; i < mesh->mNumFaces; i++) {
             aiFace face = mesh->mFaces[i];
             for (uint32_t j = 0; j < face.mNumIndices; j++) {
                 indices.push_back(face.mIndices[j]);
             }
         }
+        bool no_normals;
+        for (uint32_t i = 0; i < mesh->mNumVertices; i++) {
+            Vertex vertex;
+            SetVertexBoneDataToDefault(vertex);
+            vertex.position =
+                glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y,
+                          mesh->mVertices[i].z);
+            if (mesh->mNormals)
+                vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y,
+                                          mesh->mNormals[i].z);
+            else {
+                vertex.normal = glm::vec3(0, 0, 0);
+                no_normals = true;
+            }
+
+            if (mesh->mTextureCoords[0]) {
+                vertex.texUV = glm::vec2(mesh->mTextureCoords[0][i].x,
+                                         mesh->mTextureCoords[0][i].y);
+            } else {
+                vertex.texUV = glm::vec2(0.0f, 0.0f);
+            }
+            if (mesh->mTangents) {
+                vertex.tangent =
+                    glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y,
+                              mesh->mTangents[i].z);
+            } else
+                vertex.tangent = glm::vec3(0);
+            if (mesh->mBitangents) {
+                vertex.bitangent =
+                    glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y,
+                              mesh->mBitangents[i].z);
+            } else
+                vertex.bitangent = glm::vec3(0);
+            vertices.push_back(vertex);
+        }
+
+        if (no_normals) {
+            for (uint32_t i = 0; i < indices.size(); i += 3) {
+                glm::vec3 A = vertices[indices[i]].position;
+
+                if (i + 1LL >= indices.size())
+                    break;
+                if (i + 2LL >= indices.size())
+                    break;
+
+                glm::vec3 B = vertices[indices[i + 1LL]].position;
+                glm::vec3 C = vertices[indices[i + 2LL]].position;
+                glm::vec3 normal = computeFaceNormal(A, B, C);
+                vertices[indices[i]].normal += normal;
+                vertices[indices[i + 1LL]].normal += normal;
+                vertices[indices[i + 2LL]].normal += normal;
+            }
+
+            for (auto &vertex : vertices) {
+                vertex.normal = glm::normalize(vertex.normal);
+            }
+        }
+        std::cout << "Calling\n";
+        ExtractBoneWeightForVertices(vertices, mesh, scene);
+
+        // indices
 
         Texture *diffuse = nullptr;
         Texture *specular = nullptr;

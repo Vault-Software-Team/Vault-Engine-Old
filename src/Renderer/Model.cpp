@@ -96,8 +96,12 @@ namespace HyperAPI {
             vertex.position =
                 glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y,
                           mesh->mVertices[i].z);
-            vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y,
-                                      mesh->mNormals[i].z);
+            if (mesh->mNormals)
+                vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y,
+                                          mesh->mNormals[i].z);
+            else
+                vertex.normal = glm::vec3(0, 0, 0);
+
             if (mesh->mTextureCoords[0]) {
                 vertex.texUV = glm::vec2(mesh->mTextureCoords[0][i].x,
                                          mesh->mTextureCoords[0][i].y);
