@@ -10,16 +10,23 @@ namespace Sandbox
             SetObjectID();
         }
 
-        bool clicked;
         void OnUpdate(float ts)
         {
-            if (Input.IsKeyPressed(Input.KEY_Q) && !clicked)
-            {
-                Scene.LoadScene("assets/scenes/silver.vault");
-                clicked = true;
-            }
 
-            if (Input.IsKeyReleased(Input.KEY_Q) && clicked) clicked = false;
+        }
+
+        bool entered;
+        void OnMouseEnter()
+        {
+            if (entered) return;
+            Debug.Log("Mouse Entered!");
+            entered = true;
+        }
+
+        void OnMouseExit()
+        {
+            entered = false;
+            Debug.Log("Mouse Exited!");
         }
     }
 }

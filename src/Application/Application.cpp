@@ -489,6 +489,21 @@ namespace Hyper {
                                 }
                             }
 
+                            if (overObject->HasComponent<CsharpScriptManager>()) {
+                                auto &scriptManager = overObject->GetComponent<CsharpScriptManager>();
+                                for (auto klass : scriptManager.selectedScripts) {
+                                    MonoObject *exception = nullptr;
+                                    MonoScriptClass *behaviour =
+                                        HyperAPI::CsharpScriptEngine::instances[klass.first];
+                                    MonoMethod *method = behaviour->GetMethod("OnMouseExit", 0);
+                                    if (!method)
+                                        continue;
+
+                                    void *params[0] = {};
+                                    mono_runtime_invoke(method, behaviour->f_GetObject(), params, &exception);
+                                }
+                            }
+
                             mouseOverObjects.erase(
                                 std::remove(mouseOverObjects.begin(),
                                             mouseOverObjects.end(), overObject),
@@ -521,6 +536,21 @@ namespace Hyper {
                                     ->GetComponent<m_LuaScriptComponent>();
                             for (auto &script : nativeManager.scripts) {
                                 script.OnMouseEnter();
+                            }
+                        }
+
+                        if (gameObject->HasComponent<CsharpScriptManager>()) {
+                            auto &scriptManager = gameObject->GetComponent<CsharpScriptManager>();
+                            for (auto klass : scriptManager.selectedScripts) {
+                                MonoObject *exception = nullptr;
+                                MonoScriptClass *behaviour =
+                                    HyperAPI::CsharpScriptEngine::instances[klass.first];
+                                MonoMethod *method = behaviour->GetMethod("OnMouseEnter", 0);
+                                if (!method)
+                                    continue;
+
+                                void *params[0] = {};
+                                mono_runtime_invoke(method, behaviour->f_GetObject(), params, &exception);
                             }
                         }
                     }

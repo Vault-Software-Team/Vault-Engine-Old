@@ -269,8 +269,8 @@ namespace Vault
         protected virtual void OnCollisionExit2D(string ID) { }
         protected virtual void OnCollisionEnter3D(string ID) { }
         protected virtual void OnCollisionExit3D(string ID) { }
-        protected virtual void OnMouseEnter(string ID) { }
-        protected virtual void OnMouseExit(string ID) { }
+        protected virtual void OnMouseEnter() { }
+        protected virtual void OnMouseExit() { }
 
         protected void SetObjectID()
         {

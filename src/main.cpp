@@ -4376,11 +4376,11 @@ int main(int argc, char **argv) {
                     if (gameObject->layer != layer.first)
                         continue;
                     if (gameObject->HasComponent<MeshRenderer>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        // for (uint32_t i = 0; i < 32; i++) {
+                        //     // unbind all texture
+                        //     glActiveTexture(GL_TEXTURE0 + i);
+                        //     glBindTexture(GL_TEXTURE_2D, 0);
+                        // }
 
                         auto meshRenderer =
                             gameObject->GetComponent<MeshRenderer>();
@@ -4466,11 +4466,11 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpriteRenderer>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        // for (uint32_t i = 0; i < 32; i++) {
+                        //     // unbind all texture
+                        //     glActiveTexture(GL_TEXTURE0 + i);
+                        //     glBindTexture(GL_TEXTURE_2D, 0);
+                        // }
 
                         auto spriteRenderer =
                             gameObject->GetComponent<SpriteRenderer>();
@@ -4510,11 +4510,11 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpritesheetRenderer>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        // for (uint32_t i = 0; i < 32; i++) {
+                        //     // unbind all texture
+                        //     glActiveTexture(GL_TEXTURE0 + i);
+                        //     glBindTexture(GL_TEXTURE_2D, 0);
+                        // }
 
                         auto spritesheetRenderer =
                             gameObject->GetComponent<SpritesheetRenderer>();
@@ -4560,11 +4560,11 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpriteAnimation>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        // for (uint32_t i = 0; i < 32; i++) {
+                        //     // unbind all texture
+                        //     glActiveTexture(GL_TEXTURE0 + i);
+                        //     glBindTexture(GL_TEXTURE_2D, 0);
+                        // }
 
                         auto spriteAnimation =
                             gameObject->GetComponent<SpriteAnimation>();
@@ -4605,11 +4605,11 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<c_SpritesheetAnimation>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        // for (uint32_t i = 0; i < 32; i++) {
+                        //     // unbind all texture
+                        //     glActiveTexture(GL_TEXTURE0 + i);
+                        //     glBindTexture(GL_TEXTURE_2D, 0);
+                        // }
 
                         auto spritesheetAnimation =
                             gameObject->GetComponent<c_SpritesheetAnimation>();
@@ -5077,11 +5077,11 @@ int main(int argc, char **argv) {
                     if (gameObject->layer != layer.first)
                         continue;
                     if (gameObject->HasComponent<MeshRenderer>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        // for (uint32_t i = 0; i < 32; i++) {
+                        //     // unbind all texture
+                        //     glActiveTexture(GL_TEXTURE0 + i);
+                        //     glBindTexture(GL_TEXTURE_2D, 0);
+                        // }
 
                         auto meshRenderer =
                             gameObject->GetComponent<MeshRenderer>();
@@ -5128,11 +5128,11 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpriteRenderer>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        // for (uint32_t i = 0; i < 32; i++) {
+                        //     // unbind all texture
+                        //     glActiveTexture(GL_TEXTURE0 + i);
+                        //     glBindTexture(GL_TEXTURE_2D, 0);
+                        // }
 
                         auto spriteRenderer =
                             gameObject->GetComponent<SpriteRenderer>();
@@ -5164,11 +5164,11 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpritesheetRenderer>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        // for (uint32_t i = 0; i < 32; i++) {
+                        //     // unbind all texture
+                        //     glActiveTexture(GL_TEXTURE0 + i);
+                        //     glBindTexture(GL_TEXTURE_2D, 0);
+                        // }
 
                         auto spritesheetRenderer =
                             gameObject->GetComponent<SpritesheetRenderer>();
@@ -5203,11 +5203,11 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpriteAnimation>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        // for (uint32_t i = 0; i < 32; i++) {
+                        //     // unbind all texture
+                        //     glActiveTexture(GL_TEXTURE0 + i);
+                        //     glBindTexture(GL_TEXTURE_2D, 0);
+                        // }
 
                         auto spriteAnimation =
                             gameObject->GetComponent<SpriteAnimation>();
@@ -5237,11 +5237,11 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<c_SpritesheetAnimation>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        // for (uint32_t i = 0; i < 32; i++) {
+                        //     // unbind all texture
+                        //     glActiveTexture(GL_TEXTURE0 + i);
+                        //     glBindTexture(GL_TEXTURE_2D, 0);
+                        // }
 
                         auto spritesheetAnimation =
                             gameObject->GetComponent<c_SpritesheetAnimation>();
