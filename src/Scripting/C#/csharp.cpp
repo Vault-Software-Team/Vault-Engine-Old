@@ -32,11 +32,13 @@
 #include "SpritesheetAnimationFunctions.hpp"
 #include "BloomFunctions.hpp"
 #include "Rigidbody2DFunctions.hpp"
+#include "Rigidbody3DFunctions.hpp"
 #include "BoxCollider2DFunctions.hpp"
 #include "SceneFunctions.hpp"
 #include "GameObjectFunctions.hpp"
 #include "CameraFunctions.hpp"
 #include "Audio3DFunctions.hpp"
+#include "MainFunctions.hpp"
 
 namespace CsharpVariables {
     MonoDomain *rootDomain;
@@ -73,6 +75,9 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("Vault.Terminal::Log", reinterpret_cast<void *(*)>(NativeLog));
         mono_add_internal_call("Vault.Debug::TestVector", reinterpret_cast<void *(*)>(TestVector));
 
+        // Main Functions
+        mono_add_internal_call("Vault.Main::cpp_DeltaTime", reinterpret_cast<void *(*)>(cpp_DeltaTime));
+
         // Editor Logs
         mono_add_internal_call("Vault.Debug::Log", reinterpret_cast<void *(*)>(EditorLog));
         mono_add_internal_call("Vault.Debug::Error", reinterpret_cast<void *(*)>(EditorError));
@@ -108,6 +113,9 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("Vault.Input::GetMouseYAxis", reinterpret_cast<void *(*)>(Input_GetMouseYAxis));
         mono_add_internal_call("Vault.Input::SetMouseHidden", reinterpret_cast<void *(*)>(Input_SetMouseHidden));
         mono_add_internal_call("Vault.Input::SetMousePosition", reinterpret_cast<void *(*)>(Input_SetMousePosition));
+        mono_add_internal_call("Vault.Input::cpp_GetMouseWorldPosition", reinterpret_cast<void *(*)>(Input_GetMouseWorldPosition));
+        mono_add_internal_call("Vault.Input::atan2", reinterpret_cast<void *(*)>(Input_atan2));
+        mono_add_internal_call("Vault.Input::cpp_normalize", reinterpret_cast<void *(*)>(Input_normalize));
 
         // GameObject Functions
         mono_add_internal_call("Vault.GameObject::GetIDByName", reinterpret_cast<void *(*)>(GameObject_GetIDByName));
@@ -140,11 +148,20 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         // Rigidbody2D Component
         mono_add_internal_call("Vault.Rigidbody2D::cpp_GetKey", reinterpret_cast<void *(*)>(Rigidbody2D_GetKey));
+        mono_add_internal_call("Vault.Rigidbody2D::cpp_SetType", reinterpret_cast<void *(*)>(Rigidbody2D_SetType));
         mono_add_internal_call("Vault.Rigidbody2D::cpp_SetVelocity", reinterpret_cast<void *(*)>(Rigidbody2D_SetVelocity));
         mono_add_internal_call("Vault.Rigidbody2D::cpp_SetAngularVelocity", reinterpret_cast<void *(*)>(Rigidbody2D_SetAngularVelocity));
         mono_add_internal_call("Vault.Rigidbody2D::cpp_SetPosition", reinterpret_cast<void *(*)>(Rigidbody2D_SetPosition));
         mono_add_internal_call("Vault.Rigidbody2D::cpp_Force", reinterpret_cast<void *(*)>(Rigidbody2D_Force));
         mono_add_internal_call("Vault.Rigidbody2D::cpp_Torque", reinterpret_cast<void *(*)>(Rigidbody2D_Torque));
+
+        // Rigidbody3D Component
+        mono_add_internal_call("Vault.Rigidbody3D::cpp_SetPosition", reinterpret_cast<void *(*)>(Rigidbody3D_SetPosition));
+        mono_add_internal_call("Vault.Rigidbody3D::cpp_AddForce", reinterpret_cast<void *(*)>(Rigidbody3D_AddForce));
+        mono_add_internal_call("Vault.Rigidbody3D::cpp_AddTorque", reinterpret_cast<void *(*)>(Rigidbody3D_AddTorque));
+        mono_add_internal_call("Vault.Rigidbody3D::cpp_AddForceAtPosition", reinterpret_cast<void *(*)>(Rigidbody3D_AddForceAtPosition));
+        mono_add_internal_call("Vault.Rigidbody3D::cpp_SetVelocity", reinterpret_cast<void *(*)>(Rigidbody3D_SetVelocity));
+        mono_add_internal_call("Vault.Rigidbody3D::cpp_SetAngularVelocity", reinterpret_cast<void *(*)>(Rigidbody3D_SetAngularVelocity));
 
         mono_add_internal_call("Vault.BoxCollider2D::cpp_GetKey", reinterpret_cast<void *(*)>(BoxCollider2D_GetKey));
         mono_add_internal_call("Vault.BoxCollider2D::cpp_SetKey", reinterpret_cast<void *(*)>(BoxCollider2D_SetKey));

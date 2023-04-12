@@ -16,6 +16,7 @@
 #include <FileWatch/FileWatch.hpp>
 #include "ImGuizmo/ImGuizmo.h"
 #include "LinearMath/btTransform.h"
+#include "box2d/b2_world_callbacks.h"
 #include "mono/metadata/class.h"
 #include "mono/metadata/exception.h"
 #include "mono/metadata/object.h"
@@ -126,6 +127,7 @@ namespace HyperAPI {
     extern bool isStopped;
     extern glm::vec3 mousePosWorld, mousePosCamWorld;
     extern float sceneMouseX, sceneMouseY;
+    extern b2ContactListener *b2_listener;
 
     struct Config {
         char name[50];

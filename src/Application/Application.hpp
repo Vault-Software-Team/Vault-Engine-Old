@@ -16,6 +16,7 @@ namespace Hyper {
         int winWidth, winHeight;
         int width;
         int height;
+        int sw = 0, sh = 0;
         float exposure = 1;
 
         std::string vendor, srenderer, version;

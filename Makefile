@@ -40,10 +40,12 @@ components = $(wildcard src/Components/*.cpp)
 renderer = $(wildcard src/Renderer/*.cpp)
 audio = $(wildcard src/Audio/*.cpp)
 other_stuff = $(wildcard src/Application/*.cpp)
+other_stuff = $(wildcard src/lib/*.cpp)
 other_stuff += $(wildcard src/Bloom/*.cpp)
 other_stuff += $(wildcard src/f_GameObject/*.cpp)
 other_stuff += $(wildcard src/Experimental/*.cpp)
 other_stuff += $(wildcard src/scene.cpp)
+other_stuff += $(wildcard src/InputEvents.cpp)
 
 debugging = $(wildcard src/Debugging/*.cpp)
 scripting = $(wildcard src/Scripting/*/*.cpp)
@@ -72,7 +74,7 @@ eng:
 	mv *.o bin
 
 deez:
-	$(GNU_LINUX_COMPILER) -c src/Renderer/Texture.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c src/Renderer/Mesh.cpp $(flags)
 	mv *.o bin
 	make app
 

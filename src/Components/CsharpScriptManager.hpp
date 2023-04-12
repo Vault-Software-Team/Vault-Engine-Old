@@ -81,17 +81,6 @@ namespace HyperAPI::Experimental {
             }
         }
 
-        void Update() {
-            for (auto klass : selectedScripts) {
-                MonoObject *exception = nullptr;
-                MonoScriptClass *behaviour =
-                    CsharpScriptEngine::instances[klass.first];
-                MonoMethod *onUpdate = behaviour->GetMethod("OnUpdate", 1);
-
-                void *params = &Timestep::deltaTime;
-                // TODO: Get the exception if theres one and print it in the editor console, mono_runtime_invoke(onUpdate, behaviour->f_GetObject(), &params, &exception);
-                mono_runtime_invoke(onUpdate, behaviour->f_GetObject(), &params, nullptr);
-            }
-        }
+        void Update();
     };
 } // namespace HyperAPI::Experimental

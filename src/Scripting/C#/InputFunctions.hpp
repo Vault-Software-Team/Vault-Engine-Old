@@ -25,4 +25,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
     int Input_GetMouseYAxis();
     void Input_SetMouseHidden(bool hidden);
     void Input_SetMousePosition(float x, float y);
+    void Input_GetMouseWorldPosition(MonoString **out);
+    float Input_atan2(float x, float y);
+    void Input_normalize(float x, float y, float z, MonoString **out);
 } // namespace HyperAPI::CsharpScriptEngine::Functions

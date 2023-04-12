@@ -10,6 +10,6 @@ namespace HyperAPI {
         Mesh *mesh;
         Material material;
 
-        Terrain();
+        Terrain(int div, float width);
     };
 } // namespace HyperAPI

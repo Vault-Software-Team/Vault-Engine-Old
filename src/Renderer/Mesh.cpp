@@ -4,6 +4,16 @@
 #include "../Debugging/GLError.hpp"
 
 namespace HyperAPI {
+    Mesh::~Mesh() {
+        vertices.clear();
+        indices.clear();
+        // textures.clear();
+
+        glDeleteBuffers(1, &VBO);
+        glDeleteBuffers(1, &IBO);
+        glDeleteVertexArrays(1, &VAO);
+    }
+
     Mesh::Mesh(std::vector<Vertex> &vertices, std::vector<uint32_t> &indices,
                Material &material, bool empty, bool batched) {
 
@@ -62,19 +72,16 @@ namespace HyperAPI {
         glGenBuffers(1, &VBO);
         glGenBuffers(1, &IBO);
         glBindVertexArray(VAO);
-        glCheckError();
 
         if (!batched) {
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex),
                          vertices.data(), GL_DYNAMIC_DRAW);
-            glCheckError();
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                          indices.size() * sizeof(uint32_t), indices.data(),
                          GL_STATIC_DRAW);
-            glCheckError();
 
             // coords
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);

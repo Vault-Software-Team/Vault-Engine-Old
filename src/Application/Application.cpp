@@ -23,7 +23,8 @@ namespace Hyper {
             gui,
         std::function<void(HyperAPI::Shader &)> shadowMapRender) {
         HYPER_LOG("Application started")
-
+        width = 1280;
+        height = 720;
         float gamma = 2.2f;
         // if (renderOnScreen) {
         // glEnable(GL_FRAMEBUFFER_SRGB);
@@ -600,6 +601,7 @@ namespace Hyper {
             glActiveTexture(GL_TEXTURE16);
             glBindTexture(GL_TEXTURE_2D, bloomRenderer.BloomTexture());
             framebufferShader.SetUniform1i("bloomTexture", 16);
+
             if (renderOnScreen) {
                 EndFrame(framebufferShader, *renderer, rectVAO,
                          postProcessingTexture, postProcessingFBO, width,

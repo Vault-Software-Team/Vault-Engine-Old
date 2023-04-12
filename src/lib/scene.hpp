@@ -106,6 +106,8 @@ namespace HyperAPI {
         extern std::vector<Mesh *> entities;
         extern std::vector<Model> models;
         extern Camera *mainCamera;
+        extern Camera *scene_camera;
+        extern bool stop_scripts;
         extern std::vector<Camera *> cameras;
         extern std::vector<Log> logs;
 #ifdef _WIN32

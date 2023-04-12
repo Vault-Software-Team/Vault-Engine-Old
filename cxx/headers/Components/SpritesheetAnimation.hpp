@@ -110,9 +110,10 @@ namespace HyperAPI::Experimental {
 
                 if (ImGui::TreeNode("Animations")) {
                     for (auto &animation : anims) {
+                        static const std::string m_id = uuid::generate_uuid_v4();
                         int index = &animation - &anims[0];
 
-                        if (ImGui::TreeNode(animation.name)) {
+                        if (ImGui::TreeNode(m_id.c_str(), "%s", animation.name)) {
                             ImGui::InputText("Name", animation.name, 499);
                             ImGui::DragFloat("Delay", &animation.delay, 0.01f);
                             ImGui::Checkbox("Loop", &animation.loop);
@@ -232,10 +233,15 @@ namespace HyperAPI::Experimental {
             if (Scene::m_Registry.has<Bloom>(entity)) {
                 auto &bloom = Scene::m_Registry.get<Bloom>(entity);
                 mesh->material.bloomColor = bloom.bloomColor;
+                mesh->material.bloom_threshold = bloom.bloom_threshold;
+                mesh->material.dynamic_bloom = bloom.dynamic_bloom;
             } else {
                 mesh->material.bloomColor = Vector3(0, 0, 0);
+                mesh->material.bloom_threshold = 0;
+                mesh->material.dynamic_bloom = false;
             }
 
+            bool trulyChanged;
             for (auto &vertex : mesh->vertices) {
                 m_SpritesheetAnimationData::Frame currFrame;
                 for (auto &animation : anims) {
@@ -265,7 +271,17 @@ namespace HyperAPI::Experimental {
                             yCoord / spritesheetSize.y),
                     Vector2(currFrame.offset.x / spritesheetSize.x,
                             yCoord / spritesheetSize.y)};
+
+                trulyChanged = !(vertex.texUV.x == texCoords[index].x && vertex.texUV.y == texCoords[index].y);
+
                 vertex.texUV = texCoords[index];
+            }
+
+            if (trulyChanged) {
+                glBindVertexArray(mesh->VAO);
+                glBindBuffer(GL_ARRAY_BUFFER, mesh->VBO);
+                glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * mesh->vertices.size(),
+                                mesh->vertices.data());
             }
         }
     };

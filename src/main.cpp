@@ -8,12 +8,14 @@
 #include "Components/CppScriptManager.hpp"
 #include "Components/CsharpScriptManager.hpp"
 #include "Components/SpritesheetAnimation.hpp"
+#include "GLFW/glfw3.h"
 #include "ImGuiColorTextEdit/TextEditor.h"
 #include "ImGuizmo/ImGuizmo.h"
 #include "Renderer/AudioEngine.hpp"
 #include "Scripting/CXX/CppScripting.hpp"
 #include "Rusty/hyperlog.hpp"
 #include "f_GameObject/f_GameObject.hpp"
+#include "glm/geometric.hpp"
 #include "rusty_vault.hpp"
 #include "Renderer/Timestep.hpp"
 #include "glm/ext/matrix_transform.hpp"
@@ -719,8 +721,10 @@ void ShortcutManager(bool &openConfig) {
             return;
         nlohmann::json JSON;
         Scene::SaveJSONPrefab(JSON, Scene::m_Object);
-        Scene::LoadJSONPrefab(JSON);
+        auto *go = Scene::LoadJSONPrefab(JSON);
         JSON.clear();
+        Scene::m_Object = go;
+        Scene::m_Object->name += " (Prefab)";
     }
 }
 
@@ -781,6 +785,7 @@ int cpp_play_audio(char *audio_file) {
 typedef CppScripting::Script *(*f_create_object)();
 
 int main(int argc, char **argv) {
+    HyperAPI::b2_listener = listener;
     {
         char cwd[1024];
         getcwd(cwd, sizeof(cwd));
@@ -1031,6 +1036,7 @@ int main(int argc, char **argv) {
                   "assets/skybox/top.jpg", "assets/skybox/bottom.jpg",
                   "assets/skybox/front.jpg", "assets/skybox/back.jpg");
     auto *camera = new Camera(false, app.width, app.height, Vector3(0, 3, 15));
+    Scene::scene_camera = camera;
     camera->cam_far = 5000;
 
 #ifndef GAME_BUILD
@@ -3840,8 +3846,52 @@ int main(int argc, char **argv) {
     // BatchLayer batch_layer(v, ii);
     // batch_layer.AddToBatch(batch_plane.m_Mesh, &batch_trans);
 
+    Transform test_transform;
+    test_transform.position = glm::vec3(0, 0, 0);
+    test_transform.rotation = glm::vec3(0, 0, 0);
+    test_transform.scale = glm::vec3(1, 1, 1);
+
+    Cube cube;
+
     app.Run(
         [&](uint32_t &shadowMapTex) {
+#ifndef GAME_BUILD
+            {
+                glm::vec2 tempPos(mousePos.x, mousePos.y);
+                glm::vec3 tempScale(1, 1, 1);
+                if (!Scene::mainCamera)
+                    return;
+                if (Scene::mainCamera->EnttComp) {
+                    tempScale = Scene::m_Registry.get<Experimental::Transform>(Scene::mainCamera->entity).scale;
+                } else {
+                    tempScale = Scene::mainCamera->GetComponent<TransformComponent>().scale;
+                }
+                glm::vec2 tempWinSize(windowSize.x, windowSize.y);
+                Input::set_ray(tempPos, tempScale, tempWinSize);
+            }
+#else
+            {
+                double mousex, mousey;
+                glfwGetCursorPos(app.renderer->window, &mousex, &mousey);
+                glm::vec2 tempPos(mousex, mousey);
+                glm::vec3 tempScale(1, 1, 1);
+                if (!Scene::mainCamera)
+                    return;
+                if (Scene::mainCamera->EnttComp) {
+                    tempScale = Scene::m_Registry.get<Experimental::Transform>(Scene::mainCamera->entity).scale;
+                } else {
+                    tempScale = Scene::mainCamera->GetComponent<TransformComponent>().scale;
+                }
+                glm::vec2 tempWinSize(app.width, app.height);
+                Input::set_ray(tempPos, tempScale, tempWinSize);
+            }
+#endif
+
+            if (Input::IsKeyPressed(KEY_Q)) {
+                nlohmann::json j;
+                // Scene::LoadScene("assets/scenes/dust2.vault", j);
+            }
+
             // glEnable(GL_CULL_FACE);
             // glCullFace(GL_BACK);
             // glFrontFace(GL_CCW);
@@ -3855,9 +3905,6 @@ int main(int argc, char **argv) {
             shader.SetUniform1i("shadowMap", GL_TEXTURE7);
             shader.SetUniformMat4("lightSpaceMatrix", Scene::projection);
             shader.SetUniform1f("time", Timestep::deltaTime);
-
-            if (Scene::LoadingScene)
-                return;
 
             // std::vector<Shader*> shaders = {&shader};
             PostProcessingEffects(shader, camera);
@@ -4134,7 +4181,7 @@ int main(int argc, char **argv) {
                         bodyDef.type = rigidbody.type;
                         bodyDef.position.Set(transform.position.x,
                                              transform.position.y);
-                        bodyDef.angle = glm::radians(transform.rotation.z);
+                        bodyDef.angle = transform.rotation.z;
                         bodyDef.gravityScale = rigidbody.gravityScale;
 
                         b2Body *body = Scene::world->CreateBody(&bodyDef);
@@ -4166,8 +4213,16 @@ int main(int argc, char **argv) {
                     const auto &position = body->GetPosition();
                     transform.position.x = position.x;
                     transform.position.y = position.y;
-                    transform.rotation.z = glm::degrees(body->GetAngle());
+                    transform.rotation.z = body->GetAngle();
                 }
+
+                // auto view_csharp = Scene::m_Registry.view<CsharpScriptManager>();
+                // for (auto e : view_csharp) {
+                //     GameObject *m_GameObject = f_GameObject::FindGameObjectByEntt(e);
+
+                //     auto &manager = m_GameObject->GetComponent<CsharpScriptManager>();
+                //     manager.Start();
+                // }
 
                 for (auto *gameObject : Scene::m_GameObjects) {
                     if (gameObject->HasComponent<Audio3D>()) {
@@ -4218,6 +4273,20 @@ int main(int argc, char **argv) {
             }
 
             for (auto &gameObject : Scene::m_GameObjects) {
+                if (Scene::LoadingScene)
+                    break;
+
+#ifdef _WIN32
+                if (IsBadReadPtr(gameObject, sizeof(GameObject)))
+                    continue;
+#else
+                int nullfd = open("/dev/random", O_WRONLY);
+                if (write(nullfd, gameObject, sizeof(GameObject)) < 0) {
+                    continue;
+                }
+                close(nullfd);
+#endif
+
                 if (!gameObject)
                     continue;
 
@@ -4296,21 +4365,21 @@ int main(int argc, char **argv) {
                     }
                 }
 
-                if (gameObject->HasComponent<NativeScriptManager>()) {
-                    auto &script =
-                        gameObject->GetComponent<NativeScriptManager>();
-                    if (HyperAPI::isRunning) {
-                        script.Update();
-                    }
-                }
+                // if (gameObject->HasComponent<NativeScriptManager>()) {
+                //     auto &script =
+                //         gameObject->GetComponent<NativeScriptManager>();
+                //     if (HyperAPI::isRunning) {
+                //         script.Update();
+                //     }
+                // }
 
-                if (gameObject->HasComponent<BoxCollider2D>()) {
-                    auto &component =
-                        gameObject->GetComponent<BoxCollider2D>();
-                    if (HyperAPI::isRunning) {
-                        component.Update();
-                    }
-                }
+                // if (gameObject->HasComponent<BoxCollider2D>()) {
+                //     auto &component =
+                //         gameObject->GetComponent<BoxCollider2D>();
+                //     if (HyperAPI::isRunning) {
+                //         component.Update();
+                //     }
+                // }
             }
 
             //        font.Render(textShader, *camera, "Hello World!",
@@ -4343,6 +4412,17 @@ int main(int argc, char **argv) {
             shader.SetUniformMat4("lightSpaceMatrix",
                                   Scene::projection);
             // layer.Draw(shader, *Scene::mainCamera, material);
+            // glm::vec3 raypos = Input::mouseRay;
+            // raypos.y = -raypos.y;
+
+            // glm::vec3 difference = raypos - test_transform.position;
+            // difference = glm::normalize(difference);
+            // float rotZ = atan2(difference.x, difference.y);
+            // test_transform.rotation = glm::vec3(0, 0, -rotZ);
+
+            // // test_transform.LookAt(raypos);
+            // test_transform.Update();
+            // cube.meshes[0]->Draw(shader, *Scene::mainCamera, test_transform.transform);
 
             for (auto &layer : Scene::layers) {
                 bool notInCameraLayer = true;
@@ -4376,11 +4456,11 @@ int main(int argc, char **argv) {
                     if (gameObject->layer != layer.first)
                         continue;
                     if (gameObject->HasComponent<MeshRenderer>()) {
-                        // for (uint32_t i = 0; i < 32; i++) {
-                        //     // unbind all texture
-                        //     glActiveTexture(GL_TEXTURE0 + i);
-                        //     glBindTexture(GL_TEXTURE_2D, 0);
-                        // }
+                        for (uint32_t i = 0; i < 32; i++) {
+                            // unbind all texture
+                            glActiveTexture(GL_TEXTURE0 + i);
+                            glBindTexture(GL_TEXTURE_2D, 0);
+                        }
 
                         auto meshRenderer =
                             gameObject->GetComponent<MeshRenderer>();
@@ -4466,11 +4546,11 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpriteRenderer>()) {
-                        // for (uint32_t i = 0; i < 32; i++) {
-                        //     // unbind all texture
-                        //     glActiveTexture(GL_TEXTURE0 + i);
-                        //     glBindTexture(GL_TEXTURE_2D, 0);
-                        // }
+                        for (uint32_t i = 0; i < 32; i++) {
+                            // unbind all texture
+                            glActiveTexture(GL_TEXTURE0 + i);
+                            glBindTexture(GL_TEXTURE_2D, 0);
+                        }
 
                         auto spriteRenderer =
                             gameObject->GetComponent<SpriteRenderer>();
@@ -4510,11 +4590,11 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpritesheetRenderer>()) {
-                        // for (uint32_t i = 0; i < 32; i++) {
-                        //     // unbind all texture
-                        //     glActiveTexture(GL_TEXTURE0 + i);
-                        //     glBindTexture(GL_TEXTURE_2D, 0);
-                        // }
+                        for (uint32_t i = 0; i < 32; i++) {
+                            // unbind all texture
+                            glActiveTexture(GL_TEXTURE0 + i);
+                            glBindTexture(GL_TEXTURE_2D, 0);
+                        }
 
                         auto spritesheetRenderer =
                             gameObject->GetComponent<SpritesheetRenderer>();
@@ -4560,11 +4640,11 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpriteAnimation>()) {
-                        // for (uint32_t i = 0; i < 32; i++) {
-                        //     // unbind all texture
-                        //     glActiveTexture(GL_TEXTURE0 + i);
-                        //     glBindTexture(GL_TEXTURE_2D, 0);
-                        // }
+                        for (uint32_t i = 0; i < 32; i++) {
+                            // unbind all texture
+                            glActiveTexture(GL_TEXTURE0 + i);
+                            glBindTexture(GL_TEXTURE_2D, 0);
+                        }
 
                         auto spriteAnimation =
                             gameObject->GetComponent<SpriteAnimation>();
@@ -4605,11 +4685,11 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<c_SpritesheetAnimation>()) {
-                        // for (uint32_t i = 0; i < 32; i++) {
-                        //     // unbind all texture
-                        //     glActiveTexture(GL_TEXTURE0 + i);
-                        //     glBindTexture(GL_TEXTURE_2D, 0);
-                        // }
+                        for (uint32_t i = 0; i < 32; i++) {
+                            // unbind all texture
+                            glActiveTexture(GL_TEXTURE0 + i);
+                            glBindTexture(GL_TEXTURE_2D, 0);
+                        }
 
                         auto spritesheetAnimation =
                             gameObject->GetComponent<c_SpritesheetAnimation>();
@@ -5077,11 +5157,11 @@ int main(int argc, char **argv) {
                     if (gameObject->layer != layer.first)
                         continue;
                     if (gameObject->HasComponent<MeshRenderer>()) {
-                        // for (uint32_t i = 0; i < 32; i++) {
-                        //     // unbind all texture
-                        //     glActiveTexture(GL_TEXTURE0 + i);
-                        //     glBindTexture(GL_TEXTURE_2D, 0);
-                        // }
+                        for (uint32_t i = 0; i < 32; i++) {
+                            // unbind all texture
+                            glActiveTexture(GL_TEXTURE0 + i);
+                            glBindTexture(GL_TEXTURE_2D, 0);
+                        }
 
                         auto meshRenderer =
                             gameObject->GetComponent<MeshRenderer>();
@@ -5128,11 +5208,11 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpriteRenderer>()) {
-                        // for (uint32_t i = 0; i < 32; i++) {
-                        //     // unbind all texture
-                        //     glActiveTexture(GL_TEXTURE0 + i);
-                        //     glBindTexture(GL_TEXTURE_2D, 0);
-                        // }
+                        for (uint32_t i = 0; i < 32; i++) {
+                            // unbind all texture
+                            glActiveTexture(GL_TEXTURE0 + i);
+                            glBindTexture(GL_TEXTURE_2D, 0);
+                        }
 
                         auto spriteRenderer =
                             gameObject->GetComponent<SpriteRenderer>();
@@ -5164,11 +5244,11 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpritesheetRenderer>()) {
-                        // for (uint32_t i = 0; i < 32; i++) {
-                        //     // unbind all texture
-                        //     glActiveTexture(GL_TEXTURE0 + i);
-                        //     glBindTexture(GL_TEXTURE_2D, 0);
-                        // }
+                        for (uint32_t i = 0; i < 32; i++) {
+                            // unbind all texture
+                            glActiveTexture(GL_TEXTURE0 + i);
+                            glBindTexture(GL_TEXTURE_2D, 0);
+                        }
 
                         auto spritesheetRenderer =
                             gameObject->GetComponent<SpritesheetRenderer>();
@@ -5203,11 +5283,11 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpriteAnimation>()) {
-                        // for (uint32_t i = 0; i < 32; i++) {
-                        //     // unbind all texture
-                        //     glActiveTexture(GL_TEXTURE0 + i);
-                        //     glBindTexture(GL_TEXTURE_2D, 0);
-                        // }
+                        for (uint32_t i = 0; i < 32; i++) {
+                            // unbind all texture
+                            glActiveTexture(GL_TEXTURE0 + i);
+                            glBindTexture(GL_TEXTURE_2D, 0);
+                        }
 
                         auto spriteAnimation =
                             gameObject->GetComponent<SpriteAnimation>();
@@ -5237,11 +5317,11 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<c_SpritesheetAnimation>()) {
-                        // for (uint32_t i = 0; i < 32; i++) {
-                        //     // unbind all texture
-                        //     glActiveTexture(GL_TEXTURE0 + i);
-                        //     glBindTexture(GL_TEXTURE_2D, 0);
-                        // }
+                        for (uint32_t i = 0; i < 32; i++) {
+                            // unbind all texture
+                            glActiveTexture(GL_TEXTURE0 + i);
+                            glBindTexture(GL_TEXTURE_2D, 0);
+                        }
 
                         auto spritesheetAnimation =
                             gameObject->GetComponent<c_SpritesheetAnimation>();

@@ -1,5 +1,6 @@
 #include "Texture.hpp"
 #include "libs.hpp"
+#include <exception>
 
 namespace HyperAPI {
     std::vector<m_Texture *> textures;
@@ -11,6 +12,7 @@ namespace HyperAPI {
     }
 
     Texture::Texture(const char *texturePath, uint32_t slot, const char *textureType) {
+        std::cout << texturePath << std::endl;
         texPath = std::string(texturePath);
         for (auto *m_tex : textures) {
             if (m_tex->texPath == std::string(texturePath)) {
@@ -74,8 +76,13 @@ namespace HyperAPI {
     Texture::~Texture() {
         if (!tex)
             return;
-        if (--tex->sharing <= 0) {
-            delete tex;
+        try {
+            std::cout << tex << std::endl;
+            if (--tex->sharing <= 0) {
+                delete tex;
+            }
+        } catch (std::exception &e) {
+            HYPER_LOG(e.what())
         }
     }
     Texture::Texture(unsigned char *m_Data, uint32_t slot,

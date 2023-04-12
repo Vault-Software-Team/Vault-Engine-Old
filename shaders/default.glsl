@@ -52,20 +52,20 @@ uniform mat4 finalBonesMatrices[MAX_BONES];
 
 void main() {
     vec4 totalPosition = vec4(0);
-    for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
-    {
-        if(boneIds[i] == -1) continue;
+    // for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
+    // {
+    //     if(boneIds[i] == -1) continue;
 
-        if(boneIds[i] >= MAX_BONES) 
-        {
-            totalPosition = vec4(position, 1.0f);
-            break;
-        }
+    //     if(boneIds[i] >= MAX_BONES) 
+    //     {
+    //         totalPosition = vec4(position, 1.0f);
+    //         break;
+    //     }
 
-        vec4 localPosition = finalBonesMatrices[boneIds[i]] * vec4(position, 1.0f);
-        totalPosition += localPosition * weights[i];
-        vec3 localNormal = mat3(finalBonesMatrices[boneIds[i]]) * aNormal;
-    }
+    //     vec4 localPosition = finalBonesMatrices[boneIds[i]] * vec4(position, 1.0f);
+    //     totalPosition += localPosition * weights[i];
+    //     vec3 localNormal = mat3(finalBonesMatrices[boneIds[i]]) * aNormal;
+    // }
     totalPosition = vec4(position, 1.0f);
 
     vec4 worldPosition = vec4(0);
@@ -445,8 +445,8 @@ float far = 100.0;
 uniform uint u_EntityID;
 
 // Post Processing uniforms
-uniform int globalBloom;
-uniform float bloomThreshold;
+uniform bool dynamic_bloom;
+uniform float bloom_threshold;
 
 void main() {
     vec4 normalTex = texture(texture_normal0, texCoords);
@@ -503,11 +503,9 @@ void main() {
     }
 
     float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if(brightness > bloomThreshold && globalBloom == 0) {
-        // BloomColor = FragColor;
-    }
-
-    if((u_BloomColor.r > 0.5 || u_BloomColor.g > 0.5 || u_BloomColor.b > 0.5)
+    if(brightness > bloom_threshold && dynamic_bloom) {
+        BloomColor = FragColor;
+    } else if((u_BloomColor.r > 0.5 || u_BloomColor.g > 0.5 || u_BloomColor.b > 0.5)
     && (u_BloomColor.r < 0.7 || u_BloomColor.g < 0.7 || u_BloomColor.b < 0.7)) {
         FragColor = result * (u_BloomColor.r * 20);
         BloomColor = vec4(u_BloomColor * 2, 1);

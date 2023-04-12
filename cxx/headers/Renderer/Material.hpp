@@ -16,6 +16,8 @@ namespace HyperAPI {
         Vector4 baseColor;
         float shininess;
         float metallic;
+        float bloom_threshold;
+        bool dynamic_bloom;
         float roughness;
         Vector3 bloomColor = Vector3(0, 0, 0);
         Vector2 texUVs = Vector2(0, 0);

@@ -1,8 +1,12 @@
 #include "lib/scene.hpp"
 #include "Components/3DText.hpp"
 #include "Components/AudioListener.hpp"
+#include "Components/CppScriptManager.hpp"
+#include "Components/Exp_Base.hpp"
 #include "Renderer/Mesh.hpp"
 #include "Renderer/Structures.hpp"
+#include "box2d/b2_world_callbacks.h"
+#include "f_GameObject/f_GameObject.hpp"
 #include "lib/api.hpp"
 #include "libs.hpp"
 #include "json/json.hpp"
@@ -647,6 +651,17 @@ namespace HyperAPI {
             if (type == "Bloom") {
                 auto &bloom = gameObject->AddComponent<Experimental::Bloom>();
 
+                if (component.contains("dynamic_bloom")) {
+                    bloom.dynamic_bloom = component["dynamic_bloom"];
+                    std::cout << bloom.dynamic_bloom << "what\n";
+                } else {
+                    bloom.dynamic_bloom = false;
+                    std::cout << bloom.dynamic_bloom << "whatnya\n";
+                }
+
+                if (component.contains("bloom_threshold"))
+                    bloom.bloom_threshold = component["bloom_threshold"];
+
                 bloom.bloomColor = Vector3(
                     component["bloomColor"]["x"],
                     component["bloomColor"]["y"],
@@ -655,8 +670,14 @@ namespace HyperAPI {
         }
 
         void LoadScene(const std::string &scenePath, nlohmann::json &StateScene) {
-            LoadingScene = true;
+            stop_scripts = true;
+            m_Object = nullptr;
+            mainCamera = scene_camera;
+
             bool was_running = HyperAPI::isRunning;
+            isRunning = false;
+            isStopped = true;
+            LoadingScene = true;
 
             if (scenePath != "")
                 currentScenePath = scenePath;
@@ -866,8 +887,15 @@ namespace HyperAPI {
             // delete json so that it wont take any space
             JSON.clear();
 
+            if (was_running) {
+                Experimental::StartWorld(b2_listener);
+                isRunning = true;
+                isStopped = false;
+            }
+
             LoadingScene = false;
             HYPER_LOG("Loaded scene: " + scenePath);
+            stop_scripts = false;
         }
         Experimental::GameObject *LoadPrefab(const std::string &scenePath) {
             std::ifstream file(scenePath);
@@ -1423,6 +1451,8 @@ namespace HyperAPI {
             if (gameObject->HasComponent<Experimental::Bloom>()) {
                 auto &bloom = gameObject->GetComponent<Experimental::Bloom>();
                 JSON[i]["components"][componentOffset]["type"] = "Bloom";
+                JSON[i]["components"][componentOffset]["bloom_threshold"] = bloom.bloom_threshold;
+                JSON[i]["components"][componentOffset]["dynamic_bloom"] = bloom.dynamic_bloom;
                 JSON[i]["components"][componentOffset]["bloomColor"] = {
                     {"x", bloom.bloomColor.x},
                     {"y", bloom.bloomColor.y},
@@ -1580,6 +1610,8 @@ namespace HyperAPI {
         std::vector<Mesh *> entities = {};
         std::vector<Model> models = {};
         Camera *mainCamera;
+        Camera *scene_camera;
+        bool stop_scripts = false;
         std::vector<Camera *> cameras = {};
         std::vector<Log> logs = {};
 #ifdef _WIN32

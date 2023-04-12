@@ -22,6 +22,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         if (m_key == "velocity") {
             *result = mono_string_new(appDomain, (to_string(((b2Body *)rigidbody.body)->GetLinearVelocity().x) + " " + to_string(((b2Body *)rigidbody.body)->GetLinearVelocity().y)).c_str());
         }
+
+        if (m_key == "type") {
+            *result = mono_string_new(appDomain, (to_string(rigidbody.type).c_str()));
+        }
     }
     void Rigidbody2D_SetVelocity(float x, float y, MonoString *id) {
         using namespace Experimental;
@@ -97,5 +101,20 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         auto &rigidbody = gameObject->GetComponent<Rigidbody2D>();
 
         rigidbody.Torque(torque);
+    }
+
+    void Rigidbody2D_SetType(int type, MonoString *id) {
+        using namespace Experimental;
+        using namespace CsharpVariables;
+
+        const std::string m_id = mono_string_to_utf8(id);
+        auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
+        auto &rigidbody = gameObject->GetComponent<Rigidbody2D>();
+        rigidbody.type = (b2BodyType)type;
     }
 } // namespace HyperAPI::CsharpScriptEngine::Functions

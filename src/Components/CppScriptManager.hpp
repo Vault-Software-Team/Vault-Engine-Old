@@ -3,6 +3,7 @@
 #include "Exp_Base.hpp"
 #include "../Renderer/Timestep.hpp"
 #include "../Scripting/CXX/CppScripting.hpp"
+#include "scene.hpp"
 
 namespace HyperAPI::Experimental {
     struct CppScriptManager : public BaseComponent {
@@ -77,6 +78,8 @@ namespace HyperAPI::Experimental {
 
         void Update() {
             using namespace CppScripting;
+            if (Scene::stop_scripts)
+                return;
 
             for (auto *script : addedScripts) {
                 script->Update();
@@ -85,6 +88,8 @@ namespace HyperAPI::Experimental {
 
         void Start() {
             using namespace CppScripting;
+            if (Scene::stop_scripts)
+                return;
 
             for (auto *script : addedScripts) {
                 script->objId = ID;

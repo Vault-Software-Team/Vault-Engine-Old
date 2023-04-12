@@ -89,6 +89,7 @@ namespace HyperAPI::CppScripting {
                                                                     "-I\"" +
                     cxx + "/headers/vendor/NoesisGUI\" -I\"" + cxx + "/headers/lib\"";
 #endif
+                std::cout << "what\n";
                 std::cout << headers << std::endl;
                 system((std::string(config.linuxCompiler) + " -c -fPIC " +
                         dirEntry.path().string() + " " + headers +

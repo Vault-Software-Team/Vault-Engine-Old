@@ -102,10 +102,15 @@ namespace HyperAPI::Experimental {
             if (Scene::m_Registry.has<Bloom>(entity)) {
                 auto &bloom = Scene::m_Registry.get<Bloom>(entity);
                 mesh->material.bloomColor = bloom.bloomColor;
+                mesh->material.bloom_threshold = bloom.bloom_threshold;
+                mesh->material.dynamic_bloom = bloom.dynamic_bloom;
             } else {
                 mesh->material.bloomColor = Vector3(0, 0, 0);
+                mesh->material.bloom_threshold = 0;
+                mesh->material.dynamic_bloom = false;
             }
 
+            bool trulyChanged = false;
             for (auto &vertex : mesh->vertices) {
                 int index = &vertex - &mesh->vertices[0];
                 float xCoord = spriteOffset.x + spriteSize.x;
@@ -126,7 +131,17 @@ namespace HyperAPI::Experimental {
                             yCoord / spritesheetSize.y),
                     Vector2(spriteOffset.x / spritesheetSize.x,
                             yCoord / spritesheetSize.y)};
+
+                trulyChanged = !(vertex.texUV.x == texCoords[index].x && vertex.texUV.y == texCoords[index].y);
+
                 vertex.texUV = texCoords[index];
+            }
+
+            if (trulyChanged) {
+                glBindVertexArray(mesh->VAO);
+                glBindBuffer(GL_ARRAY_BUFFER, mesh->VBO);
+                glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * mesh->vertices.size(),
+                                mesh->vertices.data());
             }
         }
     };

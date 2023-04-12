@@ -59,7 +59,7 @@
 #include "../Renderer/Structures.hpp"
 #include "../Renderer/Texture.hpp"
 #include "../Renderer/Timestep.hpp"
-#include "../Renderer/Batch.hpp"
+#include "../Batch/BatchLayer.hpp"
 #include "../Renderer/Font.hpp"
 #include "../Renderer/Terrain.hpp"
 

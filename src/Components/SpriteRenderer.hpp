@@ -101,8 +101,12 @@ namespace HyperAPI::Experimental {
             if (Scene::m_Registry.has<Bloom>(entity)) {
                 auto &bloom = Scene::m_Registry.get<Bloom>(entity);
                 mesh->material.bloomColor = bloom.bloomColor;
+                mesh->material.bloom_threshold = bloom.bloom_threshold;
+                mesh->material.dynamic_bloom = bloom.dynamic_bloom;
             } else {
                 mesh->material.bloomColor = Vector3(0, 0, 0);
+                mesh->material.bloom_threshold = 0;
+                mesh->material.dynamic_bloom = false;
             }
         }
     };

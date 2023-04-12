@@ -1,37 +1,43 @@
 #include "TransformFunctions.hpp"
 #include "csharp.hpp"
+#include <exception>
 
 namespace HyperAPI::CsharpScriptEngine::Functions {
     void Transform_GetKey(MonoString *key, MonoString *id, MonoString **result) {
         using namespace Experimental;
-
-        const std::string keyStr = mono_string_to_utf8(key);
-        const std::string idStr = mono_string_to_utf8(id);
-
-        auto *gameObject = f_GameObject::FindGameObjectByID(idStr);
-        if (!gameObject) {
-            Log log(("C#: Couldn't find game object with ID: " + idStr), LOG_ERROR);
-            *result = mono_string_new(CsharpVariables::appDomain, "0, 0, 0");
+        if (!id)
             return;
-        }
-        auto &transform = gameObject->GetComponent<Transform>();
 
-        if (keyStr == "position") {
-            *result = mono_string_new(CsharpVariables::appDomain, (
-                                                                      std::to_string(transform.position.x) + " " + std::to_string(transform.position.y) + " " + std::to_string(transform.position.z))
-                                                                      .c_str());
-        }
+        try {
+            const std::string keyStr = mono_string_to_utf8(key);
+            const std::string idStr = mono_string_to_utf8(id);
 
-        if (keyStr == "rotation") {
-            *result = mono_string_new(CsharpVariables::appDomain, (
-                                                                      std::to_string(transform.rotation.x) + " " + std::to_string(transform.rotation.y) + " " + std::to_string(transform.rotation.z))
-                                                                      .c_str());
-        }
+            auto *gameObject = f_GameObject::FindGameObjectByID(idStr);
+            if (!gameObject) {
+                Log log(("C#: Couldn't find game object with ID: " + idStr), LOG_ERROR);
+                *result = mono_string_new(CsharpVariables::appDomain, "0, 0, 0");
+                return;
+            }
+            auto &transform = gameObject->GetComponent<Transform>();
 
-        if (keyStr == "scale") {
-            *result = mono_string_new(CsharpVariables::appDomain, (
-                                                                      std::to_string(transform.scale.x) + " " + std::to_string(transform.scale.y) + " " + std::to_string(transform.scale.z))
-                                                                      .c_str());
+            if (keyStr == "position") {
+                *result = mono_string_new(CsharpVariables::appDomain, (
+                                                                          std::to_string(transform.position.x) + " " + std::to_string(transform.position.y) + " " + std::to_string(transform.position.z))
+                                                                          .c_str());
+            }
+
+            if (keyStr == "rotation") {
+                *result = mono_string_new(CsharpVariables::appDomain, (
+                                                                          std::to_string(transform.rotation.x) + " " + std::to_string(transform.rotation.y) + " " + std::to_string(transform.rotation.z))
+                                                                          .c_str());
+            }
+
+            if (keyStr == "scale") {
+                *result = mono_string_new(CsharpVariables::appDomain, (
+                                                                          std::to_string(transform.scale.x) + " " + std::to_string(transform.scale.y) + " " + std::to_string(transform.scale.z))
+                                                                          .c_str());
+            }
+        } catch (std::exception &e) {
         }
     }
 

@@ -30,7 +30,9 @@ namespace HyperAPI::BulletPhysicsWorld {
         dynamicsWorld->setGravity(btVector3(0, -9.81, 0));
     }
 
-    void UpdatePhysics() { dynamicsWorld->stepSimulation(1.f / 60.f, 10); }
+    void UpdatePhysics() {
+        dynamicsWorld->stepSimulation(1.f / 60.f, 10);
+    }
 
     void CollisionCallback(
         std::function<void(const std::string &, const std::string &)>

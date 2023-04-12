@@ -28,16 +28,7 @@ namespace HyperAPI {
         Mesh(std::vector<Vertex> &vertices, std::vector<uint32_t> &indices,
              Material &material, bool empty = false, bool batched = false);
 
-        ~Mesh() {
-            vertices.clear();
-            indices.clear();
-            textures.clear();
-
-            glDeleteBuffers(1, &VBO);
-            glDeleteBuffers(1, &IBO);
-            glDeleteVertexArrays(1, &VAO);
-        }
-
+        ~Mesh();
         uint32_t enttId;
 
         void Draw(Shader &shader, Camera &camera,

@@ -37,6 +37,8 @@ namespace HyperAPI {
         shader.SetUniform1f("shininess", shininess);
         shader.SetUniform1f("metallic", metallic);
         shader.SetUniform1f("roughness", roughness);
+        shader.SetUniform1f("bloom_threshold", bloom_threshold);
+        shader.SetUniform1i("dynamic_bloom", dynamic_bloom);
         shader.SetUniform2f("texUvOffset", texUVs.x, texUVs.y);
         shader.SetUniform3f("u_BloomColor", bloomColor.x, bloomColor.y,
                             bloomColor.z);

@@ -66,5 +66,10 @@ namespace Vault
             string[] strs = result.Split(" ");
             return new Vector3(float.Parse(strs[0]), float.Parse(strs[1]), float.Parse(strs[2]));
         }
+
+        public void SetPosition(Vector3 pos)
+        {
+            cpp_SetPosition(pos.x, pos.y, pos.z, Entity.ID);
+        }
     }
 }

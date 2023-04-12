@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Runtime.Intrinsics.X86;
+using System.Runtime.CompilerServices;
 using System;
 
 namespace Vault
@@ -46,6 +47,16 @@ namespace Vault
         public Main()
         {
             Vector3 vector = new Vector3(1, 2, 3);
+        }
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static float cpp_DeltaTime();
+
+        public static float deltaTime
+        {
+            get { return cpp_DeltaTime(); }
+            set
+            { }
         }
     }
 
@@ -217,6 +228,27 @@ namespace Vault
         extern public static void SetMouseHidden(bool hidden);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static void SetMousePosition(float x, float y);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static void cpp_GetMouseWorldPosition(out string result);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static float atan2(float x, float y);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static void cpp_normalize(float x, float y, float z, out string result);
+
+        public static Vector3 normalize(Vector3 vec)
+        {
+            cpp_normalize(vec.x, vec.y, vec.z, out string result);
+            string[] results = result.Split(" ");
+            return new Vector3(float.Parse(results[0]), float.Parse(results[1]), float.Parse(results[2]));
+        }
+
+        public static Vector3 GetMouseWorldPosition()
+        {
+            cpp_GetMouseWorldPosition(out string result);
+            string[] results = result.Split(" ");
+            return new Vector3(float.Parse(results[0]), float.Parse(results[1]), float.Parse(results[2]));
+        }
+
     }
 
     public class Lerp

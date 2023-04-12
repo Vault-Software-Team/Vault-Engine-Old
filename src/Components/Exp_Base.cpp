@@ -1,17 +1,27 @@
 #include "Exp_Base.hpp"
 
-#include "LuaScriptComponent.hpp"
-#include "Model.hpp"
-#include "NativeScriptManager.hpp"
+#include "Bloom.hpp"
+#include "Bone.hpp"
+#include "BoxCollider2D.hpp"
+#include "CameraComponent.hpp"
+#include "Colliders3D.hpp"
 #include "CppScriptManager.hpp"
 #include "CsharpScriptManager.hpp"
+#include "GameObject.hpp"
+#include "Lights.hpp"
+#include "LuaScriptComponent.hpp"
+#include "MeshRenderer.hpp"
+#include "Model.hpp"
+#include "NativeScriptManager.hpp"
+#include "PathfindingAI.hpp"
 #include "Rigidbody2D.hpp"
 #include "Rigidbody3D.hpp"
-#include "BoxCollider2D.hpp"
-#include "Colliders3D.hpp"
-#include "PathfindingAI.hpp"
 #include "SpriteAnimation.hpp"
 #include "SpritesheetAnimation.hpp"
+#include "SpritesheetRenderer.hpp"
+#include "Transform.hpp"
+#include "3DText.hpp"
+#include "AudioListener.hpp"
 #include "Audio3D.hpp"
 #include "box2d/b2_types.h"
 #include "glm/fwd.hpp"
@@ -70,7 +80,7 @@ namespace HyperAPI::Experimental {
             bodyDef.userData.pointer = reinterpret_cast<uintptr_t>(gameObject);
             bodyDef.type = rb2d.type;
             bodyDef.position.Set(transform.position.x, transform.position.y);
-            bodyDef.angle = glm::radians(transform.rotation.z);
+            bodyDef.angle = transform.rotation.z;
             bodyDef.gravityScale = rb2d.gravityScale;
 
             b2Body *body = Scene::world->CreateBody(&bodyDef);

@@ -1,4 +1,5 @@
 #pragma once
+#pragma once
 #include "../vendor/glad/include/glad/glad.h"
 #include "../vendor/GLFW/glfw3.h"
 #include <fstream>
@@ -34,12 +35,6 @@
 #include <map>
 #include "scene.hpp"
 #include <memory>
-
-#ifdef _WIN32
-#define DLL_LINKER extern __declspec(dllexport)
-#else
-#define DLL_LINKER extern
-#endif
 
 bool G_END_WITH(std::string const &value, std::string const &ending);
 
@@ -111,8 +106,17 @@ namespace HyperAPI {
         extern std::vector<Mesh *> entities;
         extern std::vector<Model> models;
         extern Camera *mainCamera;
+        extern Camera *scene_camera;
+        extern bool stop_scripts;
         extern std::vector<Camera *> cameras;
-        DLL_LINKER std::vector<Log> logs;
+        extern std::vector<Log> logs;
+#ifdef _WIN32
+#ifdef BUILD_DLL
+        extern "C" __declspec(dllimport) std::vector<Log> *GetLogs();
+#else
+        extern "C" __declspec(dllexport) std::vector<Log> *GetLogs();
+#endif
+#endif
         extern glm::mat4 projection;
 
         extern std::vector<entt::entity> backup_entities;

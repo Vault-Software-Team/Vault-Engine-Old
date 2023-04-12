@@ -16,6 +16,7 @@ namespace Hyper {
         int winWidth, winHeight;
         int width;
         int height;
+        int sw = 0, sh = 0;
         float exposure = 1;
 
         std::string vendor, srenderer, version;
@@ -24,17 +25,18 @@ namespace Hyper {
         std::function<void()> m_update;
 
         HyperAPI::Renderer *renderer;
+        HyperAPI::Experimental::GameObject *currently_hovering_over;
 
         Application(
             const int width, const int height, const char *gameTitle,
             bool fullscreen = false, bool resizable = true,
             bool wireframe = false, std::function<void()> ioConf = []() {})
             : width(width), height(height), title(std::string(gameTitle)) {
-            HYPER_LOG("Initializing Static Engine");
+            HYPER_LOG("Initializing Vault Engine");
             renderer =
                 new HyperAPI::Renderer(width, height, title.c_str(), {0, -1}, 8,
                                        fullscreen, resizable, wireframe);
-            HYPER_LOG("Initialized Static Engine");
+            HYPER_LOG("Initialized Vault Engine");
 
             // HYPER_LOG("Initializing Audio Engine");
             // HyperAPI::AudioEngine::Init();

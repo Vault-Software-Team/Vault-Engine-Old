@@ -1,4 +1,5 @@
 #include "libs.hpp"
+#include "box2d/b2_world_callbacks.h"
 
 namespace uuid {
     std::random_device rd;
@@ -41,6 +42,7 @@ namespace HyperAPI {
     bool isStopped = true;
     glm::vec3 mousePosWorld, mousePosCamWorld;
     float sceneMouseX, sceneMouseY;
+    b2ContactListener *b2_listener;
     Config config = {
         "Vault Engine",
         "assets/scenes/main.vault",

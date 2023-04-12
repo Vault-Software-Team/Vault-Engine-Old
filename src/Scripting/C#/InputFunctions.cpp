@@ -1,4 +1,8 @@
 #include "InputFunctions.hpp"
+#include "InputEvents.hpp"
+#include "csharp.hpp"
+#include "glm/ext/quaternion_geometric.hpp"
+#include "mono/metadata/object.h"
 
 namespace HyperAPI::CsharpScriptEngine::Functions {
     // Inputs
@@ -40,5 +44,18 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
     void Input_SetMousePosition(float x, float y) {
         Input::SetMousePosition(x, y);
+    }
+
+    void Input_GetMouseWorldPosition(MonoString **out) {
+        *out = mono_string_new(CsharpVariables::appDomain, (std::to_string(Input::mouseRay.x) + " " + std::to_string(-Input::mouseRay.y) + " " + std::to_string(Input::mouseRay.z)).c_str());
+    }
+
+    float Input_atan2(float x, float y) {
+        return atan2(x, y);
+    }
+
+    void Input_normalize(float x, float y, float z, MonoString **out) {
+        glm::vec3 normalized = glm::normalize(glm::vec3(x, y, z));
+        *out = mono_string_new(CsharpVariables::appDomain, (std::to_string(normalized.x) + " " + std::to_string(-normalized.y) + " " + std::to_string(normalized.z)).c_str());
     }
 } // namespace HyperAPI::CsharpScriptEngine::Functions
