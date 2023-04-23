@@ -368,6 +368,9 @@ namespace Vault
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static string cpp_InstantiatePrefab(string prefab_path);
 
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static string cpp_InstantiatePrefabWithProperties(string prefab_path, float px, float py, float pz, float rx, float ry, float rz, string parent_id = "NO_PARENT");
+
         public static void RemoveGameObject(GameObject game_object)
         {
             cpp_RemoveGameObject(game_object.id);
@@ -381,6 +384,11 @@ namespace Vault
         public static void InstantiatePrefab(string prefab_path)
         {
             cpp_InstantiatePrefab(prefab_path);
+        }
+
+        public static void InstantiatePrefabWithProperties(string prefab_path, Vector3 position, Vector3 rotation, string parent_id = "NO_PARENT")
+        {
+            cpp_InstantiatePrefabWithProperties(prefab_path, position.x, position.y, position.z, rotation.x, rotation.y, rotation.z, parent_id);
         }
 
         public string name;

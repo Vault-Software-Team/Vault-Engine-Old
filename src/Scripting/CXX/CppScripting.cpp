@@ -58,6 +58,7 @@ namespace HyperAPI::CppScripting {
                 sharedObj.handle = LoadLibrary(file.c_str());
                 sharedObj.create =
                     (Script * (*)()) GetProcAddress(sharedObj.handle, "create_object");
+                sharedObj.get_logs = (std::vector<Log> * (*)()) GetProcAddress(sharedObj.handle, "get_logs");
                 sharedObj.name = dirEntry.path().filename().string();
                 cpp_scripts.push_back(sharedObj);
             }

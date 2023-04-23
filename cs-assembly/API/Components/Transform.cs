@@ -53,5 +53,16 @@ namespace Vault
                 SetKey("scale", Entity.ID, value.x, value.y, value.z);
             }
         }
+
+        public Vector3 forward
+        {
+            get
+            {
+                GetKey("forward", Entity.ID, out string result);
+                string[] strValues = result.Split(" ");
+                return new Vector3(float.Parse(strValues[0]), float.Parse(strValues[1]), float.Parse(strValues[2]));
+            }
+            set { }
+        }
     }
 }

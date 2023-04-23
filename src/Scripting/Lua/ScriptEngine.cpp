@@ -110,6 +110,10 @@ void LuaGetComponents(lua_State *L, GameObject *gameObject, const std::string &t
         PushTableKey(L, "scaleX", transform.scale.x);
         PushTableKey(L, "scaleY", transform.scale.y);
         PushTableKey(L, "scaleZ", transform.scale.z);
+
+        PushTableKey(L, "forwardX", transform.forward.x);
+        PushTableKey(L, "forwardY", transform.forward.y);
+        PushTableKey(L, "forwardZ", transform.forward.z);
     } else if (type == "MeshRenderer") {
         MeshRenderer &meshRenderer = gameObject->GetComponent<MeshRenderer>();
         HyperAPI::Material &material = meshRenderer.m_Mesh->material;
@@ -996,7 +1000,7 @@ namespace ScriptEngine {
         lua_register(L, "FindGameObjectsByTag", Functions::FindGameObjectsByTag);
         lua_register(L, "InstantiatePrefab", Functions::InstantiatePrefab);
         lua_register(L, "LoadScene", Functions::LoadScene);
-        lua_register(L, "InstantiateTransformPrefab", Functions::InstantiateTransformPrefab);
+        lua_register(L, "InstantiatePrefabWithProperties", Functions::InstantiatePrefabWithProperties);
         lua_register(L, "PlayAudio", Functions::PlayAudio);
         lua_register(L, "StopAudio", Functions::StopAudio);
         lua_register(L, "PlayMusic", Functions::PlayMusic);
@@ -1594,7 +1598,7 @@ namespace ScriptEngine {
             return 1;
         }
 
-        int InstantiateTransformPrefab(lua_State *L) {
+        int InstantiatePrefabWithProperties(lua_State *L) {
             auto prefabPath = (std::string)lua_tostring(L, 1);
             Vector3 position = {lua_tonumber(L, 2), lua_tonumber(L, 3), lua_tonumber(L, 4)};
             Vector3 rotation = {lua_tonumber(L, 5), lua_tonumber(L, 6), lua_tonumber(L, 7)};

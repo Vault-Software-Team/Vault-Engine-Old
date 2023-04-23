@@ -25,5 +25,7 @@ public:
 };
 
 VAULT_API NewScript *create_object();
+VAULT_API std::vector<Log> *get_logs();
 }
-                            
+                          
+

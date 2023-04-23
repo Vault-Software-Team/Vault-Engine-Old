@@ -41,6 +41,9 @@ namespace HyperAPI::Experimental {
                             addedScripts.push_back(script);
                             addedScripts[addedScripts.size() - 1]->name =
                                 item.name;
+#ifdef _WIN32
+                            item.get_logs();
+#endif
                         }
                     }
 

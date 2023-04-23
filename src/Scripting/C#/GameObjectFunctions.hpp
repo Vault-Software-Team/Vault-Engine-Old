@@ -20,4 +20,5 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
     void GameObject_AddGameObject(MonoString *name, MonoString *tag, MonoString **m_id);
     void GameObject_RemoveGameObject(MonoString *id);
     void GameObject_InstantiatePrefab(MonoString *prefab_path);
+    void GameObject_InstantiatePrefabWithProperties(MonoString *prefab_path, float px, float py, float pz, float rx, float ry, float rz, MonoString *parent_id);
 } // namespace HyperAPI::CsharpScriptEngine::Functions

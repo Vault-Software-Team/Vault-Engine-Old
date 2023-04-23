@@ -1,6 +1,11 @@
 #include "NewScript.hpp"
 NewScript *create_object() {
+	Log log("fuck!", LOG_INFO);
     return new NewScript;
+}
+
+std::vector<Log> *get_logs() {
+	return &Scene::logs;
 }
 
 void NewScript::Start() {
@@ -11,6 +16,8 @@ void NewScript::Update() {
 	Log deez("hi", LOG_INFO);
 }
                             
+
+
 
 
 

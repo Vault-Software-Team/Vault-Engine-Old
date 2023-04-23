@@ -128,6 +128,15 @@ debugging:
 
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
 
+one_file:
+	$(GNU_LINUX_COMPILER) -c src/Renderer/Renderer.cpp $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
+	mv *.o bin
+
+	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
+
 scripting:
 	$(GNU_LINUX_COMPILER) -c $(scripting) $(flags)
 	mv *.o bin

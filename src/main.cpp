@@ -724,7 +724,6 @@ void ShortcutManager(bool &openConfig) {
         auto *go = Scene::LoadJSONPrefab(JSON);
         JSON.clear();
         Scene::m_Object = go;
-        Scene::m_Object->name += " (Prefab)";
     }
 }
 
@@ -1126,18 +1125,16 @@ int main(int argc, char **argv) {
 
     // flat plane vertices
     std::vector<Vertex> planeVertices = {
-        {Vector3(-0.5f, 0.0f, 0.5f), Vector3(0), Vector3(0, 1, 0),
-         Vector2(0, 0)},
-        {Vector3(0.5f, 0.0f, 0.5f), Vector3(0), Vector3(0, 1, 0),
-         Vector2(1, 0)},
-        {Vector3(0.5f, 0.0f, -0.5f), Vector3(0), Vector3(0, 1, 0),
-         Vector2(1, 1)},
-        {Vector3(-0.5f, 0.0f, -0.5f), Vector3(0), Vector3(0, 1, 0),
-         Vector2(0, 1)},
-    };
+        Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(1, 1, 1),
+               glm::vec3(0, 1, 0), glm::vec2(0.0f, 0.0f)},
+        Vertex{glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(1, 1, 1),
+               glm::vec3(0, 1, 0), glm::vec2(1.0f, 0.0f)},
+        Vertex{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(1, 1, 1),
+               glm::vec3(0, 1, 0), glm::vec2(1.0f, 1.0f)},
+        Vertex{glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(1, 1, 1),
+               glm::vec3(0, 1, 0), glm::vec2(0.0f, 1.0f)}};
 
-    // indices
-    std::vector<uint32_t> planeIndices = {0, 1, 2, 2, 3, 0};
+    std::vector<uint32_t> planeIndices = {0, 1, 2, 0, 2, 3};
 
     Material material(Vector4(0, 4, 0.2, 1));
     Mesh CubeCollider(cubeVertices, cubeIndices, material);
@@ -1145,7 +1142,7 @@ int main(int argc, char **argv) {
     bool drawBoxCollider2D = false;
     glm::vec3 bc2dPos = glm::vec3(0, 0, 0);
     glm::vec3 bc2dScale = glm::vec3(1, 1, 1);
-    float bc2dRotation = 0.0f;
+    glm::vec3 bc2dRotation = glm::vec3(0, 0, 0);
 
     std::vector<Vertex> sprite_vertices = {
         Vertex{glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(1, 1, 1),
@@ -2241,7 +2238,9 @@ int main(int argc, char **argv) {
                 app.sceneMouseX = m_mouseX;
                 app.sceneMouseY = m_mouseY;
 
-                ImGuizmo::SetOrthographic(Scene::mainCamera->mode2D);
+                if (Scene::mainCamera) {
+                    ImGuizmo::SetOrthographic(Scene::mainCamera->mode2D);
+                }
                 ImGuizmo::SetDrawlist();
                 ImGuizmo::SetRect(viewX, viewY, viewWidth, viewHeight);
 
@@ -2914,7 +2913,7 @@ int main(int argc, char **argv) {
                             auto &transform =
                                 Scene::m_Object->GetComponent<Transform>();
                             bc2dPos = transform.position;
-                            bc2dRotation = transform.rotation.z;
+                            bc2dRotation = transform.rotation;
                             bc2dScale = Vector3(comp.size.x, comp.size.y, 1);
                         }
                     } else {
@@ -3855,6 +3854,14 @@ int main(int argc, char **argv) {
 
     app.Run(
         [&](uint32_t &shadowMapTex) {
+            if (Scene::m_Object == nullptr) {
+                drawBoxCollider2D = false;
+            }
+
+            if (Scene::mainCamera == nullptr) {
+                Scene::mainCamera = camera;
+            }
+
 #ifndef GAME_BUILD
             {
                 glm::vec2 tempPos(mousePos.x, mousePos.y);
@@ -4983,22 +4990,20 @@ int main(int argc, char **argv) {
                 }
             }
 
-            //        glClear(GL_DEPTH_BUFFER_BIT);
-            //        if (drawBoxCollider2D) {
-            //            glDepthFunc(GL_LEQUAL);
-            //            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            //
-            //            glm::mat4 model = glm::mat4(1.0f);
-            //            model = glm::translate(model, bc2dPos) *
-            //                    glm::scale(model, glm::vec3(bc2dScale.x / 2,
-            //                    bc2dScale.y / 2, 1.0f)) * glm::rotate(model,
-            //                    glm::radians(90.0f), glm::vec3(1.0f, 0.0f,
-            //                    0.0f));
-            ////            mesh_BoxCollider2D.Draw(workerShader, *camera,
-            /// model);
-            //
-            //            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            //        }
+            glClear(GL_DEPTH_BUFFER_BIT);
+            if (drawBoxCollider2D) {
+                glDepthFunc(GL_LEQUAL);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+                glm::mat4 model = glm::mat4(1.0f);
+                model = glm::translate(model, bc2dPos) *
+                        glm::toMat4(glm::quat(bc2dRotation)) *
+                        glm::scale(model, glm::vec3(bc2dScale.x / 2,
+                                                    bc2dScale.y / 2, 1.0f));
+                mesh_BoxCollider2D.Draw(workerShader, *camera, model);
+
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            }
 
             for (auto &gameObject : Scene::m_GameObjects) {
                 if (!gameObject->enabled)

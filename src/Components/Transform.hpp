@@ -43,7 +43,7 @@ namespace HyperAPI::Experimental {
                                            scale.z * 0.5));
 
             const glm::mat4 inverted = glm::inverse(transform);
-            forward = normalize(glm::vec3(inverted[2]));
+            forward = normalize(glm::vec3(inverted[2])) * glm::vec3(1, 1, -1);
         }
 
         void LookAt(glm::vec3 target) {

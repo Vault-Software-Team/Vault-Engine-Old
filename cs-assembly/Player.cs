@@ -6,19 +6,30 @@ namespace Sandbox
     public class Player : Entity
     {
         Transform transform;
+        Entity parent;
 
         void OnStart()
         {
             SetObjectID();
             transform = GetComponent<Transform>();
+            parent = GetEntity(GameObject.GetIDByTag("CubePoint"));
         }
 
-        void OnUpdate(float ts)
+        bool pressed = false;
+
+        void OnUpdate()
         {
-            Vector3 ray = Input.GetMouseWorldPosition();
-            Vector3 difference = new Vector3(ray.x - transform.position.x, ray.y - transform.position.y, ray.z - transform.position.z);
-            float rotZ = Input.atan2(difference.x, difference.y);
-            transform.rotation = new Vector3(0, 0, -rotZ);
+            if (Input.IsKeyPressed(Input.KEY_Q) && !pressed)
+            {
+                Debug.Log("Spawned!");
+                GameObject.InstantiatePrefabWithProperties("assets/Cube.prefab", new Vector3(-4.56f, 2.31f, 0.0f), new Vector3(0, 0, 0.785f), parent.ID);
+                pressed = true;
+            }
+
+            if (Input.IsKeyReleased(Input.KEY_Q) && pressed)
+            {
+                pressed = false;
+            }
         }
     }
 }

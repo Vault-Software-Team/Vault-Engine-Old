@@ -82,5 +82,7 @@ namespace HyperAPI::Experimental {
         }
 
         void Update();
+
+        void DeleteComp() override;
     };
 } // namespace HyperAPI::Experimental

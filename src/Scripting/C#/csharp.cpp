@@ -123,6 +123,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("Vault.GameObject::cpp_AddGameObject", reinterpret_cast<void *(*)>(GameObject_AddGameObject));
         mono_add_internal_call("Vault.GameObject::cpp_RemoveGameObject", reinterpret_cast<void *(*)>(GameObject_RemoveGameObject));
         mono_add_internal_call("Vault.GameObject::cpp_InstantiatePrefab", reinterpret_cast<void *(*)>(GameObject_InstantiatePrefab));
+        mono_add_internal_call("Vault.GameObject::cpp_InstantiatePrefabWithProperties", reinterpret_cast<void *(*)>(GameObject_InstantiatePrefabWithProperties));
 
         // Text3D Component
         mono_add_internal_call("Vault.Text3D::GetKey", reinterpret_cast<void *(*)>(Text3D_GetKey));

@@ -46,6 +46,8 @@ namespace HyperAPI {
         glfwMakeContextCurrent(window);
         gladLoadGL();
 
+        glfwSwapInterval(1);
+
         // set minimum size of a window;
         glfwSetWindowSizeLimits(window, 800, 600, GLFW_DONT_CARE,
                                 GLFW_DONT_CARE);

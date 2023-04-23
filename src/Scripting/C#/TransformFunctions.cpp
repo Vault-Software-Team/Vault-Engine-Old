@@ -37,6 +37,12 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
                                                                           std::to_string(transform.scale.x) + " " + std::to_string(transform.scale.y) + " " + std::to_string(transform.scale.z))
                                                                           .c_str());
             }
+
+            if (keyStr == "forward") {
+                *result = mono_string_new(CsharpVariables::appDomain, (
+                                                                          std::to_string(transform.forward.x) + " " + std::to_string(transform.forward.y) + " " + std::to_string(transform.forward.z))
+                                                                          .c_str());
+            }
         } catch (std::exception &e) {
         }
     }

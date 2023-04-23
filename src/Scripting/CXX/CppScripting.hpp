@@ -21,6 +21,7 @@ namespace HyperAPI {
             std::string typeName;
             HINSTANCE handle;
             Script *(*create)();
+            std::vector<Log> *(*get_logs)();
         };
 #else
         struct SharedObject {
