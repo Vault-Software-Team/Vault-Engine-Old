@@ -23,6 +23,7 @@
 #include "3DText.hpp"
 #include "AudioListener.hpp"
 #include "Audio3D.hpp"
+#include "assimp/material.h"
 #include "box2d/b2_types.h"
 #include "glm/fwd.hpp"
 #include "glm/geometric.hpp"
@@ -613,17 +614,32 @@ namespace HyperAPI::Experimental {
             if (num_tex > 0) {
                 ret = mot->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), texture_name);
 
+                aiString SPECULAR;
+                aiReturn spec = mot->Get(AI_MATKEY_TEXTURE(aiTextureType_SPECULAR, 0), SPECULAR);
+
+                aiString NORMALS;
+                aiReturn norm = mot->Get(AI_MATKEY_TEXTURE(aiTextureType_NORMALS, 0), NORMALS);
+
                 fs::path m_fs_path(path);
                 std::string m_path = m_fs_path.remove_filename().string();
 
                 if (!fs::exists("assets/models/scene_materials"))
                     fs::create_directory("assets/models/scene_materials");
 
+                std::string normal_path = "nullptr", specular_path = (m_path + std::string(texture_name.C_Str())).c_str();
+                if (NORMALS.length > 0) {
+                    normal_path = NORMALS.C_Str();
+                }
+
+                if (SPECULAR.length > 0) {
+                    specular_path = SPECULAR.C_Str();
+                }
+
                 std::ofstream file("assets/models/scene_materials/" + std::string(texture_name.C_Str()) + ".material");
                 nlohmann::json j = {
                     {"diffuse", (m_path + std::string(texture_name.C_Str())).c_str()},
-                    {"specular", (m_path + std::string(texture_name.C_Str())).c_str()},
-                    {"normal", "nullptr"},
+                    {"specular", specular_path},
+                    {"normal", normal_path},
                     {"height", "nullptr"},
                     {"roughness", 0},
                     {"metallic", 0},
