@@ -1,5 +1,8 @@
 #include "Model.hpp"
 #include "Mesh.hpp"
+#include "Texture.hpp"
+#include "assimp/material.h"
+#include "assimp/types.h"
 
 namespace HyperAPI {
     void Model::Draw(Shader &shader, Camera &camera) {
@@ -110,6 +113,26 @@ namespace HyperAPI {
             }
             vertices.push_back(vertex);
         }
+
+        // if (scene->HasMaterials()) {
+        //     for (uint32_t m = 0; m < scene->mNumMaterials; ++m) {
+        //         aiMaterial *material = scene->mMaterials[m];
+        //         aiString material_name;
+        //         aiReturn ret;
+
+        //         ret = material->Get(AI_MATKEY_NAME, material_name);
+        //         if (ret != AI_SUCCESS)
+        //             material_name = "";
+
+        //         int num_tex = material->GetTextureCount(aiTextureType_DIFFUSE);
+        //         aiString texture_name;
+
+        //         if (num_tex > 0) {
+        //             ret = material->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), texture_name);
+        //         }
+        //     }
+        // }
+
         ExtractBoneWeightForVertices(vertices, mesh, scene);
 
         // indices
@@ -126,6 +149,7 @@ namespace HyperAPI {
 
         if (mesh->mMaterialIndex >= 0 && texturesEnabled) {
             aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
+
             std::vector<Texture> diffuseMaps = loadMaterialTextures(
                 material, aiTextureType_DIFFUSE, "texture_diffuse");
             diffuse = &diffuseMaps[0];
@@ -136,12 +160,31 @@ namespace HyperAPI {
             specular = &specularMaps[0];
             textures.insert(textures.end(), specularMaps.begin(),
                             specularMaps.end());
+
+            diffuse = &diffuseMaps[0];
         }
 
         if (texturesEnabled) {
             Material material(Color);
-            //            material.diffuse = diffuse;
+            aiString mot_name;
+            aiReturn ret;
+
+            aiMaterial *mot = scene->mMaterials[mesh->mMaterialIndex];
+
+            ret = mot->Get(AI_MATKEY_NAME, mot_name);
+            if (ret != AI_SUCCESS)
+                mot_name = "";
+
+            int num_tex = mot->GetTextureCount(aiTextureType_DIFFUSE);
+            aiString texture_name;
+
+            if (num_tex > 0) {
+                ret = mot->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), texture_name);
+            }
+            material.diffuse = new Texture(texture_name.C_Str(), 0, "texture_diffuse");
+            material.specular = new Texture(texture_name.C_Str(), 0, "texture_specular");
             //            material.specular = specular;
+            std::cout << texture_name.C_Str() << "\n";
 
             Mesh *ent = new Mesh(vertices, indices, material);
             ent->modelMesh = true;
@@ -149,6 +192,23 @@ namespace HyperAPI {
             return ent;
         } else {
             Material material(Color);
+            aiString mot_name;
+            aiReturn ret;
+
+            aiMaterial *mot = scene->mMaterials[mesh->mMaterialIndex];
+
+            ret = mot->Get(AI_MATKEY_NAME, mot_name);
+            if (ret != AI_SUCCESS)
+                mot_name = "";
+
+            int num_tex = mot->GetTextureCount(aiTextureType_DIFFUSE);
+            aiString texture_name;
+
+            if (num_tex > 0) {
+                ret = mot->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), texture_name);
+            }
+            std::cout << texture_name.C_Str() << "\n";
+            material.diffuse = new Texture(texture_name.C_Str(), 0, "texture_diffuse");
             Mesh *ent = new Mesh(vertices, indices, material);
             ent->modelMesh = true;
             ent->name = name;

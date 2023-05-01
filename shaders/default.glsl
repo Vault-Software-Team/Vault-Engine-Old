@@ -108,7 +108,7 @@ void main() {
     fragPosLight = lightSpaceMatrix * vec4(currentPosition, 1.0);
 
     vec3 viewVector = normalize(worldPosition.xyz - cameraPosition);
-    reflectedVector = reflect(viewVector, Normal);
+    reflectedVector = reflect(viewVector, normalize(Normal));
 
     // calculate tangent/bitangent of the current vertex
     mat4 fullM = model * translation * rotation * scale;
@@ -337,7 +337,7 @@ vec4 directionalLight(DirectionalLight light) {
     specular = specular * _smoothness;
 
     if(isTex == 1) {
-        return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * baseColor * vec4(light.color, 1) * (diffuse) + specularTexture * (((specular) * vec4(light.color, 1)) * light.intensity)) + texture(texture_emission0, UVs).r;
+        return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * vec4(light.color, 1) * (diffuse) + specularTexture * (((specular) * vec4(light.color, 1)) * light.intensity)) + texture(texture_emission0, UVs).r;
     } else {
         return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * (diffuse) + vec4(1,1,1,1)  * (((specular) * vec4(light.color, 1)) * light.intensity));
     }

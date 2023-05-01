@@ -26,6 +26,8 @@
 #include "box2d/b2_types.h"
 #include "glm/fwd.hpp"
 #include "glm/geometric.hpp"
+#include <experimental/bits/fs_ops.h>
+#include <sstream>
 
 namespace HyperAPI::Experimental {
     nlohmann::json stateScene = nlohmann::json::array();
@@ -566,20 +568,21 @@ namespace HyperAPI::Experimental {
         Texture *specular = nullptr;
         Texture *normal = nullptr;
 
-        if (mesh->mMaterialIndex >= 0 && texturesEnabled) {
-            aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-            std::vector<Texture *> diffuseMaps = loadMaterialTextures(
-                material, aiTextureType_DIFFUSE, "texture_diffuse");
-            diffuse = diffuseMaps[0];
-            textures.insert(textures.end(), diffuseMaps.begin(),
-                            diffuseMaps.end());
-            std::vector<Texture *> specularMaps = loadMaterialTextures(
-                material, aiTextureType_SPECULAR, "texture_specular");
-            specular = specularMaps[0];
-            textures.insert(textures.end(), specularMaps.begin(),
-                            specularMaps.end());
-        }
+        // if (mesh->mMaterialIndex >= 0 && texturesEnabled) {
+        //     aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
+        //     std::vector<Texture *> diffuseMaps = loadMaterialTextures(
+        //         material, aiTextureType_DIFFUSE, "texture_diffuse");
+        //     diffuse = diffuseMaps[0];
+        //     textures.insert(textures.end(), diffuseMaps.begin(),
+        //                     diffuseMaps.end());
+        //     std::vector<Texture *> specularMaps = loadMaterialTextures(
+        //         material, aiTextureType_SPECULAR, "texture_specular");
+        //     specular = specularMaps[0];
+        //     textures.insert(textures.end(), specularMaps.begin(),
+        //                     specularMaps.end());
+        // }
 
+        texturesEnabled = true;
         if (texturesEnabled) {
             Material material(Color);
             material.diffuse = diffuse;
@@ -591,11 +594,59 @@ namespace HyperAPI::Experimental {
             gameObject->AddComponent<Transform>();
             gameObject->AddComponent<MeshRenderer>();
 
+            aiString mot_name;
+            aiReturn ret;
+
+            aiMaterial *mot = scene->mMaterials[mesh->mMaterialIndex];
+
+            ret = mot->Get(AI_MATKEY_NAME, mot_name);
+            if (ret != AI_SUCCESS)
+                mot_name = "";
+
+            int num_tex = mot->GetTextureCount(aiTextureType_DIFFUSE);
+            aiString texture_name;
             MeshRenderer &meshRenderer =
                 gameObject->GetComponent<MeshRenderer>();
             meshRenderer.m_Mesh = new Mesh(vertices, indices, material);
             meshRenderer.m_Model = true;
             meshRenderer.meshType = std::string(path);
+            if (num_tex > 0) {
+                ret = mot->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), texture_name);
+
+                fs::path m_fs_path(path);
+                std::string m_path = m_fs_path.remove_filename().string();
+
+                if (!fs::exists("assets/models/scene_materials"))
+                    fs::create_directory("assets/models/scene_materials");
+
+                std::ofstream file("assets/models/scene_materials/" + std::string(texture_name.C_Str()) + ".material");
+                nlohmann::json j = {
+                    {"diffuse", (m_path + std::string(texture_name.C_Str())).c_str()},
+                    {"specular", (m_path + std::string(texture_name.C_Str())).c_str()},
+                    {"normal", "nullptr"},
+                    {"height", "nullptr"},
+                    {"roughness", 0},
+                    {"metallic", 0},
+                    {"baseColor",
+                     {
+                         {"r", 1},
+                         {"g", 1},
+                         {"b", 1},
+                         {"a", 1},
+                     }},
+                    {"texUV",
+                     {{"x", 0},
+                      {"y", 0}}}};
+
+                file << j.dump(4);
+                file.close();
+
+                // meshRenderer.m_Mesh->material.diffuse = new Texture((m_path + std::string(texture_name.C_Str())).c_str(), 0, "texture_diffuse");
+                // meshRenderer.m_Mesh->material.specular = new Texture((m_path + std::string(texture_name.C_Str())).c_str(), 0, "texture_specular");
+                meshRenderer.matPath = "assets/models/scene_materials/" + std::string(texture_name.C_Str()) + ".material";
+            }
+
+            std::cout << texture_name.C_Str() << "\n";
             Scene::m_GameObjects.push_back(gameObject);
 
             return gameObject;

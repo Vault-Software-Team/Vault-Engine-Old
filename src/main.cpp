@@ -1760,7 +1760,7 @@ int main(int argc, char **argv) {
                                          &m_InspectorMaterial.roughness, 0.01f);
                         ImGui::DragFloat("Metallic",
                                          &m_InspectorMaterial.metallic, 0.01f,
-                                         0.0f, 1.0f);
+                                         0.0f);
                         ImGui::ColorEdit4("Color",
                                           &m_InspectorMaterial.baseColor.x);
 
