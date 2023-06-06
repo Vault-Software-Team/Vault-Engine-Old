@@ -403,7 +403,7 @@ namespace HyperAPI {
 
                 for (auto &scriptName : component["scripts"]) {
                     for (auto sharedObj : CppScripting::cpp_scripts) {
-                        if (sharedObj.name == scriptName) {
+                        if (sharedObj.name == (std::string)scriptName) {
                             CppScripting::Script *script = sharedObj.create();
                             scriptManager.addedScripts.push_back(script);
                             scriptManager.addedScripts[scriptManager.addedScripts.size() - 1]->name = sharedObj.name;
@@ -1494,7 +1494,13 @@ namespace HyperAPI {
                             break;
                         }
                         case DRAG_SPRITE: {
-                            currEntity->material.diffuse = new Texture((char *)dirPayloadData.c_str(), 0, "texture_diffuse");
+                            if (currEntity) {
+                                currEntity->material.diffuse = new Texture((char *)dirPayloadData.c_str(), 0, "texture_diffuse");
+                            }
+
+                            if (otherData) {
+                                otherData = new Texture((char *)dirPayloadData.c_str(), 0, "texture_diffuse");
+                            }
 
                             break;
                         }

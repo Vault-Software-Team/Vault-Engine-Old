@@ -39,6 +39,7 @@
 #include "../Components/3DText.hpp"
 #include "../Components/AudioListener.hpp"
 #include "../Components/Audio3D.hpp"
+#include "../Components/ParticleSystem.hpp"
 
 // Renderer
 #include "../Renderer/AssimpGLMHelpers.hpp"

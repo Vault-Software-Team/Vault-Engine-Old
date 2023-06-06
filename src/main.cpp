@@ -2805,6 +2805,13 @@ int main(int argc, char **argv) {
                             comp.GUI();
                     }
 
+                    if (Scene::m_Object->HasComponent<ParticleEmitter>()) {
+                        auto &comp =
+                            Scene::m_Object->GetComponent<ParticleEmitter>();
+                        if (comp.hasGUI)
+                            comp.GUI();
+                    }
+
                     if (Scene::m_Object->HasComponent<m_LuaScriptComponent>()) {
                         auto &comp = Scene::m_Object
                                          ->GetComponent<m_LuaScriptComponent>();
@@ -2997,6 +3004,11 @@ int main(int argc, char **argv) {
 
                     if (ImGui::Button("Mesh Renderer", ImVec2(200, 0))) {
                         Scene::m_Object->AddComponent<MeshRenderer>();
+                        ImGui::CloseCurrentPopup();
+                    }
+
+                    if (ImGui::Button("Particle Emitter", ImVec2(200, 0))) {
+                        Scene::m_Object->AddComponent<ParticleEmitter>();
                         ImGui::CloseCurrentPopup();
                     }
 
@@ -4362,6 +4374,10 @@ int main(int argc, char **argv) {
 
                 if (gameObject->HasComponent<AudioListener>()) {
                     gameObject->GetComponent<AudioListener>().Update();
+                }
+
+                if (gameObject->HasComponent<ParticleEmitter>()) {
+                    gameObject->GetComponent<ParticleEmitter>().Update();
                 }
 
                 if (gameObject->HasComponent<m_LuaScriptComponent>()) {
