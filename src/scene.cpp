@@ -236,60 +236,10 @@ namespace HyperAPI {
                         meshRenderer.matPath = component["material"];
                     }
                 } else {
-                    meshType = meshConfig["mesh"];
-                    if (!fs::exists("assets/models/scene_files"))
-                        fs::create_directory("assets/models/scene_files");
-
-#ifdef _WIN32
-                    std::ifstream file("assets\\models\\scene_files\\" + gameObject->ID + ".vault.model");
-#else
-                    std::ifstream file("assets/models/scene_files/" + gameObject->ID + ".vault.model");
-#endif
-                    json modelJSON = json::parse(std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>()));
-
-                    std::vector<Vertex> vertices;
-                    std::vector<uint32_t> indices;
-
-                    for (int im = 0; im < modelJSON["vertices"].size(); im++) {
-                        auto &vert = modelJSON["vertices"][im];
-                        if (vert["normal"]["x"].is_null())
-                            vert["normal"]["x"] = 0;
-                        if (vert["normal"]["y"].is_null())
-                            vert["normal"]["y"] = 0;
-                        if (vert["normal"]["z"].is_null())
-                            vert["normal"]["z"] = 0;
-
-                        if (vert["bitangent"]["x"].is_null())
-                            vert["bitangent"]["x"] = 0;
-                        if (vert["bitangent"]["y"].is_null())
-                            vert["bitangent"]["y"] = 0;
-                        if (vert["bitangent"]["z"].is_null())
-                            vert["bitangent"]["z"] = 0;
-
-                        if (vert["tangent"]["x"].is_null())
-                            vert["tangent"]["x"] = 0;
-                        if (vert["tangent"]["y"].is_null())
-                            vert["tangent"]["y"] = 0;
-                        if (vert["tangent"]["z"].is_null())
-                            vert["tangent"]["z"] = 0;
-
-                        Vertex vertex;
-                        vertex.position = glm::vec3(vert["position"]["x"], vert["position"]["y"], vert["position"]["z"]);
-                        vertex.bitangent = glm::vec3(0, 0, 0);
-                        vertex.tangent = glm::vec3(0, 0, 0);
-
-                        vertex.normal = glm::vec3(vert["normal"]["x"], vert["normal"]["y"], vert["normal"]["z"]);
-                        vertex.color = glm::vec3(vert["color"]["x"], vert["color"]["y"], vert["color"]["z"]);
-                        vertex.texUV = glm::vec2(vert["texUV"]["x"], vert["texUV"]["y"]);
-                        vertices.push_back(vertex);
-                    }
-
-                    for (auto ind : modelJSON["indices"]) {
-                        indices.push_back(ind);
-                    }
-
-                    Material baseMaterial;
-                    meshRenderer.m_Mesh = new Mesh(vertices, indices, baseMaterial);
+                    Experimental::Model model((char *)((std::string)meshConfig["mesh"]).c_str(), true, Vector4(1, 1, 1, 1), true);
+                    std::cout << model.mesh_mats.size() << std::endl;
+                    meshRenderer.m_Mesh = model.mesh_mats[(int)meshConfig["mesh_index"]]->mesh;
+                    meshRenderer.meshType = meshConfig["mesh"];
 
                     if (component["material"] != "") {
                         std::ifstream file(component["material"]);
@@ -337,6 +287,7 @@ namespace HyperAPI {
                     }
 
                     meshRenderer.m_Model = true;
+                    meshRenderer.mesh_index = meshConfig["mesh_index"];
                 }
             }
 
@@ -1110,40 +1061,42 @@ namespace HyperAPI {
 
                 JSON[i]["components"][componentOffset]["mesh"]["custom"] = meshRenderer.m_Model;
                 if (meshRenderer.m_Model) {
-                    auto *pvert = &meshRenderer.m_Mesh->vertices;
-                    auto *pind = &meshRenderer.m_Mesh->indices;
-                    std::cout << "what" << std::endl;
-#ifdef _WIN32
-                    std::ofstream file("assets\\models\\scene_files\\" + gameObject->ID + ".vault.model");
-#else
-                    std::ofstream file("assets/models/scene_files/" + gameObject->ID + ".vault.model");
-#endif
-                    nlohmann::json j = json::object();
-                    j["vertices"] = json::array();
-                    j["indices"] = json::array();
-                    for (int vi = 0; vi < (*pvert).size(); vi++) {
-                        auto &vertex = (*pvert)[vi];
-                        j["vertices"][vi] = {
-                            {"position", {{"x", vertex.position.x}, {"y", vertex.position.y}, {"z", vertex.position.z}}},
-                            {"bitangent", {{"x", vertex.bitangent.x}, {"y", vertex.bitangent.y}, {"z", vertex.bitangent.z}}},
-                            {"tangent", {{"x", vertex.tangent.x}, {"y", vertex.tangent.y}, {"z", vertex.tangent.z}}},
-                            {"color", {{"x", vertex.color.x}, {"y", vertex.color.y}, {"z", vertex.color.z}}},
-                            {"normal", {{"x", vertex.normal.x}, {"y", vertex.normal.y}, {"z", vertex.normal.z}}},
-                            {"texUV", {{"x", vertex.texUV.x}, {"y", vertex.texUV.y}}},
-                        };
-                    }
+                    //                     auto *pvert = &meshRenderer.m_Mesh->vertices;
+                    //                     auto *pind = &meshRenderer.m_Mesh->indices;
+                    // #ifdef _WIN32
+                    //                     std::ofstream file("assets\\models\\scene_files\\" + gameObject->ID + ".vault.model");
+                    // #else
+                    //                     std::ofstream file("assets/models/scene_files/" + gameObject->ID + ".vault.model");
+                    // #endif
+                    //                     nlohmann::json j = json::object();
+                    //                     j["vertices"] = json::array();
+                    //                     j["indices"] = json::array();
+                    //                     for (int vi = 0; vi < (*pvert).size(); vi++) {
+                    //                         auto &vertex = (*pvert)[vi];
+                    //                         j["vertices"][vi] = {
+                    //                             {"position", {{"x", vertex.position.x}, {"y", vertex.position.y}, {"z", vertex.position.z}}},
+                    //                             {"bitangent", {{"x", vertex.bitangent.x}, {"y", vertex.bitangent.y}, {"z", vertex.bitangent.z}}},
+                    //                             {"tangent", {{"x", vertex.tangent.x}, {"y", vertex.tangent.y}, {"z", vertex.tangent.z}}},
+                    //                             {"color", {{"x", vertex.color.x}, {"y", vertex.color.y}, {"z", vertex.color.z}}},
+                    //                             {"normal", {{"x", vertex.normal.x}, {"y", vertex.normal.y}, {"z", vertex.normal.z}}},
+                    //                             {"texUV", {{"x", vertex.texUV.x}, {"y", vertex.texUV.y}}},
+                    //                         };
+                    //                     }
 
-                    for (int ii = 0; ii < (*pind).size(); ii++) {
-                        auto &index = (*pind)[ii];
-                        j["indices"][ii] = index;
-                    }
+                    //                     for (int ii = 0; ii < (*pind).size(); ii++) {
+                    //                         auto &index = (*pind)[ii];
+                    //                         j["indices"][ii] = index;
+                    //                     }
 
-                    file << j.dump(4);
+                    //                     file << j.dump(4);
                 }
+
+                std::cout << meshRenderer.meshType << "\n";
 
                 JSON[i]["components"][componentOffset]["type"] = "MeshRenderer";
                 JSON[i]["components"][componentOffset]["mesh"]["mesh"] = meshRenderer.meshType;
                 JSON[i]["components"][componentOffset]["material"] = meshRenderer.matPath;
+                JSON[i]["components"][componentOffset]["mesh"]["mesh_index"] = meshRenderer.mesh_index;
 
                 componentOffset++;
             }

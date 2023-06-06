@@ -6,6 +6,7 @@
 
 #include "Transform.hpp"
 #include "Lights.hpp"
+#include "imgui/imgui.h"
 #include "scene.hpp"
 
 namespace HyperAPI::Experimental {
@@ -132,6 +133,8 @@ namespace HyperAPI::Experimental {
                     hasChildren = true;
                     // if enabled is false make the text grey
                     if (!enabled) {
+                        ImGui::PushStyleColor(ImGuiCol_Text,
+                                              ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
                         item = ImGui::TreeNode(
                             NODE_ID.c_str(),
                             std::string(std::string(ICON_FA_CUBE) + " " + name)

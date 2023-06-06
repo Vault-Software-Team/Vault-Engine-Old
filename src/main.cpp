@@ -2920,6 +2920,16 @@ int main(int argc, char **argv) {
                         drawBoxCollider2D = false;
                     }
 
+                    if (Scene::m_Object->HasComponent<CircleCollider2D>()) {
+                        auto &comp =
+                            Scene::m_Object->GetComponent<CircleCollider2D>();
+                        if (comp.hasGUI) {
+                            comp.GUI();
+                        }
+                    } else {
+                        drawBoxCollider2D = false;
+                    }
+
                     if (Scene::m_Object->HasComponent<Rigidbody2D>()) {
                         auto &comp =
                             Scene::m_Object->GetComponent<Rigidbody2D>();
@@ -3074,6 +3084,11 @@ int main(int argc, char **argv) {
 
                     if (ImGui::Button("Box Collider 2D", ImVec2(200, 0))) {
                         Scene::m_Object->AddComponent<BoxCollider2D>();
+                        ImGui::CloseCurrentPopup();
+                    }
+
+                    if (ImGui::Button("Circle Collider 2D", ImVec2(200, 0))) {
+                        Scene::m_Object->AddComponent<CircleCollider2D>();
                         ImGui::CloseCurrentPopup();
                     }
 
@@ -3854,15 +3869,15 @@ int main(int argc, char **argv) {
 
     app.Run(
         [&](uint32_t &shadowMapTex) {
-            if (Scene::m_Object == nullptr) {
-                drawBoxCollider2D = false;
-            }
-
             if (Scene::mainCamera == nullptr) {
                 Scene::mainCamera = camera;
             }
 
 #ifndef GAME_BUILD
+            if (Scene::m_Object == nullptr) {
+                drawBoxCollider2D = false;
+            }
+
             {
                 glm::vec2 tempPos(mousePos.x, mousePos.y);
                 glm::vec3 tempScale(1, 1, 1);

@@ -12,7 +12,7 @@
     "roughness": 0.0,
     "specular": "assets/textures/bricks2.jpg",
     "texUV": {
-        "x": 5.0,
-        "y": 5.0
+        "x": 30.0,
+        "y": 30.0
     }
 }

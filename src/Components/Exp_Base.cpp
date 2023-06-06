@@ -12,6 +12,7 @@
 #include "LuaScriptComponent.hpp"
 #include "MeshRenderer.hpp"
 #include "Model.hpp"
+#include "CircleCollider2D.hpp"
 #include "NativeScriptManager.hpp"
 #include "PathfindingAI.hpp"
 #include "Rigidbody2D.hpp"
@@ -24,6 +25,7 @@
 #include "AudioListener.hpp"
 #include "Audio3D.hpp"
 #include "assimp/material.h"
+#include "box2d/b2_circle_shape.h"
 #include "box2d/b2_types.h"
 #include "glm/fwd.hpp"
 #include "glm/geometric.hpp"
@@ -105,6 +107,22 @@ namespace HyperAPI::Experimental {
                 fixtureDef.restitutionThreshold =
                     boxCollider2D.restitutionThreshold;
                 boxCollider2D.fixture = body->CreateFixture(&fixtureDef);
+            }
+
+            if (gameObject->HasComponent<CircleCollider2D>()) {
+                auto &circleCollider2D = gameObject->GetComponent<CircleCollider2D>();
+                b2CircleShape shape;
+                shape.m_radius = circleCollider2D.radius;
+
+                b2FixtureDef fixtureDef;
+                fixtureDef.isSensor = circleCollider2D.trigger;
+                fixtureDef.shape = &shape;
+                fixtureDef.density = circleCollider2D.density;
+                fixtureDef.friction = circleCollider2D.friction;
+                fixtureDef.restitution = circleCollider2D.restitution;
+                fixtureDef.restitutionThreshold =
+                    circleCollider2D.restitutionThreshold;
+                circleCollider2D.fixture = body->CreateFixture(&fixtureDef);
             }
         }
 
@@ -385,6 +403,8 @@ namespace HyperAPI::Experimental {
             subTexture = subTexture->NextSiblingElement("SubTexture");
         }
 
+        doc.Clear();
+
         return animations;
     }
 
@@ -418,7 +438,7 @@ namespace HyperAPI::Experimental {
 
     void Model::processNode(aiNode *node, const aiScene *scene) {
         // process all the node's meshes (if any)
-        for (uint32_t i = 0; i < node->mNumMeshes; i++) {
+        for (int i = 0; i < node->mNumMeshes; i++) {
             aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
             // get name
             std::string name = mesh->mName.C_Str();
@@ -443,10 +463,13 @@ namespace HyperAPI::Experimental {
             transform[2][3] = aiTransform.c4;
             transform[3][3] = aiTransform.d4;
 
-            m_gameObjects.push_back(processMesh(mesh, scene, name));
-            auto &meshRenderer = m_gameObjects[i]->GetComponent<MeshRenderer>();
-            meshRenderer.extraMatrix = transform;
-            meshRenderer.mesh_index = i;
+            if (no_gm) {
+                mesh_mats.push_back(mesh_processMesh(mesh, scene, name));
+            } else {
+                m_gameObjects.push_back(processMesh(mesh, scene, name, (int)node->mMeshes[i]));
+                auto &meshRenderer = m_gameObjects[i]->GetComponent<MeshRenderer>();
+                meshRenderer.extraMatrix = transform;
+            }
         }
         // then do the same for each of its children
         for (uint32_t i = 0; i < node->mNumChildren; i++) {
@@ -492,7 +515,7 @@ namespace HyperAPI::Experimental {
     }
 
     GameObject *Model::processMesh(aiMesh *mesh, const aiScene *scene,
-                                   const std::string &name) {
+                                   const std::string &name, int index) {
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
         std::vector<Texture *> textures;
@@ -560,7 +583,6 @@ namespace HyperAPI::Experimental {
                 vertex.normal = glm::normalize(vertex.normal);
             }
         }
-        std::cout << "Calling\n";
         ExtractBoneWeightForVertices(vertices, mesh, scene);
 
         // indices
@@ -611,6 +633,7 @@ namespace HyperAPI::Experimental {
             meshRenderer.m_Mesh = new Mesh(vertices, indices, material);
             meshRenderer.m_Model = true;
             meshRenderer.meshType = std::string(path);
+            meshRenderer.mesh_index = index;
             if (num_tex > 0) {
                 ret = mot->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), texture_name);
 
@@ -682,10 +705,170 @@ namespace HyperAPI::Experimental {
             meshRenderer.m_Mesh = new Mesh(vertices, indices, material);
             meshRenderer.m_Model = true;
             meshRenderer.meshType = std::string(path);
+            meshRenderer.mesh_index = index;
             Scene::m_GameObjects.push_back(gameObject);
 
             return gameObject;
         }
+    }
+
+    Model::MeshMaterial *Model::mesh_processMesh(aiMesh *mesh, const aiScene *scene,
+                                                 const std::string &name) {
+        std::vector<Vertex> vertices;
+        std::vector<uint32_t> indices;
+        std::vector<Texture *> textures;
+
+        for (uint32_t i = 0; i < mesh->mNumFaces; i++) {
+            aiFace face = mesh->mFaces[i];
+            for (uint32_t j = 0; j < face.mNumIndices; j++) {
+                indices.push_back(face.mIndices[j]);
+            }
+        }
+        bool no_normals;
+        for (uint32_t i = 0; i < mesh->mNumVertices; i++) {
+            Vertex vertex;
+            SetVertexBoneDataToDefault(vertex);
+            vertex.position =
+                glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y,
+                          mesh->mVertices[i].z);
+            if (mesh->mNormals)
+                vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y,
+                                          mesh->mNormals[i].z);
+            else {
+                vertex.normal = glm::vec3(0, 0, 0);
+                no_normals = true;
+            }
+
+            if (mesh->mTextureCoords[0]) {
+                vertex.texUV = glm::vec2(mesh->mTextureCoords[0][i].x,
+                                         mesh->mTextureCoords[0][i].y);
+            } else {
+                vertex.texUV = glm::vec2(0.0f, 0.0f);
+            }
+            if (mesh->mTangents) {
+                vertex.tangent =
+                    glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y,
+                              mesh->mTangents[i].z);
+            } else
+                vertex.tangent = glm::vec3(0);
+            if (mesh->mBitangents) {
+                vertex.bitangent =
+                    glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y,
+                              mesh->mBitangents[i].z);
+            } else
+                vertex.bitangent = glm::vec3(0);
+            vertices.push_back(vertex);
+        }
+
+        if (no_normals) {
+            for (uint32_t i = 0; i < indices.size(); i += 3) {
+                glm::vec3 A = vertices[indices[i]].position;
+
+                if (i + 1LL >= indices.size())
+                    break;
+                if (i + 2LL >= indices.size())
+                    break;
+
+                glm::vec3 B = vertices[indices[i + 1LL]].position;
+                glm::vec3 C = vertices[indices[i + 2LL]].position;
+                glm::vec3 normal = computeFaceNormal(A, B, C);
+                vertices[indices[i]].normal += normal;
+                vertices[indices[i + 1LL]].normal += normal;
+                vertices[indices[i + 2LL]].normal += normal;
+            }
+
+            for (auto &vertex : vertices) {
+                vertex.normal = glm::normalize(vertex.normal);
+            }
+        }
+        ExtractBoneWeightForVertices(vertices, mesh, scene);
+
+        // indices
+
+        Texture *diffuse = nullptr;
+        Texture *specular = nullptr;
+        Texture *normal = nullptr;
+
+        // if (mesh->mMaterialIndex >= 0 && texturesEnabled) {
+        //     aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
+        //     std::vector<Texture *> diffuseMaps = loadMaterialTextures(
+        //         material, aiTextureType_DIFFUSE, "texture_diffuse");
+        //     diffuse = diffuseMaps[0];
+        //     textures.insert(textures.end(), diffuseMaps.begin(),
+        //                     diffuseMaps.end());
+        //     std::vector<Texture *> specularMaps = loadMaterialTextures(
+        //         material, aiTextureType_SPECULAR, "texture_specular");
+        //     specular = specularMaps[0];
+        //     textures.insert(textures.end(), specularMaps.begin(),
+        //                     specularMaps.end());
+        // }
+
+        texturesEnabled = true;
+        Material material(Color);
+        material.diffuse = diffuse;
+        material.specular = specular;
+
+        aiString mot_name;
+        aiReturn ret;
+
+        aiMaterial *mot = scene->mMaterials[mesh->mMaterialIndex];
+
+        ret = mot->Get(AI_MATKEY_NAME, mot_name);
+        if (ret != AI_SUCCESS)
+            mot_name = "";
+
+        int num_tex = mot->GetTextureCount(aiTextureType_DIFFUSE);
+        aiString texture_name;
+        Mesh *m_Mesh = new Mesh(vertices, indices, material);
+        if (num_tex > 0) {
+            ret = mot->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), texture_name);
+
+            aiString SPECULAR;
+            aiReturn spec = mot->Get(AI_MATKEY_TEXTURE(aiTextureType_SPECULAR, 0), SPECULAR);
+
+            aiString NORMALS;
+            aiReturn norm = mot->Get(AI_MATKEY_TEXTURE(aiTextureType_NORMALS, 0), NORMALS);
+
+            fs::path m_fs_path(path);
+            std::string m_path = m_fs_path.remove_filename().string();
+
+            if (!fs::exists("assets/models/scene_materials"))
+                fs::create_directory("assets/models/scene_materials");
+
+            std::string normal_path = "nullptr", specular_path = (m_path + std::string(texture_name.C_Str())).c_str();
+            if (NORMALS.length > 0) {
+                normal_path = NORMALS.C_Str();
+            }
+
+            if (SPECULAR.length > 0) {
+                specular_path = SPECULAR.C_Str();
+            }
+
+            std::ofstream file("assets/models/scene_materials/" + std::string(texture_name.C_Str()) + ".material");
+            nlohmann::json j = {
+                {"diffuse", (m_path + std::string(texture_name.C_Str())).c_str()},
+                {"specular", specular_path},
+                {"normal", normal_path},
+                {"height", "nullptr"},
+                {"roughness", 0},
+                {"metallic", 0},
+                {"baseColor",
+                 {
+                     {"r", 1},
+                     {"g", 1},
+                     {"b", 1},
+                     {"a", 1},
+                 }},
+                {"texUV",
+                 {{"x", 0},
+                  {"y", 0}}}};
+
+            file << j.dump(4);
+            file.close();
+
+            return new Model::MeshMaterial{m_Mesh, "assets/models/scene_materials/" + std::string(texture_name.C_Str()) + ".material"};
+        }
+        return new Model::MeshMaterial{m_Mesh, ""};
     }
 
     std::vector<Texture *> Model::loadMaterialTextures(aiMaterial *mat,

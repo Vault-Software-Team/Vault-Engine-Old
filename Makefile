@@ -129,7 +129,7 @@ debugging:
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
 
 one_file:
-	$(GNU_LINUX_COMPILER) -c src/Components/MeshRenderer.cpp src/Components/Exp_Base.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c src/Renderer/Mesh.cpp $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
