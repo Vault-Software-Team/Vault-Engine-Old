@@ -21,5 +21,30 @@ namespace Vault
             y = val.y;
             z = val.z;
         }
+
+        public static Vector3 operator +(Vector3 a, Vector3 b)
+        {
+            return new Vector3(a.x + a.x, a.y + a.y, a.z + b.z);
+        }
+
+        public static Vector3 operator +(Vector3 a, float b1)
+        {
+            return new Vector3(a.x + a.x, a.y + a.y, a.z + b);
+        }
+
+        public static Vector3 operator -(Vector3 a, Vector3 b)
+        {
+            return new Vector3(a.x - a.x, a.y - a.y, a.z - b.z);
+        }
+
+        public static Vector3 operator /(Vector3 a, Vector3 b)
+        {
+            return new Vector3(a.x / a.x, a.y / a.y, a.z / b.z);
+        }
+
+        public static Vector3 operator *(Vector3 a, Vector3 b)
+        {
+            return new Vector3(a.x * a.x, a.y * a.y, a.z * b.z);
+        }
     }
 }

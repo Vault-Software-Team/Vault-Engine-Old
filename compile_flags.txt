@@ -1,5 +1,6 @@
 -std=c++20
 -I./src/lib
 -I./src/vendor
+-I./src
 -I./src/vendor/bullet/bullet
 -I./src/vendor/NoesisGUI

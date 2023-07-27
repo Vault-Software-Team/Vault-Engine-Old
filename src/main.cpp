@@ -7,6 +7,7 @@
 #include "Audio/SoundSource.hpp"
 #include "Components/CppScriptManager.hpp"
 #include "Components/CsharpScriptManager.hpp"
+#include "Components/GameObject.hpp"
 #include "Components/SpritesheetAnimation.hpp"
 #include "GLFW/glfw3.h"
 #include "ImGuiColorTextEdit/TextEditor.h"
@@ -746,7 +747,97 @@ void PostProcessingEffects(Shader &shader, const Camera *sceneCamera) {
                         config.postProcessing.bloom.threshold);
 }
 
-#ifndef _WIN32 || GAME_BUILD
+void m_HandleCollisionCallbacks(GameObject *gameObjectA, GameObject *gameObjectB) {
+    if (gameObjectA->HasComponent<NativeScriptManager>()) {
+        auto &scriptManager =
+            gameObjectA->GetComponent<NativeScriptManager>();
+        for (auto script : scriptManager.m_StaticScripts) {
+            script->Collision3D(gameObjectB);
+        }
+    }
+
+    if (gameObjectB->HasComponent<NativeScriptManager>()) {
+        auto &scriptManager =
+            gameObjectB->GetComponent<NativeScriptManager>();
+        for (auto script : scriptManager.m_StaticScripts) {
+            script->Collision3D(gameObjectA);
+        }
+    }
+
+    if (gameObjectA->HasComponent<m_LuaScriptComponent>()) {
+        auto &scriptManager =
+            gameObjectA->GetComponent<m_LuaScriptComponent>();
+        for (auto script : scriptManager.scripts) {
+            script.Collision3D(gameObjectB);
+        }
+    }
+
+    if (gameObjectB->HasComponent<m_LuaScriptComponent>()) {
+        auto &scriptManager =
+            gameObjectB->GetComponent<m_LuaScriptComponent>();
+        for (auto script : scriptManager.scripts) {
+            script.Collision3D(gameObjectA);
+        }
+    }
+
+    if (gameObjectB->HasComponent<CppScriptManager>()) {
+        auto &scriptManager =
+            gameObjectB->GetComponent<CppScriptManager>();
+        for (auto script : scriptManager.addedScripts) {
+            script->OnCollisionEnter3D(gameObjectA);
+        }
+    }
+
+    if (gameObjectA->HasComponent<CppScriptManager>()) {
+        auto &scriptManager =
+            gameObjectA->GetComponent<CppScriptManager>();
+        for (auto script : scriptManager.addedScripts) {
+            script->OnCollisionEnter3D(gameObjectB);
+        }
+    }
+
+    if (gameObjectA->HasComponent<CsharpScriptManager>()) {
+        auto &scriptManager = gameObjectA->GetComponent<CsharpScriptManager>();
+
+        for (auto klass : scriptManager.selectedScripts) {
+            MonoObject *exception = nullptr;
+            MonoScriptClass *behaviour =
+                CsharpScriptEngine::instances[klass.first];
+            MonoMethod *method = behaviour->GetMethod("OnCollisionEnter3D", 1);
+            if (!method)
+                continue;
+
+            void *params = mono_string_new(CsharpVariables::appDomain, gameObjectB->ID.c_str());
+            mono_runtime_invoke(method, behaviour->f_GetObject(), &params, &exception);
+        }
+    }
+
+    if (gameObjectB->HasComponent<CsharpScriptManager>()) {
+        auto &scriptManager = gameObjectB->GetComponent<CsharpScriptManager>();
+
+        for (auto klass : scriptManager.selectedScripts) {
+            MonoObject *exception = nullptr;
+            MonoScriptClass *behaviour =
+                CsharpScriptEngine::instances[klass.first];
+            MonoMethod *method = behaviour->GetMethod("OnCollisionEnter3D", 1);
+            if (!method)
+                continue;
+
+            void *params = mono_string_new(CsharpVariables::appDomain, gameObjectA->ID.c_str());
+            mono_runtime_invoke(method, behaviour->f_GetObject(), &params, &exception);
+        }
+    }
+}
+
+void m_UnbindTextures() {
+    for (uint32_t i = 0; i < 32; i++) {
+        // unbind all texture
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+}
+
+#ifndef GAME_BUILD
 
 void UpdatePresence(const std::string &details = "",
                     const std::string &state = "",
@@ -839,7 +930,8 @@ int main(int argc, char **argv) {
         });
     }
 
-#ifndef _WIN32 || GAME_BUILD
+// Discord presence update
+#ifndef GAME_BUILD
     DiscordEventHandlers handlers;
     memset(&handlers, 0, sizeof(handlers));
     handlers.ready = [](const DiscordUser *request) {
@@ -868,16 +960,20 @@ int main(int argc, char **argv) {
 
     UpdatePresence("In Editor", "Making a game");
 #endif
+    // Discord presence update
 
     Scene::layers["Default"] = true;
     // ScriptEngine::Init();
 
+    // GET CWD
     char CWD[1024];
 #ifdef _WIN32
     _getcwd(CWD, sizeof(CWD));
 #else
     getcwd(CWD, sizeof(CWD));
 #endif
+    // GET CWD
+
     cwd = std::string(CWD);
 
     // check if game.config exists
@@ -956,6 +1052,7 @@ int main(int argc, char **argv) {
         o << std::setw(4) << j << std::endl;
     }
 
+// if the build is a game
 #ifdef GAME_BUILD
     Hyper::Application app(
         1280, 720, config.name, config.fullscreenOnLaunch, config.resizable,
@@ -1019,6 +1116,7 @@ int main(int argc, char **argv) {
     ImGui::GetIO().Fonts->AddFontFromFileTTF(
         "assets/fonts/fa-solid-900.ttf", 55.0f, &icons_config, icons_ranges);
 #endif
+    // if the build is a game
 
     Input::window = app.renderer->window;
     // glfw enable sticky mouse buttons
@@ -1041,6 +1139,7 @@ int main(int argc, char **argv) {
 #ifndef GAME_BUILD
     Scene::mainCamera = camera;
 #endif
+
     bool focusedOnScene = false;
     bool hoveredScene = false;
 
@@ -1096,6 +1195,7 @@ int main(int argc, char **argv) {
 
     bool usingImGuizmo = false;
 
+// debugging tools
 #ifndef GAME_BUILD
     std::vector<Vertex> cubeVertices = {
         // front
@@ -1204,6 +1304,7 @@ int main(int argc, char **argv) {
     Mesh audioMesh(sprite_vertices, sprite_indices, audioIconMaterial);
 
 #endif
+    // debugging tools
 
 #ifdef GAME_BUILD
     StartWorld(listener);
@@ -1882,7 +1983,7 @@ int main(int argc, char **argv) {
 
             ImGui::SetNextWindowSize(ImVec2(500, 0));
             if (ImGui::BeginPopup("Edit Config")) {
-#ifndef _WIN32 || GAME_BUILD
+#ifndef GAME_BUILD
                 UpdatePresence("In Editor", "Editing Configurations");
 #endif
                 ImGui::InputText("Linux Compiler", config.linuxCompiler, 500);
@@ -1935,7 +2036,7 @@ int main(int argc, char **argv) {
                 if (ImGui::Button("Main Scene", ImVec2(500, 0))) {
                     ImGuiFileDialog::Instance()->OpenDialog(
                         "ChooseMainScene", "Choose Main Scene", ".vault", ".");
-#ifndef _WIN32 || GAME_BUILD
+#ifndef GAME_BUILD
                     UpdatePresence("In Editor", "Making a game");
 #endif
                     // ImGui::CloseCurrentPopup();
@@ -1986,7 +2087,7 @@ int main(int argc, char **argv) {
                     std::ofstream o("assets/game.config");
                     o << std::setw(4) << j << std::endl;
 
-#ifndef _WIN32 || GAME_BUILD
+#ifndef GAME_BUILD
                     UpdatePresence("In Editor", "Making a game");
 #endif
 
@@ -2024,7 +2125,7 @@ int main(int argc, char **argv) {
                     auto vram = app.renderer->GetVRamUsage();
                     ImGui::Text("VRAM: %d MB / %d MB", vram.first, vram.second);
 
-#ifndef _WIN32 || GAME_BUILD
+#ifndef GAME_BUILD
                     UpdatePresence("In Editor", "Checking Details");
 #endif
                     ImGui::End();
@@ -2732,7 +2833,7 @@ int main(int argc, char **argv) {
             if (ImGui::Begin(ICON_FA_SHARE_NODES " Components")) {
                 if (Scene::m_Object != nullptr && !Scene::LoadingScene) {
                     if (ImGui::IsWindowFocused()) {
-#ifndef _WIN32 || GAME_BUILD
+#ifndef GAME_BUILD
                         UpdatePresence("In Editor",
                                        "Editing " + Scene::m_Object->name);
 #endif
@@ -3969,88 +4070,10 @@ int main(int argc, char **argv) {
                     if (!gameObjectA || !gameObjectB)
                         return;
 
-                    if (gameObjectA->HasComponent<NativeScriptManager>()) {
-                        auto &scriptManager =
-                            gameObjectA->GetComponent<NativeScriptManager>();
-                        for (auto script : scriptManager.m_StaticScripts) {
-                            script->Collision3D(gameObjectB);
-                        }
-                    }
-
-                    if (gameObjectB->HasComponent<NativeScriptManager>()) {
-                        auto &scriptManager =
-                            gameObjectB->GetComponent<NativeScriptManager>();
-                        for (auto script : scriptManager.m_StaticScripts) {
-                            script->Collision3D(gameObjectA);
-                        }
-                    }
-
-                    if (gameObjectA->HasComponent<m_LuaScriptComponent>()) {
-                        auto &scriptManager =
-                            gameObjectA->GetComponent<m_LuaScriptComponent>();
-                        for (auto script : scriptManager.scripts) {
-                            script.Collision3D(gameObjectB);
-                        }
-                    }
-
-                    if (gameObjectB->HasComponent<m_LuaScriptComponent>()) {
-                        auto &scriptManager =
-                            gameObjectB->GetComponent<m_LuaScriptComponent>();
-                        for (auto script : scriptManager.scripts) {
-                            script.Collision3D(gameObjectA);
-                        }
-                    }
-
-                    if (gameObjectB->HasComponent<CppScriptManager>()) {
-                        auto &scriptManager =
-                            gameObjectB->GetComponent<CppScriptManager>();
-                        for (auto script : scriptManager.addedScripts) {
-                            script->OnCollisionEnter3D(gameObjectA);
-                        }
-                    }
-
-                    if (gameObjectA->HasComponent<CppScriptManager>()) {
-                        auto &scriptManager =
-                            gameObjectA->GetComponent<CppScriptManager>();
-                        for (auto script : scriptManager.addedScripts) {
-                            script->OnCollisionEnter3D(gameObjectB);
-                        }
-                    }
-
-                    if (gameObjectA->HasComponent<CsharpScriptManager>()) {
-                        auto &scriptManager = gameObjectA->GetComponent<CsharpScriptManager>();
-
-                        for (auto klass : scriptManager.selectedScripts) {
-                            MonoObject *exception = nullptr;
-                            MonoScriptClass *behaviour =
-                                CsharpScriptEngine::instances[klass.first];
-                            MonoMethod *method = behaviour->GetMethod("OnCollisionEnter3D", 1);
-                            if (!method)
-                                continue;
-
-                            void *params = mono_string_new(CsharpVariables::appDomain, gameObjectB->ID.c_str());
-                            mono_runtime_invoke(method, behaviour->f_GetObject(), &params, &exception);
-                        }
-                    }
-
-                    if (gameObjectB->HasComponent<CsharpScriptManager>()) {
-                        auto &scriptManager = gameObjectB->GetComponent<CsharpScriptManager>();
-
-                        for (auto klass : scriptManager.selectedScripts) {
-                            MonoObject *exception = nullptr;
-                            MonoScriptClass *behaviour =
-                                CsharpScriptEngine::instances[klass.first];
-                            MonoMethod *method = behaviour->GetMethod("OnCollisionEnter3D", 1);
-                            if (!method)
-                                continue;
-
-                            void *params = mono_string_new(CsharpVariables::appDomain, gameObjectA->ID.c_str());
-                            mono_runtime_invoke(method, behaviour->f_GetObject(), &params, &exception);
-                        }
-                    }
+                    m_HandleCollisionCallbacks(gameObjectA, gameObjectB);
                 });
 
-#ifndef _WIN32 || GAME_BUILD
+#ifndef GAME_BUILD
                 UpdatePresence("In Editor",
                                "Playtesting " + std::string(config.name));
 #endif
@@ -4117,7 +4140,6 @@ int main(int argc, char **argv) {
                                     ImVec2(4.5, 2.5));
                 ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.5f);
             }
-
             calledOnce = true;
 
             Input::winSize = Vector3(app.width, app.height, 0);
@@ -4190,6 +4212,7 @@ int main(int argc, char **argv) {
             shader.Bind();
             shader.SetUniform1f("ambient", config.ambientLight);
 
+            // Rigidbody2D Physics update
             if (HyperAPI::isRunning && Scene::world != nullptr) {
                 const int32_t velocityIterations = 6;
                 const int32_t positionIterations = 2;
@@ -4257,14 +4280,9 @@ int main(int argc, char **argv) {
                 //     auto &manager = m_GameObject->GetComponent<CsharpScriptManager>();
                 //     manager.Start();
                 // }
-
-                for (auto *gameObject : Scene::m_GameObjects) {
-                    if (gameObject->HasComponent<Audio3D>()) {
-                        gameObject->GetComponent<Audio3D>().Update();
-                    }
-                }
             }
 
+            // 3D Physics Update
             if (bulletPhysicsStarted) {
                 auto view = Scene::m_Registry.view<Rigidbody3D>();
 
@@ -4306,6 +4324,7 @@ int main(int argc, char **argv) {
                 }
             }
 
+            // Update GameObjects
             for (auto &gameObject : Scene::m_GameObjects) {
                 if (Scene::LoadingScene)
                     break;
@@ -4403,6 +4422,10 @@ int main(int argc, char **argv) {
                     }
                 }
 
+                if (gameObject->HasComponent<Audio3D>()) {
+                    gameObject->GetComponent<Audio3D>().Update();
+                }
+
                 // if (gameObject->HasComponent<NativeScriptManager>()) {
                 //     auto &script =
                 //         gameObject->GetComponent<NativeScriptManager>();
@@ -4423,14 +4446,7 @@ int main(int argc, char **argv) {
             //        font.Render(textShader, *camera, "Hello World!",
             //        fontTransform);
 
-            // Transform Updates
-            for (auto &gameObject : Scene::m_GameObjects) {
-                if (gameObject->HasComponent<Transform>()) {
-                    auto &transform = gameObject->GetComponent<Transform>();
-                    transform.Update();
-                }
-            }
-
+            // Draw calls
             glEnable(GL_CULL_FACE);
             glCullFace(GL_BACK);
             glFrontFace(GL_CCW);
@@ -4449,20 +4465,9 @@ int main(int argc, char **argv) {
                           skybox.cubemapTexture);
             shader.SetUniformMat4("lightSpaceMatrix",
                                   Scene::projection);
-            // layer.Draw(shader, *Scene::mainCamera, material);
-            // glm::vec3 raypos = Input::mouseRay;
-            // raypos.y = -raypos.y;
-
-            // glm::vec3 difference = raypos - test_transform.position;
-            // difference = glm::normalize(difference);
-            // float rotZ = atan2(difference.x, difference.y);
-            // test_transform.rotation = glm::vec3(0, 0, -rotZ);
-
-            // // test_transform.LookAt(raypos);
-            // test_transform.Update();
-            // cube.meshes[0]->Draw(shader, *Scene::mainCamera, test_transform.transform);
 
             for (auto &layer : Scene::layers) {
+                // Check if the camera is in the layer n stuff
                 bool notInCameraLayer = true;
                 for (auto &camLayer : Scene::mainCamera->layers) {
                     if (Scene::mainCamera == camera)
@@ -4483,9 +4488,7 @@ int main(int argc, char **argv) {
                     }
                 }
 
-                if (notInCameraLayer && Scene::mainCamera != camera)
-                    continue;
-                if (isDepthCamera && Scene::mainCamera != camera)
+                if ((notInCameraLayer && Scene::mainCamera != camera) || (isDepthCamera && Scene::mainCamera != camera))
                     continue;
 
                 for (auto &gameObject : Scene::m_GameObjects) {
@@ -4494,11 +4497,7 @@ int main(int argc, char **argv) {
                     if (gameObject->layer != layer.first)
                         continue;
                     if (gameObject->HasComponent<MeshRenderer>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        m_UnbindTextures();
 
                         auto meshRenderer =
                             gameObject->GetComponent<MeshRenderer>();
@@ -4584,11 +4583,7 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpriteRenderer>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        m_UnbindTextures();
 
                         auto spriteRenderer =
                             gameObject->GetComponent<SpriteRenderer>();
@@ -4628,11 +4623,7 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpritesheetRenderer>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        m_UnbindTextures();
 
                         auto spritesheetRenderer =
                             gameObject->GetComponent<SpritesheetRenderer>();
@@ -4678,11 +4669,7 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpriteAnimation>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        m_UnbindTextures();
 
                         auto spriteAnimation =
                             gameObject->GetComponent<SpriteAnimation>();
@@ -4723,11 +4710,7 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<c_SpritesheetAnimation>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        m_UnbindTextures();
 
                         auto spritesheetAnimation =
                             gameObject->GetComponent<c_SpritesheetAnimation>();
@@ -4778,205 +4761,200 @@ int main(int argc, char **argv) {
             }
             glDisable(GL_BLEND);
             glDisable(GL_CULL_FACE);
+        // Ending of draw calls
 
-            // Grid
-            // clear depth buffer
-            // glClear(GL_DEPTH_BUFFER_BIT);
-            // if(Scene::mainCamera == camera) {
-            //     Transform transform;
-            //     transform.position = glm::vec3(0.0f, 0.0f, 0.0f);
-            //     transform.scale = glm::vec3(100.0f, 100.0f, 100.0f);
-            //     gridMesh->Draw(gridShader, *camera, transform.transform);
-            // }
-            // // Grid
+        // Grid
+        // clear depth buffer
+        // glClear(GL_DEPTH_BUFFER_BIT);
+        // if(Scene::mainCamera == camera) {
+        //     Transform transform;
+        //     transform.position = glm::vec3(0.0f, 0.0f, 0.0f);
+        //     transform.scale = glm::vec3(100.0f, 100.0f, 100.0f);
+        //     gridMesh->Draw(gridShader, *camera, transform.transform);
+        // }
+        // // Grid
 
-            for (uint32_t i = 0; i < 32; i++) {
-                // unbind all texture
-                glActiveTexture(GL_TEXTURE0 + i);
-                glBindTexture(GL_TEXTURE_2D, 0);
-            }
+        // auto cameraView = Scene::m_Registry.view<CameraComponent>();
+        // for (auto entity : cameraView) {
+        //     if (Scene::mainCamera == camera)
+        //         break;
+        //     GameObject *gameObject;
+        //     for (auto &go : Scene::m_GameObjects) {
+        //         if (go->entity == entity) {
+        //             gameObject = go;
+        //             break;
+        //         }
+        //     }
+        //     auto &camera = gameObject->GetComponent<CameraComponent>();
 
-            auto cameraView = Scene::m_Registry.view<CameraComponent>();
-            for (auto entity : cameraView) {
-                if (Scene::mainCamera == camera)
-                    break;
-                GameObject *gameObject;
-                for (auto &go : Scene::m_GameObjects) {
-                    if (go->entity == entity) {
-                        gameObject = go;
-                        break;
-                    }
-                }
-                auto &camera = gameObject->GetComponent<CameraComponent>();
+        //     if (!camera.depthCamera)
+        //         continue;
+        //     glClear(GL_DEPTH_BUFFER_BIT);
 
-                if (!camera.depthCamera)
-                    continue;
-                glClear(GL_DEPTH_BUFFER_BIT);
+        //     for (auto &layer : Scene::layers) {
+        //         bool notInCameraLayer = true;
+        //         for (auto &camLayer : camera.camera->layers) {
+        //             if (camLayer == layer.first) {
+        //                 notInCameraLayer = false;
+        //                 break;
+        //             }
+        //         }
+        //         if (notInCameraLayer)
+        //             continue;
 
-                for (auto &layer : Scene::layers) {
-                    bool notInCameraLayer = true;
-                    for (auto &camLayer : camera.camera->layers) {
-                        if (camLayer == layer.first) {
-                            notInCameraLayer = false;
-                            break;
-                        }
-                    }
-                    if (notInCameraLayer)
-                        continue;
+        //         for (auto &gameObject : Scene::m_GameObjects) {
+        //             if (!gameObject->enabled)
+        //                 continue;
+        //             if (gameObject->layer != layer.first)
+        //                 continue;
 
-                    for (auto &gameObject : Scene::m_GameObjects) {
-                        if (!gameObject->enabled)
-                            continue;
-                        if (gameObject->layer != layer.first)
-                            continue;
+        //             Transform parentTransform;
+        //             if (gameObject->parentID != "NO_PARENT") {
+        //                 parentTransform = f_GameObject::FindGameObjectByID(
+        //                                       gameObject->parentID)
+        //                                       ->GetComponent<Transform>();
+        //             }
+        //             parentTransform.Update();
 
-                        Transform parentTransform;
-                        if (gameObject->parentID != "NO_PARENT") {
-                            parentTransform = f_GameObject::FindGameObjectByID(
-                                                  gameObject->parentID)
-                                                  ->GetComponent<Transform>();
-                        }
-                        parentTransform.Update();
+        //             if (gameObject->HasComponent<MeshRenderer>()) {
+        //                 auto meshRenderer =
+        //                     gameObject->GetComponent<MeshRenderer>();
+        //                 auto transform =
+        //                     gameObject->GetComponent<Transform>();
+        //                 transform.Update();
 
-                        if (gameObject->HasComponent<MeshRenderer>()) {
-                            auto meshRenderer =
-                                gameObject->GetComponent<MeshRenderer>();
-                            auto transform =
-                                gameObject->GetComponent<Transform>();
-                            transform.Update();
+        //                 glm::mat4 extra = meshRenderer.extraMatrix;
 
-                            glm::mat4 extra = meshRenderer.extraMatrix;
+        //                 if (meshRenderer.m_Mesh != nullptr) {
+        //                     shader.Bind();
+        //                     if (Scene::m_Object == gameObject) {
+        //                         glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        //                         glStencilMask(0xFF);
+        //                     }
 
-                            if (meshRenderer.m_Mesh != nullptr) {
-                                shader.Bind();
-                                if (Scene::m_Object == gameObject) {
-                                    glStencilFunc(GL_ALWAYS, 1, 0xFF);
-                                    glStencilMask(0xFF);
-                                }
+        //                     meshRenderer.m_Mesh->Draw(
+        //                         shader, *camera.camera,
+        //                         transform.transform * extra *
+        //                             parentTransform.transform);
+        //                 }
+        //             }
 
-                                meshRenderer.m_Mesh->Draw(
-                                    shader, *camera.camera,
-                                    transform.transform * extra *
-                                        parentTransform.transform);
-                            }
-                        }
+        //             if (gameObject->HasComponent<SpriteRenderer>()) {
+        //                 auto spriteRenderer =
+        //                     gameObject->GetComponent<SpriteRenderer>();
+        //                 auto transform =
+        //                     gameObject->GetComponent<Transform>();
+        //                 transform.Update();
 
-                        if (gameObject->HasComponent<SpriteRenderer>()) {
-                            auto spriteRenderer =
-                                gameObject->GetComponent<SpriteRenderer>();
-                            auto transform =
-                                gameObject->GetComponent<Transform>();
-                            transform.Update();
+        //                 for (auto &go : Scene::m_GameObjects) {
+        //                     if (go->ID == gameObject->parentID &&
+        //                         go->HasComponent<Transform>()) {
+        //                         auto &parentTransform =
+        //                             go->GetComponent<Transform>();
+        //                         transform.position +=
+        //                             parentTransform.position;
+        //                         transform.rotation +=
+        //                             parentTransform.rotation;
+        //                         transform.scale *= parentTransform.scale;
+        //                     }
+        //                 }
 
-                            for (auto &go : Scene::m_GameObjects) {
-                                if (go->ID == gameObject->parentID &&
-                                    go->HasComponent<Transform>()) {
-                                    auto &parentTransform =
-                                        go->GetComponent<Transform>();
-                                    transform.position +=
-                                        parentTransform.position;
-                                    transform.rotation +=
-                                        parentTransform.rotation;
-                                    transform.scale *= parentTransform.scale;
-                                }
-                            }
+        //                 spriteRenderer.mesh->Draw(shader, *camera.camera,
+        //                                           transform.transform);
+        //             }
 
-                            spriteRenderer.mesh->Draw(shader, *camera.camera,
-                                                      transform.transform);
-                        }
+        //             if (gameObject->HasComponent<SpritesheetRenderer>()) {
+        //                 auto spritesheetRenderer =
+        //                     gameObject->GetComponent<SpritesheetRenderer>();
+        //                 auto transform =
+        //                     gameObject->GetComponent<Transform>();
+        //                 transform.Update();
 
-                        if (gameObject->HasComponent<SpritesheetRenderer>()) {
-                            auto spritesheetRenderer =
-                                gameObject->GetComponent<SpritesheetRenderer>();
-                            auto transform =
-                                gameObject->GetComponent<Transform>();
-                            transform.Update();
+        //                 for (auto &go : Scene::m_GameObjects) {
+        //                     if (go->ID == gameObject->parentID &&
+        //                         go->HasComponent<Transform>()) {
+        //                         auto &parentTransform =
+        //                             go->GetComponent<Transform>();
+        //                         transform.position +=
+        //                             parentTransform.position;
+        //                         transform.rotation +=
+        //                             parentTransform.rotation;
+        //                         transform.scale *= parentTransform.scale;
+        //                     }
+        //                 }
 
-                            for (auto &go : Scene::m_GameObjects) {
-                                if (go->ID == gameObject->parentID &&
-                                    go->HasComponent<Transform>()) {
-                                    auto &parentTransform =
-                                        go->GetComponent<Transform>();
-                                    transform.position +=
-                                        parentTransform.position;
-                                    transform.rotation +=
-                                        parentTransform.rotation;
-                                    transform.scale *= parentTransform.scale;
-                                }
-                            }
+        //                 if (spritesheetRenderer.mesh != nullptr) {
+        //                     spritesheetRenderer.mesh->Draw(
+        //                         shader, *camera.camera,
+        //                         transform.transform *
+        //                             parentTransform.transform);
+        //                 }
+        //             }
 
-                            if (spritesheetRenderer.mesh != nullptr) {
-                                spritesheetRenderer.mesh->Draw(
-                                    shader, *camera.camera,
-                                    transform.transform *
-                                        parentTransform.transform);
-                            }
-                        }
+        //             if (gameObject->HasComponent<SpriteAnimation>()) {
+        //                 auto spriteAnimation =
+        //                     gameObject->GetComponent<SpriteAnimation>();
+        //                 auto transform =
+        //                     gameObject->GetComponent<Transform>();
+        //                 transform.Update();
 
-                        if (gameObject->HasComponent<SpriteAnimation>()) {
-                            auto spriteAnimation =
-                                gameObject->GetComponent<SpriteAnimation>();
-                            auto transform =
-                                gameObject->GetComponent<Transform>();
-                            transform.Update();
+        //                 spriteAnimation.Play();
 
-                            spriteAnimation.Play();
+        //                 for (auto &go : Scene::m_GameObjects) {
+        //                     if (go->ID == gameObject->parentID &&
+        //                         go->HasComponent<Transform>()) {
+        //                         auto &parentTransform =
+        //                             go->GetComponent<Transform>();
+        //                         transform.position +=
+        //                             parentTransform.position;
+        //                         transform.rotation +=
+        //                             parentTransform.rotation;
+        //                         transform.scale *= parentTransform.scale;
+        //                     }
+        //                 }
 
-                            for (auto &go : Scene::m_GameObjects) {
-                                if (go->ID == gameObject->parentID &&
-                                    go->HasComponent<Transform>()) {
-                                    auto &parentTransform =
-                                        go->GetComponent<Transform>();
-                                    transform.position +=
-                                        parentTransform.position;
-                                    transform.rotation +=
-                                        parentTransform.rotation;
-                                    transform.scale *= parentTransform.scale;
-                                }
-                            }
+        //                 if (spriteAnimation.currMesh != nullptr) {
+        //                     spriteAnimation.currMesh->Draw(
+        //                         shader, *camera.camera,
+        //                         transform.transform *
+        //                             parentTransform.transform);
+        //                 }
+        //             }
 
-                            if (spriteAnimation.currMesh != nullptr) {
-                                spriteAnimation.currMesh->Draw(
-                                    shader, *camera.camera,
-                                    transform.transform *
-                                        parentTransform.transform);
-                            }
-                        }
+        //             if (gameObject
+        //                     ->HasComponent<c_SpritesheetAnimation>()) {
+        //                 auto spritesheetAnimation =
+        //                     gameObject
+        //                         ->GetComponent<c_SpritesheetAnimation>();
+        //                 auto transform =
+        //                     gameObject->GetComponent<Transform>();
+        //                 transform.Update();
 
-                        if (gameObject
-                                ->HasComponent<c_SpritesheetAnimation>()) {
-                            auto spritesheetAnimation =
-                                gameObject
-                                    ->GetComponent<c_SpritesheetAnimation>();
-                            auto transform =
-                                gameObject->GetComponent<Transform>();
-                            transform.Update();
+        //                 for (auto &go : Scene::m_GameObjects) {
+        //                     if (go->ID == gameObject->parentID &&
+        //                         go->HasComponent<Transform>()) {
+        //                         auto &parentTransform =
+        //                             go->GetComponent<Transform>();
+        //                         transform.position +=
+        //                             parentTransform.position;
+        //                         transform.rotation +=
+        //                             parentTransform.rotation;
+        //                         transform.scale *= parentTransform.scale;
+        //                     }
+        //                 }
 
-                            for (auto &go : Scene::m_GameObjects) {
-                                if (go->ID == gameObject->parentID &&
-                                    go->HasComponent<Transform>()) {
-                                    auto &parentTransform =
-                                        go->GetComponent<Transform>();
-                                    transform.position +=
-                                        parentTransform.position;
-                                    transform.rotation +=
-                                        parentTransform.rotation;
-                                    transform.scale *= parentTransform.scale;
-                                }
-                            }
-
-                            spritesheetAnimation.Play();
-                            spritesheetAnimation.Update();
-                            if (spritesheetAnimation.mesh != nullptr) {
-                                spritesheetAnimation.mesh->Draw(
-                                    shader, *camera.camera,
-                                    transform.transform *
-                                        parentTransform.transform);
-                            }
-                        }
-                    }
-                }
-            }
+        //                 spritesheetAnimation.Play();
+        //                 spritesheetAnimation.Update();
+        //                 if (spritesheetAnimation.mesh != nullptr) {
+        //                     spritesheetAnimation.mesh->Draw(
+        //                         shader, *camera.camera,
+        //                         transform.transform *
+        //                             parentTransform.transform);
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 #ifndef GAME_BUILD
             if (Scene::mainCamera != camera)
                 return;
@@ -5193,11 +5171,7 @@ int main(int argc, char **argv) {
                     if (gameObject->layer != layer.first)
                         continue;
                     if (gameObject->HasComponent<MeshRenderer>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        m_UnbindTextures();
 
                         auto meshRenderer =
                             gameObject->GetComponent<MeshRenderer>();
@@ -5244,11 +5218,7 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpriteRenderer>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        m_UnbindTextures();
 
                         auto spriteRenderer =
                             gameObject->GetComponent<SpriteRenderer>();
@@ -5280,11 +5250,7 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpritesheetRenderer>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        m_UnbindTextures();
 
                         auto spritesheetRenderer =
                             gameObject->GetComponent<SpritesheetRenderer>();
@@ -5319,11 +5285,7 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<SpriteAnimation>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        m_UnbindTextures();
 
                         auto spriteAnimation =
                             gameObject->GetComponent<SpriteAnimation>();
@@ -5353,11 +5315,7 @@ int main(int argc, char **argv) {
                     }
 
                     if (gameObject->HasComponent<c_SpritesheetAnimation>()) {
-                        for (uint32_t i = 0; i < 32; i++) {
-                            // unbind all texture
-                            glActiveTexture(GL_TEXTURE0 + i);
-                            glBindTexture(GL_TEXTURE_2D, 0);
-                        }
+                        m_UnbindTextures();
 
                         auto spritesheetAnimation =
                             gameObject->GetComponent<c_SpritesheetAnimation>();
@@ -5400,7 +5358,7 @@ int main(int argc, char **argv) {
     free(scrollData);
     exit(0);
 
-#ifndef _WIN32 || GAME_BUILD
+#ifndef GAME_BUILD
     Discord_Shutdown();
 #endif
 

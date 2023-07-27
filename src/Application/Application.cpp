@@ -40,7 +40,7 @@ namespace Hyper {
         // shader.Bind();
         // shader.SetUniform1f("ambient", 0.5);
 
-        glfwSwapInterval(1);
+        glfwSwapInterval(0);
 
         uint32_t rectVAO, rectVBO;
         glGenVertexArrays(1, &rectVAO);

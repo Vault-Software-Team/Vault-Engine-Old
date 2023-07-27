@@ -13,6 +13,8 @@ namespace MiroGayBoy
         void OnUpdate()
         {
             Debug.Log("Miro is very gay boy!");
+            Vector3 vec3 = new Vector3(1, 1, 1);
+            Vector3 vec32 = new Vector3(1, 1, 1);
         }
     }
 }
