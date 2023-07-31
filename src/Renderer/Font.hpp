@@ -1,21 +1,22 @@
 #pragma once
+#include <dllapi.hpp>
 #include "Shader.hpp"
 #include <libs.hpp>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
 namespace HyperAPI {
-    extern FT_Library ft;
-    extern Shader *font_shader;
+    DLL_API extern FT_Library ft;
+    DLL_API extern Shader *font_shader;
 
-    class Font {
+    class DLL_API Font {
     public:
         static int InitFT();
 
         uint32_t VAO, VBO;
         std::string font_path;
 
-        struct Character {
+        struct DLL_API Character {
             uint32_t TextureID; // ID handle of the glyph texture
             glm::ivec2 Size;    // Size of glyph
             glm::ivec2 Bearing; // Offset from baseline to left/top of glyph

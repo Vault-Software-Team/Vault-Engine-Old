@@ -41,12 +41,12 @@
 #include "MainFunctions.hpp"
 
 namespace CsharpVariables {
-    MonoDomain *rootDomain;
-    MonoDomain *appDomain;
-    MonoAssembly *coreAssembly;
+    DLL_API MonoDomain *rootDomain;
+    DLL_API MonoDomain *appDomain;
+    DLL_API MonoAssembly *coreAssembly;
 
-    bool compiledAssembly = false;
-    std::string oldCwd;
+    DLL_API bool compiledAssembly = false;
+    DLL_API std::string oldCwd;
 } // namespace CsharpVariables
 
 namespace HyperAPI::CsharpScriptEngine::Functions {
@@ -55,11 +55,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         std::string str = mono_string_to_utf8(type);
         std::cout << str << std::endl;
         if (str == "Transform") {
-            out = &Scene::m_GameObjects[0]->GetComponent<Transform>();
+            out = &(*Scene::m_GameObjects)[0]->GetComponent<Transform>();
         }
     }
 
-    struct m_Vec3 {
+    struct DLL_API m_Vec3 {
         float x;
         float y;
         float z;
@@ -193,10 +193,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 } // namespace HyperAPI::CsharpScriptEngine::Functions
 
 namespace HyperAPI::CsharpScriptEngine {
-    std::string nextId;
+    DLL_API std::string nextId;
 
-    std::unordered_map<std::string, MonoScriptClass *> entityClasses;
-    std::unordered_map<std::string, MonoScriptClass *> instances;
+    DLL_API std::unordered_map<std::string, MonoScriptClass *> entityClasses;
+    DLL_API std::unordered_map<std::string, MonoScriptClass *> instances;
 
     char *ReadBytes(const std::string &filepath, uint32_t *outSize) {
         std::ifstream stream(filepath, std::ios::binary | std::ios::ate);
@@ -341,7 +341,7 @@ namespace HyperAPI::CsharpScriptEngine {
             MonoScriptClass audioClass("Vault", "Audio");
             audioClass.CallConstructor();
 
-            // MonoScriptClass sceneClass("Vault", "Scene");
+            // MonoScriptClass  sceneClass("Vault", "Scene");
             // sceneClass.CallConstructor();
         }
     }

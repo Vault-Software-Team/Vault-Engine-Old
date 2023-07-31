@@ -1,8 +1,9 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 
 namespace HyperAPI {
-    class AssimpGLMHelpers {
+    class DLL_API AssimpGLMHelpers {
     public:
         static inline glm::mat4
         ConvertMatrixToGLMFormat(const aiMatrix4x4 &from) {

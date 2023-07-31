@@ -2,10 +2,10 @@
 #include "box2d/b2_world_callbacks.h"
 
 namespace uuid {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(0, 15);
-    std::uniform_int_distribution<> dis2(8, 11);
+    DLL_API std::random_device rd;
+    DLL_API std::mt19937 gen(rd());
+    DLL_API std::uniform_int_distribution<> dis(0, 15);
+    DLL_API std::uniform_int_distribution<> dis2(8, 11);
 
     std::string generate_uuid_v4() {
         std::stringstream ss;
@@ -36,14 +36,14 @@ namespace uuid {
 } // namespace uuid
 
 namespace HyperAPI {
-    std::string cwd = "";
-    std::string dirPayloadData = "";
-    bool isRunning = false;
-    bool isStopped = true;
-    glm::vec3 mousePosWorld, mousePosCamWorld;
-    float sceneMouseX, sceneMouseY;
-    b2ContactListener *b2_listener;
-    Config config = {
+    DLL_API std::string cwd = "";
+    DLL_API std::string dirPayloadData = "";
+    DLL_API bool isRunning = false;
+    DLL_API bool isStopped = true;
+    DLL_API glm::vec3 mousePosWorld, mousePosCamWorld;
+    DLL_API float sceneMouseX, sceneMouseY;
+    DLL_API b2ContactListener *b2_listener;
+    DLL_API Config config = {
         "Vault Engine",
         "assets/scenes/main.vault",
         0.2,

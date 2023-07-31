@@ -55,7 +55,7 @@ static float boundsSnap[] = {0.1f, 0.1f, 0.1f};
 static bool boundSizing = false;
 static bool boundSizingSnap = false;
 
-class CollisionListener : public b2ContactListener {
+class DLL_API CollisionListener : public b2ContactListener {
 public:
     void BeginContact(b2Contact *contact) override {
         b2Fixture *fixtureA = contact->GetFixtureA();
@@ -253,7 +253,7 @@ public:
 
 CollisionListener *listener = new CollisionListener();
 
-struct AddComponentList {
+struct DLL_API AddComponentList {
     int selected = 0;
     int length = 1;
     bool showed = false;
@@ -638,7 +638,7 @@ namespace InspecType {
                 Material };
 }
 
-struct InspectorMaterial {
+struct DLL_API InspectorMaterial {
     std::string diffuse = "None";
     std::string specular = "None";
     std::string normal = "None";
@@ -1167,6 +1167,7 @@ int main(int argc, char **argv) {
     Font::InitFT();
 
     json M_JS;
+    std::cout << &Scene::m_Registry << std::endl;
     LoadScripts();
     Scene::LoadScene(config.mainScene, M_JS);
 
@@ -2735,7 +2736,7 @@ int main(int argc, char **argv) {
                     if (ImGui::Button(ICON_FA_PLUS " Add GameObject", ImVec2(200, 25))) {
                         GameObject *go = new GameObject();
                         go->AddComponent<Transform>();
-                        Scene::m_GameObjects.push_back(go);
+                        Scene::m_GameObjects->push_back(go);
                         ImGui::CloseCurrentPopup();
                     }
                     ImGui::EndPopup();
@@ -2743,7 +2744,7 @@ int main(int argc, char **argv) {
 
                 if (ImGui::BeginDragDropTarget()) {
                     if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("game_object")) {
-                        for (auto &gameObject : Scene::m_GameObjects) {
+                        for (auto &gameObject : *Scene::m_GameObjects) {
                             if (gameObject->ID == HyperAPI::dirPayloadData) {
                                 if (gameObject->HasComponent<Transform>()) {
                                     auto &transform = gameObject->GetComponent<Transform>();
@@ -2765,7 +2766,7 @@ int main(int argc, char **argv) {
                 // if (ImGui::Button(ICON_FA_FOLDER " Add Folder", ImVec2(win_size.x - 15, 25))) {
                 //     GameObject *go = new GameObject();
                 //     go->AddComponent<Transform>();
-                //     Scene::m_GameObjects.push_back(go);
+                //     Scene::m_GameObjects->push_back(go);
                 // }
                 // ImGui::Columns(3);
                 // // ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 16, ImGui::GetCursorPos().y));
@@ -2777,12 +2778,12 @@ int main(int argc, char **argv) {
                 // ImGui::Columns();
 
                 // ImGui::Columns(3);
-                for (int i = 0; i < Scene::m_GameObjects.size(); i++) {
-                    if (Scene::m_GameObjects[i]->parentID != "NO_PARENT") {
+                for (int i = 0; i < Scene::m_GameObjects->size(); i++) {
+                    if ((*Scene::m_GameObjects)[i]->parentID != "NO_PARENT") {
                         bool parentFound;
-                        for (auto &gameObject : Scene::m_GameObjects) {
+                        for (auto &gameObject : *Scene::m_GameObjects) {
                             if (gameObject->ID ==
-                                Scene::m_GameObjects[i]->parentID) {
+                                (*Scene::m_GameObjects)[i]->parentID) {
                                 parentFound = true;
                                 break;
                             } else {
@@ -2791,22 +2792,22 @@ int main(int argc, char **argv) {
                         }
 
                         if (!parentFound) {
-                            Scene::m_GameObjects[i]->parentID = "NO_PARENT";
+                            (*Scene::m_GameObjects)[i]->parentID = "NO_PARENT";
 
-                            if (Scene::m_GameObjects[i]
+                            if ((*Scene::m_GameObjects)[i]
                                     ->HasComponent<Transform>()) {
                                 auto &transform =
-                                    Scene::m_GameObjects[i]
+                                    (*Scene::m_GameObjects)[i]
                                         ->GetComponent<Transform>();
                                 transform.parentTransform = nullptr;
                             }
                         }
                         continue;
                     }
-                    Scene::m_GameObjects[i]->GUI();
+                    (*Scene::m_GameObjects)[i]->GUI();
                 }
                 // ImGui::NextColumn();
-                // for (auto *go : Scene::m_GameObjects) {
+                // for (auto *go : *Scene::m_GameObjects) {
                 //     if (go->type == "Prefab") {
                 //         ImVec4 col(0.1294, 0.58039, 1, 1);
                 //         ImGui::TextColored(col, "%s", go->type.c_str());
@@ -2815,7 +2816,7 @@ int main(int argc, char **argv) {
                 //     }
                 // }
                 // ImGui::NextColumn();
-                // for (auto *go : Scene::m_GameObjects) {
+                // for (auto *go : *Scene::m_GameObjects) {
                 //     if (go->enabled) {
                 //         ImGui::Text("True");
                 //     } else {
@@ -3286,33 +3287,35 @@ int main(int argc, char **argv) {
                         if (!fs::exists(hpp)) {
                             std::ofstream file(hpp);
                             std::string str = R"(#pragma once 
- #include <api.hpp> 
+#include <api.hpp> 
  
- using namespace HyperAPI; 
- using namespace HyperAPI::Experimental; 
+using namespace HyperAPI; 
+using namespace HyperAPI::Experimental; 
  
- #ifdef _WIN32 
- #ifdef BUILD_DLL 
- #define VAULT_API __declspec(dllexport) 
- #else 
- #define VAULT_API __declspec(dllimport) 
- #endif 
- #else 
- #define VAULT_API 
- #endif 
+// DO NOT CHANGE THIS
+#ifdef _WIN32 
+#ifdef BUILD_DLL 
+#define VAULT_API __declspec(dllexport) 
+#else 
+#define VAULT_API __declspec(dllimport) 
+#endif 
+#else 
+#define VAULT_API 
+#endif 
+// DO NOT CHANGE THIS
+
+extern "C" { 
+    class DLL_API NewScript : CppScripting::Script { 
+    public: 
+        NewScript() = default; 
+        ~NewScript() = default; 
  
- extern "C" { 
- class NewScript : CppScripting::Script { 
- public: 
-     NewScript() = default; 
-     ~NewScript() = default; 
- 
-     void Start() override; 
-     void Update() override; 
- }; 
- 
- VAULT_API NewScript *create_object(); 
- } 
+        void Start() override; 
+        void Update() override; 
+    }; 
+    
+    VAULT_API NewScript *create_object(); 
+} 
                              )";
 
                             file << str;
@@ -3321,13 +3324,12 @@ int main(int argc, char **argv) {
                         if (!fs::exists(cpp)) {
                             std::ofstream file(cpp);
                             std::string str = R"(#include "NewScript.hpp" 
- NewScript *create_object() { 
-     return new NewScript; 
- } 
+NewScript *create_object() { 
+    return new NewScript; 
+} 
  
- void NewScript::Start() {} 
- void NewScript::Update() {} 
-                             )";
+void NewScript::Start() {} 
+void NewScript::Update() {})";
 
                             file << str;
                             file.close();
@@ -3493,25 +3495,25 @@ int main(int argc, char **argv) {
                                      in vec4 fragPosLight; 
                                      in mat3 m_TBN; 
  
-                                     struct PointLight { 
+                                     struct DLL_API PointLight { 
                                          vec3 lightPos; 
                                          vec3 color; 
                                          float intensity; 
                                      }; 
  
-                                     struct SpotLight { 
+                                     struct DLL_API SpotLight { 
                                          vec3 lightPos; 
                                          vec3 color; 
                                          vec3 angle; 
                                      }; 
  
-                                     struct DirectionalLight { 
+                                     struct DLL_API DirectionalLight { 
                                          vec3 lightPos; 
                                          vec3 color; 
                                          float intensity; 
                                      }; 
  
-                                     struct Light2D { 
+                                     struct DLL_API Light2D { 
                                          vec2 lightPos; 
                                          vec3 color; 
                                          float range; 
@@ -3936,7 +3938,7 @@ int main(int argc, char **argv) {
 
     //    Text::Font font("assets/fonts/OpenSans-Bold.ttf", 48);
     Transform fontTransform;
-    struct ScrollData {
+    struct DLL_API ScrollData {
         double x = 0;
         double y = 0;
         bool called = false;
@@ -4052,7 +4054,7 @@ int main(int argc, char **argv) {
             lastFrame = currentFrame;
 
             if (HyperAPI::isRunning) {
-                for (auto &gameObject : Scene::m_GameObjects) {
+                for (auto &gameObject : *Scene::m_GameObjects) {
                     if (!gameObject->HasComponent<PathfindingAI>())
                         continue;
 
@@ -4222,7 +4224,7 @@ int main(int argc, char **argv) {
                 auto view = Scene::m_Registry.view<Rigidbody2D>();
                 for (auto e : view) {
                     GameObject *m_GameObject;
-                    for (auto &gameObject : Scene::m_GameObjects) {
+                    for (auto &gameObject : *Scene::m_GameObjects) {
                         if (gameObject->entity == e) {
                             m_GameObject = gameObject;
                         }
@@ -4289,7 +4291,7 @@ int main(int argc, char **argv) {
                 for (auto e : view) {
                     GameObject *m_GameObject;
 
-                    for (auto &obj : Scene::m_GameObjects) {
+                    for (auto &obj : *Scene::m_GameObjects) {
                         if (obj->entity == e) {
                             m_GameObject = obj;
                         }
@@ -4325,7 +4327,7 @@ int main(int argc, char **argv) {
             }
 
             // Update GameObjects
-            for (auto &gameObject : Scene::m_GameObjects) {
+            for (auto &gameObject : *Scene::m_GameObjects) {
                 if (Scene::LoadingScene)
                     break;
 
@@ -4491,7 +4493,7 @@ int main(int argc, char **argv) {
                 if ((notInCameraLayer && Scene::mainCamera != camera) || (isDepthCamera && Scene::mainCamera != camera))
                     continue;
 
-                for (auto &gameObject : Scene::m_GameObjects) {
+                for (auto &gameObject : *Scene::m_GameObjects) {
                     if (!gameObject->enabled)
                         continue;
                     if (gameObject->layer != layer.first)
@@ -4508,7 +4510,7 @@ int main(int argc, char **argv) {
 
                         glm::mat4 m_parentTransform = glm::mat4(1.0f);
 
-                        for (auto &go : Scene::m_GameObjects) {
+                        for (auto &go : *Scene::m_GameObjects) {
                             if (go->ID == gameObject->parentID &&
                                 go->HasComponent<Transform>()) {
                                 auto &parentTransform =
@@ -4569,7 +4571,7 @@ int main(int argc, char **argv) {
 
                         glm::mat4 m_parentTransform = glm::mat4(1.0f);
 
-                        for (auto &go : Scene::m_GameObjects) {
+                        for (auto &go : *Scene::m_GameObjects) {
                             if (go->ID == gameObject->parentID &&
                                 go->HasComponent<Transform>()) {
                                 auto &parentTransform =
@@ -4590,7 +4592,7 @@ int main(int argc, char **argv) {
                         auto transform = gameObject->GetComponent<Transform>();
                         glm::mat4 m_parentTransform = glm::mat4(1.0f);
 
-                        for (auto &go : Scene::m_GameObjects) {
+                        for (auto &go : *Scene::m_GameObjects) {
                             if (go->ID == gameObject->parentID &&
                                 go->HasComponent<Transform>()) {
                                 auto &parentTransform =
@@ -4632,7 +4634,7 @@ int main(int argc, char **argv) {
 
                         glm::mat4 m_parentTransform = glm::mat4(1.0f);
 
-                        for (auto &go : Scene::m_GameObjects) {
+                        for (auto &go : *Scene::m_GameObjects) {
                             if (go->ID == gameObject->parentID &&
                                 go->HasComponent<Transform>()) {
                                 auto &parentTransform =
@@ -4678,7 +4680,7 @@ int main(int argc, char **argv) {
 
                         glm::mat4 m_parentTransform = glm::mat4(1.0f);
 
-                        for (auto &go : Scene::m_GameObjects) {
+                        for (auto &go : *Scene::m_GameObjects) {
                             if (go->ID == gameObject->parentID &&
                                 go->HasComponent<Transform>()) {
                                 auto &parentTransform =
@@ -4719,7 +4721,7 @@ int main(int argc, char **argv) {
 
                         glm::mat4 m_parentTransform = glm::mat4(1.0f);
 
-                        for (auto &go : Scene::m_GameObjects) {
+                        for (auto &go : *Scene::m_GameObjects) {
                             if (go->ID == gameObject->parentID &&
                                 go->HasComponent<Transform>()) {
                                 auto &parentTransform =
@@ -4779,7 +4781,7 @@ int main(int argc, char **argv) {
         //     if (Scene::mainCamera == camera)
         //         break;
         //     GameObject *gameObject;
-        //     for (auto &go : Scene::m_GameObjects) {
+        //     for (auto &go : *Scene::m_GameObjects) {
         //         if (go->entity == entity) {
         //             gameObject = go;
         //             break;
@@ -4802,7 +4804,7 @@ int main(int argc, char **argv) {
         //         if (notInCameraLayer)
         //             continue;
 
-        //         for (auto &gameObject : Scene::m_GameObjects) {
+        //         for (auto &gameObject : *Scene::m_GameObjects) {
         //             if (!gameObject->enabled)
         //                 continue;
         //             if (gameObject->layer != layer.first)
@@ -4846,7 +4848,7 @@ int main(int argc, char **argv) {
         //                     gameObject->GetComponent<Transform>();
         //                 transform.Update();
 
-        //                 for (auto &go : Scene::m_GameObjects) {
+        //                 for (auto &go : *Scene::m_GameObjects) {
         //                     if (go->ID == gameObject->parentID &&
         //                         go->HasComponent<Transform>()) {
         //                         auto &parentTransform =
@@ -4870,7 +4872,7 @@ int main(int argc, char **argv) {
         //                     gameObject->GetComponent<Transform>();
         //                 transform.Update();
 
-        //                 for (auto &go : Scene::m_GameObjects) {
+        //                 for (auto &go : *Scene::m_GameObjects) {
         //                     if (go->ID == gameObject->parentID &&
         //                         go->HasComponent<Transform>()) {
         //                         auto &parentTransform =
@@ -4900,7 +4902,7 @@ int main(int argc, char **argv) {
 
         //                 spriteAnimation.Play();
 
-        //                 for (auto &go : Scene::m_GameObjects) {
+        //                 for (auto &go : *Scene::m_GameObjects) {
         //                     if (go->ID == gameObject->parentID &&
         //                         go->HasComponent<Transform>()) {
         //                         auto &parentTransform =
@@ -4930,7 +4932,7 @@ int main(int argc, char **argv) {
         //                     gameObject->GetComponent<Transform>();
         //                 transform.Update();
 
-        //                 for (auto &go : Scene::m_GameObjects) {
+        //                 for (auto &go : *Scene::m_GameObjects) {
         //                     if (go->ID == gameObject->parentID &&
         //                         go->HasComponent<Transform>()) {
         //                         auto &parentTransform =
@@ -4959,7 +4961,7 @@ int main(int argc, char **argv) {
             if (Scene::mainCamera != camera)
                 return;
 
-            for (auto &gameObject : Scene::m_GameObjects) {
+            for (auto &gameObject : *Scene::m_GameObjects) {
                 if (!gameObject->enabled)
                     continue;
                 if (Scene::m_Object != gameObject)
@@ -5014,12 +5016,12 @@ int main(int argc, char **argv) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             }
 
-            for (auto &gameObject : Scene::m_GameObjects) {
+            for (auto &gameObject : *Scene::m_GameObjects) {
                 if (!gameObject->enabled)
                     continue;
 
                 if (gameObject->HasComponent<c_DirectionalLight>()) {
-                    for (auto &game_object : Scene::m_GameObjects) {
+                    for (auto &game_object : *Scene::m_GameObjects) {
                         if (game_object->HasComponent<MeshRenderer>()) {
                             auto &meshRenderer =
                                 game_object->GetComponent<MeshRenderer>();
@@ -5045,7 +5047,7 @@ int main(int argc, char **argv) {
                 }
 
                 if (gameObject->HasComponent<Audio3D>()) {
-                    for (auto &game_object : Scene::m_GameObjects) {
+                    for (auto &game_object : *Scene::m_GameObjects) {
                         if (game_object->HasComponent<MeshRenderer>()) {
                             auto &meshRenderer =
                                 game_object->GetComponent<MeshRenderer>();
@@ -5071,7 +5073,7 @@ int main(int argc, char **argv) {
                 }
 
                 if (gameObject->HasComponent<c_PointLight>()) {
-                    for (auto &game_object : Scene::m_GameObjects) {
+                    for (auto &game_object : *Scene::m_GameObjects) {
                         if (game_object->HasComponent<MeshRenderer>()) {
                             auto &meshRenderer =
                                 game_object->GetComponent<MeshRenderer>();
@@ -5097,7 +5099,7 @@ int main(int argc, char **argv) {
                 }
 
                 if (gameObject->HasComponent<c_SpotLight>()) {
-                    for (auto &game_object : Scene::m_GameObjects) {
+                    for (auto &game_object : *Scene::m_GameObjects) {
                         if (game_object->HasComponent<MeshRenderer>()) {
                             auto &meshRenderer =
                                 game_object->GetComponent<MeshRenderer>();
@@ -5123,7 +5125,7 @@ int main(int argc, char **argv) {
                 }
 
                 if (gameObject->HasComponent<CameraComponent>()) {
-                    for (auto &game_object : Scene::m_GameObjects) {
+                    for (auto &game_object : *Scene::m_GameObjects) {
                         if (game_object->HasComponent<MeshRenderer>()) {
                             auto &meshRenderer =
                                 game_object->GetComponent<MeshRenderer>();
@@ -5165,7 +5167,7 @@ int main(int argc, char **argv) {
                 if (notInCameraLayer && Scene::mainCamera != camera)
                     continue;
 
-                for (auto &gameObject : Scene::m_GameObjects) {
+                for (auto &gameObject : *Scene::m_GameObjects) {
                     if (!gameObject->enabled)
                         continue;
                     if (gameObject->layer != layer.first)
@@ -5225,7 +5227,7 @@ int main(int argc, char **argv) {
                         auto transform = gameObject->GetComponent<Transform>();
                         transform.Update();
 
-                        for (auto &go : Scene::m_GameObjects) {
+                        for (auto &go : *Scene::m_GameObjects) {
                             if (go->ID == gameObject->parentID &&
                                 go->HasComponent<Transform>()) {
                                 auto &parentTransform =
@@ -5257,7 +5259,7 @@ int main(int argc, char **argv) {
                         auto transform = gameObject->GetComponent<Transform>();
                         transform.Update();
 
-                        for (auto &go : Scene::m_GameObjects) {
+                        for (auto &go : *Scene::m_GameObjects) {
                             if (go->ID == gameObject->parentID &&
                                 go->HasComponent<Transform>()) {
                                 auto &parentTransform =
@@ -5294,7 +5296,7 @@ int main(int argc, char **argv) {
 
                         spriteAnimation.Play();
 
-                        for (auto &go : Scene::m_GameObjects) {
+                        for (auto &go : *Scene::m_GameObjects) {
                             if (go->ID == gameObject->parentID &&
                                 go->HasComponent<Transform>()) {
                                 auto &parentTransform =
@@ -5322,7 +5324,7 @@ int main(int argc, char **argv) {
                         auto transform = gameObject->GetComponent<Transform>();
                         transform.Update();
 
-                        for (auto &go : Scene::m_GameObjects) {
+                        for (auto &go : *Scene::m_GameObjects) {
                             if (go->ID == gameObject->parentID &&
                                 go->HasComponent<Transform>()) {
                                 auto &parentTransform =
@@ -5489,7 +5491,7 @@ int main() {
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.5, 2.5));
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.5f);
 
-    struct Project {
+    struct DLL_API Project {
         std::string name;
         std::string path;
     };

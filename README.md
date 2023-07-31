@@ -133,3 +133,5 @@ If you want to use C# for scripting **you need to have dotnet and the sdk instal
 - **Flowchart Editor (like in Unreal Engine)**
 - **Video Player**
 - **Batch Renderer**
+
+# TODO: EXPORT ALL CLASSES, VARIABLES & FUNCTIONS

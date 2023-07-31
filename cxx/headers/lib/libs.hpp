@@ -129,6 +129,10 @@ namespace HyperAPI {
     extern float sceneMouseX, sceneMouseY;
     extern b2ContactListener *b2_listener;
 
+#ifdef _WIN32
+    __declspec(dllexport) void test_dll_function();
+#endif
+
     struct Config {
         char name[50];
         std::string mainScene;

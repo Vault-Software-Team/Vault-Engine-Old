@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
@@ -10,7 +11,7 @@
 #include "scene.hpp"
 
 namespace HyperAPI::Experimental {
-    struct CameraComponent : public BaseComponent {
+    struct DLL_API CameraComponent : public BaseComponent {
         Camera *camera = nullptr;
         GameObject *m_GameObject = nullptr;
         bool depthCamera = false;
@@ -23,21 +24,7 @@ namespace HyperAPI::Experimental {
                                  Scene::cameras.end());
         }
 
-        void Init() {
-            auto &transform =
-                Scene::m_Registry.get<Experimental::Transform>(entity);
-            transform.rotation = glm::vec3(0.0f, 0.0f, -1.0f);
-
-            camera = new Camera(false, 1280, 720, glm::vec3(0, 0, 0), entity);
-            Scene::cameras.push_back(camera);
-
-            for (auto &gameObject : Scene::m_GameObjects) {
-                if (gameObject->ID == ID) {
-                    m_GameObject = gameObject;
-                    break;
-                }
-            }
-        }
+        void Init();
 
         void GUI();
     };

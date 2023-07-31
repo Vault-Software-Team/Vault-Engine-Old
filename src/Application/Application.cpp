@@ -457,7 +457,7 @@ namespace Hyper {
             glReadPixels(sceneMouseX, sceneMouseY, 1, 1, GL_RED_INTEGER,
                          GL_UNSIGNED_INT, &entityId);
 
-            for (auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+            for (auto &gameObject : (*HyperAPI::Scene::m_GameObjects)) {
                 if (sceneMouseY < 0 || sceneMouseX < 0) {
                     break;
                 }

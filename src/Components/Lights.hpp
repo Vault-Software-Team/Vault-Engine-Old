@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
@@ -7,7 +8,7 @@
 #include "Transform.hpp"
 
 namespace HyperAPI::Experimental {
-    struct c_PointLight : public BaseComponent {
+    struct DLL_API c_PointLight : public BaseComponent {
         glm::vec3 lightPos = glm::vec3(0, 0, 0);
         glm::vec3 color = glm::vec3(1, 1, 1);
         float intensity = 1.0f;
@@ -47,7 +48,7 @@ namespace HyperAPI::Experimental {
         }
     };
 
-    struct c_Light2D : public BaseComponent {
+    struct DLL_API c_Light2D : public BaseComponent {
         glm::vec3 lightPos = glm::vec3(0, 0, 0);
         glm::vec3 color = glm::vec3(1, 1, 1);
         float range = 1.0f;
@@ -87,7 +88,7 @@ namespace HyperAPI::Experimental {
         }
     };
 
-    struct c_SpotLight : public BaseComponent {
+    struct DLL_API c_SpotLight : public BaseComponent {
         glm::vec3 lightPos = glm::vec3(0, 0, 0);
         glm::vec3 color = glm::vec3(1, 1, 1);
         float outerCone;
@@ -133,7 +134,7 @@ namespace HyperAPI::Experimental {
         }
     };
 
-    struct c_DirectionalLight : public BaseComponent {
+    struct DLL_API c_DirectionalLight : public BaseComponent {
         glm::vec3 lightPos = glm::vec3(0, 0, 0);
         glm::vec3 color = glm::vec3(1, 1, 1);
         float intensity = 1;

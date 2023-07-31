@@ -50,7 +50,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         go->AddComponent<Transform>();
         go->name = m_name;
         go->tag = m_tag;
-        Scene::m_GameObjects.push_back(go);
+        Scene::m_GameObjects->push_back(go);
         *m_id = mono_string_new(appDomain, go->ID.c_str());
     }
 

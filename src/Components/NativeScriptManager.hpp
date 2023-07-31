@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 // OUTDATED (still usable), just use C++ Scripting (that is still in works)
 #include <libs.hpp>
 #include "Exp_Base.hpp"
@@ -8,7 +9,7 @@
 #include "GameObject.hpp"
 
 namespace HyperAPI::Experimental {
-    struct NativeScriptManager : public BaseComponent {
+    struct DLL_API NativeScriptManager : public BaseComponent {
         std::vector<StaticScript *> m_StaticScripts;
         GameObject *gameObject;
 
@@ -20,7 +21,7 @@ namespace HyperAPI::Experimental {
         }
 
         void Init() {
-            for (auto &gameObject : Scene::m_GameObjects) {
+            for (auto &gameObject : (*Scene::m_GameObjects)) {
                 if (gameObject->ID == ID) {
                     this->gameObject = gameObject;
                     break;
@@ -28,7 +29,8 @@ namespace HyperAPI::Experimental {
             }
         }
 
-        template <typename T> void AddScript() {
+        template <typename T>
+        void AddScript() {
             m_StaticScripts.push_back(std::make_shared<T>());
             m_StaticScripts.back()->gameObject = gameObject;
             HYPER_LOG(std::string("Added script: ") + typeid(T).name());

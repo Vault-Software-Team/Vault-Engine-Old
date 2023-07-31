@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Material.hpp"
 #include "Texture.hpp"
@@ -6,7 +7,7 @@
 #include "Structures.hpp"
 
 namespace HyperAPI {
-    class Mesh : public ComponentSystem {
+    class DLL_API Mesh : public ComponentSystem {
     public:
         std::string parentType = "None";
         Material material{Vector4(1, 1, 1, 1)};

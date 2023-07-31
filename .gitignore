@@ -23,3 +23,4 @@ rusty/target
 assets/models/*
 website
 *.gch
+test

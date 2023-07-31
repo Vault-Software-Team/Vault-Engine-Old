@@ -1,15 +1,16 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 
 namespace HyperAPI {
     namespace n_Bloom {
-        struct BloomMip {
+        struct DLL_API BloomMip {
             glm::vec2 size;
             glm::ivec2 intSize;
             uint32_t texture;
         };
 
-        class BloomBuffer {
+        class DLL_API BloomBuffer {
         public:
             BloomBuffer();
             ~BloomBuffer();
@@ -29,7 +30,7 @@ namespace HyperAPI {
             std::vector<BloomMip> m_MipChain;
         };
 
-        class BloomRenderer {
+        class DLL_API BloomRenderer {
         public:
             BloomRenderer();
             ~BloomRenderer();

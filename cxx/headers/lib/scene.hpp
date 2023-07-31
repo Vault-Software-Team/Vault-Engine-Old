@@ -79,7 +79,7 @@ namespace HyperAPI {
         };
 
         extern bool LoadingScene;
-        extern std::vector<Experimental::GameObject *> m_GameObjects;
+        extern std::vector<Experimental::GameObject *> *m_GameObjects;
         extern std::vector<Experimental::GameObject *> m_UIObjects;
         extern std::map<std::string, bool> layers;
         extern std::map<std::string, std::map<std::string, int>> currFrames;

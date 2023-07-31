@@ -34,10 +34,12 @@
 #include "../Components/SpriteAnimation.hpp"
 #include "../Components/SpritesheetAnimation.hpp"
 #include "../Components/SpritesheetRenderer.hpp"
+#include "../Components/CircleCollider2D.hpp"
 #include "../Components/Transform.hpp"
 #include "../Components/3DText.hpp"
 #include "../Components/AudioListener.hpp"
 #include "../Components/Audio3D.hpp"
+#include "../Components/ParticleSystem.hpp"
 
 // Renderer
 #include "../Renderer/AssimpGLMHelpers.hpp"

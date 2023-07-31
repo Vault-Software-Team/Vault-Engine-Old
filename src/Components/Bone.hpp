@@ -1,26 +1,27 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
 #include "../Renderer/OldStuff.hpp"
 
 namespace HyperAPI::Experimental {
-    struct KeyPosition {
+    struct DLL_API KeyPosition {
         glm::vec3 position;
         float timeStamp;
     };
 
-    struct KeyRotation {
+    struct DLL_API KeyRotation {
         glm::quat orientation;
         float timeStamp;
     };
 
-    struct KeyScale {
+    struct DLL_API KeyScale {
         glm::vec3 scale;
         float timeStamp;
     };
 
-    class Bone {
+    class DLL_API Bone {
     private:
         std::vector<KeyPosition> m_Positions;
         std::vector<KeyRotation> m_Rotations;

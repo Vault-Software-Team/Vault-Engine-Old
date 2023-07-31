@@ -402,11 +402,11 @@ bool is_number(const std::string &s) {
 }
 
 namespace ScriptEngine {
-    GLFWwindow *window = nullptr;
-    HyperAPI::ComponentSystem *m_ComponentSystem = nullptr;
-    HyperAPI::Experimental::GameObject *m_Object = nullptr;
-    std::string objID = "";
-    HyperAPI::ComponentSystem *m_EntityComp = nullptr;
+    DLL_API GLFWwindow *window = nullptr;
+    DLL_API HyperAPI::ComponentSystem *m_ComponentSystem = nullptr;
+    DLL_API HyperAPI::Experimental::GameObject *m_Object = nullptr;
+    DLL_API std::string objID = "";
+    DLL_API HyperAPI::ComponentSystem *m_EntityComp = nullptr;
 
     LuaScript::LuaScript(const std::string &pathToScript) {
         this->pathToScript = pathToScript;
@@ -570,9 +570,9 @@ namespace ScriptEngine {
         lastUpdateTime = now;
 
         objID = ID;
-        for (int i = 0; i < HyperAPI::Scene::m_GameObjects.size(); i++) {
-            if (HyperAPI::Scene::m_GameObjects[i]->ID == objID) {
-                m_Object = HyperAPI::Scene::m_GameObjects[i];
+        for (int i = 0; i < (*HyperAPI::Scene::m_GameObjects).size(); i++) {
+            if ((*HyperAPI::Scene::m_GameObjects)[i]->ID == objID) {
+                m_Object = (*HyperAPI::Scene::m_GameObjects)[i];
             }
         }
 
@@ -1080,7 +1080,7 @@ namespace ScriptEngine {
                 std::string id;
                 GetTableArg(L, "obj_id", id);
 
-                for (auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+                for (auto &gameObject : (*HyperAPI::Scene::m_GameObjects)) {
                     if (gameObject->ID == id) {
                         LuaUpdateComponentValues(L, type, gameObject);
                         break;
@@ -1272,7 +1272,7 @@ namespace ScriptEngine {
         int FindGameObjectByName(lua_State *L) {
             std::string name = (std::string)lua_tostring(L, 1);
 
-            for (auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+            for (auto &gameObject : (*HyperAPI::Scene::m_GameObjects)) {
                 if (gameObject->name == name) {
                     lua_newtable(L);
                     PushTableKey(L, "obj_id", gameObject->ID.c_str());
@@ -1290,7 +1290,7 @@ namespace ScriptEngine {
         int FindGameObjectByTag(lua_State *L) {
             std::string tag = (std::string)lua_tostring(L, 1);
 
-            for (auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+            for (auto &gameObject : (*HyperAPI::Scene::m_GameObjects)) {
                 if (gameObject->tag == tag) {
                     lua_newtable(L);
                     PushTableKey(L, "obj_id", gameObject->ID.c_str());
@@ -1311,7 +1311,7 @@ namespace ScriptEngine {
 
             lua_newtable(L);
             int i = 1;
-            for (auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+            for (auto &gameObject : (*HyperAPI::Scene::m_GameObjects)) {
                 if (gameObject->name == name) {
                     lua_newtable(L);
                     PushTableKey(L, "obj_id", gameObject->ID.c_str());
@@ -1333,7 +1333,7 @@ namespace ScriptEngine {
 
             lua_newtable(L);
             int i = 1;
-            for (auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+            for (auto &gameObject : (*HyperAPI::Scene::m_GameObjects)) {
                 if (gameObject->tag == tag) {
                     lua_newtable(L);
                     PushTableKey(L, "obj_id", gameObject->ID.c_str());
@@ -1357,7 +1357,7 @@ namespace ScriptEngine {
             std::string type = (std::string)lua_tostring(L, 2);
 
             GameObject *gameObject;
-            for (auto &obj : HyperAPI::Scene::m_GameObjects) {
+            for (auto &obj : (*HyperAPI::Scene::m_GameObjects)) {
                 if (obj->ID == obj_id) {
                     gameObject = obj;
                     break;
@@ -1377,7 +1377,7 @@ namespace ScriptEngine {
             std::string id;
             GetTableArg(L, "obj_id", id);
 
-            for (auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+            for (auto &gameObject : (*HyperAPI::Scene::m_GameObjects)) {
                 if (gameObject->ID == id) {
                     LuaUpdateComponentValues(L, type, gameObject);
                     break;
@@ -1437,7 +1437,7 @@ namespace ScriptEngine {
             float y = (float)lua_tonumber(L, 2);
             float z = (float)lua_tonumber(L, 3);
 
-            for (auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+            for (auto &gameObject : (*HyperAPI::Scene::m_GameObjects)) {
                 if (gameObject->ID == id) {
                     auto &transform = gameObject->GetComponent<Transform>();
                     transform.LookAt(glm::vec3(x, y, z));
@@ -1457,7 +1457,7 @@ namespace ScriptEngine {
             float y = (float)lua_tonumber(L, 2);
             float z = (float)lua_tonumber(L, 3);
 
-            for (auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+            for (auto &gameObject : (*HyperAPI::Scene::m_GameObjects)) {
                 if (gameObject->ID == id) {
                     auto &transform = gameObject->GetComponent<Transform>();
                     transform.Translate(glm::vec3(x, y, z));
@@ -1475,7 +1475,7 @@ namespace ScriptEngine {
             float y = (float)lua_tonumber(L, 2);
             float z = (float)lua_tonumber(L, 3);
 
-            for (auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+            for (auto &gameObject : (*HyperAPI::Scene::m_GameObjects)) {
                 if (gameObject->ID == id) {
                     auto &transform = gameObject->GetComponent<Transform>();
                     transform.Rotate(glm::vec3(x, y, z));
@@ -1491,7 +1491,7 @@ namespace ScriptEngine {
 
             auto texturePath = (std::string)lua_tostring(L, 1);
 
-            for (auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+            for (auto &gameObject : (*HyperAPI::Scene::m_GameObjects)) {
                 if (gameObject->ID == id) {
                     auto &meshRenderer = gameObject->GetComponent<MeshRenderer>();
                     if (meshRenderer.m_Mesh->material.diffuse != nullptr) {
@@ -1511,7 +1511,7 @@ namespace ScriptEngine {
 
             auto texturePath = (std::string)lua_tostring(L, 1);
 
-            for (auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+            for (auto &gameObject : (*HyperAPI::Scene::m_GameObjects)) {
                 if (gameObject->ID == id) {
                     auto &meshRenderer = gameObject->GetComponent<MeshRenderer>();
                     if (meshRenderer.m_Mesh->material.specular != nullptr) {
@@ -1531,7 +1531,7 @@ namespace ScriptEngine {
 
             auto texturePath = (std::string)lua_tostring(L, 1);
 
-            for (auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+            for (auto &gameObject : (*HyperAPI::Scene::m_GameObjects)) {
                 if (gameObject->ID == id) {
                     auto &meshRenderer = gameObject->GetComponent<MeshRenderer>();
                     if (meshRenderer.m_Mesh->material.normal != nullptr) {
@@ -1551,7 +1551,7 @@ namespace ScriptEngine {
 
             auto texturePath = (std::string)lua_tostring(L, 1);
 
-            for (auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+            for (auto &gameObject : (*HyperAPI::Scene::m_GameObjects)) {
                 if (gameObject->ID == id) {
                     auto &spriteRenderer = gameObject->GetComponent<SpriteRenderer>();
                     if (spriteRenderer.mesh->material.diffuse != nullptr) {
@@ -1571,7 +1571,7 @@ namespace ScriptEngine {
 
             auto texturePath = (std::string)lua_tostring(L, 1);
 
-            for (auto &gameObject : HyperAPI::Scene::m_GameObjects) {
+            for (auto &gameObject : (*HyperAPI::Scene::m_GameObjects)) {
                 if (gameObject->ID == id) {
                     auto &spriteRenderer = gameObject->GetComponent<SpriteRenderer>();
                     if (spriteRenderer.mesh->material.diffuse != nullptr) {

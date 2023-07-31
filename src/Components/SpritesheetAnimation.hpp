@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
@@ -8,8 +9,8 @@
 #include "Bloom.hpp"
 
 namespace HyperAPI::Experimental {
-    struct m_SpritesheetAnimationData {
-        struct Frame {
+    struct DLL_API m_SpritesheetAnimationData {
+        struct DLL_API Frame {
             Vector2 size = Vector2(0.0f, 0.0f);
             Vector2 offset = Vector2(0.0f, 0.0f);
         };
@@ -28,7 +29,7 @@ namespace HyperAPI::Experimental {
     GetAnimationsFromXML(const char *texPath, float delay, Vector2 sheetSize,
                          const std::string &xmlFile);
 
-    struct c_SpritesheetAnimation : public BaseComponent {
+    struct DLL_API c_SpritesheetAnimation : public BaseComponent {
         Material mat{Vector4(1, 1, 1, 1)};
         Spritesheet sheet{"", mat, Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)};
         Mesh *mesh;
@@ -37,7 +38,7 @@ namespace HyperAPI::Experimental {
         Vector2 spritesheetSize;
         m_SpritesheetAnimationData::Frame currFrame;
 
-        struct CustomShader {
+        struct DLL_API CustomShader {
             bool usingCustomShader = false;
             Shader *shader = nullptr;
         } customShader;

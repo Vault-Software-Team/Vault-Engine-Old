@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
@@ -10,7 +11,7 @@
 #include "Transform.hpp"
 
 namespace HyperAPI::Experimental {
-    class Model {
+    class DLL_API Model {
     private:
         int currSlot = 0;
 
@@ -60,7 +61,7 @@ namespace HyperAPI::Experimental {
         GameObject *processMesh(aiMesh *mesh, const aiScene *scene,
                                 const std::string &name, int index);
 
-        struct MeshMaterial {
+        struct DLL_API MeshMaterial {
             Mesh *mesh;
             std::string mat_path;
         };
@@ -88,7 +89,7 @@ namespace HyperAPI::Experimental {
                 mainGameObject->name = "Model";
                 mainGameObject->ID = uuid::generate_uuid_v4();
                 mainGameObject->AddComponent<Transform>();
-                Scene::m_GameObjects.push_back(mainGameObject);
+                Scene::m_GameObjects->push_back(mainGameObject);
             }
 
             texturesEnabled = AddTexture;
@@ -99,14 +100,14 @@ namespace HyperAPI::Experimental {
         void Draw(Shader &shader, Camera &camera);
     };
 
-    struct AssimpNodeData {
+    struct DLL_API AssimpNodeData {
         glm::mat4 transformation;
         std::string name;
         int childrenCount;
         std::vector<AssimpNodeData> children;
     };
 
-    class Animation {
+    class DLL_API Animation {
     public:
         Animation() = default;
 
@@ -188,7 +189,7 @@ namespace HyperAPI::Experimental {
         std::map<std::string, BoneInfo> m_BoneInfoMap;
     };
 
-    class Animator {
+    class DLL_API Animator {
     public:
         Animator(Animation *Animation) {
             m_CurrentTime = 0.0;

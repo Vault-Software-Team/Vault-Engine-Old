@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Vault Engine
+StartupWMClass=code
+Comment=A Code Editor
+GenericName=Code Editor
+Exec=/opt/vault-engine/vault.sh
+Icon=/opt/vault-engine/build/logo2.png
+Type=Application
+Categories=Utility
+Path=/opt/vault-engine
+Path=/opt/vault-engine

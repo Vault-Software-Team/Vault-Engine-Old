@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
@@ -6,7 +7,7 @@
 #include "box2d/b2_fixture.h"
 
 namespace HyperAPI::Experimental {
-    struct BoxCollider2D : public BaseComponent {
+    struct DLL_API BoxCollider2D : public BaseComponent {
         Vector2 offset = Vector2(0, 0);
         Vector2 size = Vector2(0.5, 0.5);
 

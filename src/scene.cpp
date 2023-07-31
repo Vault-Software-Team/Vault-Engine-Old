@@ -39,7 +39,7 @@ void ApplyTransform(HyperAPI::Experimental::Transform &transform, nlohmann::json
 
 namespace HyperAPI {
     namespace Scene {
-        std::map<std::string, Texture *> Textures;
+        DLL_API std::map<std::string, Texture *> Textures;
 
         void SavePrefab(const std::string &path, Experimental::GameObject *gameObject) {
             std::ofstream file(path);
@@ -63,8 +63,8 @@ namespace HyperAPI {
             int componentOffset = 0;
             SaveComponents(JSON, gameObject, 0, componentOffset);
 
-            for (int i = 0; i < m_GameObjects.size(); i++) {
-                auto &gameObject = m_GameObjects[i];
+            for (int i = 0; i < m_GameObjects->size(); i++) {
+                auto &gameObject = (*m_GameObjects)[i];
                 if (gameObject->parentID != ID)
                     continue;
 
@@ -107,8 +107,8 @@ namespace HyperAPI {
             int componentOffset = 0;
             SaveComponents(JSON, gameObject, 0, componentOffset);
 
-            for (int i = 0; i < m_GameObjects.size(); i++) {
-                auto &gameObject = m_GameObjects[i];
+            for (int i = 0; i < m_GameObjects->size(); i++) {
+                auto &gameObject = (*m_GameObjects)[i];
                 if (gameObject->parentID != ID)
                     continue;
 
@@ -621,6 +621,7 @@ namespace HyperAPI {
         }
 
         void LoadScene(const std::string &scenePath, nlohmann::json &StateScene) {
+            HYPER_LOG("scene0");
             stop_scripts = true;
             m_Object = nullptr;
             mainCamera = scene_camera;
@@ -633,8 +634,12 @@ namespace HyperAPI {
             if (scenePath != "")
                 currentScenePath = scenePath;
 
+            HYPER_LOG("scene1")
+
             try {
-                for (auto &gameObject : m_GameObjects) {
+                HYPER_LOG("scene2")
+                HYPER_LOG(m_GameObjects)
+                for (auto &gameObject : *m_GameObjects) {
                     if (gameObject->HasComponent<Experimental::Transform>()) {
                         auto &comp = gameObject->GetComponent<Experimental::Transform>();
                         comp.DeleteComp();
@@ -744,7 +749,7 @@ namespace HyperAPI {
                     m_Registry.destroy(gameObject->entity);
                     delete gameObject;
                 }
-                m_GameObjects.clear();
+                m_GameObjects->clear();
 
                 for (auto &light : DirLights) {
                     delete light;
@@ -766,7 +771,7 @@ namespace HyperAPI {
                 }
                 Lights2D.clear();
 
-                m_GameObjects.clear();
+                m_GameObjects->clear();
             } catch (...) {
             }
 
@@ -793,6 +798,8 @@ namespace HyperAPI {
             } catch (std::exception &e) {
                 std::cout << e.what() << std::endl;
             }
+
+            HYPER_LOG("scene3")
 
             for (int i = 0; i < JSON.size(); i++) {
                 Experimental::GameObject *gameObject = new Experimental::GameObject();
@@ -825,7 +832,7 @@ namespace HyperAPI {
                 std::string meshType = "";
 
                 Experimental::Transform transform;
-                m_GameObjects.push_back(gameObject);
+                m_GameObjects->push_back(gameObject);
 
                 for (auto &component : components) {
                     std::string type = component["type"];
@@ -881,7 +888,7 @@ namespace HyperAPI {
                 std::string meshType = "";
 
                 Experimental::Transform transform;
-                m_GameObjects.push_back(gameObject);
+                m_GameObjects->push_back(gameObject);
 
                 for (auto &component : components) {
                     std::string type = component["type"];
@@ -894,11 +901,11 @@ namespace HyperAPI {
 
                     delete gameObject;
                     // erase back
-                    m_GameObjects.erase(m_GameObjects.begin() + m_GameObjects.size() - 1);
+                    m_GameObjects->erase(m_GameObjects->begin() + m_GameObjects->size() - 1);
                     int amountOfChildren = 0;
                     std::vector<std::string> childNames;
-                    for (int j = 0; j < m_GameObjects.size(); j++) {
-                        if (m_GameObjects[j]->ID == parentID) {
+                    for (int j = 0; j < m_GameObjects->size(); j++) {
+                        if ((*m_GameObjects)[j]->ID == parentID) {
                             Experimental::Model *newEntity = new Experimental::Model((char *)meshType.c_str(), false);
                             auto &m_Transform = newEntity->mainGameObject->GetComponent<Experimental::Transform>();
 
@@ -935,7 +942,7 @@ namespace HyperAPI {
                                 newEntity->m_gameObjects[a]->GetComponent<Experimental::Transform>().scale = transform.scale;
                             }
 
-                            m_GameObjects.erase(m_GameObjects.begin() + j);
+                            m_GameObjects->erase(m_GameObjects->begin() + j);
 
                             break;
                         }
@@ -971,7 +978,7 @@ namespace HyperAPI {
                 std::string meshType = "";
 
                 Experimental::Transform transform;
-                m_GameObjects.push_back(gameObject);
+                m_GameObjects->push_back(gameObject);
 
                 for (auto &component : components) {
                     std::string type = component["type"];
@@ -984,11 +991,11 @@ namespace HyperAPI {
 
                     delete gameObject;
                     // erase back
-                    m_GameObjects.erase(m_GameObjects.begin() + m_GameObjects.size() - 1);
+                    m_GameObjects->erase(m_GameObjects->begin() + m_GameObjects->size() - 1);
                     int amountOfChildren = 0;
                     std::vector<std::string> childNames;
-                    for (int j = 0; j < m_GameObjects.size(); j++) {
-                        if (m_GameObjects[j]->ID == parentID) {
+                    for (int j = 0; j < m_GameObjects->size(); j++) {
+                        if ((*m_GameObjects)[j]->ID == parentID) {
                             Experimental::Model *newEntity = new Experimental::Model((char *)meshType.c_str(), false);
                             auto &m_Transform = newEntity->mainGameObject->GetComponent<Experimental::Transform>();
 
@@ -1025,7 +1032,7 @@ namespace HyperAPI {
                                 newEntity->m_gameObjects[a]->GetComponent<Experimental::Transform>().scale = transform.scale;
                             }
 
-                            m_GameObjects.erase(m_GameObjects.begin() + j);
+                            m_GameObjects->erase(m_GameObjects->begin() + j);
 
                             break;
                         }
@@ -1423,8 +1430,8 @@ namespace HyperAPI {
 
             int offset = 0;
 
-            for (int i = 0; i < m_GameObjects.size(); i++) {
-                auto &gameObject = m_GameObjects[i];
+            for (int i = 0; i < m_GameObjects->size(); i++) {
+                auto &gameObject = (*m_GameObjects)[i];
 
                 std::string name = gameObject->name;
                 std::string ID = gameObject->ID;
@@ -1461,7 +1468,7 @@ namespace HyperAPI {
             if (ImGui::BeginDragDropTarget()) {
                 if (type == DragType::DRAG_GAMEOBJECT) {
                     if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("game_object")) {
-                        for (auto &obj : m_GameObjects) {
+                        for (auto &obj : *m_GameObjects) {
                             if (obj->ID == dirPayloadData && type == DRAG_GAMEOBJECT) {
                                 SavePrefab((std::string("assets/") + obj->name + std::string(".prefab")).c_str(), obj);
                                 break;
@@ -1542,7 +1549,7 @@ namespace HyperAPI {
                         LoadPrefab(dirPayloadData);
                     }
 
-                    for (auto &obj : m_GameObjects) {
+                    for (auto &obj : *m_GameObjects) {
                         if (obj->ID == dirPayloadData && type == DRAG_GAMEOBJECT) {
                             SavePrefab((std::string("assets/") + obj->name + std::string(".prefab")).c_str(), obj);
                             break;
@@ -1558,23 +1565,23 @@ namespace HyperAPI {
             return false;
         }
 
-        std::string currentScenePath = "";
-        entt::registry m_Registry;
-        std::map<std::string, bool> layers;
-        std::vector<Experimental::GameObject *> m_GameObjects = {};
+        DLL_API std::string currentScenePath = "";
+        DLL_API ENTT_EXPORT entt::registry m_Registry;
+        DLL_API std::map<std::string, bool> layers;
+        DLL_API std::vector<Experimental::GameObject *> *m_GameObjects = new std::vector<Experimental::GameObject *>({});
 
-        Experimental::GameObject *m_Object = nullptr;
-        char name[499];
-        char tag[499];
-        char layer[32];
+        DLL_API Experimental::GameObject *m_Object = nullptr;
+        DLL_API char name[499];
+        DLL_API char tag[499];
+        DLL_API char layer[32];
 
-        std::vector<Mesh *> entities = {};
-        std::vector<Model> models = {};
-        Camera *mainCamera;
-        Camera *scene_camera;
-        bool stop_scripts = false;
-        std::vector<Camera *> cameras = {};
-        std::vector<Log> logs = {};
+        DLL_API std::vector<Mesh *> entities = {};
+        DLL_API std::vector<Model> models = {};
+        DLL_API Camera *mainCamera;
+        DLL_API Camera *scene_camera;
+        DLL_API bool stop_scripts = false;
+        DLL_API std::vector<Camera *> cameras = {};
+        DLL_API std::vector<Log> logs = {};
 #ifdef _WIN32
 #ifndef BUILD_DLL
         std::vector<Log> *GetLogs() {
@@ -1586,17 +1593,17 @@ namespace HyperAPI {
 
         std::vector<entt::entity> backup_entities = {};
 
-        std::vector<HyperAPI::PointLight *> PointLights = {};
-        std::vector<HyperAPI::Light2D *> Lights2D = {};
-        std::vector<HyperAPI::SpotLight *> SpotLights = {};
-        std::vector<HyperAPI::DirectionalLight *> DirLights = {};
-        std::vector<HyperAPI::Mesh *> hyperEntities = {};
-        std::map<std::string, std::map<std::string, int>> currFrames;
-        std::map<std::string, std::map<std::string, float>> currDelays;
+        DLL_API std::vector<HyperAPI::PointLight *> PointLights = {};
+        DLL_API std::vector<HyperAPI::Light2D *> Lights2D = {};
+        DLL_API std::vector<HyperAPI::SpotLight *> SpotLights = {};
+        DLL_API std::vector<HyperAPI::DirectionalLight *> DirLights = {};
+        DLL_API std::vector<HyperAPI::Mesh *> hyperEntities = {};
+        DLL_API std::map<std::string, std::map<std::string, int>> currFrames;
+        DLL_API std::map<std::string, std::map<std::string, float>> currDelays;
 
-        bool LoadingScene = false;
+        DLL_API bool LoadingScene = false;
 
-        b2World *world = nullptr;
-        std::vector<Experimental::GameObject *> m_UIObjects;
+        DLL_API b2World *world = nullptr;
+        DLL_API std::vector<Experimental::GameObject *> m_UIObjects;
     } // namespace Scene
 } // namespace HyperAPI

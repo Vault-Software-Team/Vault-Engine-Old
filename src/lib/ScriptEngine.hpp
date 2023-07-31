@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include "../vendor/luajit-2.1/lua.hpp"
 #include <iostream>
 #include <string>
@@ -16,20 +17,20 @@
 // #endif
 
 namespace HyperAPI {
-    class ComponentSystem;
+    class DLL_API ComponentSystem;
     namespace Experimental {
-        class ComponentEntity;
-        class GameObject;
+        class DLL_API ComponentEntity;
+        class DLL_API GameObject;
 
     } // namespace Experimental
 } // namespace HyperAPI
 
-struct GLFWwindow;
+struct DLL_API GLFWwindow;
 namespace ScriptEngine {
-    extern GLFWwindow *window;
-    extern HyperAPI::ComponentSystem *m_EntityComp;
-    extern HyperAPI::Experimental::GameObject *m_Object;
-    extern std::string objID;
+    DLL_API extern GLFWwindow *window;
+    DLL_API extern HyperAPI::ComponentSystem *m_EntityComp;
+    DLL_API extern HyperAPI::Experimental::GameObject *m_Object;
+    DLL_API extern std::string objID;
 
     namespace Functions {
         //  Rigidbody functions
@@ -124,12 +125,12 @@ namespace ScriptEngine {
 
     lua_State *m_Init();
 
-    struct m_FieldValue {
+    struct DLL_API m_FieldValue {
         char value[1024];
         bool updated = false;
     };
 
-    class m_LuaScript {
+    class DLL_API m_LuaScript {
     public:
         std::map<std::string, m_FieldValue> m_Fields;
         lua_State *L;
@@ -162,7 +163,7 @@ namespace ScriptEngine {
         void OnMouseExit();
     };
 
-    class LuaScript {
+    class DLL_API LuaScript {
     public:
         lua_State *L;
         int r;

@@ -1,16 +1,16 @@
 #include "BulletPhysicsWorld.hpp"
 
 namespace HyperAPI::BulletPhysicsWorld {
-    btDiscreteDynamicsWorld *dynamicsWorld;
-    btBroadphaseInterface *broadphase;
-    btDefaultCollisionConfiguration *collisionConfiguration;
-    btCollisionDispatcher *dispatcher;
-    btSequentialImpulseConstraintSolver *solver;
-    btAlignedObjectArray<btCollisionShape *> collisionShapes;
-    btAlignedObjectArray<btRigidBody *> rigidBodies;
-    btAlignedObjectArray<btPairCachingGhostObject *> ghostObjects;
-    btAlignedObjectArray<btTypedConstraint *> constraints;
-    btAlignedObjectArray<btCollisionObject *> collisionObjects;
+    DLL_API btDiscreteDynamicsWorld *dynamicsWorld;
+    DLL_API btBroadphaseInterface *broadphase;
+    DLL_API btDefaultCollisionConfiguration *collisionConfiguration;
+    DLL_API btCollisionDispatcher *dispatcher;
+    DLL_API btSequentialImpulseConstraintSolver *solver;
+    DLL_API btAlignedObjectArray<btCollisionShape *> collisionShapes;
+    DLL_API btAlignedObjectArray<btRigidBody *> rigidBodies;
+    DLL_API btAlignedObjectArray<btPairCachingGhostObject *> ghostObjects;
+    DLL_API btAlignedObjectArray<btTypedConstraint *> constraints;
+    DLL_API btAlignedObjectArray<btCollisionObject *> collisionObjects;
 
     void Delete() {
         delete dynamicsWorld;

@@ -3,8 +3,8 @@
 #include "freetype/freetype.h"
 
 namespace HyperAPI {
-    FT_Library ft;
-    Shader *font_shader;
+    DLL_API FT_Library ft;
+    DLL_API Shader *font_shader;
 
     int Font::InitFT() {
         font_shader = new Shader("shaders/text_shader.glsl");

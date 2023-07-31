@@ -74,4 +74,20 @@ namespace HyperAPI::Experimental {
             ImGui::TreePop();
         }
     }
+
+    void CameraComponent::Init() {
+        auto &transform =
+            Scene::m_Registry.get<Experimental::Transform>(entity);
+        transform.rotation = glm::vec3(0.0f, 0.0f, -1.0f);
+
+        camera = new Camera(false, 1280, 720, glm::vec3(0, 0, 0), entity);
+        Scene::cameras.push_back(camera);
+
+        for (auto &gameObject : (*Scene::m_GameObjects)) {
+            if (gameObject->ID == ID) {
+                m_GameObject = gameObject;
+                break;
+            }
+        }
+    }
 } // namespace HyperAPI::Experimental

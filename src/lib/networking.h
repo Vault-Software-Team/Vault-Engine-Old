@@ -15,7 +15,7 @@
 
 namespace HyperAPI {
     namespace Networking {
-        class Socket {
+        class DLL_API Socket {
         private:
             struct sockaddr_in address;
             int sock;
@@ -41,7 +41,7 @@ namespace HyperAPI {
             void SetConnection(int);
         };
 
-        class BindSocket : public Socket {
+        class DLL_API BindSocket : public Socket {
         public:
             BindSocket(
                     int domain,
@@ -54,7 +54,7 @@ namespace HyperAPI {
             int Connect(int sock, struct sockaddr_in address) override;
         };
 
-        class ConnectSocket : public Socket {
+        class DLL_API ConnectSocket : public Socket {
         public:
             ConnectSocket(
                     int domain,
@@ -67,7 +67,7 @@ namespace HyperAPI {
             int Connect(int sock, struct sockaddr_in address) override;
         };
 
-        class ListenSocket : public BindSocket {
+        class DLL_API ListenSocket : public BindSocket {
         private:
             int backlog;
             int listening;
@@ -84,7 +84,7 @@ namespace HyperAPI {
             void Listen();
         };
 
-        class Server {
+        class DLL_API Server {
         protected:
             ListenSocket *socket;
             virtual void Accepter(){};
@@ -104,7 +104,7 @@ namespace HyperAPI {
             ListenSocket *GetSocket() const;
         };
 
-        class TestServer : public Server {
+        class DLL_API TestServer : public Server {
         private:
             char buffer[30000] = {0};
             int newSocket;

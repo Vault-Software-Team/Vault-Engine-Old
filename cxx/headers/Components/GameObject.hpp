@@ -6,6 +6,7 @@
 
 #include "Transform.hpp"
 #include "Lights.hpp"
+#include "imgui/imgui.h"
 #include "scene.hpp"
 
 namespace HyperAPI::Experimental {
@@ -28,7 +29,7 @@ namespace HyperAPI::Experimental {
         }
 
         void Update() {
-            for (auto &childObject : Scene::m_GameObjects) {
+            for (auto &childObject : (*Scene::m_GameObjects)) {
                 if (childObject->parentID == ID) {
                     auto &transform = GetComponent<Transform>();
                     auto &childTransform =
@@ -40,7 +41,9 @@ namespace HyperAPI::Experimental {
         }
 
         void UpdateEnabled() {
-            for (auto &childObject : Scene::m_GameObjects) {
+            for (auto &childObject : (*Scene::m_GameObjects)) {
+                if (!childObject)
+                    continue;
                 if (childObject->parentID != ID)
                     continue;
 
@@ -109,12 +112,9 @@ namespace HyperAPI::Experimental {
             Scene::m_Registry.remove(entity);
             Scene::m_Registry.destroy(entity);
 
-            Scene::m_GameObjects.erase(std::remove(Scene::m_GameObjects.begin(),
-                                                   Scene::m_GameObjects.end(),
-                                                   this),
-                                       Scene::m_GameObjects.end());
+            Scene::m_GameObjects->erase(std::remove(Scene::m_GameObjects->begin(), Scene::m_GameObjects->end(), this), Scene::m_GameObjects->end());
 
-            for (auto &gameObject : Scene::m_GameObjects) {
+            for (auto &gameObject : (*Scene::m_GameObjects)) {
                 if (gameObject->parentID == ID) {
                     gameObject->parentID = "NO_PARENT";
                     gameObject->DeleteGameObject();
@@ -125,7 +125,7 @@ namespace HyperAPI::Experimental {
         void GUI() {
             bool item;
             bool hasChildren = false;
-            for (auto &gameObject : Scene::m_GameObjects) {
+            for (auto &gameObject : (*Scene::m_GameObjects)) {
                 if (gameObject->parentID == ID) {
                     hasChildren = true;
                     // if enabled is false make the text grey
@@ -136,6 +136,7 @@ namespace HyperAPI::Experimental {
                             NODE_ID.c_str(),
                             std::string(std::string(ICON_FA_CUBE) + " " + name)
                                 .c_str());
+
                         ImGui::PopStyleColor();
                     } else {
                         item = ImGui::TreeNode(
@@ -192,7 +193,7 @@ namespace HyperAPI::Experimental {
                 if (const ImGuiPayload *payload =
                         ImGui::AcceptDragDropPayload("game_object")) {
                     if (dirPayloadData != ID) {
-                        for (auto &gameObject : Scene::m_GameObjects) {
+                        for (auto &gameObject : (*Scene::m_GameObjects)) {
                             if (gameObject->ID == dirPayloadData) {
                                 gameObject->parentID = ID;
                                 break;
@@ -212,7 +213,7 @@ namespace HyperAPI::Experimental {
 
             if (item && hasChildren) {
 
-                for (auto &gameObject : Scene::m_GameObjects) {
+                for (auto &gameObject : (*Scene::m_GameObjects)) {
                     if (gameObject->parentID == ID) {
                         gameObject->GUI();
                     }

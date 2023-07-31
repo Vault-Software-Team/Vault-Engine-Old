@@ -63,6 +63,23 @@ elif [ "$PLATFORM" == "linux_install" ]; then
     cp -r mono /opt/vault-engine/mono
     cp -r cs-assembly /opt/vault-engine/cs-assembly
     cp -r cxx /opt/vault-engine/cxx
+elif [ "$PLATFORM" == "cxx" ]; then
+    if [ -d cxx ]; then
+        rm -r cxx
+        mkdir cxx
+    else
+        mkdir cxx
+    fi
+    cp -r src cxx
+    cp -r lib cxx/linux
+    make win_cxx
+    cp -r win_libs cxx/windows
+    mv libhost.a cxx/windows/libvault_api.a
+    mv cxx/src cxx/headers
+    cd cxx
+    find . -name "*.cpp" -type f -delete
+    find . -name "*.c" -type f -delete
+    find . -name "*.cxx" -type f -delete
 else 
     if [ -d dist/linux ]; then
         rm -r dist/linux

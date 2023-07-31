@@ -21,7 +21,7 @@ namespace HyperAPI::Experimental {
 
         SpriteAnimation() {
             currMesh = nullptr;
-            for (auto &gameObject : Scene::m_GameObjects) {
+            for (auto &gameObject : (*Scene::m_GameObjects)) {
                 if (gameObject->ID == ID) {
                     std::map<std::string, int> m_CurrFrames;
                     Scene::currFrames[gameObject->ID] = m_CurrFrames;
@@ -33,7 +33,7 @@ namespace HyperAPI::Experimental {
         }
 
         void DeleteComp() override {
-            for (auto &gameObject : Scene::m_GameObjects) {
+            for (auto &gameObject : (*Scene::m_GameObjects)) {
                 if (gameObject->ID == ID) {
                     Scene::currFrames.erase(gameObject->ID);
                     Scene::currDelays.erase(gameObject->ID);

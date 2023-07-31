@@ -1,11 +1,12 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "../Components/Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
 #include "../Renderer/OldStuff.hpp"
 
 namespace HyperAPI::Experimental {
-    class Random {
+    class DLL_API Random {
     public:
         static void Init() { s_Engine.seed(std::random_device()()); }
 

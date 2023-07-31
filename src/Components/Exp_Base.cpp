@@ -33,13 +33,13 @@
 #include <sstream>
 
 namespace HyperAPI::Experimental {
-    nlohmann::json stateScene = nlohmann::json::array();
-    bool bulletPhysicsStarted = false;
+    DLL_API nlohmann::json stateScene = nlohmann::json::array();
+    DLL_API bool bulletPhysicsStarted = false;
 
     void StartWorld(b2ContactListener *listener) {
         InitScripts();
 
-        for (auto &gameObject : Scene::m_GameObjects) {
+        for (auto &gameObject : *Scene::m_GameObjects) {
             if (gameObject->prefab)
                 continue;
 
@@ -71,7 +71,7 @@ namespace HyperAPI::Experimental {
 
         for (auto e : view) {
             GameObject *gameObject;
-            for (auto &go : Scene::m_GameObjects) {
+            for (auto &go : *Scene::m_GameObjects) {
                 if (go->entity == e) {
                     gameObject = go;
                     break;
@@ -130,7 +130,7 @@ namespace HyperAPI::Experimental {
 
         for (auto e : view3D) {
             GameObject *gameObject;
-            for (auto &go : Scene::m_GameObjects) {
+            for (auto &go : *Scene::m_GameObjects) {
                 if (go->entity == e) {
                     gameObject = go;
                     break;
@@ -157,7 +157,7 @@ namespace HyperAPI::Experimental {
 
         for (auto e : jointView) {
             GameObject *gameObject;
-            for (auto &go : Scene::m_GameObjects) {
+            for (auto &go : *Scene::m_GameObjects) {
                 if (go->entity == e) {
                     gameObject = go;
                     break;
@@ -172,7 +172,7 @@ namespace HyperAPI::Experimental {
 
         for (auto e : pathfindingView) {
             GameObject *gameObject;
-            for (auto &go : Scene::m_GameObjects) {
+            for (auto &go : *Scene::m_GameObjects) {
                 if (go->entity == e) {
                     gameObject = go;
                     break;
@@ -193,7 +193,7 @@ namespace HyperAPI::Experimental {
         Mix_HaltChannel(-1);
         Mix_HaltMusic();
 
-        for (auto &gameObject : Scene::m_GameObjects) {
+        for (auto &gameObject : *Scene::m_GameObjects) {
             if (gameObject->HasComponent<FixedJoint3D>()) {
                 auto &fixedJoint = gameObject->GetComponent<FixedJoint3D>();
                 fixedJoint.DeleteJoint();
@@ -686,7 +686,7 @@ namespace HyperAPI::Experimental {
             }
 
             std::cout << texture_name.C_Str() << "\n";
-            Scene::m_GameObjects.push_back(gameObject);
+            Scene::m_GameObjects->push_back(gameObject);
 
             return gameObject;
         } else {
@@ -706,7 +706,7 @@ namespace HyperAPI::Experimental {
             meshRenderer.m_Model = true;
             meshRenderer.meshType = std::string(path);
             meshRenderer.mesh_index = index;
-            Scene::m_GameObjects.push_back(gameObject);
+            Scene::m_GameObjects->push_back(gameObject);
 
             return gameObject;
         }

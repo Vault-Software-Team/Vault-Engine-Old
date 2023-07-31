@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <fstream>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
@@ -8,7 +9,7 @@
 #include "../Renderer/Shapes.hpp"
 
 namespace HyperAPI::Experimental {
-    struct MeshRenderer : public BaseComponent {
+    struct DLL_API MeshRenderer : public BaseComponent {
         Mesh *m_Mesh;
         bool m_Model = false;
 
@@ -17,7 +18,7 @@ namespace HyperAPI::Experimental {
         std::string meshType = "";
         int mesh_index = -1;
 
-        struct CustomShader {
+        struct DLL_API CustomShader {
             bool usingCustomShader = false;
             Shader *shader = nullptr;
         } customShader;

@@ -1,8 +1,9 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 
 namespace HyperAPI {
-    class Skybox {
+    class DLL_API Skybox {
     public:
         uint32_t skyboxVAO, skyboxVBO, skyboxEBO;
         Shader *shader;

@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
@@ -7,7 +8,7 @@
 #include "MeshRenderer.hpp"
 
 namespace HyperAPI::Experimental {
-    struct Collider3D : public BaseComponent {
+    struct DLL_API Collider3D : public BaseComponent {
         btCollisionShape *shape = nullptr;
         virtual void CreateShape() {}
 
@@ -18,7 +19,7 @@ namespace HyperAPI::Experimental {
         explicit operator const btCollisionShape *() const { return shape; }
     };
 
-    struct BoxCollider3D : Collider3D {
+    struct DLL_API BoxCollider3D : Collider3D {
         Vector3 size = Vector3(1, 1, 1);
 
         void CreateShape() override {
@@ -40,7 +41,7 @@ namespace HyperAPI::Experimental {
         }
     };
 
-    struct MeshCollider3D : Collider3D {
+    struct DLL_API MeshCollider3D : Collider3D {
         Vector3 size = Vector3(1, 1, 1);
 
         void CreateShape(MeshRenderer *renderer) {

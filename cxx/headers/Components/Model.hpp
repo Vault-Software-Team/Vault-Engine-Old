@@ -58,24 +58,38 @@ namespace HyperAPI::Experimental {
         void processNode(aiNode *node, const aiScene *scene);
 
         GameObject *processMesh(aiMesh *mesh, const aiScene *scene,
-                                const std::string &name);
+                                const std::string &name, int index);
+
+        struct MeshMaterial {
+            Mesh *mesh;
+            std::string mat_path;
+        };
+        std::vector<MeshMaterial *> mesh_mats;
+        MeshMaterial *mesh_processMesh(aiMesh *mesh, const aiScene *scene,
+                                       const std::string &name);
 
         std::vector<Texture *> textures_loaded;
 
         std::vector<Texture *> loadMaterialTextures(aiMaterial *mat,
                                                     aiTextureType type,
                                                     std::string typeName);
-
+        bool no_gm;
+        int mesh_index;
         Model(char *path, bool AddTexture = false,
-              Vector4 color = Vector4(1, 1, 1, 1)) {
+              Vector4 color = Vector4(1, 1, 1, 1), bool m_nogm = false, int mesh_index = 0) {
             this->path = std::string(path);
             Color = color;
 
-            mainGameObject = new GameObject();
-            mainGameObject->name = "Model";
-            mainGameObject->ID = uuid::generate_uuid_v4();
-            mainGameObject->AddComponent<Transform>();
-            Scene::m_GameObjects.push_back(mainGameObject);
+            no_gm = m_nogm;
+            this->mesh_index = mesh_index;
+
+            if (!m_nogm) {
+                mainGameObject = new GameObject();
+                mainGameObject->name = "Model";
+                mainGameObject->ID = uuid::generate_uuid_v4();
+                mainGameObject->AddComponent<Transform>();
+                Scene::m_GameObjects->push_back(mainGameObject);
+            }
 
             texturesEnabled = AddTexture;
 

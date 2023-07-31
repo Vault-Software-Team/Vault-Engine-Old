@@ -21,8 +21,8 @@ namespace HyperAPI {
         class ComponentEntity;
         class GameObject;
 
-    }
-}
+    } // namespace Experimental
+} // namespace HyperAPI
 
 struct GLFWwindow;
 namespace ScriptEngine {
@@ -111,7 +111,7 @@ namespace ScriptEngine {
         int FindGameObjectsByName(lua_State *L);
         int FindGameObjectsByTag(lua_State *L);
         int InstantiatePrefab(lua_State *L);
-        int InstantiateTransformPrefab(lua_State *L);
+        int InstantiatePrefabWithProperties(lua_State *L);
         int PlayAudio(lua_State *L);
         int PlayMusic(lua_State *L);
         int StopAudio(lua_State *L);
@@ -120,9 +120,9 @@ namespace ScriptEngine {
         int ToDegrees(lua_State *L);
         int ToRadians(lua_State *L);
         int LerpFloat(lua_State *L);
-    }
+    } // namespace Functions
 
-    lua_State* m_Init();
+    lua_State *m_Init();
 
     struct m_FieldValue {
         char value[1024];
@@ -143,7 +143,7 @@ namespace ScriptEngine {
         double lastUpdateTime = 0;
         double lastFrameTime = 0;
         float timerStart = 0.00606060606; // 0.0166666667;
-        float timer = 0.00606060606; //0.0166666667;
+        float timer = 0.00606060606;      // 0.0166666667;
 
         std::string pathToScript;
         m_LuaScript(const std::string &pathToScript);
@@ -173,4 +173,4 @@ namespace ScriptEngine {
         void Update();
     };
 
-}
+} // namespace ScriptEngine

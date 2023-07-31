@@ -80,17 +80,39 @@ bool EndsWith(std::string const &value, std::string const &ending) {
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
 
-std::vector<HyperAPI::PointLight *> PointLights;
-std::vector<HyperAPI::SpotLight *> SpotLights;
-std::vector<HyperAPI::Light2D *> Lights2D;
-std::vector<HyperAPI::DirectionalLight *> DirLights;
-std::vector<HyperAPI::Mesh *> hyperEntities;
+DLL_API std::vector<HyperAPI::PointLight *> PointLights;
+DLL_API std::vector<HyperAPI::SpotLight *> SpotLights;
+DLL_API std::vector<HyperAPI::Light2D *> Lights2D;
+DLL_API std::vector<HyperAPI::DirectionalLight *> DirLights;
+DLL_API std::vector<HyperAPI::Mesh *> hyperEntities;
 
-float rectangleVert[] = {
-    1, -1, 1, 0, -1, -1, 0, 0, -1, 1, 0, 1,
+DLL_API float rectangleVert[] = {
+    1,
+    -1,
+    1,
+    0,
+    -1,
+    -1,
+    0,
+    0,
+    -1,
+    1,
+    0,
+    1,
 
-    1, 1,  1, 1, 1,  -1, 1, 0, -1, 1, 0, 1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    -1,
+    1,
+    0,
+    -1,
+    1,
+    0,
+    1,
 };
 
-float rotation = 0.0f;
-double previousTime = glfwGetTime();
+DLL_API float rotation = 0.0f;
+DLL_API double previousTime = glfwGetTime();

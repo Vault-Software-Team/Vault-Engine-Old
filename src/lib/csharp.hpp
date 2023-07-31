@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include "mono/utils/mono-forward.h"
 #include <functional>
 #include <mono/jit/jit.h>
@@ -11,14 +12,14 @@
 #include <unordered_map>
 
 namespace CsharpVariables {
-    extern MonoDomain *rootDomain;
-    extern MonoDomain *appDomain;
-    extern MonoAssembly *coreAssembly;
-    extern bool compiledAssembly;
-    extern std::string oldCwd;
+    DLL_API extern MonoDomain *rootDomain;
+    DLL_API extern MonoDomain *appDomain;
+    DLL_API extern MonoAssembly *coreAssembly;
+    DLL_API extern bool compiledAssembly;
+    DLL_API extern std::string oldCwd;
 } // namespace CsharpVariables
 
-class MonoScriptClass {
+class DLL_API MonoScriptClass {
 private:
     MonoClass *klass;
     MonoObject *instance;
@@ -36,9 +37,9 @@ public:
 
 namespace HyperAPI {
     namespace CsharpScriptEngine {
-        extern std::unordered_map<std::string, MonoScriptClass *> entityClasses;
-        extern std::unordered_map<std::string, MonoScriptClass *> instances;
-        extern std::string nextId;
+        DLL_API extern std::unordered_map<std::string, MonoScriptClass *> entityClasses;
+        DLL_API extern std::unordered_map<std::string, MonoScriptClass *> instances;
+        DLL_API extern std::string nextId;
 
         namespace Functions {
             void NativeLog(MonoString *text);

@@ -30,7 +30,7 @@ namespace HyperAPI::Experimental {
         Rigidbody3D() = default;
 
         void Init() override {
-            for (auto &m_Object : Scene::m_GameObjects) {
+            for (auto &m_Object : (*Scene::m_GameObjects)) {
                 if (m_Object->ID == ID) {
                     gameObject = m_Object;
                     transform = &gameObject->GetComponent<Transform>();
@@ -178,7 +178,7 @@ namespace HyperAPI::Experimental {
         FixedJoint3D() = default;
 
         void Init() override {
-            for (auto &m_Object : Scene::m_GameObjects) {
+            for (auto &m_Object : (*Scene::m_GameObjects)) {
                 if (m_Object->ID == ID) {
                     gameObject = m_Object;
                     transform = &gameObject->GetComponent<Transform>();
@@ -223,7 +223,7 @@ namespace HyperAPI::Experimental {
                 if (ImGui::BeginDragDropTarget()) {
                     if (const ImGuiPayload *payload =
                             ImGui::AcceptDragDropPayload("game_object")) {
-                        for (auto &m_Object : Scene::m_GameObjects) {
+                        for (auto &m_Object : (*Scene::m_GameObjects)) {
                             if (m_Object->ID ==
                                     *((std::string *)payload->Data) &&
                                 m_Object->HasComponent<Rigidbody3D>()) {

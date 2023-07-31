@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 // THIS IS STILL IN WORKS AND **DOES NOT WORK**
 #include <libs.hpp>
 #include "Exp_Base.hpp"
@@ -9,9 +10,9 @@
 #include "../Renderer/Shapes.hpp"
 
 namespace HyperAPI::Experimental {
-    struct PathfindingAI : public BaseComponent {
+    struct DLL_API PathfindingAI : public BaseComponent {
     private:
-        struct Node {
+        struct DLL_API Node {
             bool obstacle = false;
             bool visited = false;
             float globalGoal;

@@ -1,9 +1,10 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Texture.hpp"
 
 namespace HyperAPI {
-    class Material {
+    class DLL_API Material {
     public:
         std::vector<Texture> textures;
 

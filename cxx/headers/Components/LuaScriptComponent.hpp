@@ -12,7 +12,7 @@ namespace HyperAPI::Experimental {
         std::vector<ScriptEngine::m_LuaScript> scripts;
 
         m_LuaScriptComponent() {
-            for (auto &gameObject : Scene::m_GameObjects) {
+            for (auto &gameObject : (*Scene::m_GameObjects)) {
                 if (gameObject->ID == ID) {
                     m_GameObject = gameObject;
                     std::cout << "FOUND" << std::endl;

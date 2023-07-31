@@ -1,9 +1,10 @@
 #pragma once
+#include <dllapi.hpp>
 #include <cstdint>
 #include <libs.hpp>
 
 namespace VulkanUI {
-    class Canvas {
+    class DLL_API Canvas {
     private:
         int32_t width;
         int32_t heigth;

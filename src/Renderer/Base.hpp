@@ -1,9 +1,10 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 
 #include "Renderer.hpp"
 
-extern float rectangleVert[];
+DLL_API extern float rectangleVert[];
 
 void NewFrame(uint32_t FBO, int width, int height);
 
@@ -24,8 +25,8 @@ void SC_EndFrame(HyperAPI::Renderer &renderer, uint32_t FBO, uint32_t rectVAO,
 
 bool EndsWith(std::string const &value, std::string const &ending);
 
-extern std::vector<HyperAPI::PointLight *> PointLights;
-extern std::vector<HyperAPI::Light2D *> Lights2D;
-extern std::vector<HyperAPI::SpotLight *> SpotLights;
-extern std::vector<HyperAPI::DirectionalLight *> DirLights;
-extern std::vector<HyperAPI::Mesh *> hyperEntities;
+DLL_API extern std::vector<HyperAPI::PointLight *> PointLights;
+DLL_API extern std::vector<HyperAPI::Light2D *> Lights2D;
+DLL_API extern std::vector<HyperAPI::SpotLight *> SpotLights;
+DLL_API extern std::vector<HyperAPI::DirectionalLight *> DirLights;
+DLL_API extern std::vector<HyperAPI::Mesh *> hyperEntities;

@@ -3,7 +3,7 @@
 #include <exception>
 
 namespace HyperAPI {
-    std::vector<m_Texture *> textures;
+    DLL_API std::vector<m_Texture *> textures;
 
     m_Texture::~m_Texture() {
         HYPER_LOG("Texture " + texPath + " unloaded");

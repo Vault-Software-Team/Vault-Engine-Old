@@ -1,8 +1,9 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 
 namespace HyperAPI {
-    class Shader {
+    class DLL_API Shader {
     public:
         uint32_t ID;
         std::string path;

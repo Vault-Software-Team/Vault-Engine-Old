@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include "../Renderer/Base.hpp"
 #include <cstdint>
 #include <libs.hpp>
@@ -12,7 +13,7 @@
 
 namespace HyperAPI {
     // fuck batch rendering literally omg i hate DOING THIS THIS IS FUCKING TORTURE WHY CANT SHIT BE EASY
-    class BatchLayer {
+    class DLL_API BatchLayer {
     public:
         std::vector<Vertex> m_vertices;
         std::vector<uint32_t> m_indices;

@@ -1,6 +1,7 @@
 # SET THESE VARIABLES TO MATCH YOUR ENVIRONMENT
 MINGW_COMPILER = x86_64-w64-mingw32-g++
 GNU_LINUX_COMPILER = g++
+
 # SET THESE VARIABLES TO MATCH YOUR ENVIRONMENT
 
 exec = bin/build.out
@@ -62,7 +63,7 @@ MONO_LIB=-I"$(cwd)/mono/include/mono-2.0" -D_REENTRANT  -L"$(cwd)/mono/lib" -lmo
 bullet_physics_linker_flags = -lBulletDynamics -lBulletCollision -lLinearMath
 bullet_physics_linker_flags_windows = -lBulletDynamics.dll -lBulletCollision.dll -lLinearMath.dll
 rusty = -lrusty_vault
-flags = -fno-stack-protector -std=c++20 -lstdc++fs -g -L"./lib" -lluajit-5.1 -I"./src/vendor" -I"./src/vendor/bullet/bullet" -I"./src/vendor/NoesisGUI" -I"./src/lib" -lmono-2.0 -lbacktrace -lfreetype -lGL -lbox2d -lGLU -lglfw -lm -lSDL2_mixer -lassimp -ltinyxml2 -lXrandr -lXi -lbox2d -lX11 -lXxf86vm -lpthread -ldl -lsndfile -lopenal -lXinerama -lzlib -lXcursor -lGLEW -ldiscord-rpc $(bullet_physics_linker_flags) -rdynamic
+flags = -w -fno-stack-protector -std=c++20 -lstdc++fs -g -L"./lib" -lluajit-5.1 -I"./src/vendor" -I"./src/vendor/bullet/bullet" -I"./src/vendor/NoesisGUI" -I"./src/lib" -lmono-2.0 -lbacktrace -lfreetype -lGL -lbox2d -lGLU -lglfw -lm -lSDL2_mixer -lassimp -ltinyxml2 -lXrandr -lXi -lbox2d -lX11 -lXxf86vm -lpthread -ldl -lsndfile -lopenal -lXinerama -lzlib -lXcursor -lGLEW -ldiscord-rpc $(bullet_physics_linker_flags) -rdynamic
 win_flags = -lstdc++fs -L"./win_libs" -I"./src/lib" -I"./src/vendor/NoesisGUI" -I"./src/vendor" -I"./src/vendor/bullet/bullet" -lsndfile.dll -lopenal.dll -lmono-2.0.dll -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype.dll -lSDL2.dll -lSDL2_mixer.dll -ltinyxml2 -ldiscord-rpc.dll $(bullet_physics_linker_flags_windows)
 
 all:
@@ -129,7 +130,7 @@ debugging:
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
 
 one_file:
-	$(GNU_LINUX_COMPILER) -c src/Application/Application.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c src/main.cpp src/Components/CppScriptManager.cpp $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
@@ -223,10 +224,10 @@ $(exec): $(objects)
 	g++ -c -I"./src/vendor" $(flags) $< -o $@
 
 win:
-	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(sources) $(win_flags)
-	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags)
+	$(MINGW_COMPILER) -c -w -static -g -Og -std=c++20 -Wa,-mbig-obj $(sources) $(win_flags)
 	mv *.o bin_win
-	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) $(win_flags)
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) -Wl,--export-all-symbols,--out-implib,libhost.a $(win_flags)
+	mv libhost.a cxx/windows/libvault_api.a
 
 win_rusty:
 	$(MINGW_COMPILER) -c -g -Og -static-libstdc++ -std=c++20 -Wa,-mbig-obj $(rusty_cpp) -static $(win_flags)
@@ -234,18 +235,17 @@ win_rusty:
 	ar rcs ./win_libs/libcppvault.a bin_win/*.o
 
 win_cxx:
-	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/scene.cpp $(win_flags)
-	mv bin_win/main.o ./main.o
-	ar rcs cxx/windows/libvault_api.a bin_win/*.o
-	mv main.o bin_win/main.o
+	# $(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/scene.cpp $(win_flags)
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) -Wl,--export-all-symbols,--out-implib,libhost.a $(win_flags)
 
 win_assemble:
-	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/Components/ParticleSystem.cpp $(win_flags) -lrusty_vault
-	mv *.o bin_win
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/Components/Exp_Base.cpp src/Components/CppScriptManager.cpp $(win_flags) -lrusty_vault
+	# mv *.o bin_win
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags) -lrusty_vault
 	mv *.o bin_win
 
-	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) $(win_flags) -lrusty_vault
+	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) -Wl,--export-all-symbols,--out-implib,libhost.a $(win_flags) -lrusty_vault
+	mv libhost.a cxx/windows/libvault_api.a
 
 win_components:
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(components) $(win_flags)

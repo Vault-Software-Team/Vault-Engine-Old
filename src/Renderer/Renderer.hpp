@@ -1,9 +1,10 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Structures.hpp"
 
 namespace HyperAPI {
-    class Renderer {
+    class DLL_API Renderer {
     public:
         bool wireframe;
         uint32_t postProcessingTexture;

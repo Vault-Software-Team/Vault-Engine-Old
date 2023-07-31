@@ -1,9 +1,10 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 
 namespace HyperAPI {
     namespace CppScripting {
-        class Script {
+        class DLL_API Script {
         public:
             std::string objId;
             std::string name;
@@ -16,22 +17,21 @@ namespace HyperAPI {
         };
 
 #ifdef _WIN32
-        struct SharedObject {
+        struct DLL_API SharedObject {
             std::string name;
             std::string typeName;
             HINSTANCE handle;
             Script *(*create)();
-            std::vector<Log> *(*get_logs)();
         };
 #else
-        struct SharedObject {
+        struct DLL_API SharedObject {
             std::string name;
             std::string typeName;
             void *handle;
             Script *(*create)();
         };
 #endif
-        extern std::vector<SharedObject> cpp_scripts;
+        DLL_API extern std::vector<SharedObject> cpp_scripts;
 
         void LoadScripts();
         void CompileLinuxScripts();

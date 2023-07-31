@@ -6,7 +6,7 @@
 #include "../../f_GameObject/f_GameObject.hpp"
 
 namespace HyperAPI::CppScripting {
-    std::vector<SharedObject> cpp_scripts;
+    DLL_API std::vector<SharedObject> cpp_scripts;
 
     void LoadScripts() {
 #ifndef _WIN32
@@ -23,6 +23,7 @@ namespace HyperAPI::CppScripting {
                 sharedObj.handle = dlopen(file.c_str(), RTLD_LAZY);
                 sharedObj.create =
                     (Script * (*)()) dlsym(sharedObj.handle, "create_object");
+
                 sharedObj.name = dirEntry.path().filename().string();
                 cpp_scripts.push_back(sharedObj);
 
@@ -50,17 +51,35 @@ namespace HyperAPI::CppScripting {
             if (G_END_WITH(dirEntry.path().string(), ".cpp")) {
                 std::string file = dirEntry.path().string();
                 file = std::regex_replace(file, std::regex("\\.cpp"), ".dll");
+                HYPER_LOG(file);
 
                 if (!fs::exists(file))
                     continue;
+                HYPER_LOG("it exists");
                 SharedObject sharedObj;
 
                 sharedObj.handle = LoadLibrary(file.c_str());
                 sharedObj.create =
                     (Script * (*)()) GetProcAddress(sharedObj.handle, "create_object");
-                sharedObj.get_logs = (std::vector<Log> * (*)()) GetProcAddress(sharedObj.handle, "get_logs");
                 sharedObj.name = dirEntry.path().filename().string();
                 cpp_scripts.push_back(sharedObj);
+
+                auto view = Scene::m_Registry.view<Experimental::CppScriptManager>();
+                for (auto e : view) {
+                    auto *go = f_GameObject::FindGameObjectByEntt(e);
+                    auto &comp = go->GetComponent<Experimental::CppScriptManager>();
+
+                    for (auto *script : comp.addedScripts) {
+                        for (auto scrpt : cpp_scripts) {
+                            if (scrpt.name == script->name) {
+                                if (script)
+                                    delete script;
+                                script = scrpt.create();
+                                script->name = scrpt.name;
+                            }
+                        }
+                    }
+                }
             }
         }
 #endif
@@ -138,6 +157,7 @@ namespace HyperAPI::CppScripting {
                                                                 "-I\"" +
                                       cxx + "/headers/lib\" -I\"" + cxx + "/headers/vendor/NoesisGUI\" -I\"" + cxx + "/headers/vendor\" -I\"" + cxx + "/headers/vendor/bullet/bullet\" -lvault_api -lsndfile.dll -lopenal.dll -lmono-2.0.dll -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype.dll -lSDL2.dll -lSDL2_mixer.dll -ldiscord-rpc  -ltinyxml2 -lBulletDynamics.dll -lBulletCollision.dll -lLinearMath.dll";
 #endif
+                HYPER_LOG(headers);
 
                 system((std::string(config.windowsCompiler) +
                         " -c -static -g -Og -DBUILD_DLL -std=c++20 -Wa,-mbig-obj " + dirEntry.path().string() + " " + headers + " -o " + objFile)

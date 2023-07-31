@@ -1,10 +1,13 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 
 namespace HyperAPI {
-    enum LOG_TYPE { LOG_INFO, LOG_WARNING, LOG_ERROR };
+    enum LOG_TYPE { LOG_INFO,
+                    LOG_WARNING,
+                    LOG_ERROR };
 
-    struct Log {
+    struct DLL_API Log {
         std::string message;
         LOG_TYPE type;
 

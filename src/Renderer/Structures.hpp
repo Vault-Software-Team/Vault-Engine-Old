@@ -1,14 +1,15 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #define MAX_BONE_INFLUENCE 4
 
 namespace HyperAPI {
-    struct BoneInfo {
+    struct DLL_API BoneInfo {
         int id;
         glm::mat4 offset;
     };
 
-    struct Vertex {
+    struct DLL_API Vertex {
         glm::vec3 position;
         glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f);
         glm::vec3 normal = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -20,7 +21,7 @@ namespace HyperAPI {
         float transformIndex = 0;
     };
 
-    struct Vertex_Batch {
+    struct DLL_API Vertex_Batch {
         glm::vec3 position;
         glm::vec3 normal = glm::vec3(0.0f, 0.0f, 0.0f);
         glm::vec2 texUV = glm::vec2(0.0f, 0.0f);
@@ -43,7 +44,7 @@ namespace HyperAPI {
         // glm::mat4 model = glm::mat4(1.0f);
     };
 
-    struct PointLight : public ComponentSystem {
+    struct DLL_API PointLight : public ComponentSystem {
         glm::vec3 lightPos;
         glm::vec3 color;
         float intensity;
@@ -63,7 +64,7 @@ namespace HyperAPI {
         }
     };
 
-    struct SpotLight : public ComponentSystem {
+    struct DLL_API SpotLight : public ComponentSystem {
         glm::vec3 lightPos;
         glm::vec3 color;
         float outerCone;
@@ -88,7 +89,7 @@ namespace HyperAPI {
         }
     };
 
-    struct DirectionalLight : public ComponentSystem {
+    struct DLL_API DirectionalLight : public ComponentSystem {
         glm::vec3 lightPos;
         glm::vec3 color;
         float intensity = 1;
@@ -107,7 +108,7 @@ namespace HyperAPI {
         }
     };
 
-    struct Light2D : public ComponentSystem {
+    struct DLL_API Light2D : public ComponentSystem {
         glm::vec2 lightPos;
         glm::vec3 color;
         float range;
@@ -126,7 +127,7 @@ namespace HyperAPI {
         }
     };
 
-    struct Instanced {
+    struct DLL_API Instanced {
         bool isInstanced = false;
         std::vector<TransformComponent> transforms = {};
         int count = 1;

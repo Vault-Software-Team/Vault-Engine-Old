@@ -1,7 +1,7 @@
 #include "Time.hpp"
 
 namespace HyperAPI {
-    std::string getTime() {
+    DLL_API std::string getTime() {
 
         using namespace std::chrono;
         auto now = system_clock::now();

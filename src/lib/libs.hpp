@@ -112,24 +112,28 @@ namespace fs = std::experimental::filesystem;
 using json = nlohmann::json;
 
 namespace uuid {
-    extern std::random_device rd;
-    extern std::mt19937 gen;
-    extern std::uniform_int_distribution<> dis;
-    extern std::uniform_int_distribution<> dis2;
+    DLL_API extern std::random_device rd;
+    DLL_API extern std::mt19937 gen;
+    DLL_API extern std::uniform_int_distribution<> dis;
+    DLL_API extern std::uniform_int_distribution<> dis2;
 
     std::string generate_uuid_v4();
 } // namespace uuid
 
 namespace HyperAPI {
-    extern std::string cwd;
-    extern std::string dirPayloadData;
-    extern bool isRunning;
-    extern bool isStopped;
-    extern glm::vec3 mousePosWorld, mousePosCamWorld;
-    extern float sceneMouseX, sceneMouseY;
-    extern b2ContactListener *b2_listener;
+    DLL_API extern std::string cwd;
+    DLL_API extern std::string dirPayloadData;
+    DLL_API extern bool isRunning;
+    DLL_API extern bool isStopped;
+    DLL_API extern glm::vec3 mousePosWorld, mousePosCamWorld;
+    DLL_API extern float sceneMouseX, sceneMouseY;
+    DLL_API extern b2ContactListener *b2_listener;
 
-    struct Config {
+#ifdef _WIN32
+    __declspec(dllexport) void test_dll_function();
+#endif
+
+    struct DLL_API Config {
         char name[50];
         std::string mainScene;
         float ambientLight;
@@ -138,20 +142,20 @@ namespace HyperAPI {
         bool fullscreenOnLaunch;
         int width, height;
 
-        struct PostProcessing {
+        struct DLL_API PostProcessing {
             bool enabled;
-            struct Vignette {
+            struct DLL_API Vignette {
                 float intensity;
                 float smoothness;
             } vignette;
 
-            struct Bloom {
+            struct DLL_API Bloom {
                 bool enabled;
                 float intensity;
                 float threshold;
             } bloom;
 
-            struct ChromaticAberration {
+            struct DLL_API ChromaticAberration {
                 float intensity;
             } chromaticAberration;
         } postProcessing;
@@ -159,13 +163,13 @@ namespace HyperAPI {
         char windowsCompiler[500];
     };
 
-    extern Config config;
+    DLL_API extern Config config;
 
-    struct Component {
+    struct DLL_API Component {
         bool IsPubliclyAddable = false;
     };
 
-    class ComponentSystem {
+    class DLL_API ComponentSystem {
     public:
         std::string ID = uuid::generate_uuid_v4();
         std::string name = "GameObject";
@@ -216,22 +220,22 @@ namespace HyperAPI {
         }
     };
 
-    struct KeyPosition {
+    struct DLL_API KeyPosition {
         glm::vec3 position;
         float timeStamp;
     };
 
-    struct KeyRotation {
+    struct DLL_API KeyRotation {
         glm::quat orientation;
         float timeStamp;
     };
 
-    struct KeyScale {
+    struct DLL_API KeyScale {
         glm::vec3 scale;
         float timeStamp;
     };
 
-    struct TransformComponent : public Component {
+    struct DLL_API TransformComponent : public Component {
         glm::mat4 transform = glm::mat4(1.0f);
         glm::vec3 position = glm::vec3(0, 0, 0);
         glm::vec3 rotation = glm::vec3(0, 0, 0);

@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Mesh.hpp"
@@ -6,11 +7,11 @@
 #include "Bloom.hpp"
 
 namespace HyperAPI::Experimental {
-    struct SpriteRenderer : public BaseComponent {
+    struct DLL_API SpriteRenderer : public BaseComponent {
         Mesh *mesh;
         bool noComponent = false;
 
-        struct CustomShader {
+        struct DLL_API CustomShader {
             bool usingCustomShader = false;
             Shader *shader = nullptr;
         } customShader;
@@ -111,7 +112,7 @@ namespace HyperAPI::Experimental {
         }
     };
 
-    struct m_AnimationData {
+    struct DLL_API m_AnimationData {
         char name[499] = "anim_name";
         std::string id = uuid::generate_uuid_v4();
         std::vector<SpriteRenderer> frames;

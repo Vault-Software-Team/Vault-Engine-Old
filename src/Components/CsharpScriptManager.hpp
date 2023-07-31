@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Timestep.hpp"
@@ -9,7 +10,7 @@
 #include "mono/metadata/object.h"
 
 namespace HyperAPI::Experimental {
-    struct CsharpScriptManager : public BaseComponent {
+    struct DLL_API CsharpScriptManager : public BaseComponent {
         std::unordered_map<std::string, std::string> selectedScripts;
         std::unordered_map<std::string, MonoScriptClass *> behaviours;
 

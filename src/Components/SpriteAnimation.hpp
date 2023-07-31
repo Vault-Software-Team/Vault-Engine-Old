@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
@@ -9,19 +10,19 @@
 #include "GameObject.hpp"
 
 namespace HyperAPI::Experimental {
-    struct SpriteAnimation : public BaseComponent {
+    struct DLL_API SpriteAnimation : public BaseComponent {
         Mesh *currMesh;
         std::vector<m_AnimationData> anims;
         char currAnim[499] = "";
 
-        struct CustomShader {
+        struct DLL_API CustomShader {
             bool usingCustomShader = false;
             Shader *shader = nullptr;
         } customShader;
 
         SpriteAnimation() {
             currMesh = nullptr;
-            for (auto &gameObject : Scene::m_GameObjects) {
+            for (auto &gameObject : (*Scene::m_GameObjects)) {
                 if (gameObject->ID == ID) {
                     std::map<std::string, int> m_CurrFrames;
                     Scene::currFrames[gameObject->ID] = m_CurrFrames;
@@ -33,7 +34,7 @@ namespace HyperAPI::Experimental {
         }
 
         void DeleteComp() override {
-            for (auto &gameObject : Scene::m_GameObjects) {
+            for (auto &gameObject : (*Scene::m_GameObjects)) {
                 if (gameObject->ID == ID) {
                     Scene::currFrames.erase(gameObject->ID);
                     Scene::currDelays.erase(gameObject->ID);

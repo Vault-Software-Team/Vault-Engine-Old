@@ -1,10 +1,11 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include <AL/alc.h>
 #include <AL/al.h>
 
 namespace HyperAPI {
-    class SoundSource {
+    class DLL_API SoundSource {
     public:
         SoundSource();
         ~SoundSource();

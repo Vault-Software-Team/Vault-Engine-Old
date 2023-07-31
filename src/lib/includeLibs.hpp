@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include "../vendor/glad/include/glad/glad.h"
 #include "../vendor/GLFW/glfw3.h"
 #include "ImGuizmo/ImGuizmo.h"
@@ -87,7 +88,11 @@ namespace fs = std::experimental::filesystem;
 #define CYAN SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 11)
 #define GREY SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 8)
 #define RESET SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7)
-#define HYPER_LOG(x) RED; std::cout << "[VAULT] - "; RESET; std::cout << x << std::endl;
+#define HYPER_LOG(x)           \
+    RED;                       \
+    std::cout << "[VAULT] - "; \
+    RESET;                     \
+    std::cout << x << std::endl;
 #else
 #define RED "\033[0;31m"
 #define GREEN "\033[0;32m"
@@ -103,10 +108,10 @@ namespace fs = std::experimental::filesystem;
 using json = nlohmann::json;
 
 namespace uuid {
-    extern std::random_device rd;
-    extern std::mt19937 gen;
-    extern std::uniform_int_distribution<> dis;
-    extern std::uniform_int_distribution<> dis2;
+    DLL_API extern std::random_device rd;
+    DLL_API extern std::mt19937 gen;
+    DLL_API extern std::uniform_int_distribution<> dis;
+    DLL_API extern std::uniform_int_distribution<> dis2;
 
     std::string generate_uuid_v4();
-}
+} // namespace uuid
