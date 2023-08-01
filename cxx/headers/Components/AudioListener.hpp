@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <cstdint>
 #include <libs.hpp>
 #include <memory>
@@ -12,7 +13,7 @@
 #include "scene.hpp"
 
 namespace HyperAPI::Experimental {
-    struct AudioListener : BaseComponent {
+    struct DLL_API AudioListener : BaseComponent {
         std::unique_ptr<SoundDevice> device{new SoundDevice};
         AudioListener() = default;
 

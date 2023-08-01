@@ -60,7 +60,9 @@ namespace Hyper {
                               (void *)(2 * sizeof(float)));
 
         uint32_t postProcessingFBO;
+        std::cout << "PFB: " << postProcessingFBO << std::endl;
         glGenFramebuffers(1, &postProcessingFBO);
+        std::cout << "PFB: " << postProcessingFBO << std::endl;
         glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
         glCheckError();
 

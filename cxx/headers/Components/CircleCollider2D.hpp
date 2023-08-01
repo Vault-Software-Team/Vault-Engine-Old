@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
@@ -7,7 +8,7 @@
 #include "imgui/imgui.h"
 
 namespace HyperAPI::Experimental {
-    struct CircleCollider2D : public BaseComponent {
+    struct DLL_API CircleCollider2D : public BaseComponent {
         Vector2 offset = Vector2(0, 0);
 
         float radius = 1.0f;

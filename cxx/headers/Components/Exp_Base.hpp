@@ -1,10 +1,11 @@
 #pragma once
+#include <dllapi.hpp>
 #include <cstddef>
 #include <exception>
 #include <libs.hpp>
 
 namespace HyperAPI::Experimental {
-    class ComponentEntity {
+    class DLL_API ComponentEntity {
     public:
         std::string parentID = "NO_PARENT";
         std::string name = "GameObject";
@@ -43,12 +44,8 @@ namespace HyperAPI::Experimental {
 
         template <typename T>
         bool HasComponent() {
-            try {
-                if (Scene::m_Registry.valid(entity)) {
-                    return Scene::m_Registry.has<T>(entity);
-                }
-            } catch (std::exception &e) {
-                HYPER_LOG("Caught Exception in HasComponent: " << e.what() << ", Returning false");
+            if (Scene::m_Registry.valid(entity)) {
+                return Scene::m_Registry.has<T>(entity);
             }
 
             return false;
@@ -60,7 +57,7 @@ namespace HyperAPI::Experimental {
         }
     };
 
-    struct BaseComponent {
+    struct DLL_API BaseComponent {
         entt::entity entity = entt::null;
         std::string ID = "";
         bool hasGUI = true;
@@ -70,13 +67,13 @@ namespace HyperAPI::Experimental {
         virtual void DeleteComp() {}
     };
 
-    void DrawVec3Control(const std::string &label, Vector3 &values,
-                         float resetValue = 0.0f, float columnWidth = 100.0f);
-    void DrawVec2Control(const std::string &label, Vector2 &values,
-                         float resetValue = 0.0f, float columnWidth = 100.0f);
+    void DLL_API DrawVec3Control(const std::string &label, Vector3 &values,
+                                 float resetValue = 0.0f, float columnWidth = 100.0f);
+    void DLL_API DrawVec2Control(const std::string &label, Vector2 &values,
+                                 float resetValue = 0.0f, float columnWidth = 100.0f);
 
-    extern bool bulletPhysicsStarted;
-    extern nlohmann::json stateScene;
-    void StartWorld(b2ContactListener *listener);
-    void DeleteWorld();
+    DLL_API extern bool bulletPhysicsStarted;
+    DLL_API extern nlohmann::json stateScene;
+    void DLL_API StartWorld(b2ContactListener *listener);
+    void DLL_API DeleteWorld();
 } // namespace HyperAPI::Experimental

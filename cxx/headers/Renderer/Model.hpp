@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Material.hpp"
 #include "Texture.hpp"
@@ -7,7 +8,7 @@
 #include "AssimpGLMHelpers.hpp"
 
 namespace HyperAPI {
-    class Model : public ComponentSystem {
+    class DLL_API Model : public ComponentSystem {
     private:
         int currSlot = 0;
 

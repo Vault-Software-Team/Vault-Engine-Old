@@ -1,10 +1,12 @@
 #pragma once
+#include <dllapi.hpp>
 #include <chrono>
 #include <ctime>
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <libs.hpp>
 
 namespace HyperAPI {
-    std::string getTime();
+    DLL_API std::string getTime();
 }

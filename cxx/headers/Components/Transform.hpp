@@ -1,9 +1,10 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 
 namespace HyperAPI::Experimental {
-    struct Transform : public BaseComponent {
+    struct DLL_API Transform : public BaseComponent {
         Transform *parentTransform = nullptr;
         glm::mat4 transform = glm::mat4(1.0f);
         glm::vec3 position = glm::vec3(0, 0, 0);

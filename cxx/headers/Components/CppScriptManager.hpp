@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Timestep.hpp"
@@ -6,7 +7,7 @@
 #include "scene.hpp"
 
 namespace HyperAPI::Experimental {
-    struct CppScriptManager : public BaseComponent {
+    struct DLL_API CppScriptManager : public BaseComponent {
         std::vector<CppScripting::Script *> addedScripts;
         bool showScripts;
         std::string id = uuid::generate_uuid_v4();

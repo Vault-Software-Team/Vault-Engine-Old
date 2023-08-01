@@ -13,9 +13,6 @@ namespace HyperAPI::Experimental {
 
         for (auto *script : addedScripts) {
             script->objId = ID;
-            std::cout << "G: " << &f_GameObject::FindGameObjectByID(ID)->GetComponent<Transform>() << std::endl;
-            std::cout << "R: " << &Scene::m_Registry << std::endl;
-            std::cout << "E: " << (uint64_t)f_GameObject::FindGameObjectByID(ID)->entity << std::endl;
             script->Start();
         }
     }

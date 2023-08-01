@@ -7,11 +7,104 @@
 
 namespace HyperAPI::CppScripting {
     DLL_API std::vector<SharedObject> cpp_scripts;
+    DLL_API std::vector<filewatch::FileWatch<std::string> *> FileWatches;
+
+    void CompileScripts_Linux(fs::path dirEntry) {
+        std::string file = dirEntry.string();
+        file = std::regex_replace(file, std::regex("\\.cpp"), ".so");
+
+        std::string objFile = dirEntry.string();
+        objFile =
+            std::regex_replace(objFile, std::regex("\\.cpp"), ".o");
+
+#ifdef _WIN32
+        std::string cxx = CsharpVariables::oldCwd + "\\cxx";
+        std::string headers =
+            "-I\"" + cxx + "\\headers\\vendor\" -I\"" + cxx + "\\headers\\vendor\\bullet\\bullet\" "
+                                                              "-I\"" +
+            cxx + "\\headers\\vendor\\NoesisGUI\" -I\"" + cxx + "\\headers\\lib\"";
+#else
+        std::string cxx = CsharpVariables::oldCwd + "/cxx";
+        std::string headers =
+            "-I\"" + cxx + "/headers/vendor\" -I\"" + cxx + "/headers/vendor/bullet/bullet\" "
+                                                            "-I\"" +
+            cxx + "/headers/vendor/NoesisGUI\" -I\"" + cxx + "/headers/lib\"";
+#endif
+        std::cout << "what\n";
+        std::cout << headers << std::endl;
+        system((std::string(config.linuxCompiler) + " -c -fPIC " +
+                dirEntry.string() + " " + headers +
+                " -rdynamic -o " + objFile)
+                   .c_str());
+
+        system((std::string(config.linuxCompiler) + " -shared " +
+                objFile + " -o " + file)
+                   .c_str());
+
+#ifndef _WIN32
+        for (auto script : cpp_scripts) {
+            dlclose(script.handle);
+        }
+        cpp_scripts.clear();
+        LoadScripts();
+#endif
+
+        HYPER_LOG("C++ Scripts have been compiled (Linux Compiler)")
+        LoadScripts();
+    }
+
+    void CompileScripts_Windows(fs::path dirEntry) {
+        std::string file = dirEntry.string();
+        file = std::regex_replace(file, std::regex("\\.cpp"), ".dll");
+
+        std::string objFile = dirEntry.string();
+        objFile =
+            std::regex_replace(objFile, std::regex("\\.cpp"), ".o");
+
+#ifdef _WIN32
+        std::string cxx = CsharpVariables::oldCwd + "\\cxx";
+        std::string headers = "-lstdc++fs -L\"" + cxx + "\\windows\" "
+                                                        "-I\"" +
+                              cxx + "\\headers\\lib\" -I\"" + cxx + "\\headers\\vendor\\NoesisGUI\" -I\"" + cxx + "\\headers\\vendor\" -I\"" + cxx + "\\headers\\vendor\\bullet\\bullet\" -lvault_api -lsndfile.dll -lopenal.dll -lmono-2.0.dll -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype.dll -lSDL2.dll -lSDL2_mixer.dll -ldiscord-rpc  -ltinyxml2 -lBulletDynamics.dll -lBulletCollision.dll -lLinearMath.dll";
+#else
+        std::string cxx = CsharpVariables::oldCwd + "/cxx";
+        std::string headers = "-lstdc++fs -L\"" + cxx + "/windows\" "
+                                                        "-I\"" +
+                              cxx + "/headers/lib\" -I\"" + cxx + "/headers/vendor/NoesisGUI\" -I\"" + cxx + "/headers/vendor\" -I\"" + cxx + "/headers/vendor/bullet/bullet\" -lvault_api -lsndfile.dll -lopenal.dll -lmono-2.0.dll -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype.dll -lSDL2.dll -lSDL2_mixer.dll -ldiscord-rpc  -ltinyxml2 -lBulletDynamics.dll -lBulletCollision.dll -lLinearMath.dll";
+#endif
+        HYPER_LOG(headers);
+
+        system((std::string(config.windowsCompiler) +
+                " -c -static -g -Og -DBUILD_DLL -std=c++20 -Wa,-mbig-obj " + dirEntry.string() + " " + headers + " -o " + objFile)
+                   .c_str());
+
+        system((std::string(config.windowsCompiler) + " -shared -o " + file + " " + objFile + " " + headers).c_str());
+
+#ifdef _WIN32
+        for (auto script : cpp_scripts) {
+            FreeLibrary(script.handle);
+        }
+        cpp_scripts.clear();
+        LoadScripts();
+#endif
+
+        HYPER_LOG("C++ Scripts have been compiled (Windows Compiler)")
+    }
 
     void LoadScripts() {
 #ifndef _WIN32
         auto iter = fs::recursive_directory_iterator("assets");
         for (auto &dirEntry : iter) {
+            if (G_END_WITH(dirEntry.path().string(), ".cpp") || G_END_WITH(dirEntry.path().string(), ".hpp")) {
+                HYPER_LOG("registered file watch at " << dirEntry.path().string())
+                filewatch::FileWatch<std::string> watch((std::string("./") + std::string("assets/scripts/Player/player.cpp")), [&](const std::string &filename, const filewatch::Event change_type) {
+                    HYPER_LOG("file watch fired at " << dirEntry.path().string())
+                    CompileScripts_Linux(dirEntry);
+                    CompileScripts_Windows(dirEntry);
+                });
+                FileWatches.push_back(&watch);
+            }
+
             if (G_END_WITH(dirEntry.path().string(), ".cpp")) {
                 std::string file = dirEntry.path().string();
                 file = std::regex_replace(file, std::regex("\\.cpp"), ".so");
@@ -109,7 +202,6 @@ namespace HyperAPI::CppScripting {
                                                                     "-I\"" +
                     cxx + "/headers/vendor/NoesisGUI\" -I\"" + cxx + "/headers/lib\"";
 #endif
-                std::cout << "what\n";
                 std::cout << headers << std::endl;
                 system((std::string(config.linuxCompiler) + " -c -fPIC " +
                         dirEntry.path().string() + " " + headers +
@@ -120,62 +212,62 @@ namespace HyperAPI::CppScripting {
                         objFile + " -o " + file)
                            .c_str());
 
+#ifndef _WIN32
                 for (auto script : cpp_scripts) {
-#ifdef _WIN32
-                    FreeLibrary(script.handle);
-#else
-                    dlclose(script.handle);
-#endif
+                    if (script.handle)
+                        dlclose(script.handle);
                 }
                 cpp_scripts.clear();
+                LoadScripts();
+#endif
 
                 HYPER_LOG("C++ Scripts have been compiled (Linux Compiler)")
-                LoadScripts();
             }
         }
     }
 
     void CompileWindowsScripts() {
         auto iter = fs::recursive_directory_iterator("assets");
-        for (auto &dirEntry : iter) {
-            if (G_END_WITH(dirEntry.path().string(), ".cpp")) {
-                std::string file = dirEntry.path().string();
-                file = std::regex_replace(file, std::regex("\\.cpp"), ".dll");
+        std::thread *compilerThread = new std::thread([&] {
+            for (auto &dirEntry : iter) {
+                if (G_END_WITH(dirEntry.path().string(), ".cpp")) {
+                    std::string file = dirEntry.path().string();
+                    file = std::regex_replace(file, std::regex("\\.cpp"), ".dll");
 
-                std::string objFile = dirEntry.path().string();
-                objFile =
-                    std::regex_replace(objFile, std::regex("\\.cpp"), ".o");
+                    std::string objFile = dirEntry.path().string();
+                    objFile =
+                        std::regex_replace(objFile, std::regex("\\.cpp"), ".o");
 
 #ifdef _WIN32
-                std::string cxx = CsharpVariables::oldCwd + "\\cxx";
-                std::string headers = "-lstdc++fs -L\"" + cxx + "\\windows\" "
-                                                                "-I\"" +
-                                      cxx + "\\headers\\lib\" -I\"" + cxx + "\\headers\\vendor\\NoesisGUI\" -I\"" + cxx + "\\headers\\vendor\" -I\"" + cxx + "\\headers\\vendor\\bullet\\bullet\" -lvault_api -lsndfile.dll -lopenal.dll -lmono-2.0.dll -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype.dll -lSDL2.dll -lSDL2_mixer.dll -ldiscord-rpc  -ltinyxml2 -lBulletDynamics.dll -lBulletCollision.dll -lLinearMath.dll";
+                    std::string cxx = CsharpVariables::oldCwd + "\\cxx";
+                    std::string headers = "-lstdc++fs -L\"" + cxx + "\\windows\" "
+                                                                    "-I\"" +
+                                          cxx + "\\headers\\lib\" -I\"" + cxx + "\\headers\\vendor\\NoesisGUI\" -I\"" + cxx + "\\headers\\vendor\" -I\"" + cxx + "\\headers\\vendor\\bullet\\bullet\" -lvault_api -lsndfile.dll -lopenal.dll -lmono-2.0.dll -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype.dll -lSDL2.dll -lSDL2_mixer.dll -ldiscord-rpc  -ltinyxml2 -lBulletDynamics.dll -lBulletCollision.dll -lLinearMath.dll";
 #else
-                std::string cxx = CsharpVariables::oldCwd + "/cxx";
-                std::string headers = "-lstdc++fs -L\"" + cxx + "/windows\" "
-                                                                "-I\"" +
-                                      cxx + "/headers/lib\" -I\"" + cxx + "/headers/vendor/NoesisGUI\" -I\"" + cxx + "/headers/vendor\" -I\"" + cxx + "/headers/vendor/bullet/bullet\" -lvault_api -lsndfile.dll -lopenal.dll -lmono-2.0.dll -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype.dll -lSDL2.dll -lSDL2_mixer.dll -ldiscord-rpc  -ltinyxml2 -lBulletDynamics.dll -lBulletCollision.dll -lLinearMath.dll";
+                    std::string cxx = CsharpVariables::oldCwd + "/cxx";
+                    std::string headers = "-lstdc++fs -L\"" + cxx + "/windows\" "
+                                                                    "-I\"" +
+                                          cxx + "/headers/lib\" -I\"" + cxx + "/headers/vendor/NoesisGUI\" -I\"" + cxx + "/headers/vendor\" -I\"" + cxx + "/headers/vendor/bullet/bullet\" -lvault_api -lsndfile.dll -lopenal.dll -lmono-2.0.dll -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype.dll -lSDL2.dll -lSDL2_mixer.dll -ldiscord-rpc  -ltinyxml2 -lBulletDynamics.dll -lBulletCollision.dll -lLinearMath.dll";
 #endif
-                HYPER_LOG(headers);
+                    HYPER_LOG(headers);
 
-                system((std::string(config.windowsCompiler) +
-                        " -c -static -g -Og -DBUILD_DLL -std=c++20 -Wa,-mbig-obj " + dirEntry.path().string() + " " + headers + " -o " + objFile)
-                           .c_str());
+                    system((std::string(config.windowsCompiler) +
+                            " -c -static -g -Og -DBUILD_DLL -std=c++20 -Wa,-mbig-obj " + dirEntry.path().string() + " " + headers + " -o " + objFile)
+                               .c_str());
 
-                system((std::string(config.windowsCompiler) + " -shared -o " + file + " " + objFile + " " + headers).c_str());
+                    system((std::string(config.windowsCompiler) + " -shared -o " + file + " " + objFile + " " + headers).c_str());
 
-                for (auto script : cpp_scripts) {
 #ifdef _WIN32
-                    FreeLibrary(script.handle);
-#else
-                    dlclose(script.handle);
+                    for (auto script : cpp_scripts) {
+                        FreeLibrary(script.handle);
+                        dlclose(script.handle);
+                    }
+                    LoadScripts();
 #endif
+
+                    HYPER_LOG("C++ Scripts have been compiled (Windows Compiler)")
                 }
-
-                HYPER_LOG("C++ Scripts have been compiled (Windows Compiler)")
-                LoadScripts();
             }
-        }
+        });
     }
 } // namespace HyperAPI::CppScripting

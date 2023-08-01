@@ -1,4 +1,5 @@
 #include "BulletPhysicsWorld.hpp"
+#include "Timestep.hpp"
 
 namespace HyperAPI::BulletPhysicsWorld {
     DLL_API btDiscreteDynamicsWorld *dynamicsWorld;
@@ -31,7 +32,7 @@ namespace HyperAPI::BulletPhysicsWorld {
     }
 
     void UpdatePhysics() {
-        dynamicsWorld->stepSimulation(1.f / 60.f, 10);
+        dynamicsWorld->stepSimulation(Timestep::deltaTime, 10);
     }
 
     void CollisionCallback(

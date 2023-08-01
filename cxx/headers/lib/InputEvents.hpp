@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include "../vendor/glad/include/glad/glad.h"
 #include "../vendor/GLFW/glfw3.h"
 #include "../vendor/glm/glm.hpp"
@@ -158,10 +159,10 @@
 
 namespace HyperAPI {
     namespace Input {
-        extern GLFWwindow *window;
-        extern glm::vec3 winPos;
-        extern glm::vec3 winSize;
-        extern glm::vec3 mouseRay;
+        DLL_API extern GLFWwindow *window;
+        DLL_API extern glm::vec3 winPos;
+        DLL_API extern glm::vec3 winSize;
+        DLL_API extern glm::vec3 mouseRay;
 
         void set_ray(glm::vec2 &pos, glm::vec3 &scale, glm::vec2 &renderer);
         bool IsKeyPressed(int key);
@@ -179,7 +180,7 @@ namespace HyperAPI {
 
         // controller input
         namespace Controller {
-            extern int currentController;
+            DLL_API extern int currentController;
 
             void SetCurrentController(int controller);
 

@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <cstdint>
 #include <libs.hpp>
 #include <memory>
@@ -13,11 +14,11 @@
 #include "Transform.hpp"
 
 namespace HyperAPI::Experimental {
-    struct Audio3D : BaseComponent {
+    struct DLL_API Audio3D : BaseComponent {
         uint32_t audio;
         std::unique_ptr<SoundSource> m_src = nullptr;
 
-        struct AudioFields {
+        struct DLL_API AudioFields {
             float pitch = 1;
             float volume = 1;
             float max_distance = 15;

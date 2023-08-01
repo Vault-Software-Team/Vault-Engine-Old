@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
@@ -10,7 +11,7 @@
 #include "scene.hpp"
 
 namespace HyperAPI::Experimental {
-    struct CameraComponent : public BaseComponent {
+    struct DLL_API CameraComponent : public BaseComponent {
         Camera *camera = nullptr;
         GameObject *m_GameObject = nullptr;
         bool depthCamera = false;

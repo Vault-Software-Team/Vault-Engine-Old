@@ -32,7 +32,10 @@ namespace HyperAPI {
         };
 #endif
         DLL_API extern std::vector<SharedObject> cpp_scripts;
+        DLL_API extern std::vector<filewatch::FileWatch<std::string> *> FileWatches;
 
+        void CompileScripts_Windows(fs::path dirEntry);
+        void CompileScripts_Linux(fs::path dirEntry);
         void LoadScripts();
         void CompileLinuxScripts();
         void CompileWindowsScripts();

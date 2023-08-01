@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
@@ -7,7 +8,7 @@
 #include "GameObject.hpp"
 
 namespace HyperAPI::Experimental {
-    struct m_LuaScriptComponent : public BaseComponent {
+    struct DLL_API m_LuaScriptComponent : public BaseComponent {
         GameObject *m_GameObject;
         std::vector<ScriptEngine::m_LuaScript> scripts;
 

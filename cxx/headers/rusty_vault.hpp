@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #ifdef RUSTY_BUILD
 extern "C" {
 int cpp_play_audio(char *audio_file);

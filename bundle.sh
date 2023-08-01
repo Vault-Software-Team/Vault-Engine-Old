@@ -71,10 +71,10 @@ elif [ "$PLATFORM" == "cxx" ]; then
         mkdir cxx
     fi
     cp -r src cxx
-    cp -r lib cxx/linux
-    make win_cxx
-    cp -r win_libs cxx/windows
-    mv libhost.a cxx/windows/libvault_api.a
+    # cp -r lib cxx/linux
+    # make win_cxx
+    # cp -r win_libs cxx/windows
+    # mv libhost.a cxx/windows/libvault_api.a
     mv cxx/src cxx/headers
     cd cxx
     find . -name "*.cpp" -type f -delete

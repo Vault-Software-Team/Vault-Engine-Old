@@ -1,8 +1,9 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 
 namespace HyperAPI {
-    struct m_Texture {
+    struct DLL_API m_Texture {
         uint32_t ID;
         int width, height, nrChannels;
         unsigned char *data;
@@ -15,8 +16,8 @@ namespace HyperAPI {
         ~m_Texture();
     };
 
-    extern std::vector<m_Texture *> textures;
-    class Texture {
+    DLL_API extern std::vector<m_Texture *> textures;
+    class DLL_API Texture {
     public:
         std::string texPath;
         m_Texture *tex = nullptr;

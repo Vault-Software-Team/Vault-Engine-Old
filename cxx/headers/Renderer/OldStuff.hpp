@@ -1,10 +1,11 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Mesh.hpp"
 #include "Model.hpp"
 
 namespace HyperAPI {
-    class Sprite {
+    class DLL_API Sprite {
     public:
         Mesh *m_Mesh;
 
@@ -29,7 +30,7 @@ namespace HyperAPI {
                   glm::mat4 trans = glm::mat4(1));
     };
 
-    class Spritesheet {
+    class DLL_API Spritesheet {
     public:
         Mesh *m_Mesh;
 
@@ -54,14 +55,14 @@ namespace HyperAPI {
         void Draw(Shader &shader, Camera &camera);
     };
 
-    struct mg_Animation {
+    struct DLL_API mg_Animation {
         std::vector<Spritesheet> frames;
         int currentFrame = 0;
         float delay = 0.1;
         std::string keyframe;
     };
 
-    class SpritesheetAnimation {
+    class DLL_API SpritesheetAnimation {
     public:
         std::vector<mg_Animation *> animations;
         mg_Animation *currentAnimation = nullptr;
@@ -108,7 +109,7 @@ namespace HyperAPI {
         }
     };
 
-    class Graphic {
+    class DLL_API Graphic {
     public:
         Mesh *m_Mesh;
 

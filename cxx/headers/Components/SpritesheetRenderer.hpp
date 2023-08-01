@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Mesh.hpp"
@@ -7,7 +8,7 @@
 #include "../Renderer/OldStuff.hpp"
 
 namespace HyperAPI::Experimental {
-    struct SpritesheetRenderer : public BaseComponent {
+    struct DLL_API SpritesheetRenderer : public BaseComponent {
         Mesh *mesh;
         Spritesheet *sp = nullptr;
         Vector2 spritesheetSize = Vector2(512, 512);
@@ -15,7 +16,7 @@ namespace HyperAPI::Experimental {
         Vector2 spriteOffset = Vector2(0, 0);
         Material material{Vector4(1, 1, 1, 1)};
 
-        struct CustomShader {
+        struct DLL_API CustomShader {
             bool usingCustomShader = false;
             Shader *shader = nullptr;
         } customShader;

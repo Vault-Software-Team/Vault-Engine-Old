@@ -1,8 +1,9 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 
 namespace HyperAPI {
-    class Camera : public ComponentSystem {
+    class DLL_API Camera : public ComponentSystem {
     public:
         float controllerSensitivity = 1;
         float cursorWinW, cursorWinH;

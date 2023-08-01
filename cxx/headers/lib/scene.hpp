@@ -1,5 +1,7 @@
 #pragma once
+#include <dllapi.hpp>
 #pragma once
+#include <dllapi.hpp>
 #include "../vendor/glad/include/glad/glad.h"
 #include "../vendor/GLFW/glfw3.h"
 #include <fstream>
@@ -39,26 +41,26 @@
 bool G_END_WITH(std::string const &value, std::string const &ending);
 
 namespace HyperAPI {
-    class Mesh;
-    class Model;
-    class Camera;
-    class Texture;
-    class Shader;
-    class Texture;
-    struct Log;
+    class DLL_API Mesh;
+    class DLL_API Model;
+    class DLL_API Camera;
+    class DLL_API Texture;
+    class DLL_API Shader;
+    class DLL_API Texture;
+    struct DLL_API Log;
 
-    struct PointLight;
-    struct SpotLight;
-    struct DirectionalLight;
-    struct Light2D;
+    struct DLL_API PointLight;
+    struct DLL_API SpotLight;
+    struct DLL_API DirectionalLight;
+    struct DLL_API Light2D;
     namespace Experimental {
-        class GameObject;
-        struct m_AnimationData;
+        class DLL_API GameObject;
+        struct DLL_API m_AnimationData;
 
     } // namespace Experimental
 
     namespace Scene {
-        extern std::map<std::string, Texture *> Textures;
+        DLL_API extern std::map<std::string, Texture *> Textures;
 
         enum DragType {
             DRAG_DIFFUSE,
@@ -78,13 +80,13 @@ namespace HyperAPI {
             UI_SCENE
         };
 
-        extern bool LoadingScene;
-        extern std::vector<Experimental::GameObject *> *m_GameObjects;
-        extern std::vector<Experimental::GameObject *> m_UIObjects;
-        extern std::map<std::string, bool> layers;
-        extern std::map<std::string, std::map<std::string, int>> currFrames;
-        extern std::map<std::string, std::map<std::string, float>> currDelays;
-        extern std::string currentScenePath;
+        DLL_API extern bool LoadingScene;
+        DLL_API extern std::vector<Experimental::GameObject *> *m_GameObjects;
+        DLL_API extern std::vector<Experimental::GameObject *> m_UIObjects;
+        DLL_API extern std::map<std::string, bool> layers;
+        DLL_API extern std::map<std::string, std::map<std::string, int>> currFrames;
+        DLL_API extern std::map<std::string, std::map<std::string, float>> currDelays;
+        DLL_API extern std::string currentScenePath;
         void SaveComponents(nlohmann::json &JSON, Experimental::GameObject *gameObject, const int i, int &componentOffset);
 
         void LoadScene(const std::string &scenePath, nlohmann::json &StateScene);
@@ -97,36 +99,36 @@ namespace HyperAPI {
 
         bool DropTargetMat(DragType type, Mesh *currEntity, Texture *otherData = nullptr);
 
-        extern Experimental::GameObject *m_Object;
-        extern char name[499];
-        extern char tag[499];
-        extern char layer[32];
-        extern entt::registry m_Registry;
+        DLL_API extern Experimental::GameObject *m_Object;
+        DLL_API extern char name[499];
+        DLL_API extern char tag[499];
+        DLL_API extern char layer[32];
+        DLL_API extern entt::registry m_Registry;
 
-        extern std::vector<Mesh *> entities;
-        extern std::vector<Model> models;
-        extern Camera *mainCamera;
-        extern Camera *scene_camera;
-        extern bool stop_scripts;
-        extern std::vector<Camera *> cameras;
-        extern std::vector<Log> logs;
+        DLL_API extern std::vector<Mesh *> entities;
+        DLL_API extern std::vector<Model> models;
+        DLL_API extern Camera *mainCamera;
+        DLL_API extern Camera *scene_camera;
+        DLL_API extern bool stop_scripts;
+        DLL_API extern std::vector<Camera *> cameras;
+        DLL_API extern std::vector<Log> logs;
 #ifdef _WIN32
 #ifdef BUILD_DLL
-        extern "C" __declspec(dllimport) std::vector<Log> *GetLogs();
+        DLL_API extern "C" __declspec(dllimport) std::vector<Log> *GetLogs();
 #else
-        extern "C" __declspec(dllexport) std::vector<Log> *GetLogs();
+        DLL_API extern "C" __declspec(dllexport) std::vector<Log> *GetLogs();
 #endif
 #endif
-        extern glm::mat4 projection;
+        DLL_API extern glm::mat4 projection;
 
-        extern std::vector<entt::entity> backup_entities;
+        DLL_API extern std::vector<entt::entity> backup_entities;
 
-        extern std::vector<HyperAPI::PointLight *> PointLights;
-        extern std::vector<HyperAPI::Light2D *> Lights2D;
-        extern std::vector<HyperAPI::SpotLight *> SpotLights;
-        extern std::vector<HyperAPI::DirectionalLight *> DirLights;
-        extern std::vector<HyperAPI::Mesh *> hyperEntities;
+        DLL_API extern std::vector<HyperAPI::PointLight *> PointLights;
+        DLL_API extern std::vector<HyperAPI::Light2D *> Lights2D;
+        DLL_API extern std::vector<HyperAPI::SpotLight *> SpotLights;
+        DLL_API extern std::vector<HyperAPI::DirectionalLight *> DirLights;
+        DLL_API extern std::vector<HyperAPI::Mesh *> hyperEntities;
 
-        extern b2World *world;
+        DLL_API extern b2World *world;
     } // namespace Scene
 } // namespace HyperAPI

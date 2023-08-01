@@ -1,11 +1,12 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
 #include "../Renderer/OldStuff.hpp"
 
 namespace HyperAPI::Experimental {
-    struct Rigidbody2D : public BaseComponent {
+    struct DLL_API Rigidbody2D : public BaseComponent {
         b2BodyType type = b2_staticBody;
         bool fixedRotation = false;
         float gravityScale = 1.0f;

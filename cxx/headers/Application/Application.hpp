@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "../Renderer/Shader.hpp"
 #include "../Renderer/Texture.hpp"
@@ -6,7 +7,7 @@
 #include "../Renderer/Timestep.hpp"
 
 namespace Hyper {
-    class Application {
+    class DLL_API Application {
     public:
         bool isGuzimoInUse = false;
         bool mouseClicked = false;
@@ -68,7 +69,7 @@ namespace Hyper {
                 [](HyperAPI::Shader &m_shadowMapShader) {});
     };
 
-    class MousePicker {
+    class DLL_API MousePicker {
     public:
         Vector3 currentRay;
         glm::mat4 projectionMatrix;
@@ -94,5 +95,5 @@ namespace Hyper {
         Vector3 toWorldCoords(Vector4 eyeCoords);
     };
 
-    float LerpFloat(float a, float b, float t);
+    DLL_API float LerpFloat(float a, float b, float t);
 } // namespace Hyper

@@ -1,12 +1,12 @@
 #pragma once
+#include <dllapi.hpp>
 #include "scene.hpp"
-namespace HyperAPI
-{
+namespace HyperAPI {
     namespace Experimental {
-        class GameObject;
+        class DLL_API GameObject;
     }
 
-    class StaticScript {
+    class DLL_API StaticScript {
     public:
         Experimental::GameObject *gameObject;
         StaticScript() {}
@@ -21,14 +21,14 @@ namespace HyperAPI
         virtual void OnMouseEnter() {}
         virtual void OnMouseExit() {}
     };
-}
+} // namespace HyperAPI
 
 /*
-Add your class definitions here,
+Add your class DLL_API definitions here,
 DO NOT Forget to rebuild the api code!!!
 
 for example:
-class MyScript : public StaticScript
+class DLL_API MyScript : public StaticScript
 {
 public:
     // variables

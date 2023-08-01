@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
@@ -10,7 +11,7 @@
 #include "../Renderer/DecomposeTransform.hpp"
 
 namespace HyperAPI::Experimental {
-    struct Rigidbody3D : public BaseComponent {
+    struct DLL_API Rigidbody3D : public BaseComponent {
         float mass = 1;
         float restitution = 0.0f;
         float friction = 0.5f;
@@ -166,7 +167,7 @@ namespace HyperAPI::Experimental {
         }
     };
 
-    struct FixedJoint3D : public BaseComponent {
+    struct DLL_API FixedJoint3D : public BaseComponent {
         GameObject *gameObject = nullptr;
         GameObject *connectedGameObject = nullptr;
         Transform *transform;

@@ -1,10 +1,11 @@
 #pragma once
+#include <dllapi.hpp>
 #include "Widget.hpp"
 #include <cstdint>
 #include <libs.hpp>
 
 namespace VulkanUI {
-    class Button : public Widget {
+    class DLL_API Button : public Widget {
     private:
         std::string label;
         int32_t width;

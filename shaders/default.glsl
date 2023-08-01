@@ -24,6 +24,9 @@ uniform mat4 transforms[MAX_TRANSFORMS];
 
 uniform float time;
 
+// Shadow Mapping
+uniform mat4 lightProjection;
+
 // out DATA {
 //     vec2 texCoords;
 //     vec3 Color;
@@ -105,7 +108,6 @@ void main() {
     // Normal = mat3(transpose(inverse(model))) * aNormal;
     Normal = mat3(transpose(inverse(model))) * aNormal;
 
-    fragPosLight = lightSpaceMatrix * vec4(currentPosition, 1.0);
 
     vec3 viewVector = normalize(worldPosition.xyz - cameraPosition);
     reflectedVector = reflect(viewVector, normalize(Normal));
@@ -119,10 +121,13 @@ void main() {
     vec3 B = cross(N, T);
 
     m_TBN = mat3(T, B, N);
+
+    fragPosLight = lightProjection * vec4(currentPosition, 1.0);
 }
 
 #shader fragment
 #version 330 core
+
 
 layout(location = 0) out vec4 FragColor;
 layout(location = 1) out vec4 BloomColor;
@@ -142,8 +147,8 @@ in vec3 Color;
 in vec3 Normal;
 in vec3 currentPosition;
 in vec3 reflectedVector;
-in vec4 fragPosLight;
 in mat4 projection;
+in vec4 fragPosLight;
 // out mat4 model;
 
 struct PointLight {
@@ -198,6 +203,7 @@ uniform int hasHeightMap;
 
 //global textures
 uniform sampler2D shadowMap;
+uniform sampler2D shadow_map_buffer;
 
 vec4 reflectedColor = texture(cubeMap, reflectedVector);
 float specularTexture = texture(texture_specular0, texCoords).r;
@@ -336,10 +342,37 @@ vec4 directionalLight(DirectionalLight light) {
     }
     specular = specular * _smoothness;
 
+    float shadow = 0.0f;
+    vec3 lightCoords = fragPosLight.xyz / fragPosLight.w;
+    if(lightCoords.z <= 1.0f) {
+        lightCoords = (lightCoords + 1.0f) / 2.0f;
+
+        float closestDepth = texture(shadow_map_buffer, lightCoords.xy).r;
+        float currentDepth = lightCoords.z;
+        float bias = max(0.025f * (1.0f - dot(normal, lightDir)), 0.0005f);
+
+        int sampleRadius = 2;
+        vec2 pixelSize  = 1.0 / textureSize(shadow_map_buffer, 0);
+        for(int y = -sampleRadius; y <= sampleRadius; y++) {
+            for(int x = -sampleRadius; x <= sampleRadius; x++) {
+                float closestDepth = texture(shadow_map_buffer, lightCoords.xy + vec2(x,y) * pixelSize).r;
+                if(currentDepth > closestDepth + bias)
+                    shadow += 1.0f;
+            }
+        }
+
+        shadow /= pow((sampleRadius * 2 + 1), 2);
+    }
+
     if(isTex == 1) {
-        return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * vec4(light.color, 1) * (diffuse) + specularTexture * (((specular) * vec4(light.color, 1)) * light.intensity)) + texture(texture_emission0, UVs).r;
+        return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * vec4(light.color, 1) * (diffuse * (1.0f - shadow)) + specularTexture * (((specular) * vec4(light.color, 1)) * light.intensity)) + texture(texture_emission0, UVs).r;
     } else {
-        return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * (diffuse) + vec4(1,1,1,1)  * (((specular) * vec4(light.color, 1)) * light.intensity));
+        if(baseColor.r == 0) {
+            vec4 tex = texture(shadow_map_buffer, UVs);
+            return vec4(tex.r,tex.r,tex.r, 1);
+        }
+        // return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * (diffuse) + vec4(1,1,1,1)  * (((specular) * vec4(light.color, 1)) * light.intensity));
+        return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * (diffuse * (1.0f - shadow)) + vec4(1,1,1,1)  * (((specular) * vec4(light.color, 1)) * light.intensity));
     }
 }
 

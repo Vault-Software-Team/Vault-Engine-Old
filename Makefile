@@ -130,7 +130,7 @@ debugging:
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
 
 one_file:
-	$(GNU_LINUX_COMPILER) -c src/main.cpp src/Components/CppScriptManager.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c src/main.cpp src/Components/Exp_Base.cpp src/Components/CppScriptManager.cpp src/Scripting/CXX/CppScripting.cpp $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
@@ -235,7 +235,6 @@ win_rusty:
 	ar rcs ./win_libs/libcppvault.a bin_win/*.o
 
 win_cxx:
-	# $(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/scene.cpp $(win_flags)
 	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) -Wl,--export-all-symbols,--out-implib,libhost.a $(win_flags)
 
 win_assemble:

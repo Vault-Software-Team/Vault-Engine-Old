@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
@@ -9,12 +10,12 @@
 #include "GameObject.hpp"
 
 namespace HyperAPI::Experimental {
-    struct SpriteAnimation : public BaseComponent {
+    struct DLL_API SpriteAnimation : public BaseComponent {
         Mesh *currMesh;
         std::vector<m_AnimationData> anims;
         char currAnim[499] = "";
 
-        struct CustomShader {
+        struct DLL_API CustomShader {
             bool usingCustomShader = false;
             Shader *shader = nullptr;
         } customShader;

@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <fstream>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
@@ -8,7 +9,7 @@
 #include "../Renderer/Shapes.hpp"
 
 namespace HyperAPI::Experimental {
-    struct Particle {
+    struct DLL_API Particle {
         glm::vec2 position, velocity;
         glm::vec4 color;
         float life;
@@ -17,7 +18,7 @@ namespace HyperAPI::Experimental {
             : position(0.0f), velocity(0.0f), color(1.0f), life(0.0f) {}
     };
 
-    struct ParticleEmitter : public BaseComponent {
+    struct DLL_API ParticleEmitter : public BaseComponent {
         Texture *sprite = nullptr;
 
         ParticleEmitter() = default;

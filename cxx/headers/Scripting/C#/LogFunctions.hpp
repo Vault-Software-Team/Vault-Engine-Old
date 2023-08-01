@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <api.hpp>
 #include "mono/metadata/appdomain.h"
 #include "mono/metadata/assembly.h"

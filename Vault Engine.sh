@@ -6,5 +6,6 @@ clear
 # valgrind --leak-check=yes --log-file=valgrind.rpt ./build.out
 # MANGOHUD_CONFIG="cpu_temp,gpu_temp,core_load,engine_version,ram,vram" mangohud --dlsym ./bin/build.out /home/koki1019/Desktop/Projects/Polyjam_Game
 # ./bin/build.out /home/koki1019/Desktop/Projects/Polyjam_Game
-./bin/build.out "/home/koki1019/.vault_projects/Just a game"
+gdb --args ./bin/build.out "/home/koki1019/.vault_projects/Just a game"
+# ./bin/build_proj.out
 # ./bin/build.out /home/koki1019/Desktop/Projects/A_A_JotnarEngine

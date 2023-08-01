@@ -1,4 +1,5 @@
 #pragma once
+#include <dllapi.hpp>
 #include <libs.hpp>
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
@@ -10,7 +11,7 @@
 #include "scene.hpp"
 
 namespace HyperAPI::Experimental {
-    class GameObject : public ComponentEntity {
+    class DLL_API GameObject : public ComponentEntity {
     public:
         bool enabled = true;
         bool schedule = false;
