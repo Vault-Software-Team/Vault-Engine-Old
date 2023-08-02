@@ -1,0 +1,655 @@
+[
+	{
+		"ID": "5f92ea4e-65ed-49d6-b8ab-4bb538f5467f",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": -0.13960984349250793, "y": 0.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 9.853999137878418, "y": 9.853999137878418, "z": 9.853999137878418 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\materials\\brick_wall\\brick_wall.material",
+				"mesh": { "custom": false, "mesh": "Plane", "mesh_index": -1 },
+				"type": "MeshRenderer"
+			},
+			{
+				"bloomColor": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"bloom_threshold": 0.4399999976158142,
+				"dynamic_bloom": true,
+				"type": "Bloom"
+			}
+		],
+		"layer": "Default",
+		"name": "Floor",
+		"parentID": "4389570b-6358-41de-8693-f059bb38ad17",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "a4b615ce-5a14-49ed-9f15-f203a04c3542",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": -0.13960984349250793, "y": 2.440000057220459, "z": -2.5036003589630127 },
+				"rotation": { "x": 1.5707963705062866, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 9.853999137878418, "y": 0.15125545859336853, "z": 9.853997230529785 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\materials\\brick_wall\\brick_wall.material",
+				"mesh": { "custom": false, "mesh": "Plane", "mesh_index": -1 },
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Wall",
+		"parentID": "4389570b-6358-41de-8693-f059bb38ad17",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "d8890aca-f3dd-4aad-a9f4-8d461771f195",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": -2.5812344551086426, "y": 2.440000057220459, "z": -0.026627153158187866 },
+				"rotation": { "x": 1.5707963705062866, "y": 1.5707963705062866, "z": 0.0 },
+				"scale": { "x": 9.853998184204102, "y": 0.3201305866241455, "z": 9.853998184204102 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\materials\\brick_wall\\brick_wall.material",
+				"mesh": { "custom": false, "mesh": "Plane", "mesh_index": -1 },
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Wall",
+		"parentID": "4389570b-6358-41de-8693-f059bb38ad17",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "a65c2f3e-1981-4b62-9894-d5ee30a49e60",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 2.2997617721557617, "y": 2.440000057220459, "z": -0.031644269824028015 },
+				"rotation": { "x": 1.5707963705062866, "y": -1.5707963705062866, "z": 0.0 },
+				"scale": { "x": 9.853998184204102, "y": 0.25212469696998596, "z": 9.853998184204102 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\materials\\brick_wall\\brick_wall.material",
+				"mesh": { "custom": false, "mesh": "Plane", "mesh_index": -1 },
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Wall",
+		"parentID": "4389570b-6358-41de-8693-f059bb38ad17",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "74bcf941-2e7d-401d-b9f5-1282cc87977c",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": -0.10822829604148865, "y": -0.015937991440296173, "z": -0.1970774233341217 },
+				"rotation": { "x": 0.0, "y": -0.30997416377067566, "z": 0.0 },
+				"scale": { "x": 0.49000000953674316, "y": 0.49000000953674316, "z": 0.49000000953674316 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\models\\dingus\\textures\\body.material",
+				"mesh": { "custom": true, "mesh": "assets\\models\\dingus\\scene.gltf", "mesh_index": 0 },
+				"type": "MeshRenderer"
+			},
+			{
+				"script_fields": { "assets\\new_script.lua": {} },
+				"scripts": ["assets\\new_script.lua"],
+				"type": "LuaScriptComponent"
+			}
+		],
+		"layer": "Default",
+		"name": "Dingus",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "aaf95577-70f3-42b6-9e31-953e2cea9752",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 2.0, "y": 2.0, "z": 2.0 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\models\\dingus\\textures\\whiskers.material",
+				"mesh": { "custom": true, "mesh": "assets\\models\\dingus\\scene.gltf", "mesh_index": 1 },
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "dingus_whiskers_0",
+		"parentID": "74bcf941-2e7d-401d-b9f5-1282cc87977c",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "b0cb3817-7ebe-45ae-88a5-03e6a0dd700c",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": -1.3494117259979248, "y": 0.9027164578437805, "z": -2.4001049995422363 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{
+				"color": { "b": 1.0, "g": 1.0, "r": 1.0 },
+				"font": "\\home\\koki1019\\.vault_projects\\NPC\\assets\\fonts\\Ldfcomicsans-jj7l.ttf",
+				"scale": 0.009999999776482582,
+				"text": "DINGUS: THE SEQUEL",
+				"type": "Text3D",
+				"y_offset": 0.019999999552965164
+			},
+			{
+				"bloomColor": { "x": 0.6330645084381104, "y": 0.2661290168762207, "z": 1.0 },
+				"bloom_threshold": 0.0,
+				"dynamic_bloom": false,
+				"type": "Bloom"
+			}
+		],
+		"layer": "Default",
+		"name": "Text",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "46d04298-171d-43a1-8a51-fea51ea51503",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.800000011920929, "y": 1.600000023841858, "z": 3.4000000953674316 },
+				"rotation": { "x": -0.27576202154159546, "y": -0.34033921360969543, "z": -1.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{
+				"depthCamera": false,
+				"far": 100.0,
+				"fov": 45.0,
+				"layers": ["Default"],
+				"mainCamera": true,
+				"mode2D": false,
+				"near": 0.10000000149011612,
+				"type": "CameraComponent"
+			}
+		],
+		"layer": "Default",
+		"name": "Camera",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "b66e15b6-d7bb-4d20-88b0-f95650b0b0b8",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 2.8846957683563232, "y": 0.0001354320702375844, "z": -2.648909091949463 },
+				"rotation": { "x": 1.5712971687316895, "y": -0.20617860555648804, "z": -3.141592264175415 },
+				"scale": { "x": 1.2589725255966187, "y": 1.2589718103408813, "z": 1.2589718103408813 },
+				"type": "Transform"
+			}
+		],
+		"layer": "Default",
+		"name": "Table",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "af36cbaa-fae6-49f8-b53e-b3328a9aacad",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\models\\table\\mat2.material",
+				"mesh": { "custom": true, "mesh": "assets\\models\\table\\STOL_1.blend", "mesh_index": 0 },
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "CUNurbsPath.001",
+		"parentID": "b66e15b6-d7bb-4d20-88b0-f95650b0b0b8",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "b3917a1b-e986-460f-bc09-9388cbd50525",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\models\\table\\mat2.material",
+				"mesh": { "custom": true, "mesh": "assets\\models\\table\\STOL_1.blend", "mesh_index": 1 },
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "CUNurbsPath.000",
+		"parentID": "b66e15b6-d7bb-4d20-88b0-f95650b0b0b8",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "563e1b75-6329-4b1b-88ff-63fed0e52374",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\models\\table\\mat3.material",
+				"mesh": { "custom": true, "mesh": "assets\\models\\table\\STOL_1.blend", "mesh_index": 2 },
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Cylinder",
+		"parentID": "b66e15b6-d7bb-4d20-88b0-f95650b0b0b8",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "27e3a70a-2427-48db-a0d8-b48418bcbd7a",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\models\\table\\mat1.material",
+				"mesh": { "custom": true, "mesh": "assets\\models\\table\\STOL_1.blend", "mesh_index": 3 },
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "CUNurbsPath.000",
+		"parentID": "b66e15b6-d7bb-4d20-88b0-f95650b0b0b8",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "fd1bae73-5666-4819-968e-b5b073439b64",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 2.4968349933624268, "y": 0.9048753976821899, "z": -3.1836721897125244 },
+				"rotation": { "x": -3.1415927410125732, "y": -1.8594738245010376, "z": 3.1415927410125732 },
+				"scale": { "x": 0.018000012263655663, "y": 0.018000010401010513, "z": 0.018000002950429916 },
+				"type": "Transform"
+			}
+		],
+		"layer": "Default",
+		"name": "Lamp",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "bb7a09f9-51d7-479a-a9c3-27ad2f37a178",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\models\\lamp\\mat1.material",
+				"mesh": { "custom": true, "mesh": "assets\\models\\lamp\\Tischlampe.fbx", "mesh_index": 0 },
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Line002",
+		"parentID": "fd1bae73-5666-4819-968e-b5b073439b64",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "a6c7af70-643f-435c-8d65-b5c13528783d",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\models\\lamp\\mat1.material",
+				"mesh": { "custom": true, "mesh": "assets\\models\\lamp\\Tischlampe.fbx", "mesh_index": 1 },
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Object021",
+		"parentID": "fd1bae73-5666-4819-968e-b5b073439b64",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "f96110b4-cdb8-4a35-bcc9-c6e1afaaad2c",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\models\\lamp\\mat1.material",
+				"mesh": { "custom": true, "mesh": "assets\\models\\lamp\\Tischlampe.fbx", "mesh_index": 2 },
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Object018",
+		"parentID": "fd1bae73-5666-4819-968e-b5b073439b64",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "7f53eef3-d78b-40ac-a1b0-af2edf47b5ba",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\models\\lamp\\mat1.material",
+				"mesh": { "custom": true, "mesh": "assets\\models\\lamp\\Tischlampe.fbx", "mesh_index": 3 },
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Cylinder005",
+		"parentID": "fd1bae73-5666-4819-968e-b5b073439b64",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "8bd67ffa-3f70-4202-bda6-7af1f0ddb52b",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\models\\lamp\\mat1.material",
+				"mesh": { "custom": true, "mesh": "assets\\models\\lamp\\Tischlampe.fbx", "mesh_index": 4 },
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Box011",
+		"parentID": "fd1bae73-5666-4819-968e-b5b073439b64",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "1a0fa1ac-168b-427a-ba9c-dcc3026b1b49",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\models\\lamp\\mat1.material",
+				"mesh": { "custom": true, "mesh": "assets\\models\\lamp\\Tischlampe.fbx", "mesh_index": 5 },
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Spring013",
+		"parentID": "fd1bae73-5666-4819-968e-b5b073439b64",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "427a1a06-4acf-4ab0-b1e9-6f94339e0039",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{
+				"material": "",
+				"mesh": { "custom": true, "mesh": "assets\\models\\lamp\\Tischlampe.fbx", "mesh_index": 6 },
+				"type": "MeshRenderer"
+			},
+			{
+				"bloomColor": { "x": 1.0, "y": 0.630072832107544, "z": 0.4193548560142517 },
+				"bloom_threshold": 0.0,
+				"dynamic_bloom": false,
+				"type": "Bloom"
+			}
+		],
+		"layer": "Default",
+		"name": "Sphere020",
+		"parentID": "fd1bae73-5666-4819-968e-b5b073439b64",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "5b264de2-721f-4510-af49-03733e56bcd1",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{
+				"material": "",
+				"mesh": { "custom": true, "mesh": "assets\\models\\lamp\\Tischlampe.fbx", "mesh_index": 7 },
+				"type": "MeshRenderer"
+			},
+			{
+				"bloomColor": { "x": 1.0, "y": 0.6819069385528564, "z": 0.41129034757614136 },
+				"bloom_threshold": 0.0,
+				"dynamic_bloom": false,
+				"type": "Bloom"
+			}
+		],
+		"layer": "Default",
+		"name": "Sphere020",
+		"parentID": "fd1bae73-5666-4819-968e-b5b073439b64",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "4389570b-6358-41de-8693-f059bb38ad17",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 2.0, "y": 2.0, "z": 2.0 },
+				"type": "Transform"
+			}
+		],
+		"layer": "Default",
+		"name": "House",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "8c02fae1-df7c-4350-84ec-cd4d1d96f517",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 1.4211235046386719, "y": 0.6486272215843201, "z": -0.7133477330207825 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 0.18450000882148743, "y": 0.18450000882148743, "z": 0.18450000882148743 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets\\models\\mug\\source\\mat1.material",
+				"mesh": { "custom": true, "mesh": "assets\\models\\mug\\source\\mug.fbx", "mesh_index": 0 },
+				"type": "MeshRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Mug",
+		"parentID": "1daafcac-e57c-476c-93e4-2375354beb90",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "1daafcac-e57c-476c-93e4-2375354beb90",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": -12.21978759765625, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 0.800000011920929, "y": 0.800000011920929, "z": 0.800000011920929 },
+				"type": "Transform"
+			}
+		],
+		"layer": "Default",
+		"name": "Mug",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "45cb74f4-e64c-43ea-a9c5-b2f97ef399b6",
+		"active": false,
+		"components": [
+			{
+				"position": { "x": 0.13253840804100037, "y": 1.0100115537643433, "z": -2.301356792449951 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 5.207205295562744, "y": 3.248638391494751, "z": 0.7900000810623169 },
+				"type": "Transform"
+			},
+			{
+				"color": { "a": 1.0, "b": 0.1568627506494522, "g": 0.1568627506494522, "r": 0.1568627506494522 },
+				"sprite": "",
+				"type": "SpriteRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Panel",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "091b4cd7-dacd-4851-98ce-09bc5b86c616",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 7.320000171661377, "y": 27.140460968017578, "z": 3.961965799331665 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{ "color": { "b": 1.0, "g": 1.0, "r": 1.0 }, "intensity": 1.0, "type": "DirectionalLight" }
+		],
+		"layer": "Default",
+		"name": "GameObject",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "662497a5-f87f-4216-a2cb-dcac33115b3f",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": -0.24121151864528656, "y": 0.7167786955833435, "z": -2.6587953567504883 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{ "color": { "b": 1.0, "g": 0.2666666805744171, "r": 0.6313725709915161 }, "intensity": 1.0, "type": "PointLight" }
+		],
+		"layer": "Default",
+		"name": "POint light",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	}
+]

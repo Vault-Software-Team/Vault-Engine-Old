@@ -975,6 +975,108 @@ int main(int argc, char **argv) {
 
     cwd = std::string(CWD);
 
+    glm::vec3 lightPos(-18.70, 14.50, 5.50);
+    float orthoSize = 50;
+    glm::vec2 shadowOrtho1(-orthoSize, orthoSize);
+    glm::vec2 shadowNearFar(1, 75);
+    glm::vec2 shadowOrtho2(-orthoSize, orthoSize);
+    glm::vec3 lightUpThing(0, 1, 0);
+    glm::vec2 shadowTextureSize(2048, 2048);
+    int shadowMapWidth = 2048, shadowMapHeight = 2048;
+    bool enableShadowMap = false;
+    bool enableSpotLightShadowMap = false;
+
+    // check if game.config exists
+    std::ifstream file("assets/game.config");
+    bool mainSceneFound = false;
+    if (file.is_open()) {
+        nlohmann::json JSON = nlohmann::json::parse(file);
+
+        config.width = JSON["width"];
+        config.height = JSON["height"];
+        strcpy(config.name, ((std::string)JSON["name"]).c_str());
+        config.ambientLight = JSON["ambientLight"];
+        config.exposure =
+            JSON.contains("exposure") ? (float)JSON["exposure"] : 1.0f;
+        config.mainScene = JSON["mainScene"];
+        config.resizable = JSON["resizable"];
+        config.fullscreenOnLaunch = JSON["fullscreen_on_launch"];
+        strcpy(config.linuxCompiler,
+               ((std::string)JSON["linux_compiler"]).c_str());
+        strcpy(config.windowsCompiler,
+               ((std::string)JSON["windows_compiler"]).c_str());
+        for (auto &layer : JSON["layers"]) {
+            Scene::layers[(std::string)layer] = true;
+        }
+        mainSceneFound = true;
+
+        if (JSON.contains("post_processing")) {
+            config.postProcessing.enabled = JSON["post_processing"]["enabled"];
+            config.postProcessing.bloom.enabled =
+                JSON["post_processing"]["bloom"]["enabled"];
+            config.postProcessing.bloom.threshold =
+                JSON["post_processing"]["bloom"]["threshold"];
+
+            config.postProcessing.vignette.intensity =
+                JSON["post_processing"]["vignette"]["intensity"];
+            config.postProcessing.vignette.smoothness =
+                JSON["post_processing"]["vignette"]["smoothness"];
+
+            config.postProcessing.chromaticAberration.intensity =
+                JSON["post_processing"]["chromatic_aberration"]["intensity"];
+        }
+
+        if (JSON.contains("shadow_mapping")) {
+            enableShadowMap = JSON["shadow_mapping"]["enabled"];
+            lightPos = glm::vec3(JSON["shadow_mapping"]["position"]["x"], JSON["shadow_mapping"]["position"]["y"], JSON["shadow_mapping"]["position"]["z"]);
+            orthoSize = JSON["shadow_mapping"]["ortho_size"];
+            shadowOrtho1 = glm::vec2(-orthoSize, orthoSize);
+            shadowOrtho2 = glm::vec2(-orthoSize, orthoSize);
+            lightUpThing = glm::vec3(JSON["shadow_mapping"]["look_at"]["x"], JSON["shadow_mapping"]["look_at"]["y"], JSON["shadow_mapping"]["look_at"]["z"]);
+            shadowNearFar = glm::vec2(JSON["shadow_mapping"]["near_far"]["x"], JSON["shadow_mapping"]["near_far"]["y"]);
+            shadowTextureSize = glm::vec2(JSON["shadow_mapping"]["map_width"], JSON["shadow_mapping"]["map_height"]);
+            shadowMapWidth = JSON["shadow_mapping"]["map_width"];
+            shadowMapHeight = JSON["shadow_mapping"]["map_height"];
+        }
+    } else {
+        nlohmann::json j = {
+            {"linux_compiler", config.linuxCompiler},
+            {"windows_compiler", config.windowsCompiler},
+            {"name", config.name},
+            {"ambientLight", config.ambientLight},
+            {"exposure", config.exposure},
+            {"mainScene", config.mainScene},
+            {"width", config.width},
+            {"height", config.height},
+            {"resizable", config.resizable},
+            {"fullscreen_on_launch", config.fullscreenOnLaunch},
+            {"layers", {"Default"}},
+            {"shadow_mapping", {
+                                   {"enabled", false},
+                                   {"position", {{"x", 0}, {"y", 0}, {"z", 0}}},
+                                   {"ortho_size", 35},
+                                   {"look_at", {{"x", 0}, {"y", 1}, {"z", 0}}},
+                                   {"near_far", {{"x", 1}, {"y", 75}}},
+                                   {"map_width", 2048},
+                                   {"map_height", 2048},
+                               }},
+            {"post_processing", {{"enabled", false}, {"bloom", {{"enabled", false}, {"threshold", 0.5f}}}, {"vignette", {
+                                                                                                                            {"enabled", config.postProcessing.enabled},
+                                                                                                                            {"intensity", config.postProcessing.vignette.intensity},
+                                                                                                                            {"smoothness", config.postProcessing.vignette.smoothness},
+                                                                                                                        }},
+                                 {"bloom", {
+                                               {"enabled", config.postProcessing.enabled},
+                                               {"threshold", config.postProcessing.bloom.threshold},
+                                           }},
+                                 {"chromatic_aberration", {
+                                                              {"intensity", config.postProcessing.chromaticAberration.intensity},
+                                                          }}}}};
+
+        std::ofstream o("assets/game.config");
+        o << std::setw(4) << j << std::endl;
+    }
+
 // if the build is a game
 #ifdef GAME_BUILD
     Hyper::Application app(
@@ -1063,6 +1165,49 @@ int main(int argc, char **argv) {
     Scene::mainCamera = camera;
 #endif
 
+    uint32_t shadowMapFBO;
+    glGenFramebuffers(1, &shadowMapFBO);
+
+    uint32_t shadowMap;
+    glGenTextures(1, &shadowMap);
+    glBindTexture(GL_TEXTURE_2D, shadowMap);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadowMapWidth, shadowMapHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    float clampColor[] = {
+        1.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+    };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, clampColor);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowMap, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glm::mat4 orthgonalProjection = glm::ortho(shadowOrtho1.x, shadowOrtho1.y, shadowOrtho2.x, shadowOrtho2.y, shadowNearFar.x, shadowNearFar.y);
+    // spot light
+    glm::mat4 perspectiveProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
+    glm::mat4 lightViewPer = glm::lookAt(lightPos, glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
+
+    glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+    glm::mat4 lightProjection = enableSpotLightShadowMap ? perspectiveProjection * lightViewPer : orthgonalProjection * lightView;
+
+    shadowShader.Bind();
+    shadowShader.SetUniformMat4("lightProjection", lightProjection);
+
+    shader.Bind();
+    shader.SetUniformMat4("lightProjection", lightProjection);
+    glActiveTexture(GL_TEXTURE11);
+    glBindTexture(GL_TEXTURE_2D, shadowMap);
+    shader.SetUniform1i("shadow_map_buffer", 11);
+
     bool focusedOnScene = false;
     bool hoveredScene = false;
 
@@ -1093,6 +1238,8 @@ int main(int argc, char **argv) {
     std::cout << &Scene::m_Registry << std::endl;
     LoadScripts();
     Scene::LoadScene(config.mainScene, M_JS);
+    std::cout << "C: " << camera << std::endl;
+    std::cout << "MC: " << Scene::mainCamera << std::endl;
 
 #ifdef GAME_BUILD
     if (Scene::mainCamera == nullptr) {
@@ -1101,6 +1248,9 @@ int main(int argc, char **argv) {
 #else
     Scene::mainCamera = camera;
 #endif
+
+    std::cout << "C: " << camera << std::endl;
+    std::cout << "MC: " << Scene::mainCamera << std::endl;
 
     Transform transform;
     transform.position = glm::vec3(2, 0, 2);
@@ -1307,145 +1457,6 @@ int main(int argc, char **argv) {
     // speaker.Play(audio);
 
     // glm::vec3 list, aud;
-    glm::vec3 lightPos(-18.70, 14.50, 5.50);
-    float orthoSize = 50;
-    glm::vec2 shadowOrtho1(-orthoSize, orthoSize);
-    glm::vec2 shadowNearFar(1, 75);
-    glm::vec2 shadowOrtho2(-orthoSize, orthoSize);
-    glm::vec3 lightUpThing(0, 1, 0);
-    glm::vec2 shadowTextureSize(2048, 2048);
-    int shadowMapWidth = 2048, shadowMapHeight = 2048;
-    bool enableShadowMap = false;
-
-    // check if game.config exists
-    std::ifstream file("assets/game.config");
-    bool mainSceneFound = false;
-    if (file.is_open()) {
-        nlohmann::json JSON = nlohmann::json::parse(file);
-
-        config.width = JSON["width"];
-        config.height = JSON["height"];
-        strcpy(config.name, ((std::string)JSON["name"]).c_str());
-        config.ambientLight = JSON["ambientLight"];
-        config.exposure =
-            JSON.contains("exposure") ? (float)JSON["exposure"] : 1.0f;
-        config.mainScene = JSON["mainScene"];
-        config.resizable = JSON["resizable"];
-        config.fullscreenOnLaunch = JSON["fullscreen_on_launch"];
-        strcpy(config.linuxCompiler,
-               ((std::string)JSON["linux_compiler"]).c_str());
-        strcpy(config.windowsCompiler,
-               ((std::string)JSON["windows_compiler"]).c_str());
-        for (auto &layer : JSON["layers"]) {
-            Scene::layers[(std::string)layer] = true;
-        }
-        mainSceneFound = true;
-
-        if (JSON.contains("post_processing")) {
-            config.postProcessing.enabled = JSON["post_processing"]["enabled"];
-            config.postProcessing.bloom.enabled =
-                JSON["post_processing"]["bloom"]["enabled"];
-            config.postProcessing.bloom.threshold =
-                JSON["post_processing"]["bloom"]["threshold"];
-
-            config.postProcessing.vignette.intensity =
-                JSON["post_processing"]["vignette"]["intensity"];
-            config.postProcessing.vignette.smoothness =
-                JSON["post_processing"]["vignette"]["smoothness"];
-
-            config.postProcessing.chromaticAberration.intensity =
-                JSON["post_processing"]["chromatic_aberration"]["intensity"];
-        }
-
-        if (JSON.contains("shadow_mapping")) {
-            enableShadowMap = JSON["shadow_mapping"]["enabled"];
-            lightPos = glm::vec3(JSON["shadow_mapping"]["position"]["x"], JSON["shadow_mapping"]["position"]["y"], JSON["shadow_mapping"]["position"]["z"]);
-            orthoSize = JSON["shadow_mapping"]["ortho_size"];
-            shadowOrtho1 = glm::vec2(-orthoSize, orthoSize);
-            shadowOrtho2 = glm::vec2(-orthoSize, orthoSize);
-            lightUpThing = glm::vec3(JSON["shadow_mapping"]["look_at"]["x"], JSON["shadow_mapping"]["look_at"]["y"], JSON["shadow_mapping"]["look_at"]["z"]);
-            shadowNearFar = glm::vec2(JSON["shadow_mapping"]["near_far"]["x"], JSON["shadow_mapping"]["near_far"]["y"]);
-            shadowTextureSize = glm::vec2(JSON["shadow_mapping"]["map_width"], JSON["shadow_mapping"]["map_height"]);
-            shadowMapWidth = JSON["shadow_mapping"]["map_width"];
-            shadowMapHeight = JSON["shadow_mapping"]["map_height"];
-        }
-    } else {
-        nlohmann::json j = {
-            {"linux_compiler", config.linuxCompiler},
-            {"windows_compiler", config.windowsCompiler},
-            {"name", config.name},
-            {"ambientLight", config.ambientLight},
-            {"exposure", config.exposure},
-            {"mainScene", config.mainScene},
-            {"width", config.width},
-            {"height", config.height},
-            {"resizable", config.resizable},
-            {"fullscreen_on_launch", config.fullscreenOnLaunch},
-            {"layers", {"Default"}},
-            {"shadow_mapping", {
-                                   {"enabled", false},
-                                   {"position", {{"x", 0}, {"y", 0}, {"z", 0}}},
-                                   {"ortho_size", 35},
-                                   {"look_at", {{"x", 0}, {"y", 1}, {"z", 0}}},
-                                   {"near_far", {{"x", 1}, {"y", 75}}},
-                                   {"map_width", 2048},
-                                   {"map_height", 2048},
-                               }},
-            {"post_processing", {{"enabled", false}, {"bloom", {{"enabled", false}, {"threshold", 0.5f}}}, {"vignette", {
-                                                                                                                            {"enabled", config.postProcessing.enabled},
-                                                                                                                            {"intensity", config.postProcessing.vignette.intensity},
-                                                                                                                            {"smoothness", config.postProcessing.vignette.smoothness},
-                                                                                                                        }},
-                                 {"bloom", {
-                                               {"enabled", config.postProcessing.enabled},
-                                               {"threshold", config.postProcessing.bloom.threshold},
-                                           }},
-                                 {"chromatic_aberration", {
-                                                              {"intensity", config.postProcessing.chromaticAberration.intensity},
-                                                          }}}}};
-
-        std::ofstream o("assets/game.config");
-        o << std::setw(4) << j << std::endl;
-    }
-
-    uint32_t shadowMapFBO;
-    glGenFramebuffers(1, &shadowMapFBO);
-
-    uint32_t shadowMap;
-    glGenTextures(1, &shadowMap);
-    glBindTexture(GL_TEXTURE_2D, shadowMap);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadowMapWidth, shadowMapHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    float clampColor[] = {
-        1.0f,
-        1.0f,
-        1.0f,
-        1.0f,
-    };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, clampColor);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowMap, 0);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glm::mat4 orthgonalProjection = glm::ortho(shadowOrtho1.x, shadowOrtho1.y, shadowOrtho2.x, shadowOrtho2.y, shadowNearFar.x, shadowNearFar.y);
-    glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-    glm::mat4 lightProjection = orthgonalProjection * lightView;
-
-    shadowShader.Bind();
-    shadowShader.SetUniformMat4("lightProjection", lightProjection);
-
-    shader.Bind();
-    shader.SetUniformMat4("lightProjection", lightProjection);
-    glActiveTexture(GL_TEXTURE11);
-    glBindTexture(GL_TEXTURE_2D, shadowMap);
-    shader.SetUniform1i("shadow_map_buffer", 11);
 
     std::function<void(uint32_t & PPT, uint32_t & PPFBO, uint32_t & gui_gui)>
         GUI_EXP = [&](uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui) {
@@ -2074,6 +2085,7 @@ int main(int argc, char **argv) {
                     ImGui::DragInt("Map Width", &shadowMapWidth, 1.0f, 0);
                     ImGui::DragInt("Map Height", &shadowMapHeight, 1.0f, 0);
                     ImGui::Checkbox("Enable Shadow Mapping", &enableShadowMap);
+                    ImGui::Checkbox("Enable Spot Lights", &enableSpotLightShadowMap);
                     if (!enableShadowMap) {
                         glEnable(GL_DEPTH_TEST);
                         glViewport(0, 0, shadowMapWidth, shadowMapHeight);
@@ -3957,21 +3969,21 @@ void NewScript::Update() {})";
 #else
                     fs::copy("./assets", filePathName + "/assets", fs::copy_options::recursive);
                     fs::copy("./shaders", filePathName + "/shaders", fs::copy_options::recursive);
-                    fs::copy("./bin/dlls", filePathName + "/lib", fs::copy_options::recursive);
+                    fs::copy(m_cwd + "/bin/dlls", filePathName + "/lib", fs::copy_options::recursive);
                     fs::copy(m_cwd + "/bin/game.exe", filePathName + "/lib/game.exe", fs::copy_options::recursive);
                     fs::copy(m_cwd + "/bin/LaunchGame.bat", filePathName + "/" + config.name + ".bat", fs::copy_options::recursive);
-                    fs::copy("./build", filePathName + "/build", fs::copy_options::recursive);
-                    fs::copy("./cs-assembly", filePathName + "/cs-assembly", fs::copy_options::recursive);
+                    fs::copy(m_cwd + "/build", filePathName + "/build", fs::copy_options::recursive);
+                    // fs::copy("./cs-assembly", filePathName + "/cs-assembly", fs::copy_options::recursive);
                     fs::copy(m_cwd + "/mono/lib", filePathName + "/lib/mono", fs::copy_options::recursive);
                     fs::copy("./imgui.ini", filePathName + "/imgui.ini", fs::copy_options::recursive);
 #endif
 
-                    for (const auto &iter : std::filesystem::directory_iterator(filePathName + "/cs-assembly")) {
-                        if (iter.path().extension() == ".cs") {
-                            std::filesystem::remove(iter.path());
-                        }
-                    }
-                    fs::remove_all(filePathName + "/cs-assembly/API");
+                    // for (const auto &iter : std::filesystem::directory_iterator(filePathName + "/cs-assembly")) {
+                    //     if (iter.path().extension() == ".cs") {
+                    //         std::filesystem::remove(iter.path());
+                    //     }
+                    // }
+                    // fs::remove_all(filePathName + "/cs-assembly/API");
                 }
                 ImGuiFileDialog::Instance()->Close();
             }
@@ -4011,20 +4023,20 @@ void NewScript::Update() {})";
                     std::string m_cwd = CsharpVariables::oldCwd;
                     fs::copy("./assets", filePathName + "/assets", fs::copy_options::recursive);
                     fs::copy("./shaders", filePathName + "/shaders", fs::copy_options::recursive);
-                    fs::copy("./lib", filePathName + "/lib", fs::copy_options::recursive);
+                    fs::copy(m_cwd + "/lib", filePathName + "/lib", fs::copy_options::recursive);
                     fs::copy(m_cwd + "/bin/game.out", filePathName + "/lib/game.out", fs::copy_options::recursive);
                     fs::copy(m_cwd + "/bin/LaunchGame.sh", filePathName + "/" + config.name + ".sh", fs::copy_options::recursive);
-                    fs::copy("./build", filePathName + "/build", fs::copy_options::recursive);
-                    fs::copy("./cs-assembly", filePathName + "/cs-assembly", fs::copy_options::recursive);
+                    fs::copy(m_cwd + "/build", filePathName + "/build", fs::copy_options::recursive);
+                    // fs::copy("./cs-assembly", filePathName + "/cs-assembly", fs::copy_options::recursive);
                     fs::copy(m_cwd + "/mono", filePathName + "/mono", fs::copy_options::recursive);
                     fs::copy("./imgui.ini", filePathName + "/imgui.ini", fs::copy_options::recursive);
 
-                    for (const auto &iter : std::filesystem::directory_iterator(filePathName + "/cs-assembly")) {
-                        if (iter.path().extension() == ".cs") {
-                            std::filesystem::remove(iter.path());
-                        }
-                    }
-                    fs::remove_all(filePathName + "/cs-assembly/API");
+                    // for (const auto &iter : std::filesystem::directory_iterator(filePathName + "/cs-assembly")) {
+                    //     if (iter.path().extension() == ".cs") {
+                    //         std::filesystem::remove(iter.path());
+                    //     }
+                    // }
+                    // fs::remove_all(filePathName + "/cs-assembly/API");
                 }
 
                 // close
@@ -4657,7 +4669,9 @@ void NewScript::Update() {})";
                             glBindTexture(GL_TEXTURE_2D, shadowMap);
                             orthgonalProjection = glm::ortho(shadowOrtho1.x, shadowOrtho1.y, shadowOrtho2.x, shadowOrtho2.y, shadowNearFar.x, shadowNearFar.y);
                             lightView = glm::lookAt(lightPos, glm::vec3(0, 0, 0), lightUpThing);
-                            lightProjection = orthgonalProjection * lightView;
+                            perspectiveProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
+                            lightViewPer = glm::lookAt(lightPos, glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
+                            lightProjection = enableSpotLightShadowMap ? perspectiveProjection * lightViewPer : orthgonalProjection * lightView;
 
                             shader.SetUniformMat4("lightProjection", lightProjection);
                             shader.SetUniform1i("shadow_map_buffer", 11);
@@ -4887,6 +4901,71 @@ void NewScript::Update() {})";
             }
             glDisable(GL_BLEND);
             glDisable(GL_CULL_FACE);
+
+            // Shadow mapping
+            if (enableShadowMap) {
+                glEnable(GL_DEPTH_TEST);
+                glViewport(0, 0, shadowMapWidth, shadowMapHeight);
+                glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
+                glClear(GL_DEPTH_BUFFER_BIT);
+
+                for (auto &gameObject : *Scene::m_GameObjects) {
+                    if (!gameObject->enabled)
+                        continue;
+
+                    if (gameObject->HasComponent<MeshRenderer>()) {
+                        m_UnbindTextures();
+
+                        auto meshRenderer =
+                            gameObject->GetComponent<MeshRenderer>();
+                        auto transform = gameObject->GetComponent<Transform>();
+                        transform.Update();
+
+                        glm::mat4 extra = meshRenderer.extraMatrix;
+
+                        glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                        for (auto &go : *Scene::m_GameObjects) {
+                            if (go->ID == gameObject->parentID &&
+                                go->HasComponent<Transform>()) {
+                                auto &parentTransform =
+                                    go->GetComponent<Transform>();
+                                parentTransform.Update();
+                                m_parentTransform = parentTransform.transform;
+                            }
+                        }
+
+                        if (meshRenderer.m_Mesh != nullptr) {
+                            shader.Bind();
+                            shader.SetUniformMat4("lightSpaceMatrix",
+                                                  Scene::projection);
+
+                            meshRenderer.m_Mesh->enttId =
+                                (uint32_t)gameObject->entity;
+                            glActiveTexture(GL_TEXTURE21);
+                            glBindTexture(GL_TEXTURE_CUBE_MAP,
+                                          skybox.cubemapTexture);
+
+                            // if (meshRenderer.customShader.shader != nullptr) {
+                            //     meshRenderer.customShader.shader->Bind();
+                            //     meshRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                            // }
+
+                            if (meshRenderer.meshType == "Plane") {
+                            } else {
+                                meshRenderer.m_Mesh->Draw(
+                                    shadowShader,
+                                    *Scene::mainCamera,
+                                    transform.transform * extra *
+                                        m_parentTransform);
+                            }
+                        }
+                    }
+                }
+                // end of shadow mapping
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                glViewport(0, 0, app.width, app.height);
+            }
 
             // Ending of draw calls
 
@@ -5237,108 +5316,6 @@ void NewScript::Update() {})";
                 }
             }
 #endif
-            // Shadow mapping
-            if (enableShadowMap) {
-                glEnable(GL_DEPTH_TEST);
-                glViewport(0, 0, shadowMapWidth, shadowMapHeight);
-                glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
-                glClear(GL_DEPTH_BUFFER_BIT);
-                for (auto &layer : Scene::layers) {
-                    // Check if the camera is in the layer n stuff
-                    bool notInCameraLayer = true;
-                    for (auto &camLayer : Scene::mainCamera->layers) {
-                        if (Scene::mainCamera == camera)
-                            break;
-                        if (camLayer == layer.first) {
-                            notInCameraLayer = false;
-                            break;
-                        }
-                    }
-
-                    bool isDepthCamera = false;
-                    auto view = Scene::m_Registry.view<CameraComponent>();
-                    for (auto e : view) {
-                        auto &cam = Scene::m_Registry.get<CameraComponent>(e);
-                        if (cam.camera == Scene::mainCamera && cam.depthCamera) {
-                            isDepthCamera = true;
-                            break;
-                        }
-                    }
-
-                    if ((notInCameraLayer && Scene::mainCamera != camera) || (isDepthCamera && Scene::mainCamera != camera))
-                        continue;
-
-                    for (auto &gameObject : *Scene::m_GameObjects) {
-                        if (!gameObject->enabled)
-                            continue;
-                        if (gameObject->layer != layer.first)
-                            continue;
-                        if (gameObject->HasComponent<MeshRenderer>()) {
-                            m_UnbindTextures();
-
-                            auto meshRenderer =
-                                gameObject->GetComponent<MeshRenderer>();
-                            auto transform = gameObject->GetComponent<Transform>();
-                            transform.Update();
-
-                            glm::mat4 extra = meshRenderer.extraMatrix;
-
-                            glm::mat4 m_parentTransform = glm::mat4(1.0f);
-
-                            for (auto &go : *Scene::m_GameObjects) {
-                                if (go->ID == gameObject->parentID &&
-                                    go->HasComponent<Transform>()) {
-                                    auto &parentTransform =
-                                        go->GetComponent<Transform>();
-                                    parentTransform.Update();
-                                    m_parentTransform = parentTransform.transform;
-                                }
-                            }
-
-                            if (meshRenderer.m_Mesh != nullptr) {
-                                shader.Bind();
-                                shader.SetUniformMat4("lightSpaceMatrix",
-                                                      Scene::projection);
-
-                                if (Scene::m_Object == gameObject) {
-                                    glStencilFunc(GL_ALWAYS, 1, 0xFF);
-                                    glStencilMask(0xFF);
-                                }
-
-                                meshRenderer.m_Mesh->enttId =
-                                    (uint32_t)gameObject->entity;
-                                glActiveTexture(GL_TEXTURE21);
-                                glBindTexture(GL_TEXTURE_CUBE_MAP,
-                                              skybox.cubemapTexture);
-
-                                // if (meshRenderer.customShader.shader != nullptr) {
-                                //     meshRenderer.customShader.shader->Bind();
-                                //     meshRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
-                                // }
-
-                                if (meshRenderer.meshType == "Plane") {
-                                    glDisable(GL_CULL_FACE);
-                                    meshRenderer.m_Mesh->Draw(
-                                        shadowShader,
-                                        *Scene::mainCamera,
-                                        transform.transform * extra *
-                                            m_parentTransform);
-                                    glEnable(GL_CULL_FACE);
-                                } else {
-                                    meshRenderer.m_Mesh->Draw(
-                                        shadowShader,
-                                        *Scene::mainCamera,
-                                        transform.transform * extra *
-                                            m_parentTransform);
-                                }
-                            }
-                        }
-                    }
-                }
-                // end of shadow mapping
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                glViewport(0, 0, app.width, app.height);
-            }
         },
         GUI_EXP,
         [&](Shader &m_shadowMapShader) {

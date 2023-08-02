@@ -851,8 +851,9 @@ namespace HyperAPI {
                 isStopped = false;
             }
 
-            Scene::mainCamera = scene_camera;
-
+            if (Scene::mainCamera == nullptr) {
+                Scene::mainCamera = scene_camera;
+            }
             LoadingScene = false;
             HYPER_LOG("Loaded scene: " + scenePath);
             stop_scripts = false;
