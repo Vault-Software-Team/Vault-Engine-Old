@@ -1,20 +1,25 @@
 using System;
 using Vault;
 
-namespace MiroGayBoy
+namespace Classes
 {
-    public class GayBoy : Entity
+    class Spy : Entity
     {
+        Transform transform;
+        public float speed = 2;
+
         void OnStart()
         {
             SetObjectID();
+
+            transform = GetComponent<Transform>();
         }
 
         void OnUpdate()
         {
-            Debug.Log("Miro is very gay boy!");
-            Vector3 vec3 = new Vector3(1, 1, 1);
-            Vector3 vec32 = new Vector3(1, 1, 1);
+            Vector3 rot = transform.rotation;
+            rot.y += speed * Main.deltaTime;
+            transform.rotation = rot;
         }
     }
 }

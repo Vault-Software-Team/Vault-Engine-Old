@@ -1606,5 +1606,6 @@ namespace HyperAPI {
 
         DLL_API b2World *world = nullptr;
         DLL_API std::vector<Experimental::GameObject *> m_UIObjects;
+        DLL_API int aspect_width = 1920, aspect_height = 1080;
     } // namespace Scene
 } // namespace HyperAPI

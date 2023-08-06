@@ -6,22 +6,30 @@
 #include "../Renderer/OldStuff.hpp"
 
 namespace HyperAPI::Experimental {
-    struct DLL_API KeyPosition {
+    struct KeyPosition {
         glm::vec3 position;
         float timeStamp;
     };
 
-    struct DLL_API KeyRotation {
+    struct KeyRotation {
         glm::quat orientation;
         float timeStamp;
     };
 
-    struct DLL_API KeyScale {
+    struct KeyScale {
         glm::vec3 scale;
         float timeStamp;
     };
 
-    class DLL_API Bone {
+    struct BoneInfo {
+        /*id is index in finalBoneMatrices*/
+        int id;
+
+        /*offset matrix transforms vertex from model space to bone space*/
+        glm::mat4 offset;
+    };
+
+    class Bone {
     private:
         std::vector<KeyPosition> m_Positions;
         std::vector<KeyRotation> m_Rotations;
@@ -35,14 +43,15 @@ namespace HyperAPI::Experimental {
         int m_ID;
 
     public:
+        /*reads keyframes from aiNodeAnim*/
         Bone(const std::string &name, int ID, const aiNodeAnim *channel)
-            : m_Name(name), m_ID(ID), m_LocalTransform(1.0f) {
+            : m_Name(name),
+              m_ID(ID),
+              m_LocalTransform(1.0f) {
             m_NumPositions = channel->mNumPositionKeys;
 
-            for (int positionIndex = 0; positionIndex < m_NumPositions;
-                 ++positionIndex) {
-                aiVector3D aiPosition =
-                    channel->mPositionKeys[positionIndex].mValue;
+            for (int positionIndex = 0; positionIndex < m_NumPositions; ++positionIndex) {
+                aiVector3D aiPosition = channel->mPositionKeys[positionIndex].mValue;
                 float timeStamp = channel->mPositionKeys[positionIndex].mTime;
                 KeyPosition data;
                 data.position = AssimpGLMHelpers::GetGLMVec(aiPosition);
@@ -51,10 +60,8 @@ namespace HyperAPI::Experimental {
             }
 
             m_NumRotations = channel->mNumRotationKeys;
-            for (int rotationIndex = 0; rotationIndex < m_NumRotations;
-                 ++rotationIndex) {
-                aiQuaternion aiOrientation =
-                    channel->mRotationKeys[rotationIndex].mValue;
+            for (int rotationIndex = 0; rotationIndex < m_NumRotations; ++rotationIndex) {
+                aiQuaternion aiOrientation = channel->mRotationKeys[rotationIndex].mValue;
                 float timeStamp = channel->mRotationKeys[rotationIndex].mTime;
                 KeyRotation data;
                 data.orientation = AssimpGLMHelpers::GetGLMQuat(aiOrientation);
@@ -73,9 +80,9 @@ namespace HyperAPI::Experimental {
             }
         }
 
-        /*interpolates  b/w positions,rotations & scaling keys based on the
-        curren time of the animation and prepares the local transformation
-        matrix by combining all keys tranformations*/
+        /*interpolates  b/w positions,rotations & scaling keys based on the curren time of
+        the animation and prepares the local transformation matrix by combining all keys
+        tranformations*/
         void Update(float animationTime) {
             glm::mat4 translation = InterpolatePosition(animationTime);
             glm::mat4 rotation = InterpolateRotation(animationTime);
@@ -87,8 +94,8 @@ namespace HyperAPI::Experimental {
         std::string GetBoneName() const { return m_Name; }
         int GetBoneID() { return m_ID; }
 
-        /* Gets the current index on mKeyPositions to interpolate to based
-        on the current animation time*/
+        /* Gets the current index on mKeyPositions to interpolate to based on
+        the current animation time*/
         int GetPositionIndex(float animationTime) {
             for (int index = 0; index < m_NumPositions - 1; ++index) {
                 if (animationTime < m_Positions[index + 1].timeStamp)
@@ -97,8 +104,8 @@ namespace HyperAPI::Experimental {
             assert(0);
         }
 
-        /* Gets the current index on mKeyRotations to interpolate to based
-        on the current animation time*/
+        /* Gets the current index on mKeyRotations to interpolate to based on the
+        current animation time*/
         int GetRotationIndex(float animationTime) {
             for (int index = 0; index < m_NumRotations - 1; ++index) {
                 if (animationTime < m_Rotations[index + 1].timeStamp)
@@ -107,8 +114,8 @@ namespace HyperAPI::Experimental {
             assert(0);
         }
 
-        /* Gets the current index on mKeyScalings to interpolate to based on
-        the current animation time */
+        /* Gets the current index on mKeyScalings to interpolate to based on the
+        current animation time */
         int GetScaleIndex(float animationTime) {
             for (int index = 0; index < m_NumScalings - 1; ++index) {
                 if (animationTime < m_Scales[index + 1].timeStamp)
@@ -119,8 +126,7 @@ namespace HyperAPI::Experimental {
 
     private:
         /* Gets normalized value for Lerp & Slerp*/
-        float GetScaleFactor(float lastTimeStamp, float nextTimeStamp,
-                             float animationTime) {
+        float GetScaleFactor(float lastTimeStamp, float nextTimeStamp, float animationTime) {
             float scaleFactor = 0.0f;
             float midWayLength = animationTime - lastTimeStamp;
             float framesDiff = nextTimeStamp - lastTimeStamp;
@@ -128,25 +134,23 @@ namespace HyperAPI::Experimental {
             return scaleFactor;
         }
 
-        /*figures out which position keys to interpolate b/w and performs
-        the interpolation and returns the translation matrix*/
+        /*figures out which position keys to interpolate b/w and performs the interpolation
+        and returns the translation matrix*/
         glm::mat4 InterpolatePosition(float animationTime) {
             if (1 == m_NumPositions)
                 return glm::translate(glm::mat4(1.0f), m_Positions[0].position);
 
             int p0Index = GetPositionIndex(animationTime);
             int p1Index = p0Index + 1;
-            float scaleFactor =
-                GetScaleFactor(m_Positions[p0Index].timeStamp,
-                               m_Positions[p1Index].timeStamp, animationTime);
-            glm::vec3 finalPosition =
-                glm::mix(m_Positions[p0Index].position,
-                         m_Positions[p1Index].position, scaleFactor);
+            float scaleFactor = GetScaleFactor(m_Positions[p0Index].timeStamp,
+                                               m_Positions[p1Index].timeStamp, animationTime);
+            glm::vec3 finalPosition = glm::mix(m_Positions[p0Index].position,
+                                               m_Positions[p1Index].position, scaleFactor);
             return glm::translate(glm::mat4(1.0f), finalPosition);
         }
 
-        /*figures out which rotations keys to interpolate b/w and performs
-        the interpolation and returns the rotation matrix*/
+        /*figures out which rotations keys to interpolate b/w and performs the interpolation
+        and returns the rotation matrix*/
         glm::mat4 InterpolateRotation(float animationTime) {
             if (1 == m_NumRotations) {
                 auto rotation = glm::normalize(m_Rotations[0].orientation);
@@ -155,29 +159,25 @@ namespace HyperAPI::Experimental {
 
             int p0Index = GetRotationIndex(animationTime);
             int p1Index = p0Index + 1;
-            float scaleFactor =
-                GetScaleFactor(m_Rotations[p0Index].timeStamp,
-                               m_Rotations[p1Index].timeStamp, animationTime);
-            glm::quat finalRotation =
-                glm::slerp(m_Rotations[p0Index].orientation,
-                           m_Rotations[p1Index].orientation, scaleFactor);
+            float scaleFactor = GetScaleFactor(m_Rotations[p0Index].timeStamp,
+                                               m_Rotations[p1Index].timeStamp, animationTime);
+            glm::quat finalRotation = glm::slerp(m_Rotations[p0Index].orientation,
+                                                 m_Rotations[p1Index].orientation, scaleFactor);
             finalRotation = glm::normalize(finalRotation);
             return glm::toMat4(finalRotation);
         }
 
-        /*figures out which scaling keys to interpolate b/w and performs the
-        interpolation and returns the scale matrix*/
+        /*figures out which scaling keys to interpolate b/w and performs the interpolation
+        and returns the scale matrix*/
         glm::mat4 InterpolateScaling(float animationTime) {
             if (1 == m_NumScalings)
                 return glm::scale(glm::mat4(1.0f), m_Scales[0].scale);
 
             int p0Index = GetScaleIndex(animationTime);
             int p1Index = p0Index + 1;
-            float scaleFactor =
-                GetScaleFactor(m_Scales[p0Index].timeStamp,
-                               m_Scales[p1Index].timeStamp, animationTime);
-            glm::vec3 finalScale = glm::mix(
-                m_Scales[p0Index].scale, m_Scales[p1Index].scale, scaleFactor);
+            float scaleFactor = GetScaleFactor(m_Scales[p0Index].timeStamp,
+                                               m_Scales[p1Index].timeStamp, animationTime);
+            glm::vec3 finalScale = glm::mix(m_Scales[p0Index].scale, m_Scales[p1Index].scale, scaleFactor);
             return glm::scale(glm::mat4(1.0f), finalScale);
         }
     };

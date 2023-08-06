@@ -4,6 +4,7 @@ using Vault;
 
 namespace Vault
 {
+
     public class Transform : Component
     {
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -11,6 +12,14 @@ namespace Vault
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static void SetKey(string key, string id, float x, float y, float z);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static void cpp_LookAt(string id, float x, float y, float z);
+
+        public void LookAt(Vector3 target_position)
+        {
+            cpp_LookAt(Entity.ID, target_position.x, target_position.y, target_position.z);
+        }
 
         public Vector3 position
         {
@@ -59,6 +68,28 @@ namespace Vault
             get
             {
                 GetKey("forward", Entity.ID, out string result);
+                string[] strValues = result.Split(" ");
+                return new Vector3(float.Parse(strValues[0]), float.Parse(strValues[1]), float.Parse(strValues[2]));
+            }
+            set { }
+        }
+
+        public Vector3 up
+        {
+            get
+            {
+                GetKey("up", Entity.ID, out string result);
+                string[] strValues = result.Split(" ");
+                return new Vector3(float.Parse(strValues[0]), float.Parse(strValues[1]), float.Parse(strValues[2]));
+            }
+            set { }
+        }
+
+        public Vector3 right
+        {
+            get
+            {
+                GetKey("right", Entity.ID, out string result);
                 string[] strValues = result.Split(" ");
                 return new Vector3(float.Parse(strValues[0]), float.Parse(strValues[1]), float.Parse(strValues[2]));
             }

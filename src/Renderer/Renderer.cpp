@@ -22,7 +22,6 @@ namespace HyperAPI {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         // core profile
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
         // error callback
         glfwSetErrorCallback([](int error, const char *description) {

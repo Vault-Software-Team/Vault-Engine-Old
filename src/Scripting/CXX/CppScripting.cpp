@@ -95,15 +95,15 @@ namespace HyperAPI::CppScripting {
 #ifndef _WIN32
         auto iter = fs::recursive_directory_iterator("assets");
         for (auto &dirEntry : iter) {
-            if (G_END_WITH(dirEntry.path().string(), ".cpp") || G_END_WITH(dirEntry.path().string(), ".hpp")) {
-                HYPER_LOG("registered file watch at " << dirEntry.path().string())
-                filewatch::FileWatch<std::string> watch((std::string("./") + std::string("assets/scripts/Player/player.cpp")), [&](const std::string &filename, const filewatch::Event change_type) {
-                    HYPER_LOG("file watch fired at " << dirEntry.path().string())
-                    CompileScripts_Linux(dirEntry);
-                    CompileScripts_Windows(dirEntry);
-                });
-                FileWatches.push_back(&watch);
-            }
+            // if (G_END_WITH(dirEntry.path().string(), ".cpp") || G_END_WITH(dirEntry.path().string(), ".hpp")) {
+            //     HYPER_LOG("registered file watch at " << dirEntry.path().string())
+            //     filewatch::FileWatch<std::string> watch((std::string("./") + ), [&](const std::string &filename, const filewatch::Event change_type) {
+            //         HYPER_LOG("file watch fired at " << dirEntry.path().string())
+            //         CompileScripts_Linux(dirEntry);
+            //         CompileScripts_Windows(dirEntry);
+            //     });
+            //     FileWatches.push_back(&watch);
+            // }
 
             if (G_END_WITH(dirEntry.path().string(), ".cpp")) {
                 std::string file = dirEntry.path().string();

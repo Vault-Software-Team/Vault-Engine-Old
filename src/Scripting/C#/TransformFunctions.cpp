@@ -43,6 +43,18 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
                                                                           std::to_string(transform.forward.x) + " " + std::to_string(transform.forward.y) + " " + std::to_string(transform.forward.z))
                                                                           .c_str());
             }
+
+            if (keyStr == "up") {
+                *result = mono_string_new(CsharpVariables::appDomain, (
+                                                                          std::to_string(transform.up.x) + " " + std::to_string(transform.up.y) + " " + std::to_string(transform.up.z))
+                                                                          .c_str());
+            }
+
+            if (keyStr == "right") {
+                *result = mono_string_new(CsharpVariables::appDomain, (
+                                                                          std::to_string(transform.right.x) + " " + std::to_string(transform.right.y) + " " + std::to_string(transform.right.z))
+                                                                          .c_str());
+            }
         } catch (std::exception &e) {
         }
     }
@@ -76,5 +88,25 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
             transform.scale.y = y;
             transform.scale.z = z;
         }
+    }
+
+    void Transform_LookAt(MonoString *id, float x, float y, float z) {
+        using namespace Experimental;
+        if (!id)
+            return;
+
+        try {
+            const std::string idStr = mono_string_to_utf8(id);
+
+            auto *gameObject = f_GameObject::FindGameObjectByID(idStr);
+            if (!gameObject) {
+                Log log(("C#: Couldn't find game object with ID: " + idStr), LOG_ERROR);
+                return;
+            }
+            auto &transform = gameObject->GetComponent<Transform>();
+
+            transform.LookAt(glm::vec3(x, y, z));
+        } catch (std::exception &e) {
+        };
     }
 } // namespace HyperAPI::CsharpScriptEngine::Functions

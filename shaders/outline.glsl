@@ -1,7 +1,7 @@
 #shader vertex
 #version 330 core
 layout (location = 0) in vec3 position;
-layout (location = 2) in vec3 normal;
+layout(location = 2) in vec3 aNormal;
 
 uniform mat4 camera;
 uniform mat4 translation;
@@ -11,8 +11,8 @@ uniform float outlining;
 uniform mat4 model;
 
 void main() {
-    // vec3 currentPosition = vec3(model * translation * rotation * scale * outlining * vec4(position, 1));
-    vec3 currentPosition = vec3(model * vec4(position + normal * 0.000001, 1));
+    vec3 Normal = mat3(transpose(inverse(model))) * aNormal;
+    vec3 currentPosition = vec3(model * translation * rotation * scale * vec4(position, 1));
     gl_Position = camera * vec4(currentPosition, 1);
 }
 

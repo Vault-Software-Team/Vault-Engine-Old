@@ -86,6 +86,7 @@ namespace HyperAPI::Experimental {
                                 {"height", "nullptr"},
                                 {"roughness", 0},
                                 {"metallic", 0},
+                                {"shininess", 16},
                                 {"baseColor",
                                  {
                                      {"r", 1},
@@ -113,9 +114,9 @@ namespace HyperAPI::Experimental {
                             const std::string diffuseTexture = JSON["diffuse"];
                             const std::string specularTexture = JSON["specular"];
                             const std::string normalTexture = JSON["normal"];
-                            std::string heightTexture = "nullptr";
+                            std::string emissionTexture = "nullptr";
                             if (JSON.contains("height")) {
-                                heightTexture = JSON["height"];
+                                emissionTexture = JSON["height"];
                             }
 
                             if (diffuseTexture != "nullptr") {
@@ -145,13 +146,13 @@ namespace HyperAPI::Experimental {
                                     normalTexture.c_str(), 2, "texture_normal");
                             }
 
-                            if (heightTexture != "nullptr") {
+                            if (emissionTexture != "nullptr") {
                                 if (m_Mesh->material.height != nullptr) {
                                     delete m_Mesh->material.height;
                                 }
 
                                 m_Mesh->material.height = new Texture(
-                                    heightTexture.c_str(), 2, "texture_normal");
+                                    emissionTexture.c_str(), 2, "texture_normal");
                             }
 
                             m_Mesh->material.baseColor = Vector4(
@@ -160,6 +161,9 @@ namespace HyperAPI::Experimental {
 
                             m_Mesh->material.roughness = JSON["roughness"];
                             m_Mesh->material.metallic = JSON["metallic"];
+                            if (JSON.contains("shininess")) {
+                                m_Mesh->material.shininess = JSON["shininess"];
+                            }
                             m_Mesh->material.texUVs =
                                 Vector2(JSON["texUV"]["x"], JSON["texUV"]["y"]);
 
@@ -190,6 +194,7 @@ namespace HyperAPI::Experimental {
                         }
 
                         m_Mesh->material.roughness = 0.0f;
+                        m_Mesh->material.shininess = 0.0f;
                         m_Mesh->material.metallic = 0.0f;
                         m_Mesh->material.texUVs = Vector2(0, 0);
                     }
@@ -243,9 +248,9 @@ namespace HyperAPI::Experimental {
                     const std::string diffuseTexture = JSON["diffuse"];
                     const std::string specularTexture = JSON["specular"];
                     const std::string normalTexture = JSON["normal"];
-                    std::string heightTexture = "nullptr";
+                    std::string emissionTexture = "nullptr";
                     if (JSON.contains("height")) {
-                        heightTexture = JSON["height"];
+                        emissionTexture = JSON["height"];
                     }
 
                     if (diffuseTexture != "nullptr") {
@@ -275,13 +280,13 @@ namespace HyperAPI::Experimental {
                             normalTexture.c_str(), 2, "texture_normal");
                     }
 
-                    if (heightTexture != "nullptr") {
+                    if (emissionTexture != "nullptr") {
                         if (m_Mesh->material.height != nullptr) {
                             delete m_Mesh->material.height;
                         }
 
                         m_Mesh->material.height = new Texture(
-                            heightTexture.c_str(), 2, "texture_normal");
+                            emissionTexture.c_str(), 2, "texture_normal");
                     }
 
                     m_Mesh->material.baseColor = Vector4(
@@ -289,6 +294,9 @@ namespace HyperAPI::Experimental {
                         JSON["baseColor"]["b"], JSON["baseColor"]["a"]);
 
                     m_Mesh->material.roughness = JSON["roughness"];
+                    if (JSON.contains("shininess")) {
+                        m_Mesh->material.shininess = JSON["shininess"];
+                    }
                     m_Mesh->material.metallic = JSON["metallic"];
                     m_Mesh->material.texUVs =
                         Vector2(JSON["texUV"]["x"], JSON["texUV"]["y"]);
@@ -333,9 +341,14 @@ namespace HyperAPI::Experimental {
             const std::string diffuseTexture = JSON["diffuse"];
             const std::string specularTexture = JSON["specular"];
             const std::string normalTexture = JSON["normal"];
-            std::string heightTexture = "nullptr";
+            std::string emissionTexture = "nullptr";
             if (JSON.contains("height")) {
-                heightTexture = JSON["height"];
+                emissionTexture = JSON["height"];
+            }
+
+            std::string heightTexture = "nullptr";
+            if (JSON.contains("height_map")) {
+                emissionTexture = JSON["height_map"];
             }
 
             if (diffuseTexture != "nullptr") {
@@ -394,17 +407,17 @@ namespace HyperAPI::Experimental {
                 }
             }
 
-            if (heightTexture != "nullptr") {
+            if (emissionTexture != "nullptr") {
                 if (m_Mesh->material.emission != nullptr) {
                     if (m_Mesh->material.emission->texPath !=
-                        heightTexture) {
+                        emissionTexture) {
                         delete m_Mesh->material.emission;
                         m_Mesh->material.emission = new Texture(
-                            heightTexture.c_str(), 4, "texture_emission");
+                            emissionTexture.c_str(), 4, "texture_emission");
                     }
                 } else {
                     m_Mesh->material.emission = new Texture(
-                        heightTexture.c_str(), 4, "texture_emission");
+                        emissionTexture.c_str(), 4, "texture_emission");
                 }
             } else {
                 if (m_Mesh->material.emission != nullptr) {
@@ -418,6 +431,9 @@ namespace HyperAPI::Experimental {
                         JSON["baseColor"]["b"], JSON["baseColor"]["a"]);
 
             m_Mesh->material.roughness = JSON["roughness"];
+            if (JSON.contains("shininess")) {
+                m_Mesh->material.shininess = JSON["shininess"];
+            }
             m_Mesh->material.metallic = JSON["metallic"];
             m_Mesh->material.texUVs =
                 Vector2(JSON["texUV"]["x"], JSON["texUV"]["y"]);

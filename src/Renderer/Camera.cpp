@@ -53,11 +53,8 @@ namespace HyperAPI {
                                ? prespectiveSize.x / prespectiveSize.y
                                : width / height;
 
+            aspect = (float)Scene::aspect_width / Scene::aspect_height;
             if (mode2D) {
-                float target_width = 1280;
-                float target_height = 720;
-                float A = target_width / target_height;
-                float V = width / height;
 
                 projection =
                     glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.1f, 5000.0f);
@@ -116,6 +113,7 @@ namespace HyperAPI {
                                : width / height;
 
             if (mode2D) {
+                aspect = (float)Scene::aspect_width / Scene::aspect_height;
                 projection =
                     glm::ortho(-aspect, aspect, -1.0f, 1.0f, 0.1f, 5000.0f);
                 projection =

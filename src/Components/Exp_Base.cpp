@@ -408,6 +408,27 @@ namespace HyperAPI::Experimental {
         return animations;
     }
 
+    Model::Model(char *path, bool AddTexture,
+                 Vector4 color, bool m_nogm, int mesh_index) {
+        this->path = std::string(path);
+        Color = color;
+
+        no_gm = m_nogm;
+        this->mesh_index = mesh_index;
+
+        if (!m_nogm) {
+            mainGameObject = new GameObject();
+            mainGameObject->name = "Model";
+            mainGameObject->ID = uuid::generate_uuid_v4();
+            mainGameObject->AddComponent<Transform>();
+            Scene::m_GameObjects->push_back(mainGameObject);
+        }
+
+        texturesEnabled = AddTexture;
+
+        loadModel(path);
+    }
+
     void Model::Draw(Shader &shader, Camera &camera) {
         Transform &mainTransform = mainGameObject->GetComponent<Transform>();
         mainTransform.Update();
@@ -422,8 +443,7 @@ namespace HyperAPI::Experimental {
     void Model::loadModel(std::string path) {
         Assimp::Importer import;
         const aiScene *scene = import.ReadFile(
-            path, aiProcess_Triangulate | aiProcess_CalcTangentSpace |
-                      aiProcess_PreTransformVertices);
+            path, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
 
         if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE ||
             !scene->mRootNode) {
@@ -485,12 +505,24 @@ namespace HyperAPI::Experimental {
         return glm::normalize(glm::cross(a, b));
     }
 
+    void Model::SetVertexBoneData(Vertex &vertex, int boneID, float weight) {
+        for (int i = 0; i < MAX_BONE_WEIGHTS; ++i) {
+            if (vertex.m_BoneIDs[i] < 0) {
+                vertex.m_Weights[i] = weight;
+                vertex.m_BoneIDs[i] = boneID;
+                std::cout << "Weight: " << weight << "";
+                std::cout << "Bone ID: " << boneID << "";
+                break;
+            }
+        }
+    }
+
     void Model::ExtractBoneWeightForVertices(std::vector<Vertex> &vertices, aiMesh *mesh, const aiScene *scene) {
+        std::cout << "Bone count: " << mesh->mNumBones << std::endl;
         for (int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex) {
             int boneID = -1;
             std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
             if (m_BoneInfoMap.find(boneName) == m_BoneInfoMap.end()) {
-                std::cout << boneName << std::endl;
                 BoneInfo newBoneInfo;
                 newBoneInfo.id = m_BoneCounter;
                 newBoneInfo.offset = AssimpGLMHelpers::ConvertMatrixToGLMFormat(
@@ -509,7 +541,7 @@ namespace HyperAPI::Experimental {
                 int vertexId = weights[weightIndex].mVertexId;
                 float weight = weights[weightIndex].mWeight;
                 assert(vertexId <= vertices.size());
-                SetVertexBoneData(vertices[vertexId], boneID, weight);
+                SetVertexBoneData(std::ref(vertices[vertexId]), boneID, weight);
             }
         }
     }
@@ -526,7 +558,7 @@ namespace HyperAPI::Experimental {
                 indices.push_back(face.mIndices[j]);
             }
         }
-        bool no_normals;
+        bool no_normals = false;
         for (uint32_t i = 0; i < mesh->mNumVertices; i++) {
             Vertex vertex;
             SetVertexBoneDataToDefault(vertex);
@@ -583,7 +615,7 @@ namespace HyperAPI::Experimental {
                 vertex.normal = glm::normalize(vertex.normal);
             }
         }
-        ExtractBoneWeightForVertices(vertices, mesh, scene);
+        ExtractBoneWeightForVertices(std::ref(vertices), mesh, scene);
 
         // indices
 
@@ -613,6 +645,13 @@ namespace HyperAPI::Experimental {
 
             GameObject *gameObject = new GameObject();
             gameObject->name = name;
+            if (!mainGameObject) {
+                mainGameObject = new GameObject();
+                mainGameObject->name = "Model";
+                mainGameObject->ID = uuid::generate_uuid_v4();
+                mainGameObject->AddComponent<Transform>();
+                Scene::m_GameObjects->push_back(mainGameObject);
+            }
             gameObject->parentID = mainGameObject->ID;
             gameObject->AddComponent<Transform>();
             gameObject->AddComponent<MeshRenderer>();

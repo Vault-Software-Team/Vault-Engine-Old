@@ -9,6 +9,8 @@
 #include "GameObject.hpp"
 #include "Bone.hpp"
 #include "Transform.hpp"
+#define MAX_BONE_INFLUENCE 4
+#define MAX_BONE_WEIGHTS MAX_BONE_INFLUENCE
 
 namespace HyperAPI::Experimental {
     class DLL_API Model {
@@ -16,31 +18,19 @@ namespace HyperAPI::Experimental {
         int currSlot = 0;
 
     public:
-        std::map<std::string, BoneInfo> m_BoneInfoMap;
-        std::vector<Experimental::GameObject *> bones;
+        std::map<std::string, BoneInfo> m_BoneInfoMap; //
         int m_BoneCounter = 0;
+
         auto &GetBoneInfoMap() { return m_BoneInfoMap; }
-
-        int &GetBoneCounter() { return m_BoneCounter; }
-
+        int &GetBoneCount() { return m_BoneCounter; }
         void SetVertexBoneDataToDefault(Vertex &vertex) {
-            for (int i = 0; i < MAX_BONE_INFLUENCE; i++) {
+            for (int i = 0; i < MAX_BONE_WEIGHTS; i++) {
                 vertex.m_BoneIDs[i] = -1;
                 vertex.m_Weights[i] = 0.0f;
             }
         }
 
-        int bonesStuffIdkFuckThisShit = 0;
-        void SetVertexBoneData(Vertex &vertex, int boneID, float weight) {
-            for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) {
-                if (vertex.m_BoneIDs[i] < 0) {
-                    vertex.m_Weights[i] = weight;
-                    vertex.m_BoneIDs[i] = boneID;
-                    break;
-                }
-            }
-        }
-
+        void SetVertexBoneData(Vertex &vertex, int boneID, float weight);
         void ExtractBoneWeightForVertices(std::vector<Vertex> &vertices, aiMesh *mesh, const aiScene *scene);
 
         GameObject *mainGameObject;
@@ -77,41 +67,23 @@ namespace HyperAPI::Experimental {
         bool no_gm;
         int mesh_index;
         Model(char *path, bool AddTexture = false,
-              Vector4 color = Vector4(1, 1, 1, 1), bool m_nogm = false, int mesh_index = 0) {
-            this->path = std::string(path);
-            Color = color;
-
-            no_gm = m_nogm;
-            this->mesh_index = mesh_index;
-
-            if (!m_nogm) {
-                mainGameObject = new GameObject();
-                mainGameObject->name = "Model";
-                mainGameObject->ID = uuid::generate_uuid_v4();
-                mainGameObject->AddComponent<Transform>();
-                Scene::m_GameObjects->push_back(mainGameObject);
-            }
-
-            texturesEnabled = AddTexture;
-
-            loadModel(path);
-        }
+              Vector4 color = Vector4(1, 1, 1, 1), bool m_nogm = false, int mesh_index = 0);
 
         void Draw(Shader &shader, Camera &camera);
     };
 
-    struct DLL_API AssimpNodeData {
+    struct AssimpNodeData {
         glm::mat4 transformation;
         std::string name;
         int childrenCount;
         std::vector<AssimpNodeData> children;
     };
 
-    class DLL_API Animation {
+    class Animation {
     public:
         Animation() = default;
 
-        Animation(const std::string &animationPath, Experimental::Model *model) {
+        Animation(const std::string &animationPath, Model *model) {
             Assimp::Importer importer;
             const aiScene *scene = importer.ReadFile(animationPath, aiProcess_Triangulate);
             assert(scene && scene->mRootNode);
@@ -151,7 +123,7 @@ namespace HyperAPI::Experimental {
             int size = animation->mNumChannels;
 
             auto &boneInfoMap = model.GetBoneInfoMap(); // getting m_BoneInfoMap from Model class
-            int &boneCount = model.GetBoneCounter();    // getting the m_BoneCounter from Model class
+            int &boneCount = model.GetBoneCount();      // getting the m_BoneCounter from Model class
 
             // reading channels(bones engaged in an animation and their keyframes)
             for (int i = 0; i < size; i++) {
@@ -189,11 +161,11 @@ namespace HyperAPI::Experimental {
         std::map<std::string, BoneInfo> m_BoneInfoMap;
     };
 
-    class DLL_API Animator {
+    class Animator {
     public:
-        Animator(Animation *Animation) {
+        Animator(Animation *currentAnimation) {
             m_CurrentTime = 0.0;
-            m_CurrentAnimation = Animation;
+            m_CurrentAnimation = currentAnimation;
 
             m_FinalBoneMatrices.reserve(100);
 

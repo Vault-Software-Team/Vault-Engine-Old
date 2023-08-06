@@ -2,6 +2,7 @@
 #include <dllapi.hpp>
 #include <libs.hpp>
 #define MAX_BONE_INFLUENCE 4
+#define MAX_BONE_WEIGHTS MAX_BONE_INFLUENCE
 
 namespace HyperAPI {
     struct DLL_API BoneInfo {

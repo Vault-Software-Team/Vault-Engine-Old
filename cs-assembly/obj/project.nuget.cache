@@ -1,11 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "Wc0+GrVx7BoJ1qWMds5oVLkPGs8ESxx8PJTiyh7yjlt3XH+Op3oiN3omanznFbujLJ6QKwlN0CQh0/gWwYX/rg==",
+  "dgSpecHash": "e/EdjnCqHrYezbpob5G7kTm57wE8yRnmL1X/JUhGfM6H4V2dCG0P5IE7MdAzLcYL92KAiECPHxA3fdNcdek0TQ==",
   "success": true,
   "projectFilePath": "/home/koki1019/Desktop/Main Projects/Vault_Engine/cs-assembly/cs-assembly.csproj",
   "expectedPackageFiles": [
-    "/home/koki1019/.nuget/packages/microsoft.netcore.app.ref/6.0.16/microsoft.netcore.app.ref.6.0.16.nupkg.sha512",
-    "/home/koki1019/.nuget/packages/microsoft.aspnetcore.app.ref/6.0.16/microsoft.aspnetcore.app.ref.6.0.16.nupkg.sha512"
+    "/home/koki1019/.nuget/packages/microsoft.netcore.app.ref/6.0.20/microsoft.netcore.app.ref.6.0.20.nupkg.sha512",
+    "/home/koki1019/.nuget/packages/microsoft.aspnetcore.app.ref/6.0.20/microsoft.aspnetcore.app.ref.6.0.20.nupkg.sha512"
   ],
   "logs": []
 }

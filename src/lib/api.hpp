@@ -64,7 +64,7 @@
 #include "../Renderer/Timestep.hpp"
 #include "../Batch/BatchLayer.hpp"
 #include "../Renderer/Font.hpp"
-#include "../Renderer/Terrain.hpp"
+#include "../Terrain/Terrain.hpp"
 
 // Audio
 #include "../Audio/SoundBuffer.hpp"

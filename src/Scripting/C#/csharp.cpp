@@ -93,6 +93,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         // Transform Component
         mono_add_internal_call("Vault.Transform::GetKey", reinterpret_cast<void *(*)>(Transform_GetKey));
         mono_add_internal_call("Vault.Transform::SetKey", reinterpret_cast<void *(*)>(Transform_SetKey));
+        mono_add_internal_call("Vault.Transform::cpp_LookAt", reinterpret_cast<void *(*)>(Transform_LookAt));
 
         // ID Shit
         mono_add_internal_call("Vault.Entity::GetID", reinterpret_cast<void *(*)>(Entity_GetID));

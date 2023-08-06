@@ -22,6 +22,8 @@ namespace Hyper {
         std::function<void(uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui)>
             gui,
         std::function<void(HyperAPI::Shader &)> shadowMapRender) {
+        glfwWindowHint(GLFW_DECORATED, false);
+
         HYPER_LOG("Application started")
         width = 1280;
         height = 720;
@@ -30,7 +32,6 @@ namespace Hyper {
         // glEnable(GL_FRAMEBUFFER_SRGB);
         // }
 
-        HyperAPI::Shader shadowMapProgram("shaders/shadowMap.glsl");
         HyperAPI::Shader framebufferShader("shaders/framebuffer.glsl");
         HyperAPI::Shader blurShader("shaders/blur.glsl");
 
@@ -40,7 +41,7 @@ namespace Hyper {
         // shader.Bind();
         // shader.SetUniform1f("ambient", 0.5);
 
-        glfwSwapInterval(0);
+        glfwSwapInterval(1);
 
         uint32_t rectVAO, rectVBO;
         glGenVertexArrays(1, &rectVAO);
@@ -614,22 +615,22 @@ namespace Hyper {
                             S_PPFBO, width, height, sceneMouseX, sceneMouseY);
             }
 
-            if (!renderOnScreen) {
-                ImGui_ImplOpenGL3_NewFrame();
-                ImGui_ImplGlfw_NewFrame();
-                ImGui::NewFrame();
-                ImGuizmo::BeginFrame();
+            // if (!renderOnScreen) {
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+            ImGuizmo::BeginFrame();
 
-                gui(S_PPT, S_PPFBO, testTexture);
+            gui(S_PPT, S_PPFBO, testTexture);
 
-                ImGui::Render();
-                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-                GLFWwindow *backup_current_context = glfwGetCurrentContext();
-                ImGui::UpdatePlatformWindows();
-                ImGui::RenderPlatformWindowsDefault();
-                glfwMakeContextCurrent(backup_current_context);
-            }
+            GLFWwindow *backup_current_context = glfwGetCurrentContext();
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+            glfwMakeContextCurrent(backup_current_context);
+            // }
             glfwSwapBuffers(renderer->window);
         }
 

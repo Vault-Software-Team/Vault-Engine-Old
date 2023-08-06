@@ -9,6 +9,7 @@
 namespace Hyper {
     class DLL_API Application {
     public:
+        static inline Application *instance;
         bool isGuzimoInUse = false;
         bool mouseClicked = false;
         int sceneMouseX, sceneMouseY;
@@ -33,10 +34,12 @@ namespace Hyper {
             bool fullscreen = false, bool resizable = true,
             bool wireframe = false, std::function<void()> ioConf = []() {})
             : width(width), height(height), title(std::string(gameTitle)) {
+            instance = this;
             HYPER_LOG("Initializing Vault Engine");
             renderer =
                 new HyperAPI::Renderer(width, height, title.c_str(), {0, -1}, 8,
                                        fullscreen, resizable, wireframe);
+            glfwWindowHint(GLFW_DECORATED, false);
             HYPER_LOG("Initialized Vault Engine");
 
             // HYPER_LOG("Initializing Audio Engine");

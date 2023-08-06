@@ -133,12 +133,25 @@ namespace HyperAPI {
     }
 
     void Texture::Bind(uint32_t slot) {
-        if (slot == -1) {
-            glActiveTexture(GL_TEXTURE0 + tex->slot);
-            glBindTexture(GL_TEXTURE_2D, tex->ID);
-        } else {
-            glActiveTexture(GL_TEXTURE0 + slot);
-            glBindTexture(GL_TEXTURE_2D, tex->ID);
+#ifdef _WIN32
+        if (IsBadReadPtr(text, sizeof(m_Texture)))
+            return;
+#else
+        int nullfd = open("/dev/random", O_WRONLY);
+        if (write(nullfd, tex, sizeof(m_Texture)) < 0) {
+            return;
+        }
+        close(nullfd);
+#endif
+
+        if (tex) {
+            if (slot == -1) {
+                glActiveTexture(GL_TEXTURE0 + tex->slot);
+                glBindTexture(GL_TEXTURE_2D, tex->ID);
+            } else {
+                glActiveTexture(GL_TEXTURE0 + slot);
+                glBindTexture(GL_TEXTURE_2D, tex->ID);
+            }
         }
     }
 

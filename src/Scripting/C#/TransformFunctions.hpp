@@ -18,4 +18,5 @@
 namespace HyperAPI::CsharpScriptEngine::Functions {
     void Transform_GetKey(MonoString *key, MonoString *id, MonoString **result);
     void Transform_SetKey(MonoString *key, MonoString *id, float x, float y, float z);
+    void Transform_LookAt(MonoString *id, float x, float y, float z);
 } // namespace HyperAPI::CsharpScriptEngine::Functions

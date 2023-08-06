@@ -53,6 +53,8 @@ static int m_GuizmoWorld = -1;
 static float bounds[] = {-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f};
 static float boundsSnap[] = {0.1f, 0.1f, 0.1f};
 static bool boundSizing = false;
+static bool openConsole = false;
+static char consoleBuffer[1000];
 static bool boundSizingSnap = false;
 
 class DLL_API CollisionListener : public b2ContactListener {
@@ -352,7 +354,6 @@ void DirIter(const std::string &path) {
 
     if (count == 0)
         count = 5;
-
     ImGui::Columns(count, 0, false);
 
     // select second fa-solid-900 font that is twice big
@@ -644,6 +645,7 @@ struct DLL_API InspectorMaterial {
     std::string normal = "None";
     std::string height = "None";
     float metallic = 0;
+    float shininess = 0;
     float roughness = 0;
     Vector4 baseColor = Vector4(1, 1, 1, 1);
     Vector2 texUVs = Vector2(0, 0);
@@ -651,10 +653,113 @@ struct DLL_API InspectorMaterial {
 
 bool editingText = false;
 
-void ShortcutManager(bool &openConfig) {
+bool ccode_StartsWith(const char *a, const char *b) {
+    if (strncmp(a, b, strlen(b)) == 0)
+        return 1;
+    return 0;
+}
+
+std::vector<std::string> console_GetArguments(std::string string) {
+    std::vector<std::string> out;
+    std::string s;
+    std::stringstream ss(string);
+    while (std::getline(ss, s, ' ')) {
+        out.push_back(s);
+    }
+    out.erase(out.begin());
+
+    return out;
+}
+
+void DevConsole() {
+    // Static Variables
+    static bool wireframe_rendering = false;
+
+    if (ImGui::IsKeyPressed('`') || ImGui::IsKeyPressed('~')) {
+        openConsole = !openConsole;
+    }
+
+    if (openConsole) {
+        if (ImGui::Begin("Dev Console", &openConsole)) {
+            ImVec2 console_size = ImGui::GetWindowSize();
+            ImGui::BeginChild("Dev Logs", ImVec2(console_size.x, console_size.y - 70));
+
+            for (auto &log : Scene::logs) {
+                log.GUI();
+            }
+
+            ImGui::SetScrollHereY(0.999f);
+            ImGui::EndChild();
+            ImGui::PushItemWidth(console_size.x);
+            ImGui::InputText("##dev_input", consoleBuffer, 1000);
+
+            if (ImGui::IsKeyPressed(ImGuiKey_Enter) && ImGui::IsWindowFocused()) {
+                if (ccode_StartsWith(consoleBuffer, "exit")) {
+                    exit(0);
+                } else if (ccode_StartsWith(consoleBuffer, "warning")) {
+                    std::vector<std::string> out = console_GetArguments(consoleBuffer);
+
+                    std::string real_string;
+                    for (auto &string : out) {
+                        real_string += string;
+                        real_string += " ";
+                    }
+                    Log log(real_string, HyperAPI::LOG_WARNING);
+                } else if (ccode_StartsWith(consoleBuffer, "error")) {
+                    std::vector<std::string> out = console_GetArguments(consoleBuffer);
+
+                    std::string real_string;
+                    for (auto &string : out) {
+                        real_string += string;
+                        real_string += " ";
+                    }
+                    Log log(real_string, HyperAPI::LOG_ERROR);
+                } else if (ccode_StartsWith(consoleBuffer, "print")) {
+                    std::stringstream ss(consoleBuffer);
+
+                    std::vector<std::string> out = console_GetArguments(consoleBuffer);
+                    std::string real_string;
+                    for (auto &string : out) {
+                        real_string += string;
+                        real_string += " ";
+                    }
+                    Log log(real_string, HyperAPI::LOG_INFO);
+                } else if (ccode_StartsWith(consoleBuffer, "wireframe")) {
+                    wireframe_rendering = !wireframe_rendering;
+                    Hyper::Application::instance->renderer->wireframe = wireframe_rendering;
+                    Log log(wireframe_rendering ? "Enabled Wireframe" : "Disabled Wireframe", LOG_INFO);
+                } else {
+                    Log log("Invalid Command!", HyperAPI::LOG_ERROR);
+                }
+            }
+
+            ImGui::End();
+        }
+    }
+}
+
+void RunInstance(const char *m_cwd) {
+#ifdef _WIN32
+    std::thread *gameThread = new std::thread([&](const char *m_cwd) {
+        system(("\"" + std::string(CsharpVariables::oldCwd) + std::string("\\bin\\game.out\" \"") + m_cwd + "\"").c_str());
+    },
+                                              m_cwd);
+#else
+    std::thread *gameThread = new std::thread([&](const char *m_cwd) {
+        system(("\"" + std::string(CsharpVariables::oldCwd) + std::string("/bin/game.out\" \"") + m_cwd + "\"").c_str());
+    },
+                                              m_cwd);
+#endif
+}
+
+void ShortcutManager(bool &openConfig, const char *m_cwd) {
     if (ImGui::IsKeyDown(GLFW_KEY_LEFT_CONTROL) &&
         ImGui::IsKeyPressed(GLFW_KEY_G)) {
         drawGrid = !drawGrid;
+    }
+
+    if (ImGui::IsKeyDown(GLFW_KEY_LEFT_CONTROL) && ImGui::IsKeyPressed(GLFW_KEY_I)) {
+        RunInstance(m_cwd);
     }
 
     if (ImGui::IsKeyPressed(ImGuiKey_LeftAlt) && ImGui::IsKeyPressed(GLFW_KEY_T)) {
@@ -1010,6 +1115,14 @@ int main(int argc, char **argv) {
         }
         mainSceneFound = true;
 
+        if (JSON.contains("aspect_width")) {
+            Scene::aspect_width = JSON["aspect_width"];
+        }
+
+        if (JSON.contains("aspect_height")) {
+            Scene::aspect_height = JSON["aspect_height"];
+        }
+
         if (JSON.contains("post_processing")) {
             config.postProcessing.enabled = JSON["post_processing"]["enabled"];
             config.postProcessing.bloom.enabled =
@@ -1048,6 +1161,8 @@ int main(int argc, char **argv) {
             {"mainScene", config.mainScene},
             {"width", config.width},
             {"height", config.height},
+            {"aspect_width", Scene::aspect_width},
+            {"aspect_height", Scene::aspect_height},
             {"resizable", config.resizable},
             {"fullscreen_on_launch", config.fullscreenOnLaunch},
             {"layers", {"Default"}},
@@ -1146,8 +1261,12 @@ int main(int argc, char **argv) {
     Input::window = app.renderer->window;
     // glfw enable sticky mouse buttons
     Shader shader("shaders/default.glsl");
+    Shader outlineShader("shaders/outline.glsl");
     Shader shadowShader("shaders/shadowMap.glsl");
     Shader workerShader("shaders/worker.glsl");
+    outlineShader.Bind();
+    outlineShader.SetUniform1f("outlining", 1.08f);
+    outlineShader.Unbind();
     // Shader batchShader("shaders/batch.glsl");
     // Shader gridShader("shaders/grid.glsl");
 
@@ -1311,9 +1430,13 @@ int main(int argc, char **argv) {
     std::vector<uint32_t> planeIndices = {0, 1, 2, 0, 2, 3};
 
     Material material(Vector4(0, 4, 0.2, 1));
-    Mesh CubeCollider(cubeVertices, cubeIndices, material);
+    Mesh mesh_BoxCollider3D(cubeVertices, cubeIndices, material);
     Mesh mesh_BoxCollider2D(planeVertices, planeIndices, material);
+    Mesh *mesh_MeshCollider3D = nullptr;
+
     bool drawBoxCollider2D = false;
+    bool drawBoxCollider3D = false;
+    bool drawMeshCollider3D = false;
     glm::vec3 bc2dPos = glm::vec3(0, 0, 0);
     glm::vec3 bc2dScale = glm::vec3(1, 1, 1);
     glm::vec3 bc2dRotation = glm::vec3(0, 0, 0);
@@ -1460,7 +1583,9 @@ int main(int argc, char **argv) {
 
     std::function<void(uint32_t & PPT, uint32_t & PPFBO, uint32_t & gui_gui)>
         GUI_EXP = [&](uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui) {
-            ShortcutManager(openConfig);
+            ShortcutManager(openConfig, m_cwd);
+
+            DevConsole();
 
             if (ImGui::BeginMainMenuBar()) {
                 if (ImGui::BeginMenu("File")) {
@@ -1542,6 +1667,20 @@ int main(int argc, char **argv) {
                         ImGuiFileDialog::Instance()->OpenDialog(
                             "BuildWindowsDialog", "Build for Windows", nullptr,
                             ".");
+                    }
+
+                    if (ImGui::MenuItem("Run Instance", "CTRL+I")) {
+                        if (Scene::currentScenePath == "") {
+                            ImGuiFileDialog::Instance()->OpenDialog(
+                                "SaveSceneDialog",
+                                ICON_FA_FLOPPY_DISK " Save Scene", ".vault",
+                                ".");
+                        } else {
+                            json S_SJ;
+                            Scene::SaveScene(Scene::currentScenePath, S_SJ);
+                        }
+
+                        RunInstance(m_cwd);
                     }
                     ImGui::EndMenu();
                 }
@@ -1738,6 +1877,8 @@ int main(int argc, char **argv) {
                                 {"mainScene", config.mainScene},
                                 {"width", config.width},
                                 {"height", config.height},
+                                {"aspect_width", Scene::aspect_width},
+                                {"aspect_height", Scene::aspect_height},
                                 {"resizable", config.resizable},
                                 {"fullscreen_on_launch",
                                  config.fullscreenOnLaunch},
@@ -1826,6 +1967,12 @@ int main(int argc, char **argv) {
                                 }
                                 m_InspectorMaterial.roughness =
                                     JSON["roughness"];
+                                if (JSON.contains("shininess")) {
+                                    m_InspectorMaterial.shininess =
+                                        JSON["shininess"] == "nullptr"
+                                            ? "None"
+                                            : JSON["shininess"];
+                                }
                                 m_InspectorMaterial.metallic = JSON["metallic"];
                                 m_InspectorMaterial.texUVs.x =
                                     JSON["texUV"]["x"];
@@ -1933,6 +2080,8 @@ int main(int argc, char **argv) {
                                           &m_InspectorMaterial.texUVs.x, 0.01f);
                         ImGui::DragFloat("Roughness",
                                          &m_InspectorMaterial.roughness, 0.01f);
+                        ImGui::DragFloat("Shininess",
+                                         &m_InspectorMaterial.shininess, 0.01f);
                         ImGui::DragFloat("Metallic",
                                          &m_InspectorMaterial.metallic, 0.01f,
                                          0.0f);
@@ -1959,6 +2108,7 @@ int main(int argc, char **argv) {
                                                : m_InspectorMaterial.height},
                                 {"roughness", m_InspectorMaterial.roughness},
                                 {"metallic", m_InspectorMaterial.metallic},
+                                {"shininess", m_InspectorMaterial.shininess},
                                 {"baseColor",
                                  {
                                      {"r", m_InspectorMaterial.baseColor.x},
@@ -2074,6 +2224,9 @@ int main(int argc, char **argv) {
                 ImGui::Checkbox("Resizable", &config.resizable);
                 ImGui::DragInt("Width", &config.width, 1, 0, 1920);
                 ImGui::DragInt("Height", &config.height, 1, 0, 1080);
+
+                ImGui::DragInt("Aspect Width", &Scene::aspect_width, 1, 0, 1920);
+                ImGui::DragInt("Aspect Height", &Scene::aspect_height, 1, 0, 1080);
                 // ImGui::DragFloat("Grid Size", &m_grid_size, 5, 1);
                 // ImGui::Checkbox("Draw Grid", &drawGrid);
 
@@ -2175,6 +2328,8 @@ int main(int argc, char **argv) {
                         {"ambientLight", config.ambientLight},
                         {"exposure", config.exposure},
                         {"mainScene", config.mainScene},
+                        {"aspect_width", Scene::aspect_width},
+                        {"aspect_height", Scene::aspect_height},
                         {"resizable", config.resizable},
                         {"fullscreen_on_launch", config.fullscreenOnLaunch},
                         {"width", config.width},
@@ -2984,6 +3139,7 @@ int main(int argc, char **argv) {
                     Scene::m_Object->name = Scene::name;
                     Scene::m_Object->layer = Scene::layer;
 
+                    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
                     if (Scene::m_Object->HasComponent<Transform>()) {
                         auto &comp = Scene::m_Object->GetComponent<Transform>();
                         if (comp.hasGUI)
@@ -3178,15 +3334,40 @@ int main(int argc, char **argv) {
                     if (Scene::m_Object->HasComponent<BoxCollider3D>()) {
                         auto &comp =
                             Scene::m_Object->GetComponent<BoxCollider3D>();
-                        if (comp.hasGUI)
+                        if (comp.hasGUI) {
+                            auto &transform =
+                                Scene::m_Object->GetComponent<Transform>();
+                            bc2dPos = transform.position;
+                            bc2dRotation = transform.rotation;
+                            bc2dScale = Vector3(comp.size.x, comp.size.y, comp.size.z);
+
+                            drawBoxCollider3D = true;
                             comp.GUI();
+                        }
+                    } else {
+                        drawBoxCollider3D = false;
                     }
 
                     if (Scene::m_Object->HasComponent<MeshCollider3D>()) {
                         auto &comp =
                             Scene::m_Object->GetComponent<MeshCollider3D>();
-                        if (comp.hasGUI)
+                        if (comp.hasGUI) {
+                            if (Scene::m_Object->HasComponent<MeshRenderer>()) {
+                                drawMeshCollider3D = true;
+                                auto &meshRenderer = Scene::m_Object->GetComponent<MeshRenderer>();
+                                if (meshRenderer.m_Mesh) {
+                                    mesh_MeshCollider3D = meshRenderer.m_Mesh;
+                                    auto &transform =
+                                        Scene::m_Object->GetComponent<Transform>();
+                                    bc2dPos = transform.position;
+                                    bc2dRotation = transform.rotation;
+                                    bc2dScale = Vector3(comp.size.x, comp.size.y, comp.size.z);
+                                }
+                            }
                             comp.GUI();
+                        }
+                    } else {
+                        drawMeshCollider3D = false;
                     }
 
                     if (Scene::m_Object->HasComponent<Bloom>()) {
@@ -3201,6 +3382,7 @@ int main(int argc, char **argv) {
                         if (comp.hasGUI)
                             comp.GUI();
                     }
+                    ImGui::PopStyleColor();
 
                     ImGui::Separator();
 
@@ -3514,7 +3696,7 @@ void NewScript::Update() {})";
                                      uniform mat4 rotation; 
                                      uniform mat4 scale; 
                                      uniform mat4 model; 
-                                     uniform mat4 lightSpaceMatrix; 
+                                     uniform mat4 lightProjection; 
                                      uniform vec3 cameraPosition; 
                                      uniform vec2 texUvOffset; 
  
@@ -3582,7 +3764,7 @@ void NewScript::Update() {})";
                                          data_out.Normal = mat3(transpose(inverse(model))) * aNormal; 
                                          // Normal = aNormal; 
  
-                                         data_out.fragPosLight = lightSpaceMatrix * vec4(data_out.currentPosition, 1.0); 
+                                         data_out.fragPosLight = lightProjection * vec4(data_out.currentPosition, 1.0); 
  
                                          vec3 viewVector = normalize(worldPosition.xyz - cameraPosition); 
                                          data_out.reflectedVector = reflect(viewVector, data_out.Normal); 
@@ -3661,7 +3843,7 @@ void NewScript::Update() {})";
                                      uniform int hasHeightMap; 
  
                                      //global textures 
-                                     uniform sampler2D shadowMap; 
+                                     uniform sampler2D shadow_map_buffer; 
  
                                      vec4 reflectedColor = texture(cubeMap, reflectedVector); 
                                      float specularTexture = texture(texture_specular0, texCoords).r; 
@@ -3807,6 +3989,8 @@ void NewScript::Update() {})";
                 if (ImGui::Button(ICON_FA_PLUS " New File", ImVec2(0, 0))) {
                     ImGui::OpenPopup("New File");
                 }
+                ImGui::SameLine();
+                ImGui::Text(currentDirectory.c_str());
 
                 ImGui::Separator();
                 if (ImGui::BeginDragDropTarget()) {
@@ -4045,7 +4229,9 @@ void NewScript::Update() {})";
         };
 #else
     std::function<void(uint32_t & PPT, uint32_t & PPFBO, uint32_t & gui_gui)>
-        GUI_EXP = [&](uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui) {};
+        GUI_EXP = [&](uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui) {
+            DevConsole();
+        };
 #endif
 
     bool calledOnce = false;
@@ -4064,7 +4250,7 @@ void NewScript::Update() {})";
 
     float wheel = 0;
 
-    // infinite grid
+// infinite grid
 #ifndef GAME_BUILD
     Mesh *gridMesh = Plane(Vector4(1, 0, 0, 1)).m_Mesh;
 #endif
@@ -4080,15 +4266,6 @@ void NewScript::Update() {})";
     // Batch batch_layer;
     Material batch_mat;
     Shader batch_shader("shaders/batch.glsl");
-    // batch_layer.AddMesh(batch_plane.m_Mesh->vertices, batch_plane.m_Mesh->indices, &batch_trans);
-
-    // Terrain terrain;
-
-    // Plane batch_plane;
-    // std::vector<Vertex> v;
-    // std::vector<uint32_t> ii;
-    // BatchLayer batch_layer(v, ii);
-    // batch_layer.AddToBatch(batch_plane.m_Mesh, &batch_trans);
 
     Transform test_transform;
     test_transform.position = glm::vec3(0, 0, 0);
@@ -4102,8 +4279,30 @@ void NewScript::Update() {})";
 
     const double fpsLimit = 1.0 / 60.0;
 
+    // Experimental::Model ourModel("assets/models/vamp/Taunt.fbx");
+    // Animation danceAnimation("assets/models/vamp/Taunt.fbx", &ourModel);
+    // Animator animator(&danceAnimation);
+
+    // Terrain m_terrain("assets/iceland_heightmap.png");
+    const int targetWidth = 1920, targetHeight = 1080;
+    float targetAspectRatio = (float)targetWidth / (float)targetHeight;
     app.Run(
         [&](uint32_t &shadowMapTex) {
+            glClearColor(0, 0, 0, 1);
+            int aspectWidth = app.width;
+            int aspectHeight = (int)((float)aspectWidth / targetAspectRatio);
+            if (aspectHeight > app.height) {
+                aspectHeight = app.height;
+                aspectWidth = (int)((float)aspectHeight * targetAspectRatio);
+            }
+            int vpX = (int)(((float)app.width / 2.0f) - ((float)aspectWidth / 2.0f));
+            int vpY = (int)(((float)app.height / 2.0f) - ((float)aspectHeight / 2.0f));
+            if (Scene::mainCamera->EnttComp) {
+                glViewport(vpX, vpY, aspectWidth, aspectHeight);
+            } else {
+                glViewport(0, 0, app.width, app.height);
+            }
+
             double now = glfwGetTime();
             double deltaTime = now - lastUpdateTime;
             if (Scene::mainCamera == nullptr) {
@@ -4113,6 +4312,7 @@ void NewScript::Update() {})";
 #ifndef GAME_BUILD
             if (Scene::m_Object == nullptr) {
                 drawBoxCollider2D = false;
+                drawBoxCollider3D = false;
             }
 
             {
@@ -4146,11 +4346,6 @@ void NewScript::Update() {})";
             }
 #endif
 
-            if (Input::IsKeyPressed(KEY_Q)) {
-                nlohmann::json j;
-                // Scene::LoadScene("assets/scenes/dust2.vault", j);
-            }
-
             // glEnable(GL_CULL_FACE);
             // glCullFace(GL_BACK);
             // glFrontFace(GL_CCW);
@@ -4161,8 +4356,6 @@ void NewScript::Update() {})";
             // animator.UpdateAnimation(Timestep::deltaTime);
             runTime += Timestep::deltaTime;
             shader.Bind();
-            shader.SetUniform1i("shadowMap", GL_TEXTURE7);
-            shader.SetUniformMat4("lightSpaceMatrix", Scene::projection);
             shader.SetUniform1f("time", Timestep::deltaTime);
 
             // std::vector<Shader*> shaders = {&shader};
@@ -4176,14 +4369,6 @@ void NewScript::Update() {})";
             lastFrame = currentFrame;
 
             if (HyperAPI::isRunning) {
-                for (auto &gameObject : *Scene::m_GameObjects) {
-                    if (!gameObject->HasComponent<PathfindingAI>())
-                        continue;
-
-                    auto &component = gameObject->GetComponent<PathfindingAI>();
-                    component.Update(shader, *Scene::mainCamera);
-                }
-
                 BulletPhysicsWorld::UpdatePhysics();
                 BulletPhysicsWorld::CollisionCallback([&](const std::string
                                                               &idA,
@@ -4331,7 +4516,7 @@ void NewScript::Update() {})";
             camera->updateMatrix(camera->cam_fov, camera->cam_near,
                                  camera->cam_far,
                                  Vector2(app.winWidth, app.winHeight), winSize);
-            skybox.Draw(*Scene::mainCamera, winSize.x, winSize.y);
+            skybox.Draw(*Scene::mainCamera, Scene::mainCamera->EnttComp ? Scene::aspect_width : winSize.x, Scene::mainCamera->EnttComp ? Scene::aspect_width : winSize.y);
             // floor.Draw(shader, *camera);
             shader.Bind();
             shader.SetUniform1f("ambient", config.ambientLight);
@@ -4413,48 +4598,38 @@ void NewScript::Update() {})";
                 auto view = Scene::m_Registry.view<Rigidbody3D>();
 
                 for (auto e : view) {
-                    GameObject *m_GameObject;
-
-                    for (auto &obj : *Scene::m_GameObjects) {
-                        if (obj->entity == e) {
-                            m_GameObject = obj;
-                        }
-                    }
-
-                    auto &rigidbody = m_GameObject->GetComponent<Rigidbody3D>();
+                    auto &rigidbody = Scene::m_Registry.get<Rigidbody3D>(e);
                     if (rigidbody.body == nullptr) {
                         auto &rigidbody =
-                            m_GameObject->GetComponent<Rigidbody3D>();
+                            Scene::m_Registry.get<Rigidbody3D>(e);
                         rigidbody.transform =
-                            &m_GameObject->GetComponent<Transform>();
+                            &Scene::m_Registry.get<Transform>(e);
 
-                        if (m_GameObject->HasComponent<BoxCollider3D>()) {
+                        if (Scene::m_Registry.has<BoxCollider3D>(e)) {
                             auto &collider =
-                                m_GameObject->GetComponent<BoxCollider3D>();
+                                Scene::m_Registry.get<BoxCollider3D>(e);
                             collider.CreateShape();
                             rigidbody.CreateBody(collider.shape);
                         }
 
-                        if (m_GameObject->HasComponent<MeshCollider3D>()) {
+                        if (Scene::m_Registry.has<MeshCollider3D>(e)) {
                             auto &collider =
-                                m_GameObject->GetComponent<MeshCollider3D>();
+                                Scene::m_Registry.get<MeshCollider3D>(e);
                             collider.CreateShape(
-                                &m_GameObject->GetComponent<MeshRenderer>());
+                                &Scene::m_Registry.get<MeshRenderer>(e));
                             rigidbody.CreateBody(collider.shape);
                         }
                     }
 
                     rigidbody.transform =
-                        &m_GameObject->GetComponent<Transform>();
+                        &Scene::m_Registry.get<Transform>(e);
                     rigidbody.Update();
                 }
             }
 
-            // Update GameObjects
             for (auto &gameObject : *Scene::m_GameObjects) {
                 if (Scene::LoadingScene)
                     break;
-
 #ifdef _WIN32
                 if (IsBadReadPtr(gameObject, sizeof(GameObject)))
                     continue;
@@ -4497,6 +4672,9 @@ void NewScript::Update() {})";
                     gameObject->GetComponent<c_Light2D>().Update();
                 }
 
+                if (Scene::LoadingScene)
+                    break;
+
                 if (gameObject->HasComponent<c_SpotLight>()) {
                     gameObject->GetComponent<c_SpotLight>().Update();
                 }
@@ -4525,52 +4703,35 @@ void NewScript::Update() {})";
                     gameObject->GetComponent<ParticleEmitter>().Update();
                 }
 
-                if (gameObject->HasComponent<m_LuaScriptComponent>()) {
-                    auto &script =
-                        gameObject->GetComponent<m_LuaScriptComponent>();
-                    if (HyperAPI::isRunning) {
-                        script.Update();
-                    }
-                }
-
-                if (gameObject->HasComponent<CppScriptManager>()) {
-                    auto &script = gameObject->GetComponent<CppScriptManager>();
-                    if (HyperAPI::isRunning) {
-                        script.Update();
-                    }
-                }
-
-                if (gameObject->HasComponent<CsharpScriptManager>()) {
-                    auto &script =
-                        gameObject->GetComponent<CsharpScriptManager>();
-                    if (HyperAPI::isRunning) {
-                        script.Update();
-                    }
-                }
-
                 if (gameObject->HasComponent<Audio3D>()) {
                     gameObject->GetComponent<Audio3D>().Update();
                 }
-
-                // if (gameObject->HasComponent<NativeScriptManager>()) {
-                //     auto &script =
-                //         gameObject->GetComponent<NativeScriptManager>();
-                //     if (HyperAPI::isRunning) {
-                //         script.Update();
-                //     }
-                // }
-
-                // if (gameObject->HasComponent<BoxCollider2D>()) {
-                //     auto &component =
-                //         gameObject->GetComponent<BoxCollider2D>();
-                //     if (HyperAPI::isRunning) {
-                //         component.Update();
-                //     }
-                // }
             }
 
-            //        font.Render(textShader, *camera, "Hello World!",
-            //        fontTransform);
+            auto csharp_view = Scene::m_Registry.view<CsharpScriptManager>();
+            auto lua_view = Scene::m_Registry.view<m_LuaScriptComponent>();
+            auto cpp_view = Scene::m_Registry.view<CppScriptManager>();
+
+            for (auto e : lua_view) {
+                auto &script =
+                    Scene::m_Registry.get<m_LuaScriptComponent>(e);
+                if (HyperAPI::isRunning) {
+                    script.Update();
+                }
+            }
+            for (auto e : cpp_view) {
+                auto &script = Scene::m_Registry.get<CppScriptManager>(e);
+                if (HyperAPI::isRunning) {
+                    script.Update();
+                }
+            }
+            for (auto e : csharp_view) {
+                auto &script =
+                    Scene::m_Registry.get<CsharpScriptManager>(e);
+                if (HyperAPI::isRunning) {
+                    script.Update();
+                }
+            }
 
             // Draw calls
             glEnable(GL_CULL_FACE);
@@ -4589,8 +4750,9 @@ void NewScript::Update() {})";
             glActiveTexture(GL_TEXTURE21);
             glBindTexture(GL_TEXTURE_CUBE_MAP,
                           skybox.cubemapTexture);
-            shader.SetUniformMat4("lightSpaceMatrix",
-                                  Scene::projection);
+
+            // test_transform.Update();
+            // m_terrain.Draw(shader, *Scene::mainCamera, test_transform.transform);
 
             for (auto &layer : Scene::layers) {
                 // Check if the camera is in the layer n stuff
@@ -4622,281 +4784,303 @@ void NewScript::Update() {})";
                         continue;
                     if (gameObject->layer != layer.first)
                         continue;
-                    if (gameObject->HasComponent<MeshRenderer>()) {
-                        m_UnbindTextures();
+                    // glEnable(GL_DEPTH_TEST);
+                    if (Scene::m_Object == gameObject) {
+                        // glStencilFunc(GL_ALWAYS, 1, 0xFF);
+                        // glStencilMask(0xFF);
+                    }
+                    std::function<void(Shader &)> call = [&](Shader &use_shader) {
+                        if (gameObject->HasComponent<MeshRenderer>()) {
+                            m_UnbindTextures();
+                            // animator.UpdateAnimation(Timestep::deltaTime);
+                            // auto transforms = animator.GetFinalBoneMatrices();
+                            // shader.Bind();
+                            // for (int i = 0; i < transforms.size(); ++i) {
+                            // auto _t = transforms[i];
+                            // glm::vec3 t, r, s;
+                            // DecomposeTransform(_t, t, r, s);
+                            // std::cout << i << "T: " << t.x << " " << t.y << " " << t.z << "\n";
+                            // std::cout << i <<"R: " << r.x << " " << r.y << " " << r.z << "\n";
+                            // std::cout << i << "S: " << s.x << " " << s.y << " " << s.z << "\n";
+                            // shader.SetUniformMat4(std::string("finalBonesMatrices[" + std::to_string(i) + "]").c_str(), transforms[i]);
+                            // }
 
-                        auto meshRenderer =
-                            gameObject->GetComponent<MeshRenderer>();
-                        auto transform = gameObject->GetComponent<Transform>();
-                        transform.Update();
+                            auto meshRenderer =
+                                gameObject->GetComponent<MeshRenderer>();
+                            auto transform = gameObject->GetComponent<Transform>();
+                            transform.Update();
 
-                        glm::mat4 extra = meshRenderer.extraMatrix;
+                            glm::mat4 extra = meshRenderer.extraMatrix;
 
-                        glm::mat4 m_parentTransform = glm::mat4(1.0f);
+                            glm::mat4 m_parentTransform = glm::mat4(1.0f);
 
-                        for (auto &go : *Scene::m_GameObjects) {
-                            if (go->ID == gameObject->parentID &&
-                                go->HasComponent<Transform>()) {
-                                auto &parentTransform =
-                                    go->GetComponent<Transform>();
-                                parentTransform.Update();
-                                m_parentTransform = parentTransform.transform;
+                            for (auto &go : *Scene::m_GameObjects) {
+                                if (go->ID == gameObject->parentID &&
+                                    go->HasComponent<Transform>()) {
+                                    auto &parentTransform =
+                                        go->GetComponent<Transform>();
+                                    parentTransform.Update();
+                                    m_parentTransform = parentTransform.transform;
+                                }
+                            }
+
+                            if (meshRenderer.m_Mesh != nullptr) {
+                                meshRenderer.m_Mesh->enttId =
+                                    (uint32_t)gameObject->entity;
+                                glActiveTexture(GL_TEXTURE21);
+                                glBindTexture(GL_TEXTURE_CUBE_MAP,
+                                              skybox.cubemapTexture);
+
+                                // if (meshRenderer.customShader.shader != nullptr) {
+                                //     meshRenderer.customShader.shader->Bind();
+                                //     meshRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                                // }
+                                shader.Bind();
+                                glActiveTexture(GL_TEXTURE11);
+                                glBindTexture(GL_TEXTURE_2D, shadowMap);
+                                orthgonalProjection = glm::ortho(shadowOrtho1.x, shadowOrtho1.y, shadowOrtho2.x, shadowOrtho2.y, shadowNearFar.x, shadowNearFar.y);
+                                lightView = glm::lookAt(lightPos, glm::vec3(0, 0, 0), lightUpThing);
+                                perspectiveProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
+                                lightViewPer = glm::lookAt(lightPos, glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
+                                lightProjection = enableSpotLightShadowMap ? perspectiveProjection * lightViewPer : orthgonalProjection * lightView;
+
+                                shader.SetUniformMat4("lightProjection", lightProjection);
+                                shader.SetUniform1i("shadow_map_buffer", 11);
+
+                                shadowShader.Bind();
+                                shadowShader.SetUniformMat4("lightProjection", lightProjection);
+
+                                if (meshRenderer.meshType == "Plane") {
+                                    glDisable(GL_CULL_FACE);
+                                    meshRenderer.m_Mesh->Draw(
+                                        meshRenderer.customShader.usingCustomShader
+                                            ? *meshRenderer.customShader.shader
+                                            : use_shader,
+                                        *Scene::mainCamera,
+                                        transform.transform * extra *
+                                            m_parentTransform);
+                                    glEnable(GL_CULL_FACE);
+                                } else {
+                                    meshRenderer.m_Mesh->Draw(
+                                        meshRenderer.customShader.usingCustomShader
+                                            ? *meshRenderer.customShader.shader
+                                            : use_shader,
+                                        *Scene::mainCamera,
+                                        transform.transform * extra *
+                                            m_parentTransform);
+                                }
                             }
                         }
 
-                        if (meshRenderer.m_Mesh != nullptr) {
-                            shader.Bind();
-                            shader.SetUniformMat4("lightSpaceMatrix",
-                                                  Scene::projection);
+                        if (gameObject->HasComponent<Text3D>()) {
+                            auto &renderer = gameObject->GetComponent<Text3D>();
+                            renderer.Update();
+                            auto &transform = gameObject->GetComponent<Transform>();
+                            transform.Update();
 
-                            if (Scene::m_Object == gameObject) {
-                                glStencilFunc(GL_ALWAYS, 1, 0xFF);
-                                glStencilMask(0xFF);
+                            glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                            for (auto &go : *Scene::m_GameObjects) {
+                                if (go->ID == gameObject->parentID &&
+                                    go->HasComponent<Transform>()) {
+                                    auto &parentTransform =
+                                        go->GetComponent<Transform>();
+                                    parentTransform.Update();
+                                    m_parentTransform = parentTransform.transform;
+                                }
                             }
 
-                            meshRenderer.m_Mesh->enttId =
-                                (uint32_t)gameObject->entity;
+                            renderer.font->Draw(*Scene::mainCamera, transform.transform * m_parentTransform, renderer.text, renderer.color, renderer.bloomColor, 0, 0, renderer.scale, renderer.y_offset);
+                        }
+
+                        if (gameObject->HasComponent<SpriteRenderer>()) {
+                            m_UnbindTextures();
+
+                            auto spriteRenderer =
+                                gameObject->GetComponent<SpriteRenderer>();
+                            auto transform = gameObject->GetComponent<Transform>();
+                            glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                            for (auto &go : *Scene::m_GameObjects) {
+                                if (go->ID == gameObject->parentID &&
+                                    go->HasComponent<Transform>()) {
+                                    auto &parentTransform =
+                                        go->GetComponent<Transform>();
+                                    parentTransform.Update();
+                                    m_parentTransform = parentTransform.transform;
+                                }
+                            }
+
                             glActiveTexture(GL_TEXTURE21);
                             glBindTexture(GL_TEXTURE_CUBE_MAP,
                                           skybox.cubemapTexture);
 
-                            // if (meshRenderer.customShader.shader != nullptr) {
-                            //     meshRenderer.customShader.shader->Bind();
-                            //     meshRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
-                            // }
-                            shader.Bind();
-                            glActiveTexture(GL_TEXTURE11);
-                            glBindTexture(GL_TEXTURE_2D, shadowMap);
-                            orthgonalProjection = glm::ortho(shadowOrtho1.x, shadowOrtho1.y, shadowOrtho2.x, shadowOrtho2.y, shadowNearFar.x, shadowNearFar.y);
-                            lightView = glm::lookAt(lightPos, glm::vec3(0, 0, 0), lightUpThing);
-                            perspectiveProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
-                            lightViewPer = glm::lookAt(lightPos, glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
-                            lightProjection = enableSpotLightShadowMap ? perspectiveProjection * lightViewPer : orthgonalProjection * lightView;
+                            spriteRenderer.mesh->enttId =
+                                (uint32_t)gameObject->entity;
+                            glDisable(GL_CULL_FACE);
 
-                            shader.SetUniformMat4("lightProjection", lightProjection);
-                            shader.SetUniform1i("shadow_map_buffer", 11);
+                            if (spriteRenderer.customShader.shader != nullptr) {
+                                spriteRenderer.customShader.shader->Bind();
+                                spriteRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                            }
 
-                            shadowShader.Bind();
-                            shadowShader.SetUniformMat4("lightProjection", lightProjection);
+                            spriteRenderer.mesh->Draw(
+                                spriteRenderer.customShader.usingCustomShader
+                                    ? *spriteRenderer.customShader.shader
+                                    : use_shader,
+                                *Scene::mainCamera,
+                                transform.transform * m_parentTransform);
+                            glEnable(GL_CULL_FACE);
+                        }
 
-                            if (meshRenderer.meshType == "Plane") {
-                                glDisable(GL_CULL_FACE);
-                                meshRenderer.m_Mesh->Draw(
-                                    meshRenderer.customShader.usingCustomShader
-                                        ? *meshRenderer.customShader.shader
-                                        : shader,
+                        if (gameObject->HasComponent<SpritesheetRenderer>()) {
+                            m_UnbindTextures();
+
+                            auto spritesheetRenderer =
+                                gameObject->GetComponent<SpritesheetRenderer>();
+                            auto transform = gameObject->GetComponent<Transform>();
+                            transform.Update();
+
+                            glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                            for (auto &go : *Scene::m_GameObjects) {
+                                if (go->ID == gameObject->parentID &&
+                                    go->HasComponent<Transform>()) {
+                                    auto &parentTransform =
+                                        go->GetComponent<Transform>();
+                                    parentTransform.Update();
+                                    m_parentTransform = parentTransform.transform;
+                                }
+                            }
+
+                            glActiveTexture(GL_TEXTURE21);
+                            glBindTexture(GL_TEXTURE_CUBE_MAP,
+                                          skybox.cubemapTexture);
+
+                            // disable face culling
+                            glDisable(GL_CULL_FACE);
+                            if (spritesheetRenderer.mesh != nullptr) {
+                                spritesheetRenderer.mesh->enttId =
+                                    (uint32_t)gameObject->entity;
+
+                                if (spritesheetRenderer.customShader.shader != nullptr) {
+                                    spritesheetRenderer.customShader.shader->Bind();
+                                    spritesheetRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                                }
+
+                                spritesheetRenderer.mesh->Draw(
+                                    spritesheetRenderer.customShader
+                                            .usingCustomShader
+                                        ? *spritesheetRenderer.customShader.shader
+                                        : use_shader,
                                     *Scene::mainCamera,
-                                    transform.transform * extra *
-                                        m_parentTransform);
-                                glEnable(GL_CULL_FACE);
-                            } else {
-                                meshRenderer.m_Mesh->Draw(
-                                    meshRenderer.customShader.usingCustomShader
-                                        ? *meshRenderer.customShader.shader
-                                        : shader,
+                                    transform.transform * m_parentTransform);
+                            }
+                            glEnable(GL_CULL_FACE);
+                        }
+
+                        if (gameObject->HasComponent<SpriteAnimation>()) {
+                            m_UnbindTextures();
+
+                            auto spriteAnimation =
+                                gameObject->GetComponent<SpriteAnimation>();
+                            auto transform = gameObject->GetComponent<Transform>();
+                            transform.Update();
+
+                            glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                            for (auto &go : *Scene::m_GameObjects) {
+                                if (go->ID == gameObject->parentID &&
+                                    go->HasComponent<Transform>()) {
+                                    auto &parentTransform =
+                                        go->GetComponent<Transform>();
+                                    parentTransform.Update();
+                                    m_parentTransform = parentTransform.transform;
+                                }
+                            }
+
+                            spriteAnimation.Play();
+
+                            if (spriteAnimation.currMesh != nullptr) {
+                                spriteAnimation.currMesh->enttId =
+                                    (uint32_t)gameObject->entity;
+
+                                if (spriteAnimation.customShader.shader != nullptr) {
+                                    spriteAnimation.customShader.shader->Bind();
+                                    spriteAnimation.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                                }
+
+                                spriteAnimation.currMesh->Draw(
+                                    spriteAnimation.customShader.usingCustomShader
+                                        ? *spriteAnimation.customShader.shader
+                                        : use_shader,
                                     *Scene::mainCamera,
-                                    transform.transform * extra *
-                                        m_parentTransform);
-                            }
-                        }
-                    }
-
-                    if (gameObject->HasComponent<Text3D>()) {
-                        auto &renderer = gameObject->GetComponent<Text3D>();
-                        renderer.Update();
-                        auto &transform = gameObject->GetComponent<Transform>();
-                        transform.Update();
-
-                        glm::mat4 m_parentTransform = glm::mat4(1.0f);
-
-                        for (auto &go : *Scene::m_GameObjects) {
-                            if (go->ID == gameObject->parentID &&
-                                go->HasComponent<Transform>()) {
-                                auto &parentTransform =
-                                    go->GetComponent<Transform>();
-                                parentTransform.Update();
-                                m_parentTransform = parentTransform.transform;
+                                    transform.transform * m_parentTransform);
+                                // glDisable(GL_BLEND);
                             }
                         }
 
-                        renderer.font->Draw(*Scene::mainCamera, transform.transform * m_parentTransform, renderer.text, renderer.color, renderer.bloomColor, 0, 0, renderer.scale, renderer.y_offset);
-                    }
+                        if (gameObject->HasComponent<c_SpritesheetAnimation>()) {
+                            m_UnbindTextures();
 
-                    if (gameObject->HasComponent<SpriteRenderer>()) {
-                        m_UnbindTextures();
+                            auto spritesheetAnimation =
+                                gameObject->GetComponent<c_SpritesheetAnimation>();
+                            auto transform = gameObject->GetComponent<Transform>();
+                            transform.Update();
 
-                        auto spriteRenderer =
-                            gameObject->GetComponent<SpriteRenderer>();
-                        auto transform = gameObject->GetComponent<Transform>();
-                        glm::mat4 m_parentTransform = glm::mat4(1.0f);
+                            glm::mat4 m_parentTransform = glm::mat4(1.0f);
 
-                        for (auto &go : *Scene::m_GameObjects) {
-                            if (go->ID == gameObject->parentID &&
-                                go->HasComponent<Transform>()) {
-                                auto &parentTransform =
-                                    go->GetComponent<Transform>();
-                                parentTransform.Update();
-                                m_parentTransform = parentTransform.transform;
-                            }
-                        }
-
-                        glActiveTexture(GL_TEXTURE21);
-                        glBindTexture(GL_TEXTURE_CUBE_MAP,
-                                      skybox.cubemapTexture);
-
-                        spriteRenderer.mesh->enttId =
-                            (uint32_t)gameObject->entity;
-                        glDisable(GL_CULL_FACE);
-
-                        if (spriteRenderer.customShader.shader != nullptr) {
-                            spriteRenderer.customShader.shader->Bind();
-                            spriteRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
-                        }
-
-                        spriteRenderer.mesh->Draw(
-                            spriteRenderer.customShader.usingCustomShader
-                                ? *spriteRenderer.customShader.shader
-                                : shader,
-                            *Scene::mainCamera,
-                            transform.transform * m_parentTransform);
-                        glEnable(GL_CULL_FACE);
-                    }
-
-                    if (gameObject->HasComponent<SpritesheetRenderer>()) {
-                        m_UnbindTextures();
-
-                        auto spritesheetRenderer =
-                            gameObject->GetComponent<SpritesheetRenderer>();
-                        auto transform = gameObject->GetComponent<Transform>();
-                        transform.Update();
-
-                        glm::mat4 m_parentTransform = glm::mat4(1.0f);
-
-                        for (auto &go : *Scene::m_GameObjects) {
-                            if (go->ID == gameObject->parentID &&
-                                go->HasComponent<Transform>()) {
-                                auto &parentTransform =
-                                    go->GetComponent<Transform>();
-                                parentTransform.Update();
-                                m_parentTransform = parentTransform.transform;
-                            }
-                        }
-
-                        glActiveTexture(GL_TEXTURE21);
-                        glBindTexture(GL_TEXTURE_CUBE_MAP,
-                                      skybox.cubemapTexture);
-
-                        // disable face culling
-                        glDisable(GL_CULL_FACE);
-                        if (spritesheetRenderer.mesh != nullptr) {
-                            spritesheetRenderer.mesh->enttId =
-                                (uint32_t)gameObject->entity;
-
-                            if (spritesheetRenderer.customShader.shader != nullptr) {
-                                spritesheetRenderer.customShader.shader->Bind();
-                                spritesheetRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                            for (auto &go : *Scene::m_GameObjects) {
+                                if (go->ID == gameObject->parentID &&
+                                    go->HasComponent<Transform>()) {
+                                    auto &parentTransform =
+                                        go->GetComponent<Transform>();
+                                    parentTransform.Update();
+                                    m_parentTransform = parentTransform.transform;
+                                }
                             }
 
-                            spritesheetRenderer.mesh->Draw(
-                                spritesheetRenderer.customShader
-                                        .usingCustomShader
-                                    ? *spritesheetRenderer.customShader.shader
-                                    : shader,
-                                *Scene::mainCamera,
-                                transform.transform * m_parentTransform);
-                        }
-                        glEnable(GL_CULL_FACE);
-                    }
+                            spritesheetAnimation.Play();
+                            spritesheetAnimation.Update();
 
-                    if (gameObject->HasComponent<SpriteAnimation>()) {
-                        m_UnbindTextures();
+                            glActiveTexture(GL_TEXTURE21);
+                            glBindTexture(GL_TEXTURE_CUBE_MAP,
+                                          skybox.cubemapTexture);
 
-                        auto spriteAnimation =
-                            gameObject->GetComponent<SpriteAnimation>();
-                        auto transform = gameObject->GetComponent<Transform>();
-                        transform.Update();
+                            glDisable(GL_CULL_FACE);
+                            if (spritesheetAnimation.mesh != nullptr) {
+                                spritesheetAnimation.mesh->enttId =
+                                    (uint32_t)gameObject->entity;
 
-                        glm::mat4 m_parentTransform = glm::mat4(1.0f);
+                                if (spritesheetAnimation.customShader.shader != nullptr) {
+                                    spritesheetAnimation.customShader.shader->Bind();
+                                    spritesheetAnimation.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                                }
 
-                        for (auto &go : *Scene::m_GameObjects) {
-                            if (go->ID == gameObject->parentID &&
-                                go->HasComponent<Transform>()) {
-                                auto &parentTransform =
-                                    go->GetComponent<Transform>();
-                                parentTransform.Update();
-                                m_parentTransform = parentTransform.transform;
+                                spritesheetAnimation.mesh->Draw(
+                                    spritesheetAnimation.customShader
+                                            .usingCustomShader
+                                        ? *spritesheetAnimation.customShader.shader
+                                        : use_shader,
+                                    *Scene::mainCamera,
+                                    transform.transform * m_parentTransform);
+                                // glDisable(GL_BLEND);
                             }
+                            glEnable(GL_CULL_FACE);
                         }
+                    };
+                    call(shader);
 
-                        spriteAnimation.Play();
+                    // if (Scene::m_Object == gameObject) {
+                    //     glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+                    //     glStencilMask(0xFF);
+                    //     glDisable(GL_DEPTH_TEST);
+                    //     call(outlineShader);
 
-                        if (spriteAnimation.currMesh != nullptr) {
-                            spriteAnimation.currMesh->enttId =
-                                (uint32_t)gameObject->entity;
-
-                            if (spriteAnimation.customShader.shader != nullptr) {
-                                spriteAnimation.customShader.shader->Bind();
-                                spriteAnimation.customShader.shader->SetUniform1f("DeltaTime", runTime);
-                            }
-
-                            spriteAnimation.currMesh->Draw(
-                                spriteAnimation.customShader.usingCustomShader
-                                    ? *spriteAnimation.customShader.shader
-                                    : shader,
-                                *Scene::mainCamera,
-                                transform.transform * m_parentTransform);
-                            // glDisable(GL_BLEND);
-                        }
-                    }
-
-                    if (gameObject->HasComponent<c_SpritesheetAnimation>()) {
-                        m_UnbindTextures();
-
-                        auto spritesheetAnimation =
-                            gameObject->GetComponent<c_SpritesheetAnimation>();
-                        auto transform = gameObject->GetComponent<Transform>();
-                        transform.Update();
-
-                        glm::mat4 m_parentTransform = glm::mat4(1.0f);
-
-                        for (auto &go : *Scene::m_GameObjects) {
-                            if (go->ID == gameObject->parentID &&
-                                go->HasComponent<Transform>()) {
-                                auto &parentTransform =
-                                    go->GetComponent<Transform>();
-                                parentTransform.Update();
-                                m_parentTransform = parentTransform.transform;
-                            }
-                        }
-
-                        spritesheetAnimation.Play();
-                        spritesheetAnimation.Update();
-
-                        glActiveTexture(GL_TEXTURE21);
-                        glBindTexture(GL_TEXTURE_CUBE_MAP,
-                                      skybox.cubemapTexture);
-
-                        glDisable(GL_CULL_FACE);
-                        if (spritesheetAnimation.mesh != nullptr) {
-                            spritesheetAnimation.mesh->enttId =
-                                (uint32_t)gameObject->entity;
-
-                            if (spritesheetAnimation.customShader.shader != nullptr) {
-                                spritesheetAnimation.customShader.shader->Bind();
-                                spritesheetAnimation.customShader.shader->SetUniform1f("DeltaTime", runTime);
-                            }
-
-                            spritesheetAnimation.mesh->Draw(
-                                spritesheetAnimation.customShader
-                                        .usingCustomShader
-                                    ? *spritesheetAnimation.customShader.shader
-                                    : shader,
-                                *Scene::mainCamera,
-                                transform.transform * m_parentTransform);
-                            // glDisable(GL_BLEND);
-                        }
-                        glEnable(GL_CULL_FACE);
-                    }
+                    //     glStencilMask(0xFF);
+                    //     glStencilFunc(GL_ALWAYS, 0, 0xFF);
+                    //     glEnable(GL_DEPTH_TEST);
+                    // }
                 }
             }
             glDisable(GL_BLEND);
@@ -4936,10 +5120,6 @@ void NewScript::Update() {})";
                         }
 
                         if (meshRenderer.m_Mesh != nullptr) {
-                            shader.Bind();
-                            shader.SetUniformMat4("lightSpaceMatrix",
-                                                  Scene::projection);
-
                             meshRenderer.m_Mesh->enttId =
                                 (uint32_t)gameObject->entity;
                             glActiveTexture(GL_TEXTURE21);
@@ -4964,210 +5144,21 @@ void NewScript::Update() {})";
                 }
                 // end of shadow mapping
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                glViewport(0, 0, app.width, app.height);
+                if (Scene::mainCamera->EnttComp) {
+                    glViewport(vpX, vpY, aspectWidth, aspectHeight);
+                } else {
+                    glViewport(0, 0, app.width, app.height);
+                }
             }
 
             // Ending of draw calls
-
-            // Grid
-            // clear depth buffer
-            // glClear(GL_DEPTH_BUFFER_BIT);
-            // if(Scene::mainCamera == camera) {
-            //     Transform transform;
-            //     transform.position = glm::vec3(0.0f, 0.0f, 0.0f);
-            //     transform.scale = glm::vec3(100.0f, 100.0f, 100.0f);
-            //     gridMesh->Draw(gridShader, *camera, transform.transform);
-            // }
-            // // Grid
-
-            // auto cameraView = Scene::m_Registry.view<CameraComponent>();
-            // for (auto entity : cameraView) {
-            //     if (Scene::mainCamera == camera)
-            //         break;
-            //     GameObject *gameObject;
-            //     for (auto &go : *Scene::m_GameObjects) {
-            //         if (go->entity == entity) {
-            //             gameObject = go;
-            //             break;
-            //         }
-            //     }
-            //     auto &camera = gameObject->GetComponent<CameraComponent>();
-
-            //     if (!camera.depthCamera)
-            //         continue;
-            //     glClear(GL_DEPTH_BUFFER_BIT);
-
-            //     for (auto &layer : Scene::layers) {
-            //         bool notInCameraLayer = true;
-            //         for (auto &camLayer : camera.camera->layers) {
-            //             if (camLayer == layer.first) {
-            //                 notInCameraLayer = false;
-            //                 break;
-            //             }
-            //         }
-            //         if (notInCameraLayer)
-            //             continue;
-
-            //         for (auto &gameObject : *Scene::m_GameObjects) {
-            //             if (!gameObject->enabled)
-            //                 continue;
-            //             if (gameObject->layer != layer.first)
-            //                 continue;
-
-            //             Transform parentTransform;
-            //             if (gameObject->parentID != "NO_PARENT") {
-            //                 parentTransform = f_GameObject::FindGameObjectByID(
-            //                                       gameObject->parentID)
-            //                                       ->GetComponent<Transform>();
-            //             }
-            //             parentTransform.Update();
-
-            //             if (gameObject->HasComponent<MeshRenderer>()) {
-            //                 auto meshRenderer =
-            //                     gameObject->GetComponent<MeshRenderer>();
-            //                 auto transform =
-            //                     gameObject->GetComponent<Transform>();
-            //                 transform.Update();
-
-            //                 glm::mat4 extra = meshRenderer.extraMatrix;
-
-            //                 if (meshRenderer.m_Mesh != nullptr) {
-            //                     shader.Bind();
-            //                     if (Scene::m_Object == gameObject) {
-            //                         glStencilFunc(GL_ALWAYS, 1, 0xFF);
-            //                         glStencilMask(0xFF);
-            //                     }
-
-            //                     meshRenderer.m_Mesh->Draw(
-            //                         shader, *camera.camera,
-            //                         transform.transform * extra *
-            //                             parentTransform.transform);
-            //                 }
-            //             }
-
-            //             if (gameObject->HasComponent<SpriteRenderer>()) {
-            //                 auto spriteRenderer =
-            //                     gameObject->GetComponent<SpriteRenderer>();
-            //                 auto transform =
-            //                     gameObject->GetComponent<Transform>();
-            //                 transform.Update();
-
-            //                 for (auto &go : *Scene::m_GameObjects) {
-            //                     if (go->ID == gameObject->parentID &&
-            //                         go->HasComponent<Transform>()) {
-            //                         auto &parentTransform =
-            //                             go->GetComponent<Transform>();
-            //                         transform.position +=
-            //                             parentTransform.position;
-            //                         transform.rotation +=
-            //                             parentTransform.rotation;
-            //                         transform.scale *= parentTransform.scale;
-            //                     }
-            //                 }
-
-            //                 spriteRenderer.mesh->Draw(shader, *camera.camera,
-            //                                           transform.transform);
-            //             }
-
-            //             if (gameObject->HasComponent<SpritesheetRenderer>()) {
-            //                 auto spritesheetRenderer =
-            //                     gameObject->GetComponent<SpritesheetRenderer>();
-            //                 auto transform =
-            //                     gameObject->GetComponent<Transform>();
-            //                 transform.Update();
-
-            //                 for (auto &go : *Scene::m_GameObjects) {
-            //                     if (go->ID == gameObject->parentID &&
-            //                         go->HasComponent<Transform>()) {
-            //                         auto &parentTransform =
-            //                             go->GetComponent<Transform>();
-            //                         transform.position +=
-            //                             parentTransform.position;
-            //                         transform.rotation +=
-            //                             parentTransform.rotation;
-            //                         transform.scale *= parentTransform.scale;
-            //                     }
-            //                 }
-
-            //                 if (spritesheetRenderer.mesh != nullptr) {
-            //                     spritesheetRenderer.mesh->Draw(
-            //                         shader, *camera.camera,
-            //                         transform.transform *
-            //                             parentTransform.transform);
-            //                 }
-            //             }
-
-            //             if (gameObject->HasComponent<SpriteAnimation>()) {
-            //                 auto spriteAnimation =
-            //                     gameObject->GetComponent<SpriteAnimation>();
-            //                 auto transform =
-            //                     gameObject->GetComponent<Transform>();
-            //                 transform.Update();
-
-            //                 spriteAnimation.Play();
-
-            //                 for (auto &go : *Scene::m_GameObjects) {
-            //                     if (go->ID == gameObject->parentID &&
-            //                         go->HasComponent<Transform>()) {
-            //                         auto &parentTransform =
-            //                             go->GetComponent<Transform>();
-            //                         transform.position +=
-            //                             parentTransform.position;
-            //                         transform.rotation +=
-            //                             parentTransform.rotation;
-            //                         transform.scale *= parentTransform.scale;
-            //                     }
-            //                 }
-
-            //                 if (spriteAnimation.currMesh != nullptr) {
-            //                     spriteAnimation.currMesh->Draw(
-            //                         shader, *camera.camera,
-            //                         transform.transform *
-            //                             parentTransform.transform);
-            //                 }
-            //             }
-
-            //             if (gameObject
-            //                     ->HasComponent<c_SpritesheetAnimation>()) {
-            //                 auto spritesheetAnimation =
-            //                     gameObject
-            //                         ->GetComponent<c_SpritesheetAnimation>();
-            //                 auto transform =
-            //                     gameObject->GetComponent<Transform>();
-            //                 transform.Update();
-
-            //                 for (auto &go : *Scene::m_GameObjects) {
-            //                     if (go->ID == gameObject->parentID &&
-            //                         go->HasComponent<Transform>()) {
-            //                         auto &parentTransform =
-            //                             go->GetComponent<Transform>();
-            //                         transform.position +=
-            //                             parentTransform.position;
-            //                         transform.rotation +=
-            //                             parentTransform.rotation;
-            //                         transform.scale *= parentTransform.scale;
-            //                     }
-            //                 }
-
-            //                 spritesheetAnimation.Play();
-            //                 spritesheetAnimation.Update();
-            //                 if (spritesheetAnimation.mesh != nullptr) {
-            //                     spritesheetAnimation.mesh->Draw(
-            //                         shader, *camera.camera,
-            //                         transform.transform *
-            //                             parentTransform.transform);
-            //                 }
-            //             }
-            //         }
-            //     }
-            // }
             lastUpdateTime = now;
 #ifndef GAME_BUILD
             if (Scene::mainCamera != camera)
                 return;
 
             glClear(GL_DEPTH_BUFFER_BIT);
-            if (drawBoxCollider2D) {
+            if (drawBoxCollider2D || drawBoxCollider3D) {
                 glDepthFunc(GL_LEQUAL);
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -5176,24 +5167,55 @@ void NewScript::Update() {})";
                         glm::toMat4(glm::quat(bc2dRotation)) *
                         glm::scale(model, glm::vec3(bc2dScale.x / 2,
                                                     bc2dScale.y / 2, 1.0f));
+
                 mesh_BoxCollider2D.Draw(workerShader, *camera, model);
 
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             }
 
+            if (drawBoxCollider3D) {
+                glDepthFunc(GL_LEQUAL);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+                glm::mat4 model = glm::mat4(1.0f);
+                model = glm::translate(model, bc2dPos) *
+                        glm::toMat4(glm::quat(bc2dRotation)) *
+                        glm::scale(model, glm::vec3(bc2dScale.x / 2,
+                                                    bc2dScale.y / 2, bc2dScale.z / 2));
+                mesh_BoxCollider3D.Draw(workerShader, *camera, model);
+
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            }
+
+            if (drawMeshCollider3D) {
+                glDepthFunc(GL_LEQUAL);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+                glm::mat4 model = glm::mat4(1.0f);
+                model = glm::translate(model, bc2dPos) *
+                        glm::toMat4(glm::quat(bc2dRotation)) *
+                        glm::scale(model, glm::vec3(bc2dScale.x / 2,
+                                                    bc2dScale.y / 2, bc2dScale.z / 2));
+                glm::vec4 backup = mesh_MeshCollider3D->material.baseColor;
+                mesh_MeshCollider3D->material.baseColor = Vector4(0, 4, 0.2, 1);
+                mesh_MeshCollider3D->Draw(workerShader, *camera, model);
+                mesh_MeshCollider3D->material.baseColor = backup;
+
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            }
+
+            auto view = Scene::m_Registry.view<MeshRenderer>();
+            for (auto e : view) {
+                auto &meshRenderer = Scene::m_Registry.get<MeshRenderer>(e);
+
+                if (meshRenderer.m_Mesh)
+                    meshRenderer.m_Mesh->material.Unbind(shader);
+            }
             for (auto &gameObject : *Scene::m_GameObjects) {
                 if (!gameObject->enabled)
                     continue;
 
                 if (gameObject->HasComponent<c_DirectionalLight>()) {
-                    for (auto &game_object : *Scene::m_GameObjects) {
-                        if (game_object->HasComponent<MeshRenderer>()) {
-                            auto &meshRenderer =
-                                game_object->GetComponent<MeshRenderer>();
-                            if (meshRenderer.m_Mesh)
-                                meshRenderer.m_Mesh->material.Unbind(shader);
-                        }
-                    }
 
                     auto &transform = gameObject->GetComponent<Transform>();
                     Transform t = transform;
@@ -5212,15 +5234,6 @@ void NewScript::Update() {})";
                 }
 
                 if (gameObject->HasComponent<Audio3D>()) {
-                    for (auto &game_object : *Scene::m_GameObjects) {
-                        if (game_object->HasComponent<MeshRenderer>()) {
-                            auto &meshRenderer =
-                                game_object->GetComponent<MeshRenderer>();
-                            if (meshRenderer.m_Mesh)
-                                meshRenderer.m_Mesh->material.Unbind(shader);
-                        }
-                    }
-
                     auto &transform = gameObject->GetComponent<Transform>();
                     Transform t = transform;
                     t.scale = glm::vec3(-0.5f, 0.5f, 0.5f);
@@ -5238,15 +5251,6 @@ void NewScript::Update() {})";
                 }
 
                 if (gameObject->HasComponent<c_PointLight>()) {
-                    for (auto &game_object : *Scene::m_GameObjects) {
-                        if (game_object->HasComponent<MeshRenderer>()) {
-                            auto &meshRenderer =
-                                game_object->GetComponent<MeshRenderer>();
-                            if (meshRenderer.m_Mesh)
-                                meshRenderer.m_Mesh->material.Unbind(shader);
-                        }
-                    }
-
                     auto &transform = gameObject->GetComponent<Transform>();
                     Transform t = transform;
                     t.scale = glm::vec3(-0.5f, 0.5f, 0.5f);
@@ -5264,15 +5268,6 @@ void NewScript::Update() {})";
                 }
 
                 if (gameObject->HasComponent<c_SpotLight>()) {
-                    for (auto &game_object : *Scene::m_GameObjects) {
-                        if (game_object->HasComponent<MeshRenderer>()) {
-                            auto &meshRenderer =
-                                game_object->GetComponent<MeshRenderer>();
-                            if (meshRenderer.m_Mesh)
-                                meshRenderer.m_Mesh->material.Unbind(shader);
-                        }
-                    }
-
                     auto &transform = gameObject->GetComponent<Transform>();
                     Transform t = transform;
                     t.scale = glm::vec3(-0.5f, 0.5f, 0.5f);
@@ -5290,15 +5285,6 @@ void NewScript::Update() {})";
                 }
 
                 if (gameObject->HasComponent<CameraComponent>()) {
-                    for (auto &game_object : *Scene::m_GameObjects) {
-                        if (game_object->HasComponent<MeshRenderer>()) {
-                            auto &meshRenderer =
-                                game_object->GetComponent<MeshRenderer>();
-                            if (meshRenderer.m_Mesh)
-                                meshRenderer.m_Mesh->material.Unbind(shader);
-                        }
-                    }
-
                     auto &transform = gameObject->GetComponent<Transform>();
                     Transform t = transform;
                     t.scale = glm::vec3(-0.5f, 0.5f, 0.5f);
@@ -5318,209 +5304,7 @@ void NewScript::Update() {})";
 #endif
         },
         GUI_EXP,
-        [&](Shader &m_shadowMapShader) {
-            for (auto &layer : Scene::layers) {
-                bool notInCameraLayer = true;
-                for (auto &camLayer : Scene::mainCamera->layers) {
-                    if (Scene::mainCamera == camera)
-                        break;
-                    if (camLayer == layer.first) {
-                        notInCameraLayer = false;
-                        break;
-                    }
-                }
-                if (notInCameraLayer && Scene::mainCamera != camera)
-                    continue;
-
-                for (auto &gameObject : *Scene::m_GameObjects) {
-                    if (!gameObject->enabled)
-                        continue;
-                    if (gameObject->layer != layer.first)
-                        continue;
-                    if (gameObject->HasComponent<MeshRenderer>()) {
-                        m_UnbindTextures();
-
-                        auto meshRenderer =
-                            gameObject->GetComponent<MeshRenderer>();
-                        auto transform = gameObject->GetComponent<Transform>();
-                        transform.Update();
-
-                        glm::mat4 extra = meshRenderer.extraMatrix;
-
-                        if (meshRenderer.m_Mesh != nullptr) {
-                            m_shadowMapShader.Bind();
-
-                            if (Scene::m_Object == gameObject) {
-                                glStencilFunc(GL_ALWAYS, 1, 0xFF);
-                                glStencilMask(0xFF);
-                            }
-                            if (transform.parentTransform != nullptr) {
-                                transform.position +=
-                                    transform.parentTransform->position;
-                                transform.rotation +=
-                                    transform.parentTransform->rotation;
-                                transform.scale *=
-                                    transform.parentTransform->scale;
-                                transform.Update();
-                            }
-
-                            meshRenderer.m_Mesh->enttId =
-                                (uint32_t)gameObject->entity;
-                            glActiveTexture(GL_TEXTURE21);
-                            glBindTexture(GL_TEXTURE_CUBE_MAP,
-                                          skybox.cubemapTexture);
-
-                            if (meshRenderer.meshType == "Plane") {
-                                glDisable(GL_CULL_FACE);
-                                meshRenderer.m_Mesh->Draw(
-                                    m_shadowMapShader, *Scene::mainCamera,
-                                    transform.transform * extra);
-                                glEnable(GL_CULL_FACE);
-                            } else {
-                                meshRenderer.m_Mesh->Draw(
-                                    m_shadowMapShader, *Scene::mainCamera,
-                                    transform.transform * extra);
-                            }
-                        }
-                    }
-
-                    if (gameObject->HasComponent<SpriteRenderer>()) {
-                        m_UnbindTextures();
-
-                        auto spriteRenderer =
-                            gameObject->GetComponent<SpriteRenderer>();
-                        auto transform = gameObject->GetComponent<Transform>();
-                        transform.Update();
-
-                        for (auto &go : *Scene::m_GameObjects) {
-                            if (go->ID == gameObject->parentID &&
-                                go->HasComponent<Transform>()) {
-                                auto &parentTransform =
-                                    go->GetComponent<Transform>();
-                                transform.position += parentTransform.position;
-                                transform.rotation += parentTransform.rotation;
-                                transform.scale *= parentTransform.scale;
-                            }
-                        }
-
-                        glActiveTexture(GL_TEXTURE21);
-                        glBindTexture(GL_TEXTURE_CUBE_MAP,
-                                      skybox.cubemapTexture);
-
-                        spriteRenderer.mesh->enttId =
-                            (uint32_t)gameObject->entity;
-                        glDisable(GL_CULL_FACE);
-                        spriteRenderer.mesh->Draw(m_shadowMapShader,
-                                                  *Scene::mainCamera,
-                                                  transform.transform);
-                        glEnable(GL_CULL_FACE);
-                    }
-
-                    if (gameObject->HasComponent<SpritesheetRenderer>()) {
-                        m_UnbindTextures();
-
-                        auto spritesheetRenderer =
-                            gameObject->GetComponent<SpritesheetRenderer>();
-                        auto transform = gameObject->GetComponent<Transform>();
-                        transform.Update();
-
-                        for (auto &go : *Scene::m_GameObjects) {
-                            if (go->ID == gameObject->parentID &&
-                                go->HasComponent<Transform>()) {
-                                auto &parentTransform =
-                                    go->GetComponent<Transform>();
-                                transform.position += parentTransform.position;
-                                transform.rotation += parentTransform.rotation;
-                                transform.scale *= parentTransform.scale;
-                            }
-                        }
-
-                        glActiveTexture(GL_TEXTURE21);
-                        glBindTexture(GL_TEXTURE_CUBE_MAP,
-                                      skybox.cubemapTexture);
-
-                        // disable face culling
-                        glDisable(GL_CULL_FACE);
-                        if (spritesheetRenderer.mesh != nullptr) {
-                            spritesheetRenderer.mesh->enttId =
-                                (uint32_t)gameObject->entity;
-                            spritesheetRenderer.mesh->Draw(m_shadowMapShader,
-                                                           *Scene::mainCamera,
-                                                           transform.transform);
-                        }
-                        glEnable(GL_CULL_FACE);
-                    }
-
-                    if (gameObject->HasComponent<SpriteAnimation>()) {
-                        m_UnbindTextures();
-
-                        auto spriteAnimation =
-                            gameObject->GetComponent<SpriteAnimation>();
-                        auto transform = gameObject->GetComponent<Transform>();
-                        transform.Update();
-
-                        spriteAnimation.Play();
-
-                        for (auto &go : *Scene::m_GameObjects) {
-                            if (go->ID == gameObject->parentID &&
-                                go->HasComponent<Transform>()) {
-                                auto &parentTransform =
-                                    go->GetComponent<Transform>();
-                                transform.position += parentTransform.position;
-                                transform.rotation += parentTransform.rotation;
-                                transform.scale *= parentTransform.scale;
-                            }
-                        }
-
-                        if (spriteAnimation.currMesh != nullptr) {
-                            spriteAnimation.currMesh->enttId =
-                                (uint32_t)gameObject->entity;
-                            spriteAnimation.currMesh->Draw(m_shadowMapShader,
-                                                           *Scene::mainCamera);
-                            // glDisable(GL_BLEND);
-                        }
-                    }
-
-                    if (gameObject->HasComponent<c_SpritesheetAnimation>()) {
-                        m_UnbindTextures();
-
-                        auto spritesheetAnimation =
-                            gameObject->GetComponent<c_SpritesheetAnimation>();
-                        auto transform = gameObject->GetComponent<Transform>();
-                        transform.Update();
-
-                        for (auto &go : *Scene::m_GameObjects) {
-                            if (go->ID == gameObject->parentID &&
-                                go->HasComponent<Transform>()) {
-                                auto &parentTransform =
-                                    go->GetComponent<Transform>();
-                                transform.position += parentTransform.position;
-                                transform.rotation += parentTransform.rotation;
-                                transform.scale *= parentTransform.scale;
-                            }
-                        }
-
-                        spritesheetAnimation.Play();
-                        spritesheetAnimation.Update();
-
-                        glActiveTexture(GL_TEXTURE21);
-                        glBindTexture(GL_TEXTURE_CUBE_MAP,
-                                      skybox.cubemapTexture);
-
-                        glDisable(GL_CULL_FACE);
-                        if (spritesheetAnimation.mesh != nullptr) {
-                            spritesheetAnimation.mesh->enttId =
-                                (uint32_t)gameObject->entity;
-                            spritesheetAnimation.mesh->Draw(
-                                m_shadowMapShader, *Scene::mainCamera,
-                                transform.transform);
-                            // glDisable(GL_BLEND);
-                        }
-                        glEnable(GL_CULL_FACE);
-                    }
-                }
-            }
-        });
+        [&](Shader &m_shadowMapShader) {});
 
     free(scrollData);
     exit(0);

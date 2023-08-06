@@ -12,7 +12,8 @@ void main() {
 
 #shader fragment
 #version 330 core
-out vec4 FragColor;
+layout(location = 0) out vec4 FragColor;
+layout(location = 1) out vec4 BloomColor;
 
 in vec2 texCoords;
 
@@ -38,4 +39,5 @@ void main() {
     }
 
     FragColor = vec4(result, 1.0);
+    BloomColor = vec4(0);
 }

@@ -18,6 +18,7 @@ uniform mat4 model;
 uniform mat4 lightSpaceMatrix;
 uniform vec3 cameraPosition;
 uniform vec2 texUvOffset;
+uniform mat4 cam_view;
 uniform bool isBatch;
 #define MAX_TRANSFORMS 32
 uniform mat4 transforms[MAX_TRANSFORMS];
@@ -48,13 +49,34 @@ out vec3 reflectedVector;
 out vec4 fragPosLight;
 out mat4 projection;
 out mat3 m_TBN;
+out float visibility;
 
 const int MAX_BONES = 100;
 const int MAX_BONE_INFLUENCE = 4;
 uniform mat4 finalBonesMatrices[MAX_BONES];
 
+const float density = 0.007;
+const float gradient = 1.5;
+
 void main() {
     vec4 totalPosition = vec4(0);
+    for(int i = 0 ; i < MAX_BONE_INFLUENCE; i++)
+    {
+        if(boneIds[i] == -1) 
+            continue;
+            
+        if(boneIds[i] >= MAX_BONES) 
+        {
+            totalPosition = vec4(position, 1.0f);
+            break;
+        }
+        vec4 localPosition = finalBonesMatrices[boneIds[i]] * vec4(position, 1.0f);
+        totalPosition += localPosition * weights[i];
+        vec3 localNormal = mat3(finalBonesMatrices[boneIds[i]]) * aNormal;
+    }
+    if(totalPosition.xyz == vec3(0,0,0)) {
+        totalPosition = vec4(position, 1.0f);
+    }
     // for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
     // {
     //     if(boneIds[i] == -1) continue;
@@ -69,7 +91,7 @@ void main() {
     //     totalPosition += localPosition * weights[i];
     //     vec3 localNormal = mat3(finalBonesMatrices[boneIds[i]]) * aNormal;
     // }
-    totalPosition = vec4(position, 1.0f);
+    // totalPosition = vec4(position, 1.0f);
 
     vec4 worldPosition = vec4(0);
     currentPosition = vec3(0);
@@ -85,6 +107,7 @@ void main() {
     
     gl_Position = camera * vec4(currentPosition, 1.0);
 
+
     // vec2 finalCoords = g_texCoords;
 
     // if(finalCoords.x > 0) {
@@ -93,7 +116,7 @@ void main() {
 
     // if(finalCoords.y > 0) {
     //     finalCoords.y = finalCoords.y + texUvOffset.y;
-    // }
+    // }Normal = mat3(transpose(inverse(model))) * aNormal;
 
     texCoords = g_texCoords;
     if(texUvOffset.x > 0) {
@@ -123,6 +146,12 @@ void main() {
     m_TBN = mat3(T, B, N);
 
     fragPosLight = lightProjection * vec4(currentPosition, 1.0);
+
+    // Fog
+    vec4 positionRelativeToCam = cam_view * worldPosition;
+    float distance = length(positionRelativeToCam.xyz);
+    visibility = exp(-pow((distance * density), gradient));
+    visibility = clamp(visibility, 0.0, 1.0);
 }
 
 #shader fragment
@@ -149,6 +178,7 @@ in vec3 currentPosition;
 in vec3 reflectedVector;
 in mat4 projection;
 in vec4 fragPosLight;
+in float visibility;
 // out mat4 model;
 
 struct PointLight {
@@ -196,6 +226,7 @@ uniform vec4 baseColor;
 uniform vec3 u_BloomColor;
 uniform float metallic;
 uniform float roughness;
+uniform float shininess;
 
 //texture setters
 uniform int hasNormalMap;
@@ -207,22 +238,6 @@ uniform sampler2D shadow_map_buffer;
 
 vec4 reflectedColor = texture(cubeMap, reflectedVector);
 float specularTexture = texture(texture_specular0, texCoords).r;
-
-float ShadowCalculation(vec4 fragPosLightSpace)
-{ 
-    // perform perspective divide
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    // transform to [0,1] range
-    projCoords = projCoords * 0.5 + 0.5;
-    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = texture(shadowMap, projCoords.xy).r;
-    // get depth of current fragment from light's perspective
-    float currentDepth = projCoords.z;
-    // check whether current frag pos is in shadow
-    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
-
-    return shadow;
-}
 
 vec4 pointLight(PointLight light) {
     float specular = 0;
@@ -288,7 +303,7 @@ vec4 pointLight(PointLight light) {
         vec3 reflectDir = reflect(-lightDir, normal);
         vec3 halfwayVec = normalize(viewDirection + lightDir);
 
-        float specAmount = pow(max(dot(normal, halfwayVec), 0.0), 16);
+        float specAmount = pow(max(dot(normal, halfwayVec), 0.0), 8);
         specular = specAmount * specularLight;
     }
 
@@ -333,7 +348,7 @@ vec4 directionalLight(DirectionalLight light) {
 
         vec3 halfwayVec = normalize(viewDirection + lightDir);
 
-        float specAmount = pow(max(dot(normal, halfwayVec), 0.0), 16);
+        float specAmount = pow(max(dot(normal, halfwayVec), 0.0), shininess);
         specular = specAmount * specularLight;
     }
     float _smoothness = 1 - roughness;
@@ -367,10 +382,6 @@ vec4 directionalLight(DirectionalLight light) {
     if(isTex == 1) {
         return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * vec4(light.color, 1) * (diffuse * (1.0f - shadow)) + specularTexture * (((specular  * (1.0f - shadow)) * vec4(light.color, 1)) * light.intensity)) + texture(texture_emission0, UVs).r;
     } else {
-        if(baseColor.r == 0) {
-            vec4 tex = texture(shadow_map_buffer, UVs);
-            return vec4(tex.r,tex.r,tex.r, 1);
-        }
         // return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * (diffuse) + vec4(1,1,1,1)  * (((specular) * vec4(light.color, 1)) * light.intensity));
         return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * (diffuse * (1.0f - shadow)) + vec4(1,1,1,1)  * (((specular  * (1.0f - shadow)) * vec4(light.color, 1)) * light.intensity));
     }
@@ -403,7 +414,7 @@ vec4 spotLight(SpotLight light) {
 
         vec3 halfwayVec = normalize(viewDirection + lightDir);
 
-        float specAmount = pow(max(dot(normal, halfwayVec), 0.0), 16);
+        float specAmount = pow(max(dot(normal, halfwayVec), 0.0), shininess);
         specular = specAmount * specularLight;
     }
     float _smoothness = 1 - roughness;
@@ -493,7 +504,6 @@ vec4 light2d(Light2D light) {
 
 // health bar thing
 
-
 float near = 0.1;
 float far = 100.0;
 
@@ -504,9 +514,6 @@ uniform bool dynamic_bloom;
 uniform float bloom_threshold;
 
 void main() {
-    vec4 normalTex = texture(texture_normal0, texCoords);
-
-    float shadow = ShadowCalculation(fragPosLight);
     if(specularTexture == 0) {
         specularTexture = texture(texture_specular0, texCoords).r;
     }
@@ -527,10 +534,6 @@ void main() {
         result = noAmbient * ambient;
         result.a = baseColor.a;
         alpha = result.a;
-    }
-
-    if(result.a < 0.1) {
-        // discard;
     }
 
     for(int i = 0; i < MAX_LIGHTS; i++) {
