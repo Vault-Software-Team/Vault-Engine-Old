@@ -39,6 +39,7 @@
 #include "CameraFunctions.hpp"
 #include "Audio3DFunctions.hpp"
 #include "MainFunctions.hpp"
+#include "DiscordFunctions.hpp"
 
 namespace CsharpVariables {
     DLL_API MonoDomain *rootDomain;
@@ -77,6 +78,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         // Main Functions
         mono_add_internal_call("Vault.Main::cpp_DeltaTime", reinterpret_cast<void *(*)>(cpp_DeltaTime));
+
+        // Discord Functions
+        mono_add_internal_call("Vault.Discord::Init", reinterpret_cast<void *(*)>(Discord_InitRPC));
+        mono_add_internal_call("Vault.Discord::SetPresence", reinterpret_cast<void *(*)>(Discord_SetPresence));
 
         // Editor Logs
         mono_add_internal_call("Vault.Debug::Log", reinterpret_cast<void *(*)>(EditorLog));

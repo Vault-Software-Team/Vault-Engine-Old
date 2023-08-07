@@ -29,6 +29,15 @@ namespace Vault
         extern public static void TestVector(ref Vector3 parameter);
     }
 
+    public class Discord
+    {
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static void Init(string client_id);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static void SetPresence(string details, string state, string largeImageKey, string largeImageText, string smallImageKey);
+    }
+
     public class Audio
     {
         public Audio() { }
