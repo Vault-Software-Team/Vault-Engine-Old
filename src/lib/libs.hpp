@@ -159,6 +159,7 @@ namespace HyperAPI {
                 float intensity;
             } chromaticAberration;
         } postProcessing;
+
         char linuxCompiler[500];
         char windowsCompiler[500];
     };

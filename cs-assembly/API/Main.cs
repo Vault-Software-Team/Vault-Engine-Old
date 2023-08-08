@@ -31,11 +31,12 @@ namespace Vault
 
     public class Discord
     {
+        public Discord() { }
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static void Init(string client_id);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        extern public static void SetPresence(string details, string state, string largeImageKey, string largeImageText, string smallImageKey);
+        extern public static void SetPresence(string details, string state, string largeImageKey, string largeImageText, string smallImageKey, string smallImageText);
     }
 
     public class Audio
@@ -306,6 +307,7 @@ namespace Vault
 
         protected virtual void OnStart() { }
         protected virtual void OnUpdate(float ts) { }
+        protected virtual void OnGUI() { }
         protected virtual void OnCollisionEnter2D(string ID) { }
         protected virtual void OnCollisionExit2D(string ID) { }
         protected virtual void OnCollisionEnter3D(string ID) { }

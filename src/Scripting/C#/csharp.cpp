@@ -40,6 +40,7 @@
 #include "Audio3DFunctions.hpp"
 #include "MainFunctions.hpp"
 #include "DiscordFunctions.hpp"
+#include "ImGuiFunctions.hpp"
 
 namespace CsharpVariables {
     DLL_API MonoDomain *rootDomain;
@@ -75,6 +76,31 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
     void RegisterFunctions() {
         mono_add_internal_call("Vault.Terminal::Log", reinterpret_cast<void *(*)>(NativeLog));
         mono_add_internal_call("Vault.Debug::TestVector", reinterpret_cast<void *(*)>(TestVector));
+        // ImGui Functions
+        mono_add_internal_call("ImGui.Window::Begin", reinterpret_cast<void *(*)>(ImGui_WindowBegin));
+        mono_add_internal_call("ImGui.Window::End", reinterpret_cast<void *(*)>(ImGui_WindowEnd));
+        mono_add_internal_call("ImGui.Window::cpp_get_win_size", reinterpret_cast<void *(*)>(ImGui_WindowGetSize));
+        mono_add_internal_call("ImGui.Window::cpp_get_win_pos", reinterpret_cast<void *(*)>(ImGui_WindowGetPos));
+        mono_add_internal_call("ImGui.Window::IsWindowHovered", reinterpret_cast<void *(*)>(ImGui_IsWindowHovered));
+        mono_add_internal_call("ImGui.Window::SetWindowPosition", reinterpret_cast<void *(*)>(ImGui_SetWindowPos));
+        mono_add_internal_call("ImGui.Window::SetWindowSize", reinterpret_cast<void *(*)>(ImGui_SetWindowSize));
+        mono_add_internal_call("ImGui.TreeNode::Begin", reinterpret_cast<void *(*)>(ImGui_TreeNodeBegin));
+        mono_add_internal_call("ImGui.TreeNode::End", reinterpret_cast<void *(*)>(ImGui_TreeNodeEnd));
+        mono_add_internal_call("ImGui.Window::Child::Begin", reinterpret_cast<void *(*)>(ImGui_WindowChildBegin));
+        mono_add_internal_call("ImGui.Window::Child::End", reinterpret_cast<void *(*)>(ImGui_WindowChildEnd));
+        mono_add_internal_call("ImGui.GUI::Text", reinterpret_cast<void *(*)>(ImGui_Text));
+        mono_add_internal_call("ImGui.GUI::DragFloat", reinterpret_cast<void *(*)>(ImGui_DragFloat));
+        mono_add_internal_call("ImGui.GUI::DragInt", reinterpret_cast<void *(*)>(ImGui_DragInt));
+        mono_add_internal_call("ImGui.GUI::NewLine", reinterpret_cast<void *(*)>(ImGui_NewLine));
+        mono_add_internal_call("ImGui.GUI::Separator", reinterpret_cast<void *(*)>(ImGui_Separator));
+        mono_add_internal_call("ImGui.GUI::EnableWindowDocking", reinterpret_cast<void *(*)>(ImGui_EnableWindowDocking));
+        mono_add_internal_call("ImGui.GUI::Button", reinterpret_cast<void *(*)>(ImGui_Button));
+        mono_add_internal_call("ImGui.GUI::Image", reinterpret_cast<void *(*)>(ImGui_Image));
+        mono_add_internal_call("ImGui.GUI::SameLine", reinterpret_cast<void *(*)>(ImGui_SameLine));
+        mono_add_internal_call("ImGui.Styles::Push", reinterpret_cast<void *(*)>(ImGui_StylesPush));
+        mono_add_internal_call("ImGui.Styles::Pop", reinterpret_cast<void *(*)>(ImGui_StylesPop));
+        mono_add_internal_call("ImGui.Colors::Push", reinterpret_cast<void *(*)>(ImGui_ColorsPush));
+        mono_add_internal_call("ImGui.Colors::Pop", reinterpret_cast<void *(*)>(ImGui_ColorsPop));
 
         // Main Functions
         mono_add_internal_call("Vault.Main::cpp_DeltaTime", reinterpret_cast<void *(*)>(cpp_DeltaTime));
@@ -345,6 +371,9 @@ namespace HyperAPI::CsharpScriptEngine {
             debugClass.CallConstructor();
 
             MonoScriptClass audioClass("Vault", "Audio");
+            audioClass.CallConstructor();
+
+            MonoScriptClass discordClass("Vault", "Discord");
             audioClass.CallConstructor();
 
             // MonoScriptClass  sceneClass("Vault", "Scene");

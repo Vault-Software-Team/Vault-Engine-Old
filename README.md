@@ -134,4 +134,10 @@ If you want to use C# for scripting **you need to have dotnet and the sdk instal
 - **Video Player**
 - **Batch Renderer**
 
-# TODO: EXPORT ALL CLASSES, VARIABLES & FUNCTIONS
+# Todo List
+
+## C# UI
+
+- Set/Fix ImGui Viewport
+- Make a main viewport to draw on
+- Fonts

@@ -471,18 +471,6 @@ namespace Hyper {
                     for (auto &overObject : mouseOverObjects) {
                         if (overObject->entity != (entt::entity)entityId) {
                             if (overObject
-                                    ->HasComponent<NativeScriptManager>()) {
-                                auto &nativeManager =
-                                    overObject
-                                        ->GetComponent<NativeScriptManager>();
-                                for (auto &script :
-                                     nativeManager.m_StaticScripts) {
-                                    script->OnMouseExit();
-                                    mouseOverObjects.push_back(overObject);
-                                }
-                            }
-
-                            if (overObject
                                     ->HasComponent<m_LuaScriptComponent>()) {
                                 auto &nativeManager =
                                     overObject
@@ -520,13 +508,6 @@ namespace Hyper {
                 if (gameObject->entity == (entt::entity)entityId) {
                     currently_hovering_over = gameObject;
                     if (HyperAPI::isRunning) {
-                        if (gameObject->HasComponent<NativeScriptManager>()) {
-                            auto &nativeManager =
-                                gameObject->GetComponent<NativeScriptManager>();
-                            for (auto &script : nativeManager.m_StaticScripts) {
-                                script->OnMouseEnter();
-                            }
-                        }
                         // if exists
                         if (std::find(mouseOverObjects.begin(),
                                       mouseOverObjects.end(),

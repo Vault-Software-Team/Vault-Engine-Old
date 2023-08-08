@@ -130,7 +130,7 @@ debugging:
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
 
 one_file:
-	$(GNU_LINUX_COMPILER) -c src/main.cpp src/Application/Application.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c src/main.cpp src/Scripting/C#/csharp.cpp src/Scripting/C#/ImGuiFunctions.cpp $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
@@ -201,7 +201,7 @@ linux:
 	make app
 
 linux_game:
-	g++ -c src/main.cpp -DGAME_BUILD $(flags)
+	g++ -c src/main.cpp src/Scripting/C#/ImGuiFunctions.cpp -DGAME_BUILD $(flags)
 	mv *.o bin
 	
 	g++ bin/*.o -o $(exec_game) -DGAME_BUILD $(flags)

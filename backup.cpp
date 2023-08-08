@@ -54,6 +54,7 @@ static float bounds[] = {-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f};
 static float boundsSnap[] = {0.1f, 0.1f, 0.1f};
 static bool boundSizing = false;
 static bool openConsole = false;
+static bool enableEditorDiscordRPC = false;
 static char consoleBuffer[1000];
 static bool boundSizingSnap = false;
 
@@ -69,7 +70,32 @@ public:
 
         auto *gameObjectA = (GameObject *)bodyUserDataA.pointer;
         auto *gameObjectB = (GameObject *)bodyUserDataB.pointer;
+
+        if (gameObjectA->HasComponent<NativeScriptManager>()) {
+            auto &scriptManager =
+                gameObjectA->GetComponent<NativeScriptManager>();
+            for (auto script : scriptManager.m_StaticScripts) {
+                script->Collision2D(gameObjectB);
+            }
+        }
+
+        if (gameObjectB->HasComponent<NativeScriptManager>()) {
+            auto &scriptManager =
+                gameObjectB->GetComponent<NativeScriptManager>();
+            for (auto script : scriptManager.m_StaticScripts) {
+                script->Collision2D(gameObjectA);
+            }
+        }
+
         // TODO: C# Events (Collision2D)
+
+        if (gameObjectB->HasComponent<NativeScriptManager>()) {
+            auto &scriptManager =
+                gameObjectB->GetComponent<NativeScriptManager>();
+            for (auto script : scriptManager.m_StaticScripts) {
+                script->Collision2D(gameObjectA);
+            }
+        }
 
         if (gameObjectA->HasComponent<m_LuaScriptComponent>()) {
             auto &scriptManager =
@@ -145,6 +171,22 @@ public:
 
         auto *gameObjectA = (GameObject *)bodyUserDataA.pointer;
         auto *gameObjectB = (GameObject *)bodyUserDataB.pointer;
+
+        if (gameObjectA->HasComponent<NativeScriptManager>()) {
+            auto &scriptManager =
+                gameObjectA->GetComponent<NativeScriptManager>();
+            for (auto script : scriptManager.m_StaticScripts) {
+                script->CollisionExit2D(gameObjectB);
+            }
+        }
+
+        if (gameObjectB->HasComponent<NativeScriptManager>()) {
+            auto &scriptManager =
+                gameObjectB->GetComponent<NativeScriptManager>();
+            for (auto script : scriptManager.m_StaticScripts) {
+                script->CollisionExit2D(gameObjectA);
+            }
+        }
 
         if (gameObjectA->HasComponent<m_LuaScriptComponent>()) {
             auto &scriptManager =
@@ -812,6 +854,22 @@ void PostProcessingEffects(Shader &shader, const Camera *sceneCamera) {
 }
 
 void m_HandleCollisionCallbacks(GameObject *gameObjectA, GameObject *gameObjectB) {
+    if (gameObjectA->HasComponent<NativeScriptManager>()) {
+        auto &scriptManager =
+            gameObjectA->GetComponent<NativeScriptManager>();
+        for (auto script : scriptManager.m_StaticScripts) {
+            script->Collision3D(gameObjectB);
+        }
+    }
+
+    if (gameObjectB->HasComponent<NativeScriptManager>()) {
+        auto &scriptManager =
+            gameObjectB->GetComponent<NativeScriptManager>();
+        for (auto script : scriptManager.m_StaticScripts) {
+            script->Collision3D(gameObjectA);
+        }
+    }
+
     if (gameObjectA->HasComponent<m_LuaScriptComponent>()) {
         auto &scriptManager =
             gameObjectA->GetComponent<m_LuaScriptComponent>();
@@ -893,6 +951,11 @@ void UpdatePresence(const std::string &details = "",
                     const std::string &largeImageText = "",
                     const std::string &smallImageKey = "",
                     const std::string &smallImageText = "") {
+
+    if (!enableEditorDiscordRPC) {
+        return;
+    }
+
     char buffer[256];
     DiscordRichPresence discordPresence;
     memset(&discordPresence, 0, sizeof(discordPresence));
@@ -1064,6 +1127,17 @@ int main(int argc, char **argv) {
 
         if (JSON.contains("aspect_height")) {
             Scene::aspect_height = JSON["aspect_height"];
+        }
+
+        if (JSON.contains("splash_screen")) {
+            config.splashScreen.enabled = JSON["splash_screen"]["enabled"];
+            config.splashScreen.fade_in = JSON["splash_screen"]["fade_in"];
+            config.splashScreen.fade_out = JSON["splash_screen"]["fade_out"];
+            config.splashScreen.to_last = JSON["splash_screen"]["to_last"];
+            std::string img = JSON["splash_screen"]["image"];
+            strcpy(config.splashScreen.image, img.c_str());
+            config.splashScreen.scale.x = JSON["splash_screen"]["scale_x"];
+            config.splashScreen.scale.y = JSON["splash_screen"]["scale_y"];
         }
 
         if (JSON.contains("post_processing")) {
@@ -1514,6 +1588,7 @@ int main(int argc, char **argv) {
     editor.SetLanguageDefinition(langDef);
     editor.SetPalette(TextEditor::GetDarkPalette());
     editor.SetShowWhitespaces(false);
+
 #ifndef GAME_BUILD
     // SoundDevice *alDevice = SoundDevice::get();
     // uint32_t audio = SoundBuffer::get()->AddSoundEffect("assets/wrld.mp3");
@@ -2157,6 +2232,8 @@ int main(int argc, char **argv) {
                 ImGui::InputText("Windows Compiler", config.windowsCompiler,
                                  500);
 
+                ImGui::Checkbox("Enable Discord RPC", &enableEditorDiscordRPC);
+
                 ImGui::InputText("Game Name", config.name, 500);
                 ImGui::DragFloat("Ambient Lightning", &config.ambientLight,
                                  0.01f, 0, 1);
@@ -2171,6 +2248,15 @@ int main(int argc, char **argv) {
                 ImGui::DragInt("Aspect Height", &Scene::aspect_height, 1, 0, 1080);
                 // ImGui::DragFloat("Grid Size", &m_grid_size, 5, 1);
                 // ImGui::Checkbox("Draw Grid", &drawGrid);
+
+                if (ImGui::TreeNode("Splash Screen")) {
+                    DrawVec2Control("Scale", config.splashScreen.scale);
+                    ImGui::DragFloat("Fade In Speed", &config.splashScreen.fade_in);
+                    ImGui::DragFloat("Fade Out Speed", &config.splashScreen.fade_out);
+                    ImGui::DragFloat("To Last (Seconds)", &config.splashScreen.to_last);
+                    ImGui::InputText("Image Path", config.splashScreen.image, 800);
+                    ImGui::TreePop();
+                }
 
                 if (ImGui::TreeNode("Shadow Mapping")) {
                     DrawVec3Control("Position", lightPos);
@@ -2190,7 +2276,7 @@ int main(int argc, char **argv) {
                     }
                     shadowOrtho1 = glm::vec2(-orthoSize, orthoSize);
                     shadowOrtho2 = glm::vec2(-orthoSize, orthoSize);
-                    ImGui::ImageButton((void *)shadowMap, ImVec2(256, 256), ImVec2(0, 1), ImVec2(1, 0));
+                    ImGui::ImageButton((void *)shadowMap, ImVec2(210, 210), ImVec2(0, 1), ImVec2(1, 0));
                     if (ImGui::Button("Reload Buffer", ImVec2(256, 0))) {
                         // delete
                         glDeleteFramebuffers(1, &shadowMapFBO);
@@ -2277,6 +2363,15 @@ int main(int argc, char **argv) {
                         {"width", config.width},
                         {"height", config.height},
                         {"layers", layerStarters},
+                        {"splashScreen", {
+                                             {"enabled", config.splashScreen.enabled},
+                                             {"fade_in", config.splashScreen.fade_in},
+                                             {"fade_out", config.splashScreen.fade_out},
+                                             {"to_last", config.splashScreen.to_last},
+                                             {"scale_x", config.splashScreen.scale.x},
+                                             {"scale_y", config.splashScreen.scale.y},
+                                             {"image", config.splashScreen.image},
+                                         }},
                         {"shadow_mapping", {
                                                {"enabled", enableShadowMap},
                                                {"position", {{"x", lightPos.x}, {"y", lightPos.y}, {"z", lightPos.z}}},
@@ -2815,22 +2910,21 @@ int main(int argc, char **argv) {
                                                  buttonColor.z, 0.7f));
                     if (ImGui::Button(ICON_FA_PLAY, ImVec2(32, 32))) {
                         // CsharpScriptEngine::ReloadAssembly();
-                        RunInstance(m_cwd);
-                        // if (HyperAPI::isStopped) {
-                        //     stateScene = nlohmann::json::array();
-                        //     Scene::SaveScene("", stateScene);
-                        // }
-                        // StartWorld(listener);
+                        if (HyperAPI::isStopped) {
+                            stateScene = nlohmann::json::array();
+                            Scene::SaveScene("", stateScene);
+                        }
+                        StartWorld(listener);
 
-                        // HyperAPI::isRunning = true;
-                        // HyperAPI::isStopped = false;
+                        HyperAPI::isRunning = true;
+                        HyperAPI::isStopped = false;
 
-                        // for (auto &camera : Scene::cameras) {
-                        //     if (camera->mainCamera) {
-                        //         Scene::mainCamera = camera;
-                        //         break;
-                        //     }
-                        // }
+                        for (auto &camera : Scene::cameras) {
+                            if (camera->mainCamera) {
+                                Scene::mainCamera = camera;
+                                break;
+                            }
+                        }
                     }
                     ImGui::PopStyleColor();
 
@@ -4173,29 +4267,6 @@ void NewScript::Update() {})";
 #else
     std::function<void(uint32_t & PPT, uint32_t & PPFBO, uint32_t & gui_gui)>
         GUI_EXP = [&](uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui) {
-            auto csharpView = Scene::m_Registry.view<CsharpScriptManager>();
-
-            for (auto e : csharpView) {
-                auto &scriptManager = Scene::m_Registry.get<CsharpScriptManager>(e);
-
-                for (auto &behaviour : scriptManager.behaviours) {
-                    MonoMethod *OnGUI = behaviour.second->GetMethod("OnGUI", 0);
-                    MonoObject *exception = nullptr;
-                    void *params[0] = {};
-
-                    mono_runtime_invoke(OnGUI, behaviour.second->f_GetObject(), params, &exception);
-                    if (exception) {
-                        MonoObject *exc = NULL;
-                        MonoString *str = mono_object_to_string(exception, &exc);
-                        if (exc) {
-                            mono_print_unhandled_exception(exc);
-                        } else {
-                            Log log(mono_string_to_utf8(str), LOG_ERROR);
-                        }
-                    }
-                }
-            }
-
             DevConsole();
         };
 #endif
@@ -4253,21 +4324,19 @@ void NewScript::Update() {})";
     const int targetWidth = 1920, targetHeight = 1080;
     float targetAspectRatio = (float)targetWidth / (float)targetHeight;
 
-#ifdef GAME_BUILD
-    // SplashScreen splashScreen("build/logo2.png");
-    // auto *backupCam = Scene::mainCamera;
-    // for (auto &camera : Scene::cameras) {
-    //     if (camera->mainCamera) {
-    //         backupCam = camera;
-    //         break;
-    //     }
-    // }
-    // Scene::mainCamera = splashScreen.cameraObject->GetComponent<CameraComponent>().camera;
-    // // Scene::mainCamera = backupCam;
-    // bool splash_done = false;
-#endif
+    SplashScreen splashScreen(config.splashScreen.image, config.splashScreen.scale, config.splashScreen.to_last, config.splashScreen.fade_in, config.splashScreen.fade_out);
+    auto *saved_camera = Scene::mainCamera;
+    Scene::mainCamera = splashScreen.cameraObject->GetComponent<CameraComponent>().camera;
+    bool splash_screen_done = false;
+
+    float timertostartsplash = 0;
+
     app.Run(
         [&](uint32_t &shadowMapTex) {
+            if (splash_screen_done && config.splashScreen.enabled) {
+                timertostartsplash += Timestep::deltaTime;
+            }
+
             glClearColor(0, 0, 0, 1);
             int aspectWidth = app.width;
             int aspectHeight = (int)((float)aspectWidth / targetAspectRatio);
@@ -4283,26 +4352,20 @@ void NewScript::Update() {})";
                 glViewport(0, 0, app.width, app.height);
             }
 
+#ifdef GAME_BUILD
+            if (!splash_screen_done && timertostartsplash >= 1.5 && config.splashScreen.enabled) {
+                splash_screen_done = splashScreen.Play();
+                if (splash_screen_done) {
+                    Scene::mainCamera = saved_camera;
+                }
+            }
+#endif
+
             double now = glfwGetTime();
             double deltaTime = now - lastUpdateTime;
             if (Scene::mainCamera == nullptr) {
                 Scene::mainCamera = camera;
             }
-#ifdef GAME_BUILD
-        // if (!splash_done) {
-        //     splash_done = splashScreen.Play();
-        //     if (splash_done) {
-        //         auto view = Scene::m_Registry.view<CameraComponent>();
-        //         for (auto &e : view) {
-        //             auto &camera = Scene::m_Registry.get<CameraComponent>(e);
-        //             if (camera.camera->mainCamera) {
-        //                 backupCam = camera.camera;
-        //                 break;
-        //             }
-        //         }
-        //     }
-        // }
-#endif
 
 #ifndef GAME_BUILD
             if (Scene::m_Object == nullptr) {

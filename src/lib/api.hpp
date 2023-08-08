@@ -41,6 +41,7 @@
 #include "../Components/AudioListener.hpp"
 #include "../Components/Audio3D.hpp"
 #include "../Components/ParticleSystem.hpp"
+#include "../Splash/Splash.hpp"
 
 // Renderer
 #include "../Renderer/AssimpGLMHelpers.hpp"
