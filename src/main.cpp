@@ -902,6 +902,11 @@ void UpdatePresence(const std::string &details = "",
     discordPresence.smallImageText = smallImageText.c_str();
     discordPresence.state = state.c_str();
     discordPresence.details = details.c_str();
+    discordPresence.joinSecret = "asdfasdf83784387fgd8";
+    discordPresence.matchSecret = "adfkjfdhjk394874567";
+    discordPresence.partyId = uuid::generate_uuid_v4().c_str();
+    discordPresence.partySize = 1;
+    discordPresence.partyMax = 5;
     discordPresence.startTimestamp = timestamp;
     Discord_UpdatePresence(&discordPresence);
 }
@@ -979,31 +984,31 @@ int main(int argc, char **argv) {
 
 // Discord presence update
 #ifndef GAME_BUILD
-    DiscordEventHandlers handlers;
-    memset(&handlers, 0, sizeof(handlers));
-    handlers.ready = [](const DiscordUser *request) {
+    DiscordEventHandlers *handlers = new DiscordEventHandlers();
+    memset(handlers, 0, sizeof(*handlers));
+    handlers->ready = [](const DiscordUser *request) {
         std::cout << "Discord: Ready" << std::endl;
     };
 
-    handlers.errored = [](int errorCode, const char *message) {
+    handlers->errored = [](int errorCode, const char *message) {
         std::cout << "Discord: Error " << errorCode << ": " << message
                   << std::endl;
     };
 
-    handlers.disconnected = [](int errorCode, const char *message) {
+    handlers->disconnected = [](int errorCode, const char *message) {
         std::cout << "Discord: Disconnected " << errorCode << ": " << message
                   << std::endl;
     };
 
-    handlers.joinGame = [](const char *joinSecret) {
+    handlers->joinGame = [](const char *joinSecret) {
         std::cout << "Discord: Join Game " << joinSecret << std::endl;
     };
 
-    handlers.spectateGame = [](const char *spectateSecret) {
+    handlers->spectateGame = [](const char *spectateSecret) {
         std::cout << "Discord: Spectate Game " << spectateSecret << std::endl;
     };
 
-    Discord_Initialize("1025522890688442400", &handlers, 1, nullptr);
+    Discord_Initialize("1025522890688442400", handlers, 1, nullptr);
 
     UpdatePresence("In Editor", "Making a game");
 #endif
@@ -1032,6 +1037,7 @@ int main(int argc, char **argv) {
     glm::vec2 shadowTextureSize(2048, 2048);
     int shadowMapWidth = 2048, shadowMapHeight = 2048;
     bool enableShadowMap = false;
+    bool enableShadowCubeMap = false;
     bool enableSpotLightShadowMap = false;
 
     // check if game.config exists
@@ -1207,6 +1213,7 @@ int main(int argc, char **argv) {
     Shader outlineShader("shaders/outline.glsl");
     Shader shadowShader("shaders/shadowMap.glsl");
     Shader workerShader("shaders/worker.glsl");
+    shadowCubeMapShader = new Shader("shaders/shadowCubeMap.glsl");
     outlineShader.Bind();
     outlineShader.SetUniform1f("outlining", 1.08f);
     outlineShader.Unbind();
@@ -1269,6 +1276,50 @@ int main(int argc, char **argv) {
     glActiveTexture(GL_TEXTURE11);
     glBindTexture(GL_TEXTURE_2D, shadowMap);
     shader.SetUniform1i("shadow_map_buffer", 11);
+
+    // uint32_t pointShadowMapFBO;
+    // glGenFramebuffers(1, &pointShadowMapFBO);
+
+    // uint32_t depthCubemap;
+    // glGenTextures(1, &depthCubemap);
+
+    // glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
+
+    // for (uint32_t i = 0; i < 6; i++) {
+    //     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, shadowMapWidth, shadowMapHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    // }
+
+    // glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    // glBindFramebuffer(GL_FRAMEBUFFER, pointShadowMapFBO);
+    // glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemap, 0);
+    // glDrawBuffer(GL_NONE);
+    // glReadBuffer(GL_NONE);
+    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // float farPlane = 100.0f;
+
+    // glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, farPlane);
+    // glm::mat4 shadowMatrices[] =
+    //     {
+    //         shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)),
+    //         shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)),
+    //         shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)),
+    //         shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0)),
+    //         shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0)),
+    //         shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0))};
+
+    // shadowCubeMapShader->Bind();
+    // shadowCubeMapShader->SetUniform1f("farPlane", farPlane);
+    // shadowCubeMapShader->SetUniform3f("lightPos", lightPos.x, lightPos.y, lightPos.z);
+    // shadowCubeMapShader->SetUniformMat4("shadowMatrices[0]", shadowMatrices[0]);
+    // shadowCubeMapShader->SetUniformMat4("shadowMatrices[1]", shadowMatrices[1]);
+    // shadowCubeMapShader->SetUniformMat4("shadowMatrices[2]", shadowMatrices[2]);
+    // shadowCubeMapShader->SetUniformMat4("shadowMatrices[3]", shadowMatrices[3]);
+    // shadowCubeMapShader->SetUniformMat4("shadowMatrices[4]", shadowMatrices[4]);
+    // shadowCubeMapShader->SetUniformMat4("shadowMatrices[5]", shadowMatrices[5]);
 
     bool focusedOnScene = false;
     bool hoveredScene = false;
@@ -2173,7 +2224,7 @@ int main(int argc, char **argv) {
                 // ImGui::Checkbox("Draw Grid", &drawGrid);
 
                 if (ImGui::TreeNode("Shadow Mapping")) {
-                    DrawVec3Control("Position", lightPos);
+                    // DrawVec3Control("Position", lightPos);
                     DrawVec3Control("Look At", lightUpThing);
                     DrawVec2Control("Near & Far", shadowNearFar);
                     ImGui::DragFloat("Orthographic Size", &orthoSize);
@@ -4268,6 +4319,14 @@ void NewScript::Update() {})";
 #endif
     app.Run(
         [&](uint32_t &shadowMapTex) {
+            auto dLightView = Scene::m_Registry.view<c_DirectionalLight>();
+
+            for(auto &e : dLightView) {
+                auto &d = Scene::m_Registry.get<c_DirectionalLight>(e);
+                lightPos = d.lightPos;
+                break;
+            }
+            
             glClearColor(0, 0, 0, 1);
             int aspectWidth = app.width;
             int aspectHeight = (int)((float)aspectWidth / targetAspectRatio);
@@ -4842,6 +4901,15 @@ void NewScript::Update() {})";
                                 shader.SetUniformMat4("lightProjection", lightProjection);
                                 shader.SetUniform1i("shadow_map_buffer", 11);
 
+                                auto pLightView = Scene::m_Registry.view<c_PointLight>();
+
+                                for (auto &e : pLightView) {
+                                    auto &light = Scene::m_Registry.get<c_PointLight>(e);
+                                    light.BindCubemap(meshRenderer.customShader.usingCustomShader
+                                                          ? *meshRenderer.customShader.shader
+                                                          : use_shader);
+                                }
+
                                 shadowShader.Bind();
                                 shadowShader.SetUniformMat4("lightProjection", lightProjection);
 
@@ -5081,6 +5149,159 @@ void NewScript::Update() {})";
             glDisable(GL_BLEND);
             glDisable(GL_CULL_FACE);
 
+// Scope of debuggers
+#ifndef GAME_BUILD
+            if (Scene::mainCamera == camera) {
+                glClear(GL_DEPTH_BUFFER_BIT);
+                if (drawBoxCollider2D || drawBoxCollider3D) {
+                    glDepthFunc(GL_LEQUAL);
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+                    glm::mat4 model = glm::mat4(1.0f);
+                    model = glm::translate(model, bc2dPos) *
+                            glm::toMat4(glm::quat(bc2dRotation)) *
+                            glm::scale(model, glm::vec3(bc2dScale.x / 2,
+                                                        bc2dScale.y / 2, 1.0f));
+
+                    mesh_BoxCollider2D.Draw(workerShader, *camera, model);
+
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                }
+
+                if (drawBoxCollider3D) {
+                    glDepthFunc(GL_LEQUAL);
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+                    glm::mat4 model = glm::mat4(1.0f);
+                    model = glm::translate(model, bc2dPos) *
+                            glm::toMat4(glm::quat(bc2dRotation)) *
+                            glm::scale(model, glm::vec3(bc2dScale.x / 2,
+                                                        bc2dScale.y / 2, bc2dScale.z / 2));
+                    mesh_BoxCollider3D.Draw(workerShader, *camera, model);
+
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                }
+
+                if (drawMeshCollider3D) {
+                    glDepthFunc(GL_LEQUAL);
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+                    glm::mat4 model = glm::mat4(1.0f);
+                    model = glm::translate(model, bc2dPos) *
+                            glm::toMat4(glm::quat(bc2dRotation)) *
+                            glm::scale(model, glm::vec3(bc2dScale.x / 2,
+                                                        bc2dScale.y / 2, bc2dScale.z / 2));
+                    glm::vec4 backup = mesh_MeshCollider3D->material.baseColor;
+                    mesh_MeshCollider3D->material.baseColor = Vector4(0, 4, 0.2, 1);
+                    mesh_MeshCollider3D->Draw(workerShader, *camera, model);
+                    mesh_MeshCollider3D->material.baseColor = backup;
+
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                }
+
+                for (auto &gameObject : *Scene::m_GameObjects) {
+                    if (!gameObject->enabled)
+                        continue;
+
+                    if (gameObject->HasComponent<c_DirectionalLight>()) {
+
+                        auto &transform = gameObject->GetComponent<Transform>();
+                        Transform t = transform;
+                        t.scale = glm::vec3(-3.5f, 3.5f, 3.5f);
+
+                        auto camTransform =
+                            camera->GetComponent<TransformComponent>();
+                        float distance = glm::distance(t.position, camTransform.position);
+                        t.scale = glm::vec3(-(distance / 4), distance / 4, distance / 4);
+                        t.LookAt(camTransform.position);
+                        t.Update();
+
+                        glDisable(GL_DEPTH_TEST);
+                        glDepthFunc(GL_LEQUAL);
+                        dirLightIconMesh.enttId = (uint32_t)gameObject->entity;
+                        dirLightIconMesh.Draw(workerShader, *camera, t.transform);
+                        glEnable(GL_DEPTH_TEST);
+                    }
+
+                    if (gameObject->HasComponent<Audio3D>()) {
+                        auto &transform = gameObject->GetComponent<Transform>();
+                        Transform t = transform;
+                        t.scale = glm::vec3(-3.5f, 3.5f, 3.5f);
+
+                        auto camTransform =
+                            camera->GetComponent<TransformComponent>();
+                        float distance = glm::distance(t.position, camTransform.position);
+                        t.scale = glm::vec3(-(distance / 4), distance / 4, distance / 4);
+                        t.LookAt(camTransform.position);
+                        t.Update();
+
+                        glDisable(GL_DEPTH_TEST);
+                        glDepthFunc(GL_LEQUAL);
+                        audioMesh.enttId = (uint32_t)gameObject->entity;
+                        audioMesh.Draw(workerShader, *camera, t.transform);
+                        glEnable(GL_DEPTH_TEST);
+                    }
+
+                    if (gameObject->HasComponent<c_PointLight>()) {
+                        auto &transform = gameObject->GetComponent<Transform>();
+                        Transform t = transform;
+                        t.scale = glm::vec3(-3.5f, 3.5f, 3.5f);
+
+                        auto camTransform =
+                            camera->GetComponent<TransformComponent>();
+                        float distance = glm::distance(t.position, camTransform.position);
+                        t.scale = glm::vec3(-(distance / 4), distance / 4, distance / 4);
+                        t.LookAt(camTransform.position);
+                        t.Update();
+
+                        glDisable(GL_DEPTH_TEST);
+                        glDepthFunc(GL_LEQUAL);
+                        pointLightIconMesh.enttId = (uint32_t)gameObject->entity;
+                        pointLightIconMesh.Draw(workerShader, *camera, t.transform);
+                        glEnable(GL_DEPTH_TEST);
+                    }
+
+                    if (gameObject->HasComponent<c_SpotLight>()) {
+                        auto &transform = gameObject->GetComponent<Transform>();
+                        Transform t = transform;
+                        t.scale = glm::vec3(-3.5f, 3.5f, 3.5f);
+
+                        auto camTransform =
+                            camera->GetComponent<TransformComponent>();
+                        float distance = glm::distance(t.position, camTransform.position);
+                        t.scale = glm::vec3(-(distance / 4), distance / 4, distance / 4);
+                        t.LookAt(camTransform.position);
+                        t.Update();
+
+                        glDisable(GL_DEPTH_TEST);
+                        glDepthFunc(GL_LEQUAL);
+                        spotLightIconMesh.enttId = (uint32_t)gameObject->entity;
+                        spotLightIconMesh.Draw(workerShader, *camera, t.transform);
+                        glEnable(GL_DEPTH_TEST);
+                    }
+
+                    if (gameObject->HasComponent<CameraComponent>()) {
+                        auto &transform = gameObject->GetComponent<Transform>();
+                        Transform t = transform;
+                        t.scale = glm::vec3(-3.5f, 3.5f, 3.5f);
+
+                        auto camTransform =
+                            camera->GetComponent<TransformComponent>();
+                        float distance = glm::distance(t.position, camTransform.position);
+                        t.scale = glm::vec3(-(distance / 4), distance / 4, distance / 4);
+                        t.LookAt(camTransform.position);
+                        t.Update();
+
+                        glDisable(GL_DEPTH_TEST);
+                        glDepthFunc(GL_LEQUAL);
+                        cameraIconMesh.enttId = (uint32_t)gameObject->entity;
+                        cameraIconMesh.Draw(workerShader, *camera, t.transform);
+                        glEnable(GL_DEPTH_TEST);
+                    }
+                }
+            }
+#endif
+
             // Shadow mapping
             if (enableShadowMap) {
                 glEnable(GL_DEPTH_TEST);
@@ -5146,157 +5367,72 @@ void NewScript::Update() {})";
                 }
             }
 
+            auto pLightView = Scene::m_Registry.view<c_PointLight>();
+
+            for (auto &e : pLightView) {
+                auto &light = Scene::m_Registry.get<c_PointLight>(e);
+
+                if (light.light->renderShadows) {
+                    light.SetShadowMapValues();
+                    glEnable(GL_DEPTH_TEST);
+                    glViewport(0, 0, shadowMapWidth, shadowMapHeight);
+                    glBindFramebuffer(GL_FRAMEBUFFER, light.light->pointShadowMapFBO);
+                    glClear(GL_DEPTH_BUFFER_BIT);
+
+                    auto rendererView = Scene::m_Registry.view<MeshRenderer>();
+
+                    for (auto &e : rendererView) {
+                        if (Scene::m_Registry.has<MeshRenderer>(e)) {
+                            m_UnbindTextures();
+
+                            auto meshRenderer =
+                                Scene::m_Registry.get<MeshRenderer>(e);
+                            auto transform = Scene::m_Registry.get<Transform>(e);
+                            transform.Update();
+
+                            glm::mat4 extra = meshRenderer.extraMatrix;
+                            glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                            if (meshRenderer.m_Mesh != nullptr) {
+                                meshRenderer.m_Mesh->enttId =
+                                    (uint32_t)e;
+                                glActiveTexture(GL_TEXTURE21);
+                                glBindTexture(GL_TEXTURE_CUBE_MAP,
+                                              skybox.cubemapTexture);
+
+                                // if (meshRenderer.customShader.shader != nullptr) {
+                                //     meshRenderer.customShader.shader->Bind();
+                                //     meshRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                                // }
+
+                                if (meshRenderer.meshType == "Plane") {
+                                    meshRenderer.m_Mesh->Draw(
+                                        *shadowCubeMapShader,
+                                        *Scene::mainCamera,
+                                        transform.transform * extra *
+                                            m_parentTransform);
+                                } else {
+                                    meshRenderer.m_Mesh->Draw(
+                                        *shadowCubeMapShader,
+                                        *Scene::mainCamera,
+                                        transform.transform * extra *
+                                            m_parentTransform);
+                                }
+                            }
+                        }
+                    }
+                    // end of shadow mapping
+                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                    if (Scene::mainCamera->EnttComp) {
+                        glViewport(vpX, vpY, aspectWidth, aspectHeight);
+                    } else {
+                        glViewport(0, 0, app.width, app.height);
+                    }
+                }
+            }
+
             // Ending of draw calls
             lastUpdateTime = now;
-#ifndef GAME_BUILD
-            if (Scene::mainCamera != camera)
-                return;
-
-            glClear(GL_DEPTH_BUFFER_BIT);
-            if (drawBoxCollider2D || drawBoxCollider3D) {
-                glDepthFunc(GL_LEQUAL);
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-                glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, bc2dPos) *
-                        glm::toMat4(glm::quat(bc2dRotation)) *
-                        glm::scale(model, glm::vec3(bc2dScale.x / 2,
-                                                    bc2dScale.y / 2, 1.0f));
-
-                mesh_BoxCollider2D.Draw(workerShader, *camera, model);
-
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            }
-
-            if (drawBoxCollider3D) {
-                glDepthFunc(GL_LEQUAL);
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-                glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, bc2dPos) *
-                        glm::toMat4(glm::quat(bc2dRotation)) *
-                        glm::scale(model, glm::vec3(bc2dScale.x / 2,
-                                                    bc2dScale.y / 2, bc2dScale.z / 2));
-                mesh_BoxCollider3D.Draw(workerShader, *camera, model);
-
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            }
-
-            if (drawMeshCollider3D) {
-                glDepthFunc(GL_LEQUAL);
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-                glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, bc2dPos) *
-                        glm::toMat4(glm::quat(bc2dRotation)) *
-                        glm::scale(model, glm::vec3(bc2dScale.x / 2,
-                                                    bc2dScale.y / 2, bc2dScale.z / 2));
-                glm::vec4 backup = mesh_MeshCollider3D->material.baseColor;
-                mesh_MeshCollider3D->material.baseColor = Vector4(0, 4, 0.2, 1);
-                mesh_MeshCollider3D->Draw(workerShader, *camera, model);
-                mesh_MeshCollider3D->material.baseColor = backup;
-
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            }
-
-            auto view = Scene::m_Registry.view<MeshRenderer>();
-            for (auto e : view) {
-                auto &meshRenderer = Scene::m_Registry.get<MeshRenderer>(e);
-
-                if (meshRenderer.m_Mesh)
-                    meshRenderer.m_Mesh->material.Unbind(shader);
-            }
-            for (auto &gameObject : *Scene::m_GameObjects) {
-                if (!gameObject->enabled)
-                    continue;
-
-                if (gameObject->HasComponent<c_DirectionalLight>()) {
-
-                    auto &transform = gameObject->GetComponent<Transform>();
-                    Transform t = transform;
-                    t.scale = glm::vec3(-0.5f, 0.5f, 0.5f);
-
-                    auto camTransform =
-                        camera->GetComponent<TransformComponent>();
-                    t.LookAt(camTransform.position);
-                    t.Update();
-
-                    glDisable(GL_DEPTH_TEST);
-                    glDepthFunc(GL_LEQUAL);
-                    dirLightIconMesh.enttId = (uint32_t)gameObject->entity;
-                    dirLightIconMesh.Draw(workerShader, *camera, t.transform);
-                    glEnable(GL_DEPTH_TEST);
-                }
-
-                if (gameObject->HasComponent<Audio3D>()) {
-                    auto &transform = gameObject->GetComponent<Transform>();
-                    Transform t = transform;
-                    t.scale = glm::vec3(-0.5f, 0.5f, 0.5f);
-
-                    auto camTransform =
-                        camera->GetComponent<TransformComponent>();
-                    t.LookAt(camTransform.position);
-                    t.Update();
-
-                    glDisable(GL_DEPTH_TEST);
-                    glDepthFunc(GL_LEQUAL);
-                    audioMesh.enttId = (uint32_t)gameObject->entity;
-                    audioMesh.Draw(workerShader, *camera, t.transform);
-                    glEnable(GL_DEPTH_TEST);
-                }
-
-                if (gameObject->HasComponent<c_PointLight>()) {
-                    auto &transform = gameObject->GetComponent<Transform>();
-                    Transform t = transform;
-                    t.scale = glm::vec3(-0.5f, 0.5f, 0.5f);
-
-                    auto camTransform =
-                        camera->GetComponent<TransformComponent>();
-                    t.LookAt(camTransform.position);
-                    t.Update();
-
-                    glDisable(GL_DEPTH_TEST);
-                    glDepthFunc(GL_LEQUAL);
-                    pointLightIconMesh.enttId = (uint32_t)gameObject->entity;
-                    pointLightIconMesh.Draw(workerShader, *camera, t.transform);
-                    glEnable(GL_DEPTH_TEST);
-                }
-
-                if (gameObject->HasComponent<c_SpotLight>()) {
-                    auto &transform = gameObject->GetComponent<Transform>();
-                    Transform t = transform;
-                    t.scale = glm::vec3(-0.5f, 0.5f, 0.5f);
-
-                    auto camTransform =
-                        camera->GetComponent<TransformComponent>();
-                    t.LookAt(camTransform.position);
-                    t.Update();
-
-                    glDisable(GL_DEPTH_TEST);
-                    glDepthFunc(GL_LEQUAL);
-                    spotLightIconMesh.enttId = (uint32_t)gameObject->entity;
-                    spotLightIconMesh.Draw(workerShader, *camera, t.transform);
-                    glEnable(GL_DEPTH_TEST);
-                }
-
-                if (gameObject->HasComponent<CameraComponent>()) {
-                    auto &transform = gameObject->GetComponent<Transform>();
-                    Transform t = transform;
-                    t.scale = glm::vec3(-0.5f, 0.5f, 0.5f);
-
-                    auto camTransform =
-                        camera->GetComponent<TransformComponent>();
-                    t.LookAt(camTransform.position);
-                    t.Update();
-
-                    glDisable(GL_DEPTH_TEST);
-                    glDepthFunc(GL_LEQUAL);
-                    cameraIconMesh.enttId = (uint32_t)gameObject->entity;
-                    cameraIconMesh.Draw(workerShader, *camera, t.transform);
-                    glEnable(GL_DEPTH_TEST);
-                }
-            }
-#endif
         },
         GUI_EXP,
         [&](Shader &m_shadowMapShader) {});

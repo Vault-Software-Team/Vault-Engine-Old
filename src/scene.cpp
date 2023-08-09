@@ -324,6 +324,14 @@ namespace HyperAPI {
                     component["color"]["b"]);
 
                 light.intensity = component["intensity"];
+
+                if (component.contains("renderShadows")) {
+                    light.light->renderShadows = component["renderShadows"];
+                }
+
+                if (component.contains("farPlane")) {
+                    light.light->farPlane = component["farPlane"];
+                }
             }
 
             if (type == "SpotLight") {
@@ -1167,6 +1175,8 @@ namespace HyperAPI {
                 JSON[i]["components"][componentOffset]["color"]["g"] = light.color.y;
                 JSON[i]["components"][componentOffset]["color"]["b"] = light.color.z;
                 JSON[i]["components"][componentOffset]["intensity"] = light.intensity;
+                JSON[i]["components"][componentOffset]["renderShadows"] = light.light->renderShadows;
+                JSON[i]["components"][componentOffset]["farPlane"] = light.light->farPlane;
 
                 componentOffset++;
             }
