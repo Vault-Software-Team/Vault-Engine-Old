@@ -36,6 +36,63 @@ namespace HyperAPI::Experimental {
     DLL_API nlohmann::json stateScene = nlohmann::json::array();
     DLL_API bool bulletPhysicsStarted = false;
 
+    void GameObject::DeleteGameObject() {
+        Scene::m_Object = nullptr;
+        keyDown = true;
+
+        if (HasComponent<c_DirectionalLight>()) {
+            Scene::DirLights.erase(
+                std::remove(Scene::DirLights.begin(),
+                            Scene::DirLights.end(),
+                            GetComponent<c_DirectionalLight>().light),
+                Scene::DirLights.end());
+            delete GetComponent<c_DirectionalLight>().light;
+        }
+
+        if (HasComponent<c_PointLight>()) {
+            Scene::PointLights.erase(
+                std::remove(Scene::PointLights.begin(),
+                            Scene::PointLights.end(),
+                            GetComponent<c_PointLight>().light),
+                Scene::PointLights.end());
+            delete GetComponent<c_PointLight>().light;
+        }
+
+        if (HasComponent<c_SpotLight>()) {
+            Scene::SpotLights.erase(
+                std::remove(Scene::SpotLights.begin(),
+                            Scene::SpotLights.end(),
+                            GetComponent<c_SpotLight>().light),
+                Scene::SpotLights.end());
+            delete GetComponent<c_SpotLight>().light;
+        }
+
+        if (HasComponent<c_Light2D>()) {
+            Scene::Lights2D.erase(
+                std::remove(Scene::Lights2D.begin(), Scene::Lights2D.end(),
+                            GetComponent<c_Light2D>().light),
+                Scene::Lights2D.end());
+            delete GetComponent<c_Light2D>().light;
+        }
+
+        Scene::m_Object = nullptr;
+
+        Scene::m_Registry.remove_all(entity);
+        Scene::m_Registry.remove(entity);
+        Scene::m_Registry.destroy(entity);
+
+        Scene::m_GameObjects->erase(std::remove(Scene::m_GameObjects->begin(), Scene::m_GameObjects->end(), this), Scene::m_GameObjects->end());
+
+        for (auto &gameObject : (*Scene::m_GameObjects)) {
+            if (gameObject->parentID == ID) {
+                gameObject->parentID = "NO_PARENT";
+                gameObject->DeleteGameObject();
+            }
+        }
+
+        delete this;
+    }
+
     void StartWorld(b2ContactListener *listener) {
         InitScripts();
 

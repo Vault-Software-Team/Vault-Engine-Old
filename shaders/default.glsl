@@ -206,6 +206,8 @@ struct Light2D {
 };
 
 uniform float ambient;
+const vec4 ambient_color = vec4(1,1,1,1);
+// sky color for example: vec4(0.258, 0.3058, 1, 1)
 #define MAX_LIGHTS 60
 uniform PointLight pointLights[MAX_LIGHTS];
 uniform Light2D light2ds[MAX_LIGHTS];
@@ -247,8 +249,10 @@ vec4 pointLight(PointLight light) {
     float specular = 0;
     // temp
     float constant = 1.0;
-    float linear = 0.09;
-    float quadratic = 0.032;
+    // float linear = 0.09;
+    // float quadratic = 0.032;
+    float quadratic = 0.0003;
+    float linear = 0.00002;
     vec2 UVs = texCoords;
 
     vec3 lightVec = (light.lightPos - currentPosition);
@@ -330,7 +334,7 @@ vec4 pointLight(PointLight light) {
         float pixelSize = 1.0f / 1024.0f;
 
         for(int z = -sampleRadius; z < sampleRadius; z++) {
-        for(int y = -sampleRadius; y < sampleRadius; y++) {
+            for(int y = -sampleRadius; y < sampleRadius; y++) {
                 for(int x = -sampleRadius; x < sampleRadius; x++) {
                     float closestDepth = texture(shadow_cubemap_buffer, fragToLight + vec3(x,y,z)  * pixelSize).r;
                     closestDepth *= farPlane;
@@ -344,10 +348,10 @@ vec4 pointLight(PointLight light) {
     }
 
     if(isTex == 1) {
-        return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * baseColor * ((diffuse * inten + ambient)  * (1.0f - shadow)) + specularTexture * ((specular * (1.0f - shadow) * inten) ))  * vec4(light.color, 1);
+        return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * baseColor * ((diffuse  * (1.0f - shadow) * inten + (ambient_color * ambient))) + specularTexture * ((specular * inten) * (1.0f - shadow)))  * vec4(light.color, 1);
     } else {
         // return vec4(shadow, shadow, shadow, 1);
-        return (mix(baseColor, reflectedColor, metallic) * (diffuse * (1.0f - shadow) * inten + ambient) * ((specular * (1.0f - shadow) * inten + ambient))) * vec4(light.color, 1);
+        return (mix(baseColor, reflectedColor, metallic) * (diffuse * (1.0f - shadow) * inten + (ambient_color *ambient)) * ((specular * (1.0f - shadow) * inten + (ambient)))) * vec4(light.color, 1);
     }
 }
 
@@ -408,10 +412,10 @@ vec4 directionalLight(DirectionalLight light) {
     }
 
     if(isTex == 1) {
-        return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * vec4(light.color, 1) * (diffuse * (1.0f - shadow) + ambient) + specularTexture * (((specular  * (1.0f - shadow)) * vec4(light.color, 1)) * light.intensity)) + texture(texture_emission0, UVs).r;
+        return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * vec4(light.color, 1) * (diffuse * (1.0f - shadow) + (ambient_color * ambient)) + specularTexture * (((specular  * (1.0f - shadow)) * vec4(light.color, 1)) * light.intensity)) + texture(texture_emission0, UVs).r;
     } else {
         // return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * (diffuse) + vec4(1,1,1,1)  * (((specular) * vec4(light.color, 1)) * light.intensity));
-        return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * (diffuse * (1.0f - shadow) + ambient) + vec4(1,1,1,1)  * (((specular  * (1.0f - shadow)) * vec4(light.color, 1)) * light.intensity));
+        return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * (diffuse * (1.0f - shadow) + (ambient_color * ambient)) + vec4(1,1,1,1)  * (((specular  * (1.0f - shadow)) * vec4(light.color, 1)) * light.intensity));
     }
 }
 
@@ -496,9 +500,9 @@ vec4 spotLight(SpotLight light) {
     }
 
     if(isTex == 1) {
-        return (mix(texture(texture_diffuse0, texCoords), reflectedColor, metallic) * baseColor * (diffuse * (1.0f - shadow) * inten + ambient) + specularTexture * ((specular * (1.0f - shadow) * inten) * vec4(light.color, 1)))  * vec4(light.color, 1);
+        return (mix(texture(texture_diffuse0, texCoords), reflectedColor, metallic) * baseColor * (diffuse * (1.0f - shadow) * inten + (ambient_color * ambient)) + specularTexture * ((specular * (1.0f - shadow) * inten) * vec4(light.color, 1)))  * vec4(light.color, 1);
     } else {
-        return (mix(baseColor, reflectedColor, metallic) * (diffuse * (1.0f - shadow) * inten) * ((specular * (1.0f - shadow) * inten  + ambient) * vec4(light.color, 1))) * vec4(light.color, 1);
+        return (mix(baseColor, reflectedColor, metallic) * (diffuse * (1.0f - shadow) * inten  + (ambient_color * ambient)) * ((specular * (1.0f - shadow) * inten  + (ambient_color * ambient)) * vec4(light.color, 1))) * vec4(light.color, 1);
     }
 }
 
