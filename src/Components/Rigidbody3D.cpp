@@ -11,7 +11,7 @@ namespace HyperAPI::Experimental {
                                           transform->position.z));
         glm::vec3 q = transform->rotation;
         btQuaternion rotation;
-        rotation.setEuler(q.y, q.x, q.z);
+        rotation.setEuler(q.x, q.y, q.z);
         HYPER_LOG("Created a Bullet Physics Rigidbody")
         bt_transform->setRotation(rotation);
 
@@ -43,5 +43,21 @@ namespace HyperAPI::Experimental {
         }
 
         BulletPhysicsWorld::dynamicsWorld->addRigidBody(body);
+    }
+
+    void Rigidbody3D::Update() {
+        if (!body)
+            return;
+        btTransform btTrans = body->getWorldTransform();
+        glm::mat4 mat = glm::mat4(1.0f);
+        btTrans.getOpenGLMatrix(&mat[0][0]);
+
+        // decompose
+        glm::vec3 pos, rot, scal;
+        DecomposeTransform(mat, pos, rot, scal);
+        transform->position = pos;
+        if (!fixedRotation) {
+            transform->rotation = rot;
+        }
     }
 } // namespace HyperAPI::Experimental

@@ -56,19 +56,7 @@ namespace HyperAPI::Experimental {
             delete bt_transform;
         }
 
-        void Update() {
-            btTransform btTrans = body->getWorldTransform();
-            glm::mat4 mat = glm::mat4(1.0f);
-            btTrans.getOpenGLMatrix(&mat[0][0]);
-
-            // decompose
-            glm::vec3 pos, rot, scal;
-            DecomposeTransform(mat, pos, rot, scal);
-            transform->position = pos;
-            if (!fixedRotation) {
-                transform->rotation = rot;
-            }
-        }
+        void Update();
 
         void GUI() override {
             if (ImGui::TreeNode("Rigidbody 3D")) {

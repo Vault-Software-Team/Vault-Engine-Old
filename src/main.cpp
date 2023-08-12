@@ -48,6 +48,7 @@ using namespace HyperAPI::Experimental;
 
 static float m_grid_size = 100;
 static bool drawGrid = false;
+static bool componentIcons = true;
 static int m_GuizmoMode = -1;
 static int m_GuizmoWorld = -1;
 static float bounds[] = {-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f};
@@ -1839,6 +1840,14 @@ int main(int argc, char **argv) {
                         }
                     }
 
+                    if (ImGui::MenuItem("Component Icons")) {
+                        componentIcons = !componentIcons;
+                    }
+
+                    if (ImGui::MenuItem("Grid")) {
+                        drawGrid = !drawGrid;
+                    }
+
                     ImGui::EndMenu();
                 }
                 ImGui::EndMainMenuBar();
@@ -2220,7 +2229,7 @@ int main(int argc, char **argv) {
 
                 ImGui::DragInt("Aspect Width", &Scene::aspect_width, 1, 0, 1920);
                 ImGui::DragInt("Aspect Height", &Scene::aspect_height, 1, 0, 1080);
-                // ImGui::DragFloat("Grid Size", &m_grid_size, 5, 1);
+                ImGui::DragFloat("Grid Size", &m_grid_size, 5, 1);
                 // ImGui::Checkbox("Draw Grid", &drawGrid);
 
                 if (ImGui::TreeNode("Shadow Mapping")) {
@@ -4161,6 +4170,7 @@ void NewScript::Update() {})";
 #ifndef GAME_BUILD
             if (Scene::m_Object == nullptr) {
                 drawBoxCollider2D = false;
+                drawMeshCollider3D = false;
                 drawBoxCollider3D = false;
             }
 
@@ -4994,104 +5004,105 @@ void NewScript::Update() {})";
                     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                 }
 
-                for (auto &gameObject : *Scene::m_GameObjects) {
-                    if (!gameObject->enabled)
-                        continue;
+                if (componentIcons) {
+                    for (auto &gameObject : *Scene::m_GameObjects) {
+                        if (!gameObject->enabled)
+                            continue;
 
-                    if (gameObject->HasComponent<c_DirectionalLight>()) {
+                        if (gameObject->HasComponent<c_DirectionalLight>()) {
 
-                        auto &transform = gameObject->GetComponent<Transform>();
-                        Transform t = transform;
-                        t.scale = glm::vec3(-3.5f, 3.5f, 3.5f);
+                            auto &transform = gameObject->GetComponent<Transform>();
+                            Transform t = transform;
+                            t.scale = glm::vec3(-3.5f, 3.5f, 3.5f);
 
-                        auto camTransform =
-                            camera->GetComponent<TransformComponent>();
-                        float distance = glm::distance(t.position, camTransform.position);
-                        t.scale = glm::vec3(-(distance / 4), distance / 4, distance / 4);
-                        t.LookAt(camTransform.position);
-                        t.Update();
+                            auto camTransform =
+                                camera->GetComponent<TransformComponent>();
+                            float distance = glm::distance(t.position, camTransform.position);
+                            t.scale = glm::vec3(-(distance / 4), distance / 4, distance / 4);
+                            t.LookAt(camTransform.position);
+                            t.Update();
 
-                        glDisable(GL_DEPTH_TEST);
-                        glDepthFunc(GL_LEQUAL);
-                        dirLightIconMesh.enttId = (uint32_t)gameObject->entity;
-                        dirLightIconMesh.Draw(workerShader, *camera, t.transform);
-                        glEnable(GL_DEPTH_TEST);
-                    }
+                            glDisable(GL_DEPTH_TEST);
+                            glDepthFunc(GL_LEQUAL);
+                            dirLightIconMesh.enttId = (uint32_t)gameObject->entity;
+                            dirLightIconMesh.Draw(workerShader, *camera, t.transform);
+                            glEnable(GL_DEPTH_TEST);
+                        }
 
-                    if (gameObject->HasComponent<Audio3D>()) {
-                        auto &transform = gameObject->GetComponent<Transform>();
-                        Transform t = transform;
-                        t.scale = glm::vec3(-3.5f, 3.5f, 3.5f);
+                        if (gameObject->HasComponent<Audio3D>()) {
+                            auto &transform = gameObject->GetComponent<Transform>();
+                            Transform t = transform;
+                            t.scale = glm::vec3(-3.5f, 3.5f, 3.5f);
 
-                        auto camTransform =
-                            camera->GetComponent<TransformComponent>();
-                        float distance = glm::distance(t.position, camTransform.position);
-                        t.scale = glm::vec3(-(distance / 4), distance / 4, distance / 4);
-                        t.LookAt(camTransform.position);
-                        t.Update();
+                            auto camTransform =
+                                camera->GetComponent<TransformComponent>();
+                            float distance = glm::distance(t.position, camTransform.position);
+                            t.scale = glm::vec3(-(distance / 4), distance / 4, distance / 4);
+                            t.LookAt(camTransform.position);
+                            t.Update();
 
-                        glDisable(GL_DEPTH_TEST);
-                        glDepthFunc(GL_LEQUAL);
-                        audioMesh.enttId = (uint32_t)gameObject->entity;
-                        audioMesh.Draw(workerShader, *camera, t.transform);
-                        glEnable(GL_DEPTH_TEST);
-                    }
+                            glDisable(GL_DEPTH_TEST);
+                            glDepthFunc(GL_LEQUAL);
+                            audioMesh.enttId = (uint32_t)gameObject->entity;
+                            audioMesh.Draw(workerShader, *camera, t.transform);
+                            glEnable(GL_DEPTH_TEST);
+                        }
 
-                    if (gameObject->HasComponent<c_PointLight>()) {
-                        auto &transform = gameObject->GetComponent<Transform>();
-                        Transform t = transform;
-                        t.scale = glm::vec3(-3.5f, 3.5f, 3.5f);
+                        if (gameObject->HasComponent<c_PointLight>()) {
+                            auto &transform = gameObject->GetComponent<Transform>();
+                            Transform t = transform;
+                            t.scale = glm::vec3(-3.5f, 3.5f, 3.5f);
 
-                        auto camTransform =
-                            camera->GetComponent<TransformComponent>();
-                        float distance = glm::distance(t.position, camTransform.position);
-                        t.scale = glm::vec3(-(distance / 4), distance / 4, distance / 4);
-                        t.LookAt(camTransform.position);
-                        t.Update();
+                            auto camTransform =
+                                camera->GetComponent<TransformComponent>();
+                            float distance = glm::distance(t.position, camTransform.position);
+                            t.scale = glm::vec3(-(distance / 4), distance / 4, distance / 4);
+                            t.LookAt(camTransform.position);
+                            t.Update();
 
-                        glDisable(GL_DEPTH_TEST);
-                        glDepthFunc(GL_LEQUAL);
-                        pointLightIconMesh.enttId = (uint32_t)gameObject->entity;
-                        pointLightIconMesh.Draw(workerShader, *camera, t.transform);
-                        glEnable(GL_DEPTH_TEST);
-                    }
+                            glDisable(GL_DEPTH_TEST);
+                            glDepthFunc(GL_LEQUAL);
+                            pointLightIconMesh.enttId = (uint32_t)gameObject->entity;
+                            pointLightIconMesh.Draw(workerShader, *camera, t.transform);
+                            glEnable(GL_DEPTH_TEST);
+                        }
 
-                    if (gameObject->HasComponent<c_SpotLight>()) {
-                        auto &transform = gameObject->GetComponent<Transform>();
-                        Transform t = transform;
-                        t.scale = glm::vec3(-3.5f, 3.5f, 3.5f);
+                        if (gameObject->HasComponent<c_SpotLight>()) {
+                            auto &transform = gameObject->GetComponent<Transform>();
+                            Transform t = transform;
+                            t.scale = glm::vec3(-3.5f, 3.5f, 3.5f);
 
-                        auto camTransform =
-                            camera->GetComponent<TransformComponent>();
-                        float distance = glm::distance(t.position, camTransform.position);
-                        t.scale = glm::vec3(-(distance / 4), distance / 4, distance / 4);
-                        t.LookAt(camTransform.position);
-                        t.Update();
+                            auto camTransform =
+                                camera->GetComponent<TransformComponent>();
+                            float distance = glm::distance(t.position, camTransform.position);
+                            t.scale = glm::vec3(-(distance / 4), distance / 4, distance / 4);
+                            t.LookAt(camTransform.position);
+                            t.Update();
 
-                        glDisable(GL_DEPTH_TEST);
-                        glDepthFunc(GL_LEQUAL);
-                        spotLightIconMesh.enttId = (uint32_t)gameObject->entity;
-                        spotLightIconMesh.Draw(workerShader, *camera, t.transform);
-                        glEnable(GL_DEPTH_TEST);
-                    }
+                            glDisable(GL_DEPTH_TEST);
+                            glDepthFunc(GL_LEQUAL);
+                            spotLightIconMesh.enttId = (uint32_t)gameObject->entity;
+                            spotLightIconMesh.Draw(workerShader, *camera, t.transform);
+                            glEnable(GL_DEPTH_TEST);
+                        }
 
-                    if (gameObject->HasComponent<CameraComponent>()) {
-                        auto &transform = gameObject->GetComponent<Transform>();
-                        Transform t = transform;
-                        t.scale = glm::vec3(-3.5f, 3.5f, 3.5f);
+                        if (gameObject->HasComponent<CameraComponent>()) {
+                            auto &transform = gameObject->GetComponent<Transform>();
+                            Transform t = transform;
+                            t.scale = glm::vec3(-3.5f, 3.5f, 3.5f);
 
-                        auto camTransform =
-                            camera->GetComponent<TransformComponent>();
-                        float distance = glm::distance(t.position, camTransform.position);
-                        t.scale = glm::vec3(-(distance / 4), distance / 4, distance / 4);
-                        t.LookAt(camTransform.position);
-                        t.Update();
+                            auto camTransform =
+                                camera->GetComponent<TransformComponent>();
+                            float distance = glm::distance(t.position, camTransform.position);
+                            t.scale = glm::vec3(-(distance / 4), distance / 4, distance / 4);
+                            t.LookAt(camTransform.position);
+                            t.Update();
 
-                        glDisable(GL_DEPTH_TEST);
-                        glDepthFunc(GL_LEQUAL);
-                        cameraIconMesh.enttId = (uint32_t)gameObject->entity;
-                        cameraIconMesh.Draw(workerShader, *camera, t.transform);
-                        glEnable(GL_DEPTH_TEST);
+                            glDepthFunc(GL_LEQUAL);
+                            cameraIconMesh.enttId = (uint32_t)gameObject->entity;
+                            cameraIconMesh.Draw(workerShader, *camera, t.transform);
+                            glEnable(GL_DEPTH_TEST);
+                        }
                     }
                 }
             }
