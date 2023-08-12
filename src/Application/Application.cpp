@@ -455,6 +455,8 @@ namespace Hyper {
             glBindTexture(GL_TEXTURE_2D, depthMap);
             update(S_PPT);
 
+            glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
+            glBindTexture(GL_TEXTURE_2D, entityTexture);
             glReadBuffer(GL_COLOR_ATTACHMENT2);
             uint32_t entityId;
             glReadPixels(sceneMouseX, sceneMouseY, 1, 1, GL_RED_INTEGER,
