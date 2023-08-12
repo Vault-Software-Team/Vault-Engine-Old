@@ -46,6 +46,7 @@ namespace HyperAPI {
 
         if (diffuse != nullptr) {
             diffuse->Bind(0);
+            std::cout << diffuse->texPath << "\n";
 
             shader.SetUniform1i("isTex", 1);
             shader.SetUniform1i("texture_diffuse0", 0);

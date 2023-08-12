@@ -1,34 +1,21 @@
-using System.Net.Mime;
 using System;
 using Vault;
-using ImGui;
 
-namespace UI
+namespace Namethiswhateveruwant
 {
 
-    public class RenderUI : Entity
+    // public and : Entity important!
+    public class NameThisWhatevUWant : Entity
     {
-        float val = 0;
+        // This gets called when a game starts
         void OnStart()
         {
-            // SetObjectID();
+            SetObjectID();
         }
 
+        // This gets called every frame
         void OnUpdate()
         {
-        }
-
-        void OnGUI()
-        {
-            // Window.SetWindowSize(1280, 720);
-            // Window.SetWindowPosition(100, 100);
-            // Window.Begin("Inventory");
-            // GUI.Text("Axe");
-            // GUI.SameLine();
-            // GUI.Image("assets/textures/bricks2.jpg", 25, 25);
-            // GUI.NewLine();
-            // GUI.DragFloat("Drag", ref val);
-            // Window.End();
         }
     }
 }

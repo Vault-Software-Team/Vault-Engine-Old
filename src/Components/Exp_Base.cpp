@@ -754,7 +754,8 @@ namespace HyperAPI::Experimental {
                     specular_path = SPECULAR.C_Str();
                 }
 
-                std::ofstream file("assets/models/scene_materials/" + std::string(texture_name.C_Str()) + ".material");
+                std::string m_uuid = uuid::generate_uuid_v4();
+                std::ofstream file("assets/models/scene_materials/" + m_uuid + ".material");
                 nlohmann::json j = {
                     {"diffuse", (m_path + std::string(texture_name.C_Str())).c_str()},
                     {"specular", specular_path},
@@ -940,7 +941,8 @@ namespace HyperAPI::Experimental {
                 specular_path = SPECULAR.C_Str();
             }
 
-            std::ofstream file("assets/models/scene_materials/" + std::string(texture_name.C_Str()) + ".material");
+            std::string m_uuid = uuid::generate_uuid_v4();
+            std::ofstream file("assets/models/scene_materials/" + m_uuid + ".material");
             nlohmann::json j = {
                 {"diffuse", (m_path + std::string(texture_name.C_Str())).c_str()},
                 {"specular", specular_path},

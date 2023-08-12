@@ -57,6 +57,7 @@ static bool boundSizing = false;
 static bool openConsole = false;
 static char consoleBuffer[1000];
 static bool boundSizingSnap = false;
+static Vector3 ambient_color = Vector3(1, 1, 1);
 
 class DLL_API CollisionListener : public b2ContactListener {
 public:
@@ -1051,6 +1052,9 @@ int main(int argc, char **argv) {
         config.height = JSON["height"];
         strcpy(config.name, ((std::string)JSON["name"]).c_str());
         config.ambientLight = JSON["ambientLight"];
+        if (JSON.contains("ambient_color")) {
+            ambient_color = glm::vec3(JSON["ambient_color"]["x"], JSON["ambient_color"]["y"], JSON["ambient_color"]["z"]);
+        }
         config.exposure =
             JSON.contains("exposure") ? (float)JSON["exposure"] : 1.0f;
         config.mainScene = JSON["mainScene"];
@@ -1107,6 +1111,7 @@ int main(int argc, char **argv) {
             {"windows_compiler", config.windowsCompiler},
             {"name", config.name},
             {"ambientLight", config.ambientLight},
+            {"ambient_color", {{"x", 1}, {"y", 1}, {"z", 1}}},
             {"exposure", config.exposure},
             {"mainScene", config.mainScene},
             {"width", config.width},
@@ -1875,6 +1880,11 @@ int main(int argc, char **argv) {
                                 {"windows_compiler", config.windowsCompiler},
                                 {"name", config.name},
                                 {"ambientLight", config.ambientLight},
+                                {"ambient_color", {
+                                                      {"x", ambient_color.x},
+                                                      {"y", ambient_color.y},
+                                                      {"z", ambient_color.z},
+                                                  }},
                                 {"exposure", config.exposure},
                                 {"mainScene", config.mainScene},
                                 {"width", config.width},
@@ -1882,35 +1892,20 @@ int main(int argc, char **argv) {
                                 {"aspect_width", Scene::aspect_width},
                                 {"aspect_height", Scene::aspect_height},
                                 {"resizable", config.resizable},
-                                {"fullscreen_on_launch",
-                                 config.fullscreenOnLaunch},
+                                {"fullscreen_on_launch", config.fullscreenOnLaunch},
                                 {"layers", layerStarters},
-                                {"post_processing",
-                                 {{"enabled", false},
-                                  {"bloom",
-                                   {{"enabled", false}, {"threshold", 0.5f}}},
-                                  {"vignette",
-                                   {
-                                       {"enabled",
-                                        config.postProcessing.enabled},
-                                       {"intensity", config.postProcessing
-                                                         .vignette.intensity},
-                                       {"smoothness", config.postProcessing
-                                                          .vignette.smoothness},
-                                   }},
-                                  {"bloom",
-                                   {
-                                       {"enabled",
-                                        config.postProcessing.enabled},
-                                       {"threshold",
-                                        config.postProcessing.bloom.threshold},
-                                   }},
-                                  {"chromatic_aberration",
-                                   {
-                                       {"intensity",
-                                        config.postProcessing
-                                            .chromaticAberration.intensity},
-                                   }}}}};
+                                {"post_processing", {{"enabled", false}, {"bloom", {{"enabled", false}, {"threshold", 0.5f}}}, {"vignette", {
+                                                                                                                                                {"enabled", config.postProcessing.enabled},
+                                                                                                                                                {"intensity", config.postProcessing.vignette.intensity},
+                                                                                                                                                {"smoothness", config.postProcessing.vignette.smoothness},
+                                                                                                                                            }},
+                                                     {"bloom", {
+                                                                   {"enabled", config.postProcessing.enabled},
+                                                                   {"threshold", config.postProcessing.bloom.threshold},
+                                                               }},
+                                                     {"chromatic_aberration", {
+                                                                                  {"intensity", config.postProcessing.chromaticAberration.intensity},
+                                                                              }}}}};
 
                             file << j.dump(4);
                             file.close();
@@ -2218,8 +2213,9 @@ int main(int argc, char **argv) {
                                  500);
 
                 ImGui::InputText("Game Name", config.name, 500);
-                ImGui::DragFloat("Ambient Lightning", &config.ambientLight,
+                ImGui::DragFloat("Ambient Multiplier", &config.ambientLight,
                                  0.01f, 0, 1);
+                ImGui::ColorEdit3("Ambient Color", &ambient_color.x);
                 ImGui::DragFloat("Exposure", &config.exposure, 0.01f, 0);
                 ImGui::Checkbox("Fullscreen On Launch",
                                 &config.fullscreenOnLaunch);
@@ -2328,6 +2324,11 @@ int main(int argc, char **argv) {
                         {"windows_compiler", config.windowsCompiler},
                         {"name", config.name},
                         {"ambientLight", config.ambientLight},
+                        {"ambient_color", {
+                                              {"x", ambient_color.x},
+                                              {"y", ambient_color.y},
+                                              {"z", ambient_color.z},
+                                          }},
                         {"exposure", config.exposure},
                         {"mainScene", config.mainScene},
                         {"aspect_width", Scene::aspect_width},
@@ -2463,9 +2464,21 @@ int main(int argc, char **argv) {
 
                     ImGui::Image((void *)PPT, ImVec2(w_s.x, w_s.y),
                                  ImVec2(0, 1), ImVec2(1, 0));
+
                     if (ImGui::BeginDragDropTarget()) {
                         if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("file")) {
                             auto *go = app.currently_hovering_over;
+                            if (dirPayloadData.ends_with(".vault")) {
+                                if (Scene::currentScenePath != "") {
+                                    json S_SJ;
+                                    Scene::SaveScene(Scene::currentScenePath, S_SJ);
+                                }
+
+                                nlohmann::json J;
+                                Scene::LoadScene(dirPayloadData, J);
+                                Scene::mainCamera = camera;
+                            }
+
                             if (go) {
                                 if (dirPayloadData.ends_with(".material")) {
 
@@ -2760,7 +2773,7 @@ int main(int argc, char **argv) {
                 }
 
                 if (complete) {
-                    Scene::mainCamera = nullptr;
+                    Scene::mainCamera = camera;
                 }
 
                 if (Scene::mainCamera == camera && drawGrid) {
@@ -3037,6 +3050,29 @@ int main(int argc, char **argv) {
                 }
                 Scene::DropTargetMat(Scene::DRAG_MODEL, nullptr, nullptr);
                 ImVec2 win_size = ImGui::GetWindowSize();
+
+                ImVec2 cursor_pos = ImGui::GetCursorPos();
+                ImGui::Dummy(ImGui::GetContentRegionAvail());
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("game_object")) {
+                        for (auto &gameObject : *Scene::m_GameObjects) {
+                            if (gameObject->ID == HyperAPI::dirPayloadData) {
+                                if (gameObject->HasComponent<Transform>()) {
+                                    auto &transform = gameObject->GetComponent<Transform>();
+
+                                    transform.parentTransform = nullptr;
+                                }
+
+                                gameObject->parentID = "NO_PARENT";
+                                break;
+                            }
+                        }
+                    }
+
+                    ImGui::EndDragDropTarget();
+                }
+                Scene::DropTargetMat(Scene::DRAG_MODEL, nullptr, nullptr);
+                ImGui::SetCursorPos(cursor_pos);
 
                 // if (ImGui::Button(ICON_FA_FOLDER " Add Folder", ImVec2(win_size.x - 15, 25))) {
                 //     GameObject *go = new GameObject();
@@ -4063,6 +4099,7 @@ void NewScript::Update() {})";
     // // Scene::mainCamera = backupCam;
     // bool splash_done = false;
 #endif
+
     app.Run(
         [&](uint32_t &shadowMapTex) {
             float lastDistance = 0;
@@ -4071,27 +4108,7 @@ void NewScript::Update() {})";
                 c_SpotLight *dLightToUse = nullptr;
                 for (auto &e : dLightView) {
                     auto &d = Scene::m_Registry.get<c_SpotLight>(e);
-                    lightPos = d.lightPos;
-                    if (Scene::mainCamera->EnttComp) {
-                        auto camTransform =
-                            camera->GetComponent<Transform>();
-
-                        float distance = glm::distance(d.lightPos, camTransform.position);
-                        if (distance < lastDistance) {
-                            lastDistance = distance;
-                            dLightToUse = &d;
-                        }
-                    } else {
-                        auto camTransform =
-                            camera->GetComponent<TransformComponent>();
-
-                        float distance = glm::distance(d.lightPos, camTransform.position);
-                        if (distance < lastDistance) {
-                            lastDistance = distance;
-                            dLightToUse = &d;
-                        }
-                    }
-
+                    dLightToUse = &d;
                     break;
                 }
                 if (dLightToUse) {
@@ -4104,25 +4121,7 @@ void NewScript::Update() {})";
                 for (auto &e : dLightView) {
                     auto &d = Scene::m_Registry.get<c_DirectionalLight>(e);
                     lightPos = d.lightPos;
-                    if (Scene::mainCamera->EnttComp) {
-                        auto camTransform =
-                            camera->GetComponent<Transform>();
-
-                        float distance = glm::distance(d.lightPos, camTransform.position);
-                        if (distance < lastDistance) {
-                            lastDistance = distance;
-                            dLightToUse = &d;
-                        }
-                    } else {
-                        auto camTransform =
-                            camera->GetComponent<TransformComponent>();
-
-                        float distance = glm::distance(d.lightPos, camTransform.position);
-                        if (distance < lastDistance) {
-                            lastDistance = distance;
-                            dLightToUse = &d;
-                        }
-                    }
+                    dLightToUse = &d;
 
                     break;
                 }
@@ -4379,6 +4378,7 @@ void NewScript::Update() {})";
             // floor.Draw(shader, *camera);
             shader.Bind();
             shader.SetUniform1f("ambient", config.ambientLight);
+            shader.SetUniform3f("ambient_color", ambient_color.x, ambient_color.y, ambient_color.z);
 
             // Rigidbody2D Physics update
             //& (now - lastFrameTime) >= fpsLimit
@@ -4705,9 +4705,10 @@ void NewScript::Update() {})";
 
                                 shader.SetUniformMat4("lightProjection", lightProjection);
                                 shader.SetUniform1i("shadow_map_buffer", 11);
+                                shader.SetUniform1i("shadow_cubemap_buffer", 12);
 
                                 auto pLightView = Scene::m_Registry.view<c_PointLight>();
-
+                                shader.SetUniform1i("shadow_cubemap_set", 0);
                                 for (auto &e : pLightView) {
                                     auto &light = Scene::m_Registry.get<c_PointLight>(e);
                                     light.BindCubemap(meshRenderer.customShader.usingCustomShader
