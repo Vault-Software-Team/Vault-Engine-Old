@@ -121,7 +121,7 @@ namespace HyperAPI {
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        framebufferShader.Bind();
+        framebufferShader->Bind();
         glBindVertexArray(rectVAO);
         glDisable(GL_DEPTH_TEST);
         glActiveTexture(GL_TEXTURE0);

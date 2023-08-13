@@ -48,6 +48,7 @@ using namespace HyperAPI::Experimental;
 
 static float m_grid_size = 100;
 static bool drawGrid = false;
+static bool insteadRunInstance = false;
 static bool componentIcons = true;
 static int m_GuizmoMode = -1;
 static int m_GuizmoWorld = -1;
@@ -1853,6 +1854,10 @@ int main(int argc, char **argv) {
                         drawGrid = !drawGrid;
                     }
 
+                    if (ImGui::MenuItem("Run instance instead of editor")) {
+                        insteadRunInstance = !insteadRunInstance;
+                    }
+
                     ImGui::EndMenu();
                 }
                 ImGui::EndMainMenuBar();
@@ -2888,22 +2893,26 @@ int main(int argc, char **argv) {
                                                  buttonColor.z, 0.7f));
                     if (ImGui::Button(ICON_FA_PLAY, ImVec2(32, 32))) {
                         // CsharpScriptEngine::ReloadAssembly();
-                        RunInstance(m_cwd);
-                        // if (HyperAPI::isStopped) {
-                        //     stateScene = nlohmann::json::array();
-                        //     Scene::SaveScene("", stateScene);
-                        // }
-                        // StartWorld(listener);
+                        // RunInstance(m_cwd);
+                        if (!insteadRunInstance) {
+                            if (HyperAPI::isStopped) {
+                                stateScene = nlohmann::json::array();
+                                Scene::SaveScene("", stateScene);
+                            }
+                            StartWorld(listener);
 
-                        // HyperAPI::isRunning = true;
-                        // HyperAPI::isStopped = false;
+                            HyperAPI::isRunning = true;
+                            HyperAPI::isStopped = false;
 
-                        // for (auto &camera : Scene::cameras) {
-                        //     if (camera->mainCamera) {
-                        //         Scene::mainCamera = camera;
-                        //         break;
-                        //     }
-                        // }
+                            for (auto &camera : Scene::cameras) {
+                                if (camera->mainCamera) {
+                                    Scene::mainCamera = camera;
+                                    break;
+                                }
+                            }
+                        } else {
+                            RunInstance(m_cwd);
+                        }
                     }
                     ImGui::PopStyleColor();
 

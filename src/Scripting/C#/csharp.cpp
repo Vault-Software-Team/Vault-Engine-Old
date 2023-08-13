@@ -41,6 +41,7 @@
 #include "MainFunctions.hpp"
 #include "DiscordFunctions.hpp"
 #include "ImGuiFunctions.hpp"
+#include "LightsFunctions.hpp"
 
 namespace CsharpVariables {
     DLL_API MonoDomain *rootDomain;
@@ -218,6 +219,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("Vault.Audio3D::cpp_Stop", reinterpret_cast<void *(*)>(Audio3D_Stop));
         mono_add_internal_call("Vault.Audio3D::cpp_SetClip", reinterpret_cast<void *(*)>(Audio3D_SetClip));
         mono_add_internal_call("Vault.Audio3D::cpp_GetClip", reinterpret_cast<void *(*)>(Audio3D_GetClip));
+
+        // Lights
+        mono_add_internal_call("Vault.PointLight::GetKey", reinterpret_cast<void *(*)>(PointLight_GetKey));
+        mono_add_internal_call("Vault.PointLight::SetKey", reinterpret_cast<void *(*)>(PointLight_SetKey));
 
         // Scene Functions
         mono_add_internal_call("Vault.Scene::LoadScene", reinterpret_cast<void *(*)>(Scene_LoadScene));
