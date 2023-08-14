@@ -36,6 +36,183 @@ namespace HyperAPI::Experimental {
     DLL_API nlohmann::json stateScene = nlohmann::json::array();
     DLL_API bool bulletPhysicsStarted = false;
 
+    void GameObject::GUI() {
+        bool item;
+        bool hasChildren = false;
+        int index = -1;
+        std::string icon_str = std::string(ICON_FA_CUBE);
+
+        if (HasComponent<CsharpScriptManager>() || HasComponent<CppScriptManager>() || HasComponent<m_LuaScriptComponent>()) {
+            icon_str = std::string(ICON_FA_CODE);
+        }
+        if (HasComponent<c_PointLight>() || HasComponent<c_SpotLight>()) {
+            icon_str = std::string(ICON_FA_LIGHTBULB);
+        }
+        if (HasComponent<c_DirectionalLight>()) {
+            icon_str = std::string(ICON_FA_SUN);
+        }
+        if (HasComponent<Audio3D>()) {
+            icon_str = std::string(ICON_FA_VOLUME_HIGH);
+        }
+        if (HasComponent<CameraComponent>()) {
+            icon_str = std::string(ICON_FA_CAMERA);
+        }
+
+        auto it = find(Scene::m_GameObjects->begin(), Scene::m_GameObjects->end(), this);
+
+        if (it != Scene::m_GameObjects->end()) {
+            index = it - Scene::m_GameObjects->begin();
+        }
+
+        if (index == -1)
+            return;
+
+        ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, 5));
+        if (ImGui::IsMouseClicked(0) && ImGui::IsItemHovered() &&
+            !ImGui::IsMouseDragging(0)) {
+            Scene::m_Object = this;
+            strncpy(Scene::name, Scene::m_Object->name.c_str(), 499);
+            Scene::name[499] = '\0';
+
+            strncpy(Scene::tag, Scene::m_Object->tag.c_str(), 499);
+            Scene::tag[499] = '\0';
+
+            strncpy(Scene::layer, Scene::m_Object->layer.c_str(), 32);
+            Scene::layer[31] = '\0';
+        }
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("game_object")) {
+                for (auto &gameObject : *Scene::m_GameObjects) {
+                    if (gameObject->ID == HyperAPI::dirPayloadData) {
+                        int gIndex = -1;
+                        auto it = find(Scene::m_GameObjects->begin(), Scene::m_GameObjects->end(), gameObject);
+
+                        if (it != Scene::m_GameObjects->end()) {
+                            gIndex = it - Scene::m_GameObjects->begin();
+                        }
+
+                        if (gIndex == -1)
+                            continue;
+
+                        std::swap((*Scene::m_GameObjects)[gIndex], (*Scene::m_GameObjects)[index]);
+                    }
+                }
+            }
+
+            ImGui::EndDragDropTarget();
+        }
+
+        for (auto &gameObject : (*Scene::m_GameObjects)) {
+            if (gameObject->parentID == ID) {
+                hasChildren = true;
+                // if enabled is false make the text grey
+                if (!enabled) {
+                    ImGui::PushStyleColor(ImGuiCol_Text,
+                                          ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+                    ImGui::PushID(NODE_ID.c_str());
+                    if (Scene::m_Object == gameObject) {
+                        item = ImGui::TreeNodeEx(
+                            std::string(icon_str + " " + name)
+                                .c_str(),
+                            ImGuiTreeNodeFlags_Selected);
+                    }
+                    ImGui::PopID();
+                    ImGui::PopStyleColor();
+                } else {
+                    ImGui::PushID(NODE_ID.c_str());
+                    if (Scene::m_Object == gameObject) {
+                        item = ImGui::TreeNodeEx(
+                            std::string(icon_str + " " + name)
+                                .c_str(),
+                            ImGuiTreeNodeFlags_Selected);
+                    } else {
+                        item = ImGui::TreeNodeEx(
+                            std::string(icon_str + " " + name)
+                                .c_str());
+                    }
+                    ImGui::PopID();
+                }
+                break;
+            }
+        }
+
+        if (!hasChildren) {
+            ImGui::PushID(NODE_ID.c_str());
+            ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 8,
+                                       ImGui::GetCursorPos().y));
+            if (!enabled) {
+                ImGui::PushStyleColor(ImGuiCol_Text,
+                                      ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+                item = ImGui::Selectable(
+                    std::string(icon_str + " " + name)
+                        .c_str(),
+                    Scene::m_Object == this);
+                ImGui::PopStyleColor();
+            } else {
+                item = ImGui::Selectable(
+                    std::string(icon_str + " " + name)
+                        .c_str(),
+                    Scene::m_Object == this);
+            }
+            ImGui::PopID();
+        }
+
+        if (ImGui::IsMouseClicked(0) && ImGui::IsItemHovered() &&
+            !ImGui::IsMouseDragging(0)) {
+            Scene::m_Object = this;
+            strncpy(Scene::name, Scene::m_Object->name.c_str(), 499);
+            Scene::name[499] = '\0';
+
+            strncpy(Scene::tag, Scene::m_Object->tag.c_str(), 499);
+            Scene::tag[499] = '\0';
+
+            strncpy(Scene::layer, Scene::m_Object->layer.c_str(), 32);
+            Scene::layer[31] = '\0';
+        }
+
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+            dirPayloadData = ID;
+            ImGui::SetDragDropPayload("game_object", &dirPayloadData,
+                                      dirPayloadData.size());
+            ImGui::Text(name.c_str());
+            ImGui::EndDragDropSource();
+        }
+
+        // drop target
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload *payload =
+                    ImGui::AcceptDragDropPayload("game_object")) {
+                if (dirPayloadData != ID) {
+                    for (auto &gameObject : (*Scene::m_GameObjects)) {
+                        if (gameObject->ID == dirPayloadData) {
+                            gameObject->parentID = ID;
+                            break;
+                        }
+                    }
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        if (Input::IsKeyPressed(KEY_DELETE) && Scene::m_Object == this &&
+            !keyDown) {
+            DeleteGameObject();
+        } else if (!Input::IsKeyPressed(KEY_DELETE)) {
+            keyDown = false;
+        }
+
+        if (item && hasChildren) {
+
+            for (auto &gameObject : (*Scene::m_GameObjects)) {
+                if (gameObject->parentID == ID) {
+                    gameObject->GUI();
+                }
+            }
+
+            ImGui::TreePop();
+        }
+    }
+
     void GameObject::DeleteGameObject() {
         Scene::m_Object = nullptr;
         keyDown = true;

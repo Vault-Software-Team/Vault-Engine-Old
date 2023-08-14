@@ -221,6 +221,7 @@ uniform DirectionalLight dirLights[MAX_LIGHTS];
 uniform int isTex;
 uniform samplerCube cubeMap;
 uniform vec3 cameraPosition;
+uniform float time;
 
 //Material properties
 uniform sampler2D texture_diffuse0;
@@ -251,39 +252,6 @@ uniform bool deferredShading;
 
 vec4 reflectedColor = texture(cubeMap, reflectedVector);
 float specularTexture = texture(texture_specular0, texCoords).r;
-
-// progress bar
-uniform bool enableProgressBar;
-uniform float fillAmount;
-uniform bool progressBarToRight;
-
-vec4 progressBar(float hp, vec2 uv, vec4 background, bool toRight) {
-    if(!enableProgressBar) {
-        if(isTex == 1) {
-            return texture(texture_diffuse0, uv);
-        } else {
-            return baseColor;
-        }
-    }
-    //the entire bar color is determined by the current hp percentage
-    if(isTex == 1) {
-        vec4 healthColor = texture(texture_diffuse0, uv);
-        if(toRight) {
-            if(uv.x > 1 - hp) return healthColor;
-        } else {
-            if(uv.x < hp) return healthColor;
-        }
-    } else {
-        vec4 healthColor = baseColor;
-        if(toRight) {
-            if(uv.x > 1 - hp) return healthColor;
-        } else {
-            if(uv.x < hp) return healthColor;
-        }
-        return background;
-    }
-    return background;
-}
 
 vec4 pointLight(PointLight light) {
     float specular = 0;
@@ -558,102 +526,30 @@ uniform uint u_EntityID;
 uniform bool dynamic_bloom;
 uniform float bloom_threshold;
 
-void main() {
-    if(specularTexture == 0) {
-        specularTexture = texture(texture_specular0, texCoords).r;
-    }
-
-    vec4 result = vec4(0);
-    vec4 noAmbient = vec4(0);
-
-    vec4 tex = texture(texture_diffuse0, texCoords);
-    float alpha = tex.a;
-
-    if(!deferredShading) {
-        for(int i = 0; i < MAX_LIGHTS; i++) {
-            if(pointLights[i].intensity > 0) {
-                result += pointLight(pointLights[i]);
-            }
-
-            if(spotLights[i].color.r > 0 || spotLights[i].color.g > 0 || spotLights[i].color.b > 0) {
-                result += spotLight(spotLights[i]);
-            }
-
-            if(dirLights[i].intensity == 1) {
-                result += directionalLight(dirLights[i]);
-            }
-
-            if(light2ds[i].color.r > 0 || spotLights[i].color.g > 0 || spotLights[i].color.b > 0) {
-                result += light2d(light2ds[i]);
-            }
-        }
-    }
-    
-    if(result.r == 0 && result.g == 0 && result.b == 0) {
-        if(isTex == 1) {
-            noAmbient = mix(tex, reflectedColor, metallic) * baseColor;
-            result = noAmbient * ambient;
-            result.a = tex.a;
-            result.a *= baseColor.a;
-            alpha = result.a;
+vec4 progressBar(float hp, vec2 uv, vec4 background, bool toRight) {
+    //the entire bar color is determined by the current hp percentage
+    if(isTex == 1) {
+        vec4 healthColor = texture(texture_diffuse0, uv);
+        if(toRight) {
+            if(uv.x > 1 - hp) return healthColor;
         } else {
-            noAmbient = mix(baseColor, reflectedColor, metallic);
-            result = noAmbient * ambient;
-            result.a = baseColor.a;
-            alpha = result.a;
+            if(uv.x < hp) return healthColor;
         }
-    }
-
-    result.a = alpha;
-    gAlbedoSpec = result;
-    if(result.a < 0.1) {
-        discard;
-    }
-
-    float brightness = dot(gAlbedoSpec.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if(brightness > bloom_threshold && dynamic_bloom) {
-        BloomColor = gAlbedoSpec;
-    } else if((u_BloomColor.r > 0.5 || u_BloomColor.g > 0.5 || u_BloomColor.b > 0.5)
-    && (u_BloomColor.r < 0.7 || u_BloomColor.g < 0.7 || u_BloomColor.b < 0.7)) {
-        gAlbedoSpec = result * (u_BloomColor.r * 20);
-        BloomColor = vec4(u_BloomColor * 2, 1);
-    } else if(u_BloomColor.r > 0.7 || u_BloomColor.g > 0.7 || u_BloomColor.b > 0.7) {
-        gAlbedoSpec = result * (u_BloomColor.r * 30);
-        BloomColor = vec4(u_BloomColor * 3, 1);
     } else {
-        BloomColor = vec4(u_BloomColor, 1);
-    }
-
-    vec4 emission = texture(texture_emission0, texCoords);
-
-    if(emission.r > 0 || emission.g > 0 || emission.b > 0) {
-        gAlbedoSpec += emission;
-        if(u_BloomColor.r > 0 || u_BloomColor.g > 0 || u_BloomColor.b > 0) {
-            BloomColor = emission * vec4(u_BloomColor, 1);
+        vec4 healthColor = baseColor;
+        if(toRight) {
+            if(uv.x > 1 - hp) return healthColor;
         } else {
-            BloomColor = emission;
+            if(uv.x < hp) return healthColor;
         }
+        return background;
     }
-
-    BloomColor.a = alpha;
-    EntityID = u_EntityID;
-
-    if(deferredShading) {
-        gAlbedoSpec = mix(gAlbedoSpec, reflectedColor, metallic) * baseColor;
-        gAlbedoSpec.a = specularTexture;
-        gPosition = FragPos;
-        
-        vec3 normal;
-        if(isTex == 1 && hasNormalMap == 1) {
-            vec4 normalTex = texture(texture_normal0, texCoords);
-            normal = normalTex.rgb * 2.0 - 1.0;
-            normal = normalize(m_TBN * normal);
-        } else {
-            normal = normalize(Normal);
-        }
-        gNormal = vec4(normal, 1);
-        gFragPosLight = fragPosLight;
-    }
+    return background;
+}
+void main() {
+    float hp = 0.2;
+    gAlbedoSpec = progressBar(hp, texCoords.xy, vec4(0,0,0,0), true);
+    BloomColor = vec4(0);
 }
 
 // #shader geometry

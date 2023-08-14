@@ -703,7 +703,8 @@ void DevConsole() {
 void RunInstance(const char *m_cwd) {
 #ifdef _WIN32
     std::thread *gameThread = new std::thread([&](const char *m_cwd) {
-        system(("\"" + std::string(CsharpVariables::oldCwd) + std::string("\\bin\\game.out\" \"") + m_cwd + "\"").c_str());
+        system((std::string("cd ") + "\"" + std::string(CsharpVariables::oldCwd) + "\\bin\"").c_str());
+        system((std::string("game.exe \"") + m_cwd + "\"").c_str());
     },
                                               m_cwd);
 #else
@@ -2233,6 +2234,13 @@ int main(int argc, char **argv) {
                 ImGui::DragFloat("Grid Size", &m_grid_size, 5, 1);
                 // ImGui::Checkbox("Draw Grid", &drawGrid);
 
+                if (ImGui::TreeNode("Editor Camera")) {
+                    TransformComponent t = camera->GetComponent<TransformComponent>();
+                    DrawVec3Control("Position", t.position);
+
+                    ImGui::TreePop();
+                }
+
                 if (ImGui::TreeNode("Rendering")) {
                     ImGui::Checkbox("Deferred Shading", &config.deferredShading);
 
@@ -2257,8 +2265,8 @@ int main(int argc, char **argv) {
                     }
                     shadowOrtho1 = glm::vec2(-orthoSize, orthoSize);
                     shadowOrtho2 = glm::vec2(-orthoSize, orthoSize);
-                    ImGui::ImageButton((void *)shadowMap, ImVec2(256, 256), ImVec2(0, 1), ImVec2(1, 0));
-                    if (ImGui::Button("Reload Buffer", ImVec2(256, 0))) {
+                    ImGui::ImageButton((void *)shadowMap, ImVec2(150, 150), ImVec2(0, 1), ImVec2(1, 0));
+                    if (ImGui::Button("Reload Buffer", ImVec2(150, 0))) {
                         // delete
                         glDeleteFramebuffers(1, &shadowMapFBO);
                         glDeleteTextures(1, &shadowMap);
@@ -4785,7 +4793,7 @@ void NewScript::Update() {})";
 
             // test_transform.Update();
             // m_terrain.Draw(shader, *Scene::mainCamera, test_transform.transform);
-
+            std::vector<Camera *> depthCams = {};
             for (auto &layer : Scene::layers) {
                 // Check if the camera is in the layer n stuff
                 bool notInCameraLayer = true;
@@ -4802,9 +4810,11 @@ void NewScript::Update() {})";
                 auto view = Scene::m_Registry.view<CameraComponent>();
                 for (auto e : view) {
                     auto &cam = Scene::m_Registry.get<CameraComponent>(e);
+                    if (cam.depthCamera) {
+                        depthCams.push_back(cam.camera);
+                    }
                     if (cam.camera == Scene::mainCamera && cam.depthCamera) {
                         isDepthCamera = true;
-                        break;
                     }
                 }
 
@@ -5125,6 +5135,304 @@ void NewScript::Update() {})";
                     // }
                 }
             }
+
+            if (Scene::mainCamera != camera) {
+                glClear(GL_DEPTH_BUFFER_BIT);
+                for (auto *cam : depthCams) {
+                    for (auto &gameObject : *Scene::m_GameObjects) {
+                        bool inLayer = false;
+                        for (auto &cLayer : cam->layers) {
+                            if (cLayer == gameObject->layer) {
+                                inLayer = true;
+                                break;
+                            }
+                        }
+
+                        if (!inLayer)
+                            continue;
+
+                        std::function<void(Shader &)> call = [&](Shader &use_shader) {
+                            if (gameObject->HasComponent<MeshRenderer>()) {
+                                m_UnbindTextures();
+                                auto meshRenderer =
+                                    gameObject->GetComponent<MeshRenderer>();
+                                auto transform = gameObject->GetComponent<Transform>();
+                                transform.Update();
+
+                                glm::mat4 extra = meshRenderer.extraMatrix;
+
+                                glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                                for (auto &go : *Scene::m_GameObjects) {
+                                    if (go->ID == gameObject->parentID &&
+                                        go->HasComponent<Transform>()) {
+                                        auto &parentTransform =
+                                            go->GetComponent<Transform>();
+                                        parentTransform.Update();
+                                        m_parentTransform = parentTransform.transform;
+                                    }
+                                }
+
+                                if (meshRenderer.m_Mesh != nullptr) {
+                                    meshRenderer.m_Mesh->enttId =
+                                        (uint32_t)gameObject->entity;
+                                    glActiveTexture(GL_TEXTURE21);
+                                    glBindTexture(GL_TEXTURE_CUBE_MAP,
+                                                  skybox.cubemapTexture);
+
+                                    // if (meshRenderer.customShader.shader != nullptr) {
+                                    //     meshRenderer.customShader.shader->Bind();
+                                    //     meshRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                                    // }
+                                    shader.Bind();
+                                    glActiveTexture(GL_TEXTURE11);
+                                    glBindTexture(GL_TEXTURE_2D, shadowMap);
+                                    orthgonalProjection = glm::ortho(shadowOrtho1.x, shadowOrtho1.y, shadowOrtho2.x, shadowOrtho2.y, shadowNearFar.x, shadowNearFar.y);
+                                    lightView = glm::lookAt(lightPos, glm::vec3(0, 0, 0), lightUpThing);
+                                    perspectiveProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
+                                    lightViewPer = glm::lookAt(lightPos, glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
+                                    lightProjection = enableSpotLightShadowMap ? perspectiveProjection * lightViewPer : orthgonalProjection * lightView;
+
+                                    shader.SetUniformMat4("lightProjection", lightProjection);
+                                    shader.SetUniform1i("shadow_map_buffer", 11);
+                                    shader.SetUniform1i("shadow_cubemap_buffer", 12);
+
+                                    auto pLightView = Scene::m_Registry.view<c_PointLight>();
+                                    shader.SetUniform1i("shadow_cubemap_set", 0);
+                                    for (auto &e : pLightView) {
+                                        auto &light = Scene::m_Registry.get<c_PointLight>(e);
+                                        light.BindCubemap(meshRenderer.customShader.usingCustomShader
+                                                              ? *meshRenderer.customShader.shader
+                                                              : use_shader);
+                                    }
+
+                                    shadowShader.Bind();
+                                    shadowShader.SetUniformMat4("lightProjection", lightProjection);
+
+                                    if (meshRenderer.meshType == "Plane") {
+                                        glDisable(GL_CULL_FACE);
+                                        meshRenderer.m_Mesh->Draw(
+                                            meshRenderer.customShader.usingCustomShader
+                                                ? *meshRenderer.customShader.shader
+                                                : use_shader,
+                                            *cam,
+                                            transform.transform * extra *
+                                                m_parentTransform);
+                                        glEnable(GL_CULL_FACE);
+                                    } else {
+                                        meshRenderer.m_Mesh->Draw(
+                                            meshRenderer.customShader.usingCustomShader
+                                                ? *meshRenderer.customShader.shader
+                                                : use_shader,
+                                            *cam,
+                                            transform.transform * extra *
+                                                m_parentTransform);
+                                    }
+                                }
+                            }
+
+                            if (gameObject->HasComponent<Text3D>()) {
+                                auto &renderer = gameObject->GetComponent<Text3D>();
+                                renderer.Update();
+                                auto &transform = gameObject->GetComponent<Transform>();
+                                transform.Update();
+
+                                glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                                for (auto &go : *Scene::m_GameObjects) {
+                                    if (go->ID == gameObject->parentID &&
+                                        go->HasComponent<Transform>()) {
+                                        auto &parentTransform =
+                                            go->GetComponent<Transform>();
+                                        parentTransform.Update();
+                                        m_parentTransform = parentTransform.transform;
+                                    }
+                                }
+
+                                renderer.font->Draw(*cam, transform.transform * m_parentTransform, renderer.text, renderer.color, renderer.bloomColor, 0, 0, renderer.scale, renderer.y_offset);
+                            }
+
+                            if (gameObject->HasComponent<SpriteRenderer>()) {
+                                m_UnbindTextures();
+
+                                auto spriteRenderer =
+                                    gameObject->GetComponent<SpriteRenderer>();
+                                auto transform = gameObject->GetComponent<Transform>();
+                                glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                                for (auto &go : *Scene::m_GameObjects) {
+                                    if (go->ID == gameObject->parentID &&
+                                        go->HasComponent<Transform>()) {
+                                        auto &parentTransform =
+                                            go->GetComponent<Transform>();
+                                        parentTransform.Update();
+                                        m_parentTransform = parentTransform.transform;
+                                    }
+                                }
+
+                                glActiveTexture(GL_TEXTURE21);
+                                glBindTexture(GL_TEXTURE_CUBE_MAP,
+                                              skybox.cubemapTexture);
+
+                                spriteRenderer.mesh->enttId =
+                                    (uint32_t)gameObject->entity;
+                                glDisable(GL_CULL_FACE);
+
+                                if (spriteRenderer.customShader.shader != nullptr) {
+                                    spriteRenderer.customShader.shader->Bind();
+                                    spriteRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                                }
+
+                                spriteRenderer.mesh->Draw(
+                                    spriteRenderer.customShader.usingCustomShader
+                                        ? *spriteRenderer.customShader.shader
+                                        : use_shader,
+                                    *cam,
+                                    transform.transform * m_parentTransform);
+                                glEnable(GL_CULL_FACE);
+                            }
+
+                            if (gameObject->HasComponent<SpritesheetRenderer>()) {
+                                m_UnbindTextures();
+
+                                auto spritesheetRenderer =
+                                    gameObject->GetComponent<SpritesheetRenderer>();
+                                auto transform = gameObject->GetComponent<Transform>();
+                                transform.Update();
+
+                                glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                                for (auto &go : *Scene::m_GameObjects) {
+                                    if (go->ID == gameObject->parentID &&
+                                        go->HasComponent<Transform>()) {
+                                        auto &parentTransform =
+                                            go->GetComponent<Transform>();
+                                        parentTransform.Update();
+                                        m_parentTransform = parentTransform.transform;
+                                    }
+                                }
+
+                                glActiveTexture(GL_TEXTURE21);
+                                glBindTexture(GL_TEXTURE_CUBE_MAP,
+                                              skybox.cubemapTexture);
+
+                                // disable face culling
+                                glDisable(GL_CULL_FACE);
+                                if (spritesheetRenderer.mesh != nullptr) {
+                                    spritesheetRenderer.mesh->enttId =
+                                        (uint32_t)gameObject->entity;
+
+                                    if (spritesheetRenderer.customShader.shader != nullptr) {
+                                        spritesheetRenderer.customShader.shader->Bind();
+                                        spritesheetRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                                    }
+
+                                    spritesheetRenderer.mesh->Draw(
+                                        spritesheetRenderer.customShader
+                                                .usingCustomShader
+                                            ? *spritesheetRenderer.customShader.shader
+                                            : use_shader,
+                                        *cam,
+                                        transform.transform * m_parentTransform);
+                                }
+                                glEnable(GL_CULL_FACE);
+                            }
+
+                            if (gameObject->HasComponent<SpriteAnimation>()) {
+                                m_UnbindTextures();
+
+                                auto spriteAnimation =
+                                    gameObject->GetComponent<SpriteAnimation>();
+                                auto transform = gameObject->GetComponent<Transform>();
+                                transform.Update();
+
+                                glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                                for (auto &go : *Scene::m_GameObjects) {
+                                    if (go->ID == gameObject->parentID &&
+                                        go->HasComponent<Transform>()) {
+                                        auto &parentTransform =
+                                            go->GetComponent<Transform>();
+                                        parentTransform.Update();
+                                        m_parentTransform = parentTransform.transform;
+                                    }
+                                }
+
+                                spriteAnimation.Play();
+
+                                if (spriteAnimation.currMesh != nullptr) {
+                                    spriteAnimation.currMesh->enttId =
+                                        (uint32_t)gameObject->entity;
+
+                                    if (spriteAnimation.customShader.shader != nullptr) {
+                                        spriteAnimation.customShader.shader->Bind();
+                                        spriteAnimation.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                                    }
+
+                                    spriteAnimation.currMesh->Draw(
+                                        spriteAnimation.customShader.usingCustomShader
+                                            ? *spriteAnimation.customShader.shader
+                                            : use_shader,
+                                        *cam,
+                                        transform.transform * m_parentTransform);
+                                    // glDisable(GL_BLEND);
+                                }
+                            }
+
+                            if (gameObject->HasComponent<c_SpritesheetAnimation>()) {
+                                m_UnbindTextures();
+
+                                auto spritesheetAnimation =
+                                    gameObject->GetComponent<c_SpritesheetAnimation>();
+                                auto transform = gameObject->GetComponent<Transform>();
+                                transform.Update();
+
+                                glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                                for (auto &go : *Scene::m_GameObjects) {
+                                    if (go->ID == gameObject->parentID &&
+                                        go->HasComponent<Transform>()) {
+                                        auto &parentTransform =
+                                            go->GetComponent<Transform>();
+                                        parentTransform.Update();
+                                        m_parentTransform = parentTransform.transform;
+                                    }
+                                }
+
+                                spritesheetAnimation.Play();
+                                spritesheetAnimation.Update();
+
+                                glActiveTexture(GL_TEXTURE21);
+                                glBindTexture(GL_TEXTURE_CUBE_MAP,
+                                              skybox.cubemapTexture);
+
+                                glDisable(GL_CULL_FACE);
+                                if (spritesheetAnimation.mesh != nullptr) {
+                                    spritesheetAnimation.mesh->enttId =
+                                        (uint32_t)gameObject->entity;
+
+                                    if (spritesheetAnimation.customShader.shader != nullptr) {
+                                        spritesheetAnimation.customShader.shader->Bind();
+                                        spritesheetAnimation.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                                    }
+
+                                    spritesheetAnimation.mesh->Draw(
+                                        spritesheetAnimation.customShader
+                                                .usingCustomShader
+                                            ? *spritesheetAnimation.customShader.shader
+                                            : use_shader,
+                                        *cam,
+                                        transform.transform * m_parentTransform);
+                                    // glDisable(GL_BLEND);
+                                }
+                                glEnable(GL_CULL_FACE);
+                            }
+                        };
+                        call(shader);
+                    }
+                }
+            }
+
             glDisable(GL_BLEND);
             glDisable(GL_CULL_FACE);
 
