@@ -141,6 +141,7 @@ namespace HyperAPI {
         bool resizable;
         bool fullscreenOnLaunch;
         int width, height;
+        bool deferredShading = false;
 
         struct DLL_API PostProcessing {
             bool enabled;

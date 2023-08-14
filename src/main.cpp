@@ -2233,6 +2233,12 @@ int main(int argc, char **argv) {
                 ImGui::DragFloat("Grid Size", &m_grid_size, 5, 1);
                 // ImGui::Checkbox("Draw Grid", &drawGrid);
 
+                if (ImGui::TreeNode("Rendering")) {
+                    ImGui::Checkbox("Deferred Shading", &config.deferredShading);
+
+                    ImGui::TreePop();
+                }
+
                 if (ImGui::TreeNode("Shadow Mapping")) {
                     // DrawVec3Control("Position", lightPos);
                     DrawVec3Control("Look At", lightUpThing);
@@ -2285,15 +2291,6 @@ int main(int argc, char **argv) {
                         ImGui::DragFloat("Strength",
                                          &config.postProcessing
                                               .chromaticAberration.intensity,
-                                         0.001f, 0);
-                        ImGui::TreePop();
-                    }
-
-                    if (ImGui::TreeNode("Bloom")) {
-                        ImGui::Checkbox("Enabled",
-                                        &config.postProcessing.bloom.enabled);
-                        ImGui::DragFloat("Threshold",
-                                         &config.postProcessing.bloom.threshold,
                                          0.001f, 0);
                         ImGui::TreePop();
                     }
@@ -4110,7 +4107,169 @@ void NewScript::Update() {})";
 #endif
 
     app.Run(
-        [&](uint32_t &shadowMapTex) {
+        [&](uint32_t &shadowMapTex, Shader &framebufferShader) {
+            framebufferShader.Bind();
+            framebufferShader.SetUniform1i("deferredShading", config.deferredShading);
+            framebufferShader.SetUniform1f("ambient", config.ambientLight);
+            framebufferShader.SetUniform3f("ambient_color", ambient_color.x, ambient_color.y, ambient_color.z);
+            framebufferShader.SetUniformMat4("lightProjection", lightProjection);
+            glActiveTexture(GL_TEXTURE11);
+            glBindTexture(GL_TEXTURE_2D, shadowMap);
+            framebufferShader.SetUniform1i("shadow_map_buffer", 11);
+            framebufferShader.SetUniform1i("shadow_cubemap_buffer", 12);
+
+            if (Scene::mainCamera->EnttComp) {
+                auto &cameraTransform =
+                    Scene::m_Registry.get<Experimental::Transform>(Scene::mainCamera->entity);
+                framebufferShader.SetUniform3f("cameraPosition", cameraTransform.position.x,
+                                               cameraTransform.position.y,
+                                               cameraTransform.position.z);
+            } else {
+                TransformComponent cameraTransform =
+                    Scene::mainCamera->GetComponent<TransformComponent>();
+                framebufferShader.SetUniform3f("cameraPosition", cameraTransform.position.x,
+                                               cameraTransform.position.y,
+                                               cameraTransform.position.z);
+            }
+
+            static bool unsetted_pl = false;
+            static bool unsetted_dl = false;
+            static bool unsetted_sl = false;
+            static bool unsetted_2dl = false;
+            for (int i = 0; i < Scene::PointLights.size(); i++) {
+                framebufferShader.SetUniform3f(
+                    ("pointLights[" + std::to_string(i) + "].lightPos").c_str(),
+                    Scene::PointLights[i]->lightPos.x,
+                    Scene::PointLights[i]->lightPos.y,
+                    Scene::PointLights[i]->lightPos.z);
+                framebufferShader.SetUniform3f(
+                    ("pointLights[" + std::to_string(i) + "].color").c_str(),
+                    Scene::PointLights[i]->color.x, Scene::PointLights[i]->color.y,
+                    Scene::PointLights[i]->color.z);
+                framebufferShader.SetUniform1f(
+                    ("pointLights[" + std::to_string(i) + "].intensity").c_str(),
+                    Scene::PointLights[i]->intensity);
+
+                unsetted_pl = false;
+            }
+            if (Scene::PointLights.size() == 0 && !unsetted_pl) {
+                for (int i = 0; i < 100; i++) {
+                    framebufferShader.SetUniform3f(
+                        ("pointLights[" + std::to_string(i) + "].lightPos").c_str(),
+                        0, 0, 0);
+                    framebufferShader.SetUniform3f(
+                        ("pointLights[" + std::to_string(i) + "].color").c_str(), 0,
+                        0, 0);
+                    framebufferShader.SetUniform1f(
+                        ("pointLights[" + std::to_string(i) + "].intensity")
+                            .c_str(),
+                        0);
+                }
+                unsetted_pl = true;
+            }
+
+            for (int i = 0; i < Scene::SpotLights.size(); i++) {
+                // Scene::SpotLights[i]->scriptComponent.OnUpdate();
+                framebufferShader.SetUniform3f(
+                    ("spotLights[" + std::to_string(i) + "].lightPos").c_str(),
+                    Scene::SpotLights[i]->lightPos.x,
+                    Scene::SpotLights[i]->lightPos.y,
+                    Scene::SpotLights[i]->lightPos.z);
+                framebufferShader.SetUniform3f(
+                    ("spotLights[" + std::to_string(i) + "].color").c_str(),
+                    Scene::SpotLights[i]->color.x, Scene::SpotLights[i]->color.y,
+                    Scene::SpotLights[i]->color.z);
+                // framebufferShader.SetUniform1f(("spotLights[" + std::to_string(i) +
+                // "].outerCone").c_str(), Scene::SpotLights[i]->outerCone);
+                // framebufferShader.SetUniform1f(("spotLights[" + std::to_string(i) +
+                // "].innerCone").c_str(), Scene::SpotLights[i]->innerCone);
+                framebufferShader.SetUniform3f(
+                    ("spotLights[" + std::to_string(i) + "].angle").c_str(),
+                    Scene::SpotLights[i]->angle.x, Scene::SpotLights[i]->angle.y,
+                    Scene::SpotLights[i]->angle.z);
+
+                unsetted_sl = false;
+            }
+            if (Scene::SpotLights.size() == 0 && !unsetted_sl) {
+                for (int i = 0; i < 100; i++) {
+                    framebufferShader.SetUniform3f(
+                        ("spotLights[" + std::to_string(i) + "].lightPos").c_str(),
+                        0, 0, 0);
+                    framebufferShader.SetUniform3f(
+                        ("spotLights[" + std::to_string(i) + "].color").c_str(), 0,
+                        0, 0);
+                    framebufferShader.SetUniform1f(
+                        ("spotLights[" + std::to_string(i) + "].outerCone").c_str(),
+                        0);
+                    framebufferShader.SetUniform1f(
+                        ("spotLights[" + std::to_string(i) + "].innerCone").c_str(),
+                        0);
+                }
+
+                unsetted_sl = true;
+            }
+
+            for (int i = 0; i < Scene::DirLights.size(); i++) {
+                // Scene::DirLights[i]->scriptComponent.OnUpdate();
+                framebufferShader.SetUniform3f(
+                    ("dirLights[" + std::to_string(i) + "].lightPos").c_str(),
+                    Scene::DirLights[i]->lightPos.x,
+                    Scene::DirLights[i]->lightPos.y,
+                    Scene::DirLights[i]->lightPos.z);
+                framebufferShader.SetUniform3f(
+                    ("dirLights[" + std::to_string(i) + "].color").c_str(),
+                    Scene::DirLights[i]->color.x, Scene::DirLights[i]->color.y,
+                    Scene::DirLights[i]->color.z);
+                framebufferShader.SetUniform1f(
+                    ("dirLights[" + std::to_string(i) + "].intensity").c_str(),
+                    Scene::DirLights[i]->intensity);
+
+                unsetted_dl = false;
+            }
+            if (Scene::DirLights.size() == 0 && !unsetted_dl) {
+                for (int i = 0; i < 100; i++) {
+                    framebufferShader.SetUniform3f(
+                        ("dirLights[" + std::to_string(i) + "].lightPos").c_str(),
+                        0, 0, 0);
+                    framebufferShader.SetUniform3f(
+                        ("dirLights[" + std::to_string(i) + "].color").c_str(), 0,
+                        0, 0);
+                    framebufferShader.SetUniform1f(
+                        ("dirLights[" + std::to_string(i) + "].intensity").c_str(),
+                        0);
+                }
+
+                unsetted_dl = true;
+            }
+
+            for (int i = 0; i < Scene::Lights2D.size(); i++) {
+                framebufferShader.SetUniform2f(
+                    ("light2ds[" + std::to_string(i) + "].lightPos").c_str(),
+                    Scene::Lights2D[i]->lightPos.x, Scene::Lights2D[i]->lightPos.y);
+                framebufferShader.SetUniform3f(
+                    ("light2ds[" + std::to_string(i) + "].color").c_str(),
+                    Scene::Lights2D[i]->color.x, Scene::Lights2D[i]->color.y,
+                    Scene::Lights2D[i]->color.z);
+                framebufferShader.SetUniform1f(
+                    ("light2ds[" + std::to_string(i) + "].range").c_str(),
+                    Scene::Lights2D[i]->range);
+
+                unsetted_2dl = false;
+            }
+            if (Scene::Lights2D.size() == 0 && !unsetted_2dl) {
+                for (int i = 0; i < 100; i++) {
+                    framebufferShader.SetUniform2f(
+                        ("light2ds[" + std::to_string(i) + "].lightPos").c_str(), 0,
+                        0);
+                    framebufferShader.SetUniform3f(
+                        ("light2ds[" + std::to_string(i) + "].color").c_str(), 0, 0,
+                        0);
+                    framebufferShader.SetUniform1f(
+                        ("light2ds[" + std::to_string(i) + "].range").c_str(), 0);
+                }
+                unsetted_2dl = true;
+            }
+
             float lastDistance = 0;
             if (enableShadowMap && enableSpotLightShadowMap) {
                 auto dLightView = Scene::m_Registry.view<c_SpotLight>();
@@ -4224,6 +4383,7 @@ void NewScript::Update() {})";
             runTime += Timestep::deltaTime;
             shader.Bind();
             shader.SetUniform1f("time", Timestep::deltaTime);
+            shader.SetUniform1i("deferredShading", config.deferredShading);
 
             // std::vector<Shader*> shaders = {&shader};
             PostProcessingEffects(shader, camera);
@@ -4606,8 +4766,12 @@ void NewScript::Update() {})";
             glCullFace(GL_BACK);
             glFrontFace(GL_CCW);
 
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            if (!config.deferredShading) {
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            } else {
+                glDisable(GL_BLEND);
+            }
             // disable wireframe mode
             // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 

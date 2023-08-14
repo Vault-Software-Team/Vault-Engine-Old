@@ -18,7 +18,7 @@
 
 namespace Hyper {
     void Application::Run(
-        std::function<void(uint32_t &)> update,
+        std::function<void(uint32_t &, HyperAPI::Shader &)> update,
         std::function<void(uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui)>
             gui,
         std::function<void(HyperAPI::Shader &)> shadowMapRender) {
@@ -107,6 +107,39 @@ namespace Hyper {
                                GL_TEXTURE_2D, entityTexture, 0);
         glCheckError();
 
+        uint32_t gPosition;
+        glGenTextures(1, &gPosition);
+        glBindTexture(GL_TEXTURE_2D, gPosition);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA,
+                     GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3,
+                               GL_TEXTURE_2D, gPosition, 0);
+        glCheckError();
+
+        uint32_t gNormal;
+        glGenTextures(1, &gNormal);
+        glBindTexture(GL_TEXTURE_2D, gNormal);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA,
+                     GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4,
+                               GL_TEXTURE_2D, gNormal, 0);
+        glCheckError();
+
+        uint32_t gFragPosLight;
+        glGenTextures(1, &gFragPosLight);
+        glBindTexture(GL_TEXTURE_2D, gFragPosLight);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA,
+                     GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5,
+                               GL_TEXTURE_2D, gFragPosLight, 0);
+        glCheckError();
+
         // rbo
         uint32_t rbo;
         glGenRenderbuffers(1, &rbo);
@@ -117,9 +150,9 @@ namespace Hyper {
                                   GL_RENDERBUFFER, rbo);
         glCheckError();
 
-        uint32_t attachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
-                                   GL_COLOR_ATTACHMENT2};
-        glDrawBuffers(3, attachments);
+        uint32_t attachments[6] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
+                                   GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5};
+        glDrawBuffers(6, attachments);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -264,6 +297,9 @@ namespace Hyper {
                 glDeleteFramebuffers(1, &S_PPFBO);
                 glDeleteTextures(1, &S_PPT);
                 glDeleteTextures(1, &bloomTexture);
+                glDeleteTextures(1, &gPosition);
+                glDeleteTextures(1, &gFragPosLight);
+                glDeleteTextures(1, &gNormal);
                 glDeleteFramebuffers(2, pingpongFBO);
                 glDeleteTextures(2, pingpongBuffer);
                 glDeleteRenderbuffers(1, &SRBO);
@@ -348,7 +384,43 @@ namespace Hyper {
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2,
                                        GL_TEXTURE_2D, entityTexture, 0);
 
-                glDrawBuffers(3, attachments);
+                glGenTextures(1, &gPosition);
+                glBindTexture(GL_TEXTURE_2D, gPosition);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB,
+                             GL_FLOAT, nullptr);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3,
+                                       GL_TEXTURE_2D, gPosition, 0);
+                glCheckError();
+
+                glGenTextures(1, &gNormal);
+                glBindTexture(GL_TEXTURE_2D, gNormal);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB,
+                             GL_FLOAT, nullptr);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4,
+                                       GL_TEXTURE_2D, gNormal, 0);
+                glCheckError();
+
+                glGenTextures(1, &gFragPosLight);
+                glBindTexture(GL_TEXTURE_2D, gFragPosLight);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB,
+                             GL_FLOAT, nullptr);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5,
+                                       GL_TEXTURE_2D, gFragPosLight, 0);
+                glCheckError();
+
+                glDrawBuffers(6, attachments);
 
                 glGenRenderbuffers(1, &rbo);
                 glBindRenderbuffer(GL_RENDERBUFFER, rbo);
@@ -453,7 +525,7 @@ namespace Hyper {
 
             glActiveTexture(GL_TEXTURE7);
             glBindTexture(GL_TEXTURE_2D, depthMap);
-            update(S_PPT);
+            update(S_PPT, framebufferShader);
 
             glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
             glBindTexture(GL_TEXTURE_2D, entityTexture);
@@ -587,6 +659,18 @@ namespace Hyper {
             glActiveTexture(GL_TEXTURE16);
             glBindTexture(GL_TEXTURE_2D, bloomRenderer.BloomTexture());
             framebufferShader.SetUniform1i("bloomTexture", 16);
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, gPosition);
+            framebufferShader.SetUniform1i("gPosition", 0);
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, gNormal);
+            framebufferShader.SetUniform1i("gNormal", 1);
+
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, gFragPosLight);
+            framebufferShader.SetUniform1i("gFragPosLight", 2);
 
             if (renderOnScreen) {
                 EndFrame(framebufferShader, *renderer, rectVAO,

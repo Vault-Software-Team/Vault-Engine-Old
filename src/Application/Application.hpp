@@ -64,7 +64,7 @@ namespace Hyper {
         }
 
         void Run(
-            std::function<void(uint32_t &)> update,
+            std::function<void(uint32_t &, HyperAPI::Shader &)> update,
             std::function<void(uint32_t &PPT, uint32_t &PPFBO,
                                uint32_t &gui_gui)>
                 gui = [](uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui) {},

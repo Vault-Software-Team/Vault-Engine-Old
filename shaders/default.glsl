@@ -47,6 +47,7 @@ out vec3 Normal;
 out vec3 currentPosition;
 out vec3 reflectedVector;
 out vec4 fragPosLight;
+out vec4 FragPos;
 out mat4 projection;
 out mat3 m_TBN;
 out float visibility;
@@ -146,6 +147,7 @@ void main() {
     m_TBN = mat3(T, B, N);
 
     fragPosLight = lightProjection * vec4(currentPosition, 1.0);
+    FragPos = vec4(currentPosition, 1.0);
 
     // Fog
     vec4 positionRelativeToCam = cam_view * worldPosition;
@@ -157,11 +159,12 @@ void main() {
 #shader fragment
 #version 330 core
 
-
-layout(location = 0) out vec4 FragColor;
+layout(location = 0) out vec4 gAlbedoSpec;
 layout(location = 1) out vec4 BloomColor;
-// entity data that is unsigned int
 layout(location = 2) out uint EntityID;
+layout(location = 3) out vec4 gPosition;
+layout(location = 4) out vec4 gNormal;
+layout(location = 5) out vec4 gFragPosLight;
 
 // in vec2 texCoords;
 // in vec3 Color;
@@ -178,6 +181,7 @@ in vec3 currentPosition;
 in vec3 reflectedVector;
 in mat4 projection;
 in vec4 fragPosLight;
+in vec4 FragPos;
 in float visibility;
 // out mat4 model;
 
@@ -242,6 +246,9 @@ uniform int shadow_cubemap_set;
 uniform float farPlane;
 uniform vec3 pointLightPos;
 
+// rendering
+uniform bool deferredShading;
+
 vec4 reflectedColor = texture(cubeMap, reflectedVector);
 float specularTexture = texture(texture_specular0, texCoords).r;
 
@@ -257,33 +264,6 @@ vec4 pointLight(PointLight light) {
 
     vec3 lightVec = (light.lightPos - currentPosition);
     vec3 viewDirection = normalize(cameraPosition - currentPosition);
-    // float height_scale = 0.05;
-    // const float minLayers = 8.0;
-    // const float maxLayers = 64.0 * 2;
-    // float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0,0,1), viewDirection)));
-    // float layerDepth = 1.0 / numLayers;
-    // float currentLayerDepth = 0.0;
-
-    // vec2 S = viewDirection.xy / viewDirection.z * height_scale;
-    // vec2 deltaUVs = S / numLayers;
-
-    // vec2 UVs = texCoords;
-    // float currentDepthMapValue = 1.0 - texture(texture_emission0, UVs).r;
-
-    // while(currentLayerDepth < currentDepthMapValue) {
-    //     UVs -= deltaUVs;
-    //     currentDepthMapValue = 1.0 - texture(texture_emission0, UVs).r;
-    //     currentLayerDepth += layerDepth;
-    // }
-
-    // vec2 prevTexCoords = UVs + deltaUVs;
-    // float afterDepth = currentDepthMapValue - currentLayerDepth;
-    // float beforeDepth = 1.0 - texture(texture_emission0, texCoords).r - currentLayerDepth + layerDepth;
-    // float weight = afterDepth / (afterDepth - beforeDepth);
-    // UVs = prevTexCoords * weight + UVs * (1.0 - weight);
-
-    // if(UVs.x > 1.0 || UVs.y > 1.0 || UVs.x < 0.0 || UVs.y < 0.0)
-    //     discard;
 
     vec3 normal;
     if(isTex == 1 && hasNormalMap == 1) {
@@ -555,35 +535,24 @@ void main() {
 
     vec4 tex = texture(texture_diffuse0, texCoords);
     float alpha = tex.a;
-    // if(isTex == 1) {
-    //     noAmbient = mix(tex, reflectedColor, metallic) * baseColor;
-    //     result = noAmbient * ambient;
-    //     result.a = tex.a;
-    //     result.a *= baseColor.a;
-    //     alpha = result.a;
-    // } else {
-    //     noAmbient = mix(baseColor, reflectedColor, metallic);
-    //     result = noAmbient * ambient;
-    //     result.a = baseColor.a;
-    //     alpha = result.a;
-    // }
 
-    for(int i = 0; i < MAX_LIGHTS; i++) {
-        if(pointLights[i].intensity > 0) {
-            vec4 light = pointLight(pointLights[i]);
-            result += pointLight(pointLights[i]);
-        }
+    if(!deferredShading) {
+        for(int i = 0; i < MAX_LIGHTS; i++) {
+            if(pointLights[i].intensity > 0) {
+                result += pointLight(pointLights[i]);
+            }
 
-        if(spotLights[i].color.r > 0 || spotLights[i].color.g > 0 || spotLights[i].color.b > 0) {
-            result += spotLight(spotLights[i]);
-        }
+            if(spotLights[i].color.r > 0 || spotLights[i].color.g > 0 || spotLights[i].color.b > 0) {
+                result += spotLight(spotLights[i]);
+            }
 
-        if(dirLights[i].intensity == 1) {
-            result += directionalLight(dirLights[i]);
-        }
+            if(dirLights[i].intensity == 1) {
+                result += directionalLight(dirLights[i]);
+            }
 
-        if(light2ds[i].color.r > 0 || spotLights[i].color.g > 0 || spotLights[i].color.b > 0) {
-            result += light2d(light2ds[i]);
+            if(light2ds[i].color.r > 0 || spotLights[i].color.g > 0 || spotLights[i].color.b > 0) {
+                result += light2d(light2ds[i]);
+            }
         }
     }
     
@@ -601,22 +570,22 @@ void main() {
             alpha = result.a;
         }
     }
-    
+
     result.a = alpha;
-    FragColor = result;
+    gAlbedoSpec = result;
     if(result.a < 0.1) {
         discard;
     }
 
-    float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    float brightness = dot(gAlbedoSpec.rgb, vec3(0.2126, 0.7152, 0.0722));
     if(brightness > bloom_threshold && dynamic_bloom) {
-        BloomColor = FragColor;
+        BloomColor = gAlbedoSpec;
     } else if((u_BloomColor.r > 0.5 || u_BloomColor.g > 0.5 || u_BloomColor.b > 0.5)
     && (u_BloomColor.r < 0.7 || u_BloomColor.g < 0.7 || u_BloomColor.b < 0.7)) {
-        FragColor = result * (u_BloomColor.r * 20);
+        gAlbedoSpec = result * (u_BloomColor.r * 20);
         BloomColor = vec4(u_BloomColor * 2, 1);
     } else if(u_BloomColor.r > 0.7 || u_BloomColor.g > 0.7 || u_BloomColor.b > 0.7) {
-        FragColor = result * (u_BloomColor.r * 30);
+        gAlbedoSpec = result * (u_BloomColor.r * 30);
         BloomColor = vec4(u_BloomColor * 3, 1);
     } else {
         BloomColor = vec4(u_BloomColor, 1);
@@ -625,17 +594,33 @@ void main() {
     vec4 emission = texture(texture_emission0, texCoords);
 
     if(emission.r > 0 || emission.g > 0 || emission.b > 0) {
-        FragColor += emission;
+        gAlbedoSpec += emission;
         if(u_BloomColor.r > 0 || u_BloomColor.g > 0 || u_BloomColor.b > 0) {
             BloomColor = emission * vec4(u_BloomColor, 1);
         } else {
             BloomColor = emission;
         }
     }
-    // FragColor.a = alpha;
-    BloomColor.a = alpha;
 
+    BloomColor.a = alpha;
     EntityID = u_EntityID;
+
+    if(deferredShading) {
+        gAlbedoSpec = mix(gAlbedoSpec, reflectedColor, metallic) * baseColor;
+        gAlbedoSpec.a = specularTexture == 0 ? 1 : specularTexture;
+        gPosition = FragPos;
+        
+        vec3 normal;
+        if(isTex == 1 && hasNormalMap == 1) {
+            vec4 normalTex = texture(texture_normal0, texCoords);
+            normal = normalTex.rgb * 2.0 - 1.0;
+            normal = normalize(m_TBN * normal);
+        } else {
+            normal = normalize(Normal);
+        }
+        gNormal = vec4(normal, 1);
+        gFragPosLight = fragPosLight;
+    }
 }
 
 // #shader geometry
