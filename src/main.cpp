@@ -338,6 +338,23 @@ void DirIter(const std::string &path) {
             bool item = ImGui::Button(
                 std::string("##" + relativePath.filename().string()).c_str(),
                 ImVec2(buttonSize, buttonSize));
+
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload *payload =
+                        ImGui::AcceptDragDropPayload("file")) {
+                    // fs::rename(file, newFile);move the file into the folder
+                    std::string file = (char *)payload->Data;
+                    file.erase(0, cwd.length() + 1);
+                    std::string newFile = entry.path().string() + "/" +
+                                          file.substr(file.find_last_of("/") + 1);
+                    try {
+                        fs::rename(file, newFile);
+                    } catch (const std::exception &e) {
+                    }
+                }
+                ImGui::EndDragDropTarget();
+            }
+
             ImGui::PopStyleColor(3);
 
             ImGui::SetCursorPos(ImVec2(cursorPos.x, cursorPos.y + 25));
@@ -3772,8 +3789,24 @@ void NewScript::Update() {})";
                 }
 
                 if (currentDirectory != fs::path("assets")) {
-                    if (ImGui::Button(ICON_FA_ARROW_LEFT)) {
+                    bool item = ImGui::Button(ICON_FA_ARROW_LEFT);
+                    if (item) {
                         currentDirectory = currentDirectory.parent_path();
+                    }
+
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload *payload =
+                                ImGui::AcceptDragDropPayload("file")) {
+                            // fs::rename(file, newFile);move the file into the folder
+                            std::string file = (char *)payload->Data;
+                            std::string newFile = "assets/" +
+                                                  file.substr(file.find_last_of("/") + 1);
+                            try {
+                                fs::rename(file, newFile);
+                            } catch (const std::exception &e) {
+                            }
+                        }
+                        ImGui::EndDragDropTarget();
                     }
 
                     ImGui::SameLine();
@@ -4019,6 +4052,55 @@ void NewScript::Update() {})";
                 // close
                 ImGuiFileDialog::Instance()->Close();
             }
+
+            const ImGuiViewport *viewport = ImGui::GetMainViewport();
+
+            // Set position to the bottom of the viewport
+            ImGui::SetNextWindowPos(
+                ImVec2(viewport->Pos.x,
+                       (viewport->Pos.y + viewport->Size.y - ImGui::GetFrameHeight()) - 10));
+
+            // Extend width to viewport width
+            ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, ImGui::GetFrameHeight()));
+            ImGui::SetNextWindowViewport(viewport->ID);
+
+            // Add menu bar flag and disable everything else
+            ImGuiWindowFlags flags =
+                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
+                ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollWithMouse |
+                ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground;
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+            if (ImGui::Begin("StatusBar", nullptr, flags)) {
+                int errors = 0, warnings = 0, logs = 0;
+
+                for (auto log : Scene::logs) {
+                    switch (log.type) {
+                    case LOG_ERROR:
+                        errors++;
+                        break;
+                    case LOG_INFO:
+                        logs++;
+                        break;
+                    case LOG_WARNING:
+                        warnings++;
+                        break;
+                    }
+                }
+
+                ImGui::TextColored(ImVec4(1.2f, 0.0f, 0.0f, 1.0f), "%s %d",
+                                   ICON_FA_CIRCLE_EXCLAMATION, errors);
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.0f, 1.0f), "%s %d",
+                                   ICON_FA_TRIANGLE_EXCLAMATION, warnings);
+
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(0.0f, 0.635f, 1.0f, 1.0f), "%s %d",
+                                   ICON_FA_CIRCLE_INFO, logs);
+
+                ImGui::End();
+            }
+            ImGui::PopStyleVar();
+            // End of ImGui
         };
 #else
     std::function<void(uint32_t & PPT, uint32_t & PPFBO, uint32_t & gui_gui)>

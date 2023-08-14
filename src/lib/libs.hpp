@@ -106,7 +106,9 @@ namespace fs = std::experimental::filesystem;
 #define CYAN "\033[0;36m"
 #define WHITE "\033[0;37m"
 #define RESET "\033[0m"
-#define HYPER_LOG(x) std::cout << YELLOW "[" << HyperAPI::getTime() << "] - " << RED << "[VAULT] " << RESET << x << std::endl;
+#define HYPER_LOG(x)                                                                                          \
+    std::cout << YELLOW "[" << HyperAPI::getTime() << "] - " << RED << "[VAULT] " << RESET << x << std::endl; \
+    HyperAPI::currentHyperLog = x;
 #endif
 
 using json = nlohmann::json;
@@ -128,6 +130,7 @@ namespace HyperAPI {
     DLL_API extern glm::vec3 mousePosWorld, mousePosCamWorld;
     DLL_API extern float sceneMouseX, sceneMouseY;
     DLL_API extern b2ContactListener *b2_listener;
+    DLL_API extern std::string currentHyperLog;
 
 #ifdef _WIN32
     __declspec(dllexport) void test_dll_function();

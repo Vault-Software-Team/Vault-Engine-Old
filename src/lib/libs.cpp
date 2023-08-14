@@ -43,6 +43,7 @@ namespace HyperAPI {
     DLL_API glm::vec3 mousePosWorld, mousePosCamWorld;
     DLL_API float sceneMouseX, sceneMouseY;
     DLL_API b2ContactListener *b2_listener;
+    DLL_API std::string currentHyperLog = "";
     DLL_API Config config = {
         "Vault Engine",
         "assets/scenes/main.vault",
