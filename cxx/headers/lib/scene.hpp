@@ -130,5 +130,8 @@ namespace HyperAPI {
         DLL_API extern std::vector<HyperAPI::Mesh *> hyperEntities;
 
         DLL_API extern b2World *world;
+
+        // aspect ratio shit
+        DLL_API extern int aspect_width, aspect_height;
     } // namespace Scene
 } // namespace HyperAPI

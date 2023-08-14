@@ -67,7 +67,7 @@ uniform mat4 lightProjection;
 
 const float shininess = 200.000;
 const float roughness = 0;
-vec3 normal = normalize(texture(gNormal, texCoords.st).rgb);
+vec3 normal = texture(gNormal, texCoords.st).rgb;
 vec4 albedo = texture(screenTexture, texCoords.st);
 float specularTexture = texture(screenTexture, texCoords.st).a;
 
@@ -175,26 +175,26 @@ vec4 directionalLight(DirectionalLight light, vec3 currentPosition) {
     specular = specular * _smoothness;
 
     float shadow = 0.0f;
-    vec3 lightCoords = fragPosLight.xyz / fragPosLight.w;
-    if(lightCoords.z <= 1.0f) {
-        lightCoords = (lightCoords + 1.0f) / 2.0f;
+    // vec3 lightCoords = fragPosLight.xyz / fragPosLight.w;
+    // if(lightCoords.z <= 1.0f) {
+    //     lightCoords = (lightCoords + 1.0f) / 2.0f;
 
-        float closestDepth = texture(shadow_map_buffer, lightCoords.xy).r;
-        float currentDepth = lightCoords.z;
-        float bias = max(0.025f * (1.0f - dot(normal, lightDir)), 0.0005f);
+    //     float closestDepth = texture(shadow_map_buffer, lightCoords.xy).r;
+    //     float currentDepth = lightCoords.z;
+    //     float bias = max(0.025f * (1.0f - dot(normal, lightDir)), 0.0005f);
 
-        int sampleRadius = 2;
-        vec2 pixelSize  = 1.0 / textureSize(shadow_map_buffer, 0);
-        for(int y = -sampleRadius; y <= sampleRadius; y++) {
-            for(int x = -sampleRadius; x <= sampleRadius; x++) {
-                float closestDepth = texture(shadow_map_buffer, lightCoords.xy + vec2(x,y) * pixelSize).r;
-                if(currentDepth > closestDepth + bias)
-                    shadow += 1.0f;
-            }
-        }
+    //     int sampleRadius = 2;
+    //     vec2 pixelSize = 1.0 / textureSize(shadow_map_buffer, 0);
+    //     for(int y = -sampleRadius; y <= sampleRadius; y++) {
+    //         for(int x = -sampleRadius; x <= sampleRadius; x++) {
+    //             float closestDepth = texture(shadow_map_buffer, lightCoords.xy + vec2(x,y) * pixelSize).r;
+    //             if(currentDepth > closestDepth + bias)
+    //                 shadow += 1.0f;
+    //         }
+    //     }
 
-        shadow /= pow((sampleRadius * 2 + 1), 2);
-    }
+    //     shadow /= pow((sampleRadius * 2 + 1), 2);
+    // }
     return (albedo * vec4(light.color, 1) * (diffuse * (1.0f - shadow) + (vec4(ambient_color, 1) * ambient)) + specularTexture * (((specular  * (1.0f - shadow)) * vec4(light.color, 1)) * light.intensity));
     // if(isTex == 1) {
     // } else {

@@ -3772,7 +3772,7 @@ void NewScript::Update() {})";
                     ImGui::OpenPopup("New File");
                 }
                 ImGui::SameLine();
-                ImGui::Text(currentDirectory.c_str());
+                ImGui::Text(currentDirectory.string().c_str());
 
                 ImGui::Separator();
                 if (ImGui::BeginDragDropTarget()) {

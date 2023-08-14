@@ -41,6 +41,7 @@
 #include "../Components/AudioListener.hpp"
 #include "../Components/Audio3D.hpp"
 #include "../Components/ParticleSystem.hpp"
+#include "../Splash/Splash.hpp"
 
 // Renderer
 #include "../Renderer/AssimpGLMHelpers.hpp"
@@ -64,7 +65,7 @@
 #include "../Renderer/Timestep.hpp"
 #include "../Batch/BatchLayer.hpp"
 #include "../Renderer/Font.hpp"
-#include "../Renderer/Terrain.hpp"
+#include "../Terrain/Terrain.hpp"
 
 // Audio
 #include "../Audio/SoundBuffer.hpp"

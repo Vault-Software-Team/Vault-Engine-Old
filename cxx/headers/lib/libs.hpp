@@ -141,6 +141,7 @@ namespace HyperAPI {
         bool resizable;
         bool fullscreenOnLaunch;
         int width, height;
+        bool deferredShading = false;
 
         struct DLL_API PostProcessing {
             bool enabled;
@@ -159,6 +160,7 @@ namespace HyperAPI {
                 float intensity;
             } chromaticAberration;
         } postProcessing;
+
         char linuxCompiler[500];
         char windowsCompiler[500];
     };

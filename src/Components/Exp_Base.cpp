@@ -782,7 +782,6 @@ namespace HyperAPI::Experimental {
                 meshRenderer.matPath = "assets/models/scene_materials/" + std::string(texture_name.C_Str()) + ".material";
             }
 
-            std::cout << texture_name.C_Str() << "\n";
             Scene::m_GameObjects->push_back(gameObject);
 
             return gameObject;

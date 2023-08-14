@@ -13,9 +13,11 @@ namespace HyperAPI::Experimental {
         std::string tag = "Untagged";
         bool prefab = false;
 
-        entt::entity entity = Scene::m_Registry.create();
+        entt::entity entity;
 
-        ComponentEntity() = default;
+        ComponentEntity() {
+            entity = Scene::m_Registry.create();
+        };
 
         template <typename T, typename... Args>
         T &AddComponent(Args &&...args) {
@@ -44,9 +46,9 @@ namespace HyperAPI::Experimental {
 
         template <typename T>
         bool HasComponent() {
-            if (Scene::m_Registry.valid(entity)) {
-                return Scene::m_Registry.has<T>(entity);
-            }
+            // if (Scene::m_Registry.valid(entity)) {
+            return Scene::m_Registry.has<T>(entity);
+            // }
 
             return false;
         }

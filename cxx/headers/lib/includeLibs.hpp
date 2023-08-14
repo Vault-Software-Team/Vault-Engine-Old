@@ -102,8 +102,7 @@ namespace fs = std::experimental::filesystem;
 #define CYAN "\033[0;36m"
 #define WHITE "\033[0;37m"
 #define RESET "\033[0m"
-#define HYPER_LOG(x) \
-    std::cout << YELLOW "[" << HyperAPI::getTime() << "] - " << RED << "[VAULT] " << RESET << x << std::endl;
+#define HYPER_LOG(x) std::cout << RED "[VAULT] - " RESET << x << std::endl;
 #endif
 
 using json = nlohmann::json;

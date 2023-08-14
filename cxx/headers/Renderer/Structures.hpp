@@ -2,6 +2,7 @@
 #include <dllapi.hpp>
 #include <libs.hpp>
 #define MAX_BONE_INFLUENCE 4
+#define MAX_BONE_WEIGHTS MAX_BONE_INFLUENCE
 
 namespace HyperAPI {
     struct DLL_API BoneInfo {
@@ -48,12 +49,18 @@ namespace HyperAPI {
         glm::vec3 lightPos;
         glm::vec3 color;
         float intensity;
+        bool renderShadows = false;
+        float farPlane = 100.0f;
+        uint32_t depthCubemap;
+        uint32_t pointShadowMapFBO;
 
         PointLight(std::vector<HyperAPI::PointLight *> &lights,
                    glm::vec3 lightPos, glm::vec3 color, float intensity) {
             this->lightPos = lightPos;
             this->color = color;
             this->intensity = intensity;
+            this->renderShadows = false;
+            this->farPlane = 100.0f;
 
             TransformComponent transform;
             transform.position = lightPos;

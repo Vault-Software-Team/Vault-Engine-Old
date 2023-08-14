@@ -260,7 +260,6 @@ namespace HyperAPI::CppScripting {
 #ifdef _WIN32
                     for (auto script : cpp_scripts) {
                         FreeLibrary(script.handle);
-                        dlclose(script.handle);
                     }
                     LoadScripts();
 #endif

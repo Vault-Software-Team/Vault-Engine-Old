@@ -1,6 +1,13 @@
 #pragma once
 #include <dllapi.hpp>
 #include <libs.hpp>
+#include "../vendor/bullet/bullet/BulletSoftBody/btSoftBody.h"
+#include "../vendor/bullet/bullet/BulletSoftBody/btSoftBodyRigidBodyCollisionConfiguration.h"
+#include "../vendor/bullet/bullet/BulletSoftBody/btSoftRigidDynamicsWorld.h"
+#include "../vendor/bullet/bullet/BulletSoftBody/btSoftBodySolvers.h"
+#include "../vendor/bullet/bullet/BulletSoftBody/btDefaultSoftBodySolver.h"
+#include "../vendor/bullet/bullet/BulletSoftBody/btSoftBodyHelpers.h"
+#include "../vendor/bullet/bullet/BulletSoftBody/btSoftBodyData.h"
 
 namespace HyperAPI::BulletPhysicsWorld {
     DLL_API extern btDiscreteDynamicsWorld *dynamicsWorld;

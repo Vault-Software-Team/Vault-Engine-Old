@@ -24,7 +24,7 @@ namespace HyperAPI {
         Vector2 texUVs = Vector2(0, 0);
 
         Material(Vector4 baseColor = Vector4(1, 1, 1, 1),
-                 std::vector<Texture> textures = {}, float shininess = 0,
+                 std::vector<Texture> textures = {}, float shininess = 16,
                  float metallic = 0, float roughness = 0);
 
         ~Material() {
