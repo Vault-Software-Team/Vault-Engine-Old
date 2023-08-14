@@ -932,6 +932,8 @@ int cpp_play_audio(char *audio_file) {
 typedef CppScripting::Script *(*f_create_object)();
 
 int main(int argc, char **argv) {
+    config.editorCamera.shiftSpeed = 0.4f;
+
     HyperAPI::b2_listener = listener;
     {
         char cwd[1024];
@@ -2237,6 +2239,7 @@ int main(int argc, char **argv) {
                 if (ImGui::TreeNode("Editor Camera")) {
                     TransformComponent t = camera->GetComponent<TransformComponent>();
                     DrawVec3Control("Position", t.position);
+                    ImGui::DragFloat("Shift Speed", &config.editorCamera.shiftSpeed, 0.01f, 0.2f);
 
                     ImGui::TreePop();
                 }

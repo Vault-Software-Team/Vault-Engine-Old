@@ -161,6 +161,10 @@ namespace HyperAPI {
             } chromaticAberration;
         } postProcessing;
 
+        struct DLL_API EditorCamera {
+            float shiftSpeed = 0.4f;
+        } editorCamera;
+
         char linuxCompiler[500];
         char windowsCompiler[500];
     };
