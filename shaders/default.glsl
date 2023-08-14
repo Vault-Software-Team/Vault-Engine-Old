@@ -607,7 +607,7 @@ void main() {
 
     if(deferredShading) {
         gAlbedoSpec = mix(gAlbedoSpec, reflectedColor, metallic) * baseColor;
-        gAlbedoSpec.a = specularTexture == 0 ? 1 : specularTexture;
+        gAlbedoSpec.a = specularTexture;
         gPosition = FragPos;
         
         vec3 normal;
