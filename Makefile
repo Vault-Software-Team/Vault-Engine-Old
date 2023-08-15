@@ -130,7 +130,7 @@ debugging:
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
 
 one_file:
-	$(GNU_LINUX_COMPILER) -c src/main.cpp src/lib/libs.cpp src/Components/Transform.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c src/main.cpp src/Components/Lights.cpp $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
@@ -242,7 +242,7 @@ win_assemble:
 	mv libhost.a cxx/windows/libvault_api.a
 
 win_components:
-	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj $(components) $(win_flags)
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/lib/libs.cpp src/Renderer/Material.cpp $(components) $(win_flags)
 	mv *.o bin_win
 
 	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp $(win_flags)

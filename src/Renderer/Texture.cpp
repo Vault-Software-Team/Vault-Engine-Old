@@ -4,6 +4,7 @@
 
 namespace HyperAPI {
     DLL_API std::vector<m_Texture *> textures;
+    DLL_API std::vector<m_Texture *> image_textures;
 
     m_Texture::~m_Texture() {
         HYPER_LOG("Texture " + texPath + " unloaded");
@@ -14,11 +15,21 @@ namespace HyperAPI {
     Texture::Texture(const char *texturePath, uint32_t slot, const char *textureType) {
         std::cout << texturePath << std::endl;
         texPath = std::string(texturePath);
-        for (auto *m_tex : textures) {
-            if (m_tex->texPath == std::string(texturePath)) {
-                tex = m_tex;
-                tex->sharing++;
-                break;
+        if (std::string(textureType) != "texture_normal") {
+            for (auto *m_tex : textures) {
+                if (m_tex->texPath == std::string(texturePath)) {
+                    tex = m_tex;
+                    tex->sharing++;
+                    break;
+                }
+            }
+        } else {
+            for (auto *m_tex : image_textures) {
+                if (m_tex->texPath == std::string(texturePath)) {
+                    tex = m_tex;
+                    tex->sharing++;
+                    break;
+                }
             }
         }
 
@@ -54,6 +65,13 @@ namespace HyperAPI {
                     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGB, GL_UNSIGNED_BYTE, tex->data);
                 else if (tex->nrChannels == 1)
                     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RED, GL_UNSIGNED_BYTE, tex->data);
+            } else if (std::string(textureType) == "texture_image") {
+                if (tex->nrChannels >= 4)
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex->width, tex->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex->data);
+                else if (tex->nrChannels == 3)
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGB, GL_UNSIGNED_BYTE, tex->data);
+                else if (tex->nrChannels == 1)
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RED, GL_UNSIGNED_BYTE, tex->data);
             } else if (tex->nrChannels >= 4)
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, tex->width, tex->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex->data);
             else if (tex->nrChannels == 3)
@@ -70,7 +88,7 @@ namespace HyperAPI {
             stbi_image_free(tex->data);
             glBindTexture(GL_TEXTURE_2D, 0);
 
-            textures.push_back(tex);
+            std::string(textureType) == "texture_normal" ? image_textures.push_back(tex) : textures.push_back(tex);
         }
     }
     Texture::~Texture() {

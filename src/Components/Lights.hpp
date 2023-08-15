@@ -77,22 +77,7 @@ namespace HyperAPI::Experimental {
 
         c_Light2D() = default;
 
-        void GUI() {
-            if (ImGui::CollapsingHeader("2D Light")) {
-                ImGui::ColorEdit4("Color", &color.x, 0);
-                ImGui::DragFloat("Range", &range, 0.01f);
-
-                ImGui::NewLine();
-                if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
-                    Scene::Lights2D.erase(std::remove(Scene::Lights2D.begin(),
-                                                      Scene::Lights2D.end(),
-                                                      light),
-                                          Scene::Lights2D.end());
-                    delete light;
-                    Scene::m_Registry.remove<c_Light2D>(entity);
-                }
-            }
-        }
+        void GUI();
 
         void Update() {
             auto &transform = Scene::m_Registry.get<Transform>(entity);
@@ -122,21 +107,7 @@ namespace HyperAPI::Experimental {
             }
         }
 
-        void GUI() {
-            if (ImGui::CollapsingHeader("Spot Light")) {
-                ImGui::ColorEdit4("Color", &color.x, 0);
-
-                ImGui::NewLine();
-                if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
-                    Scene::SpotLights.erase(
-                        std::remove(Scene::SpotLights.begin(),
-                                    Scene::SpotLights.end(), light),
-                        Scene::SpotLights.end());
-                    delete light;
-                    Scene::m_Registry.remove<c_SpotLight>(entity);
-                }
-            }
-        }
+        void GUI();
 
         void Update() {
             auto &transform = Scene::m_Registry.get<Transform>(entity);
@@ -158,28 +129,7 @@ namespace HyperAPI::Experimental {
 
         c_DirectionalLight() = default;
 
-        void GUI() {
-            auto &transform = Scene::m_Registry.get<Transform>(entity);
-            lightPos = transform.position;
-
-            if (ImGui::CollapsingHeader("Directional Light")) {
-                ImGui::ColorEdit4("Color", &color.x, 0);
-                ImGui::DragFloat("Intensity", &intensity, 0.01f);
-
-                ImGui::NewLine();
-                if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
-                    Scene::DirLights.erase(std::remove(Scene::DirLights.begin(),
-                                                       Scene::DirLights.end(),
-                                                       light),
-                                           Scene::DirLights.end());
-                    delete light;
-                    Scene::m_Registry.remove<c_DirectionalLight>(entity);
-                }
-            }
-
-            light->lightPos = lightPos;
-            light->color = color;
-        }
+        void GUI();
 
         void Update() {
             auto &transform = Scene::m_Registry.get<Transform>(entity);

@@ -58,6 +58,7 @@ static bool boundSizing = false;
 static bool openConsole = false;
 static char consoleBuffer[1000];
 static bool boundSizingSnap = false;
+static std::vector<std::pair<std::string, std::function<void()>>> add_component_guis = {};
 static Vector3 ambient_color = Vector3(1, 1, 1);
 
 class DLL_API CollisionListener : public b2ContactListener {
@@ -281,6 +282,7 @@ fs::path currentDirectory = fs::path("assets");
 
 auto langDef = TextEditor::LanguageDefinition::Lua();
 auto glslDef = TextEditor::LanguageDefinition::GLSL();
+std::vector<std::string> file_images = {};
 void DirIter(const std::string &path) {
     // alphabetical sort
     auto iter = fs::directory_iterator(currentDirectory);
@@ -440,8 +442,57 @@ void DirIter(const std::string &path) {
             } else if (ends_with(entry.path().string(), ".png") ||
                        ends_with(entry.path().string(), ".jpg") ||
                        ends_with(entry.path().string(), ".jpeg")) {
-                ImGui::Button(ICON_FA_IMAGE,
-                              ImVec2(buttonSize, buttonSize - 30));
+                m_Texture *t = nullptr;
+                for (auto *tex : image_textures) {
+                    if (tex->texPath == entry.path().string()) {
+                        t = tex;
+                    }
+                }
+
+                if (t == nullptr) {
+                    t = new m_Texture();
+                    t->sharing++;
+
+                    stbi_set_flip_vertically_on_load(true);
+                    t->texType = "texture_image";
+                    t->texStarterPath = entry.path().string().c_str();
+                    t->slot = 0;
+                    t->texPath = entry.path().string();
+                    t->data = stbi_load(entry.path().string().c_str(), &t->width, &t->height, &t->nrChannels, 0);
+
+                    HYPER_LOG("Texture " + std::to_string(0) + " loaded from " +
+                              entry.path().string())
+
+                    glGenTextures(1, &t->ID);
+                    glBindTexture(GL_TEXTURE_2D, t->ID);
+
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+                    if (t->nrChannels >= 4)
+                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, t->width, t->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, t->data);
+                    else if (t->nrChannels == 3)
+                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, t->width, t->height, 0, GL_RGB, GL_UNSIGNED_BYTE, t->data);
+                    else if (t->nrChannels == 1)
+                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, t->width, t->height, 0, GL_RED, GL_UNSIGNED_BYTE, t->data);
+
+                    stbi_image_free(t->data);
+                    glBindTexture(GL_TEXTURE_2D, 0);
+                    image_textures.push_back(t);
+                }
+
+                if (t == nullptr) {
+                    ImGui::Button(ICON_FA_IMAGE,
+                                  ImVec2(buttonSize, buttonSize - 30));
+                } else {
+                    ImGui::SetCursorPos(ImVec2(cursorPos.x, cursorPos.y));
+                    ImGui::ImageButton((void *)t->ID,
+                                       ImVec2(buttonSize - 10, buttonSize - 10));
+                }
+
             } else if (ends_with(entry.path().string(), ".ogg") ||
                        ends_with(entry.path().string(), ".mp3") ||
                        ends_with(entry.path().string(), ".wav")) {
@@ -950,7 +1001,209 @@ int cpp_play_audio(char *audio_file) {
 #endif
 typedef CppScripting::Script *(*f_create_object)();
 
+void SetupAddComponentGUI() {
+    add_component_guis.push_back(std::pair("Transform", [&] {
+        if (ImGui::Button("Transform", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<Transform>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Mesh Renderer", [&] {
+        if (ImGui::Button("Mesh Renderer", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<MeshRenderer>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Particle Emitter", [&] {
+        if (ImGui::Button("Particle Emitter", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<ParticleEmitter>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Lua Scripts", [&] {
+        if (ImGui::Button("Lua Scripts", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<m_LuaScriptComponent>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("C++ Scripts", [&] {
+        if (ImGui::Button("C++ Scripts", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<CppScriptManager>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("C# Scripts", [&] {
+        if (ImGui::Button("C# Scripts", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<CsharpScriptManager>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Camera Component", [&] {
+        if (ImGui::Button("Camera", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<CameraComponent>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("3D Audio", [&] {
+        if (ImGui::Button("3D Audio", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<Audio3D>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Audio Listener", [&] {
+        if (ImGui::Button("Audio Listener", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<AudioListener>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Point Light", [&] {
+        if (ImGui::Button("Point Light", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<c_PointLight>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Spot Light", [&] {
+        if (ImGui::Button("Spot Light", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<c_SpotLight>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Directional Light", [&] {
+        if (ImGui::Button("Directional Light", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<c_DirectionalLight>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Light 2D", [&] {
+        if (ImGui::Button("2D Light", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<c_Light2D>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Sprite Renderer", [&] {
+        if (ImGui::Button("Sprite Renderer", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<SpriteRenderer>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("3D Text", [&] {
+        if (ImGui::Button("3D Text", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<Text3D>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Sprite Animation", [&] {
+        if (ImGui::Button("Sprite Animation", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<SpriteAnimation>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Spritesheet Renderer", [&] {
+        if (ImGui::Button("Spritesheet Renderer", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<SpritesheetRenderer>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+    ;
+
+    add_component_guis.push_back(std::pair("Spritesheet Animation", [&] {
+        if (ImGui::Button("Spritesheet Animation",
+                          ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<c_SpritesheetAnimation>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Rigidbody 2D", [&] {
+        if (ImGui::Button("Rigidbody 2D", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<Rigidbody2D>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Box Collider 2D", [&] {
+        if (ImGui::Button("Box Collider 2D", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<BoxCollider2D>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Circle Collider 2D", [&] {
+        if (ImGui::Button("Circle Collider 2D", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<CircleCollider2D>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Rigidbody 3D", [&] {
+        if (ImGui::Button("Rigidbody 3D", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<Rigidbody3D>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Fixed Joint 3D", [&] {
+        if (ImGui::Button("Fixed Joint 3D", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<FixedJoint3D>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Box Collider 3D", [&] {
+        if (ImGui::Button("Box Collider 3D", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<BoxCollider3D>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Mesh Collider 3D", [&] {
+        if (ImGui::Button("Mesh Collider 3D", ImVec2(200, 0))) {
+            if (Scene::m_Object->HasComponent<MeshRenderer>()) {
+                Scene::m_Object->AddComponent<MeshCollider3D>();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Bloom", [&] {
+        if (ImGui::Button("Bloom", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<Bloom>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+
+    add_component_guis.push_back(std::pair("Pathfinding AI", [&] {
+        if (ImGui::Button("Path Finding AI", ImVec2(200, 0))) {
+            Scene::m_Object->AddComponent<PathfindingAI>();
+            ImGui::CloseCurrentPopup();
+        }
+    }));
+}
+
+char asciitolower(char in) {
+    if (in <= 'Z' && in >= 'A')
+        return in - ('Z' - 'z');
+    return in;
+}
+
 int main(int argc, char **argv) {
+    SetupAddComponentGUI();
     config.editorCamera.shiftSpeed = 0.4f;
 
     HyperAPI::b2_listener = listener;
@@ -4152,145 +4405,34 @@ int main(int argc, char **argv) {
                         }
                     }
                 }
-
+                ImGui::SetNextWindowSize(ImVec2(230, 450));
                 if (ImGui::BeginPopup("Add Component")) {
-                    if (ImGui::Button("Transform", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<Transform>();
-                        ImGui::CloseCurrentPopup();
-                    }
+                    static char component_search_buffer[100] = "";
+                    ImGui::PushItemWidth(200);
+                    ImGui::InputText("##Search Components", component_search_buffer, 100);
+                    ImGui::Separator();
+                    ImGui::PopItemWidth();
 
-                    if (ImGui::Button("Mesh Renderer", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<MeshRenderer>();
-                        ImGui::CloseCurrentPopup();
-                    }
+                    std::vector<std::pair<std::string, std::function<void()>> *> query_result = {};
 
-                    if (ImGui::Button("Particle Emitter", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<ParticleEmitter>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Lua Scripts", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<m_LuaScriptComponent>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("C++ Scripts", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<CppScriptManager>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("C# Scripts", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<CsharpScriptManager>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Camera", ImVec2(200, 0))) {
-                        // CameraComponent has one argument of type entt::entity
-                        Scene::m_Object->AddComponent<CameraComponent>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("3D Audio", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<Audio3D>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Audio Listener", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<AudioListener>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Point Light", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<c_PointLight>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Spot Light", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<c_SpotLight>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Directional Light", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<c_DirectionalLight>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("2D Light", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<c_Light2D>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Sprite Renderer", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<SpriteRenderer>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("3D Text", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<Text3D>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Sprite Animation", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<SpriteAnimation>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Spritesheet Renderer", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<SpritesheetRenderer>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Spritesheet Animation",
-                                      ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<c_SpritesheetAnimation>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Rigidbody 2D", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<Rigidbody2D>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Box Collider 2D", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<BoxCollider2D>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Circle Collider 2D", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<CircleCollider2D>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Rigidbody 3D", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<Rigidbody3D>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Fixed Joint 3D", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<FixedJoint3D>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Box Collider 3D", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<BoxCollider3D>();
-                        ImGui::CloseCurrentPopup();
-                    }
-
-                    if (ImGui::Button("Mesh Collider 3D", ImVec2(200, 0))) {
-                        if (Scene::m_Object->HasComponent<MeshRenderer>()) {
-                            Scene::m_Object->AddComponent<MeshCollider3D>();
-                            ImGui::CloseCurrentPopup();
+                    if (!strcmp(component_search_buffer, "")) {
+                        for (auto &component : add_component_guis) {
+                            component.second();
                         }
-                    }
+                    } else {
+                        std::string buffer(component_search_buffer);
+                        std::transform(buffer.begin(), buffer.end(), buffer.begin(), asciitolower);
+                        for (auto &component : add_component_guis) {
+                            std::string buffer2(component.first);
+                            std::transform(buffer2.begin(), buffer2.end(), buffer2.begin(), asciitolower);
 
-                    if (ImGui::Button("Bloom", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<Bloom>();
-                        ImGui::CloseCurrentPopup();
-                    }
+                            if (buffer2.find(buffer) != std::string::npos)
+                                query_result.push_back(&component);
+                        }
 
-                    if (ImGui::Button("Path Finding AI", ImVec2(200, 0))) {
-                        Scene::m_Object->AddComponent<PathfindingAI>();
-                        ImGui::CloseCurrentPopup();
+                        for (auto *r : query_result) {
+                            r->second();
+                        }
                     }
 
                     ImGui::EndPopup();
@@ -6759,7 +6901,7 @@ int main() {
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(25, 25));
             if (ImGui::Begin(ICON_FA_LAYER_GROUP " Projects", nullptr, flags)) {
                 if (ImGui::BeginChild("##icon stuff", ImVec2(0, 150))) {
-                    ImGui::Image((void *)logo->tex->ID, ImVec2(150, 150),
+                    ImGui::Image((void *)logo->t->ID, ImVec2(150, 150),
                                  ImVec2(0, 1), ImVec2(1, 0));
                     ImGui::EndChild();
                 }
