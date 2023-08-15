@@ -320,6 +320,7 @@ void DirIter(const std::string &path) {
 
     // select second fa-solid-900 font that is twice big
     ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[2]);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
     for (const auto &entry : folders) {
         std::string path = entry.path().string();
         fs::path relativePath = relative(entry.path(), currentDirectory);
@@ -486,6 +487,7 @@ void DirIter(const std::string &path) {
         ImGui::NextColumn();
     }
     ImGui::PopFont();
+    ImGui::PopStyleVar();
     ImGui::Columns(1);
 
     //    return;
@@ -4836,8 +4838,6 @@ void NewScript::Update() {})";
     Mesh *gridMesh = Plane(Vector4(1, 0, 0, 1)).m_Mesh;
 #endif
 
-    float runTime;
-
     // Transform batch_trans;
     // batch_trans.position = Vector3(0, 0, 0);
     // batch_trans.rotation = Vector3(0, 0, 0);
@@ -5158,7 +5158,8 @@ void NewScript::Update() {})";
             // animator.UpdateAnimation(Timestep::deltaTime);
             runTime += Timestep::deltaTime;
             shader.Bind();
-            shader.SetUniform1f("time", Timestep::deltaTime);
+            shader.SetUniform1f("delta_time", Timestep::deltaTime);
+            shader.SetUniform1f("iTime", runTime);
             shader.SetUniform1i("deferredShading", config.deferredShading);
 
             // std::vector<Shader*> shaders = {&shader};

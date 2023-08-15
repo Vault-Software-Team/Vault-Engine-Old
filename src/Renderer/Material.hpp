@@ -5,6 +5,7 @@
 
 namespace HyperAPI {
     class DLL_API Material {
+
     public:
         std::vector<Texture> textures;
 

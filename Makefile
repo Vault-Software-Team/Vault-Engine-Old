@@ -130,7 +130,7 @@ debugging:
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
 
 one_file:
-	$(GNU_LINUX_COMPILER) -c src/main.cpp src/Components/Colliders3D.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c src/main.cpp src/lib/libs.cpp src/Renderer/Material.cpp $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)

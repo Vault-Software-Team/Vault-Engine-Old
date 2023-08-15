@@ -8,5 +8,5 @@ clear
 # ./bin/build.out /home/koki1019/Desktop/Projects/Polyjam_Game
 # gdb --args ./bin/build.out "/home/koki1019/.vault_projects/NPC"
 # gdb ./bin/game.out
-./bin/build.out
+gdb ./bin/build.out
 # ./bin/build.out /home/koki1019/Desktop/Projects/A_A_JotnarEngine 

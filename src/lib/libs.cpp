@@ -36,6 +36,7 @@ namespace uuid {
 } // namespace uuid
 
 namespace HyperAPI {
+    DLL_API float runTime = 0;
     DLL_API std::string cwd = "";
     DLL_API std::string dirPayloadData = "";
     DLL_API bool isRunning = false;

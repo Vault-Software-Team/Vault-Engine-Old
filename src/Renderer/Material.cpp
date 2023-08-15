@@ -26,6 +26,8 @@ namespace HyperAPI {
     }
 
     void Material::Bind(Shader &shader) {
+        shader.SetUniform1f("iTime", runTime);
+
         // uint32_t diffuse = 0;
         // uint32_t specular = 0;
         // uint32_t normal = 0;

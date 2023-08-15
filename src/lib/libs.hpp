@@ -123,6 +123,7 @@ namespace uuid {
 } // namespace uuid
 
 namespace HyperAPI {
+    DLL_API extern float runTime;
     DLL_API extern std::string cwd;
     DLL_API extern std::string dirPayloadData;
     DLL_API extern bool isRunning;

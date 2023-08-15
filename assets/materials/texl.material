@@ -11,7 +11,7 @@
     "normal": "assets/textures/bricks2_normal.jpg",
     "roughness": 0.0,
     "shininess": 200.0,
-    "specular": "assets/textures/bricks2.jpg",
+    "specular": "assets/textures/canvas.png",
     "texUV": {
         "x": 15.0,
         "y": 15.0

@@ -23,7 +23,8 @@ uniform bool isBatch;
 #define MAX_TRANSFORMS 32
 uniform mat4 transforms[MAX_TRANSFORMS];
 
-uniform float time;
+uniform float delta_time;
+uniform float iTime;
 
 // Shadow Mapping
 uniform mat4 lightProjection;
@@ -557,6 +558,16 @@ uniform uint u_EntityID;
 // Post Processing uniforms
 uniform bool dynamic_bloom;
 uniform float bloom_threshold;
+
+uniform float delta_time;
+uniform float iTime;
+
+vec2 uv = texCoords;
+vec2 iResolution = textureSize(texture_diffuse0, 0);
+#define iChannel0 texture_diffuse0
+#define texture texture2D
+#define fragColor gAlbedoSpec
+#define mainImage main
 
 void main() {
     if(specularTexture == 0) {
