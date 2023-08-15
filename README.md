@@ -52,6 +52,7 @@
 - **Freetype**
 - **luajit**
 - **sndfile**
+- **Main Theme & Themes from [ImThemes](https://github.com/Patitotective/ImThemes)**
 
 # Huge thanks to
 

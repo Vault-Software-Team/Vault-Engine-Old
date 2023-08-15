@@ -3,4 +3,7 @@
 -I./src
 -I./src/vendor/bullet/bullet
 -I./src/vendor/NoesisGUI
+-I./src/vendor/libgit2-glib
+-I/usr/include/glib-2.0
+-I/usr/lib/glib-2.0/include
 -std=c++20

@@ -469,13 +469,13 @@ namespace HyperAPI::Experimental {
                          float resetValue, float columnWidth) {
         ImGui::PushID(label.c_str());
         ImGui::Columns(2);
-        ImGui::SetColumnWidth(0, 100);
+        ImGui::SetColumnWidth(0, 88);
         ImGui::Text(label.c_str());
         ImGui::NextColumn();
 
         ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.5f);
 
         float lineHeight =
             GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;

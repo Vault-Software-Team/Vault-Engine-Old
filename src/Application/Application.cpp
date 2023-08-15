@@ -394,7 +394,6 @@ namespace Hyper {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3,
                                        GL_TEXTURE_2D, gPosition, 0);
-                glCheckError();
 
                 glGenTextures(1, &gNormal);
                 glBindTexture(GL_TEXTURE_2D, gNormal);
@@ -406,7 +405,6 @@ namespace Hyper {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4,
                                        GL_TEXTURE_2D, gNormal, 0);
-                glCheckError();
 
                 glGenTextures(1, &gFragPosLight);
                 glBindTexture(GL_TEXTURE_2D, gFragPosLight);
@@ -418,7 +416,6 @@ namespace Hyper {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5,
                                        GL_TEXTURE_2D, gFragPosLight, 0);
-                glCheckError();
 
                 glDrawBuffers(6, attachments);
 
