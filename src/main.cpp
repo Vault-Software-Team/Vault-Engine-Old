@@ -59,6 +59,7 @@ static bool openConsole = false;
 static char consoleBuffer[1000];
 static bool boundSizingSnap = false;
 static char fileBuffer[1000];
+static char goBuffer[256];
 static std::vector<std::pair<std::string, std::function<void()>>> add_component_guis = {};
 static Vector3 ambient_color = Vector3(1, 1, 1);
 
@@ -293,8 +294,8 @@ std::vector<std::string> file_images = {};
 void DirIter(const std::string &path) {
     // alphabetical sort
     std::vector<fs::directory_entry> entries;
-    if(!strcmp(fileBuffer, "")) {
-        auto iter =  fs::directory_iterator(currentDirectory);
+    if (!strcmp(fileBuffer, "")) {
+        auto iter = fs::directory_iterator(currentDirectory);
         for (auto &p : iter) {
             entries.push_back(p);
         }
@@ -316,9 +317,11 @@ void DirIter(const std::string &path) {
         if (!strcmp(fileBuffer, "")) {
         } else {
             std::string buffer(p.path().string());
+            std::string buffer2(fileBuffer);
             std::transform(buffer.begin(), buffer.end(), buffer.begin(), asciitolower);
+            std::transform(buffer2.begin(), buffer2.end(), buffer2.begin(), asciitolower);
 
-            if (buffer.find(fileBuffer) == std::string::npos) {
+            if (buffer.find(buffer2) == std::string::npos) {
                 continue;
             }
         }
@@ -4077,7 +4080,23 @@ int main(int argc, char **argv) {
                 // ImGui::Columns();
 
                 // ImGui::Columns(3);
+
+                ImGui::PushItemWidth(ImGui::GetWindowSize().x - 15);
+                ImGui::InputText("##GameObjectBuffer", goBuffer, 256);
+                ImGui::PopItemWidth();
+
                 for (int i = 0; i < Scene::m_GameObjects->size(); i++) {
+                    if (strcmp(goBuffer, "")) {
+                        std::string buffer((*Scene::m_GameObjects)[i]->name);
+                        std::string buffer2(goBuffer);
+                        std::transform(buffer.begin(), buffer.end(), buffer.begin(), asciitolower);
+                        std::transform(buffer2.begin(), buffer2.end(), buffer2.begin(), asciitolower);
+
+                        if (buffer.find(buffer2) == std::string::npos) {
+                            continue;
+                        }
+                    }
+
                     if ((*Scene::m_GameObjects)[i]->parentID != "NO_PARENT") {
                         bool parentFound;
                         for (auto &gameObject : *Scene::m_GameObjects) {
