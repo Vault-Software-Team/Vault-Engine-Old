@@ -58,8 +58,15 @@ static bool boundSizing = false;
 static bool openConsole = false;
 static char consoleBuffer[1000];
 static bool boundSizingSnap = false;
+static char fileBuffer[1000];
 static std::vector<std::pair<std::string, std::function<void()>>> add_component_guis = {};
 static Vector3 ambient_color = Vector3(1, 1, 1);
+
+char asciitolower(char in) {
+    if (in <= 'Z' && in >= 'A')
+        return in - ('Z' - 'z');
+    return in;
+}
 
 class DLL_API CollisionListener : public b2ContactListener {
 public:
@@ -285,10 +292,17 @@ auto glslDef = TextEditor::LanguageDefinition::GLSL();
 std::vector<std::string> file_images = {};
 void DirIter(const std::string &path) {
     // alphabetical sort
-    auto iter = fs::directory_iterator(currentDirectory);
     std::vector<fs::directory_entry> entries;
-    for (auto &p : iter) {
-        entries.push_back(p);
+    if(!strcmp(fileBuffer, "")) {
+        auto iter =  fs::directory_iterator(currentDirectory);
+        for (auto &p : iter) {
+            entries.push_back(p);
+        }
+    } else {
+        auto iter = fs::recursive_directory_iterator(currentDirectory);
+        for (auto &p : iter) {
+            entries.push_back(p);
+        }
     }
     std::sort(entries.begin(), entries.end(), SortEntries);
 
@@ -297,6 +311,18 @@ void DirIter(const std::string &path) {
     std::vector<fs::directory_entry> paths;
 
     for (auto &p : entries) {
+        bool toSkip = false;
+
+        if (!strcmp(fileBuffer, "")) {
+        } else {
+            std::string buffer(p.path().string());
+            std::transform(buffer.begin(), buffer.end(), buffer.begin(), asciitolower);
+
+            if (buffer.find(fileBuffer) == std::string::npos) {
+                continue;
+            }
+        }
+
         if (fs::is_directory(p)) {
             folders.push_back(p);
         } else {
@@ -375,6 +401,7 @@ void DirIter(const std::string &path) {
 
             if (item) {
                 currentDirectory /= entry.path().filename();
+                strcpy(fileBuffer, "");
             }
         } else {
             ImVec2 cursorPos = ImGui::GetCursorPos();
@@ -1194,12 +1221,6 @@ void SetupAddComponentGUI() {
             ImGui::CloseCurrentPopup();
         }
     }));
-}
-
-char asciitolower(char in) {
-    if (in <= 'Z' && in >= 'A')
-        return in - ('Z' - 'z');
-    return in;
 }
 
 int main(int argc, char **argv) {
@@ -4642,6 +4663,10 @@ void NewScript::Update() {})";
                 if (ImGui::Button(ICON_FA_PLUS " New File", ImVec2(0, 0))) {
                     ImGui::OpenPopup("New File");
                 }
+                ImGui::SameLine();
+                ImGui::PushItemWidth(80);
+                ImGui::InputText("##FileBuffer", fileBuffer, 1000);
+                ImGui::PopItemWidth();
                 ImGui::SameLine();
                 ImGui::Text(currentDirectory.string().c_str());
 
