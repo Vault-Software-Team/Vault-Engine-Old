@@ -87,7 +87,7 @@ namespace HyperAPI::Experimental {
     }
 
     void CsharpScriptManager::GUI() {
-        if (ImGui::TreeNode("C# Script Manager")) {
+        if (ImGui::CollapsingHeader("C# Script Manager")) {
             ImGui::ListBoxHeader("C# Scripts");
 
             for (auto klass : CsharpScriptEngine::entityClasses) {
@@ -141,8 +141,6 @@ namespace HyperAPI::Experimental {
             if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
                 Scene::m_Registry.remove<CsharpScriptManager>(entity);
             }
-
-            ImGui::TreePop();
         }
     }
 

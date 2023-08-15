@@ -6,7 +6,7 @@
 
 namespace HyperAPI::Experimental {
     void Bloom::GUI() {
-        if (ImGui::TreeNode("Bloom")) {
+        if (ImGui::CollapsingHeader("Bloom")) {
             ImGui::Checkbox("Dynamic Bloom", &dynamic_bloom);
             ImGui::DragFloat("Bloom Threshold", &bloom_threshold, 0.01);
             ImGui::ColorEdit3("Bloom Color", &bloomColor.x);
@@ -15,7 +15,6 @@ namespace HyperAPI::Experimental {
             if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
                 Scene::m_Registry.remove<Bloom>(entity);
             }
-            ImGui::TreePop();
         }
     }
 } // namespace HyperAPI::Experimental

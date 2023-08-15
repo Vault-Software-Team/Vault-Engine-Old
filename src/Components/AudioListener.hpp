@@ -17,14 +17,7 @@ namespace HyperAPI::Experimental {
         std::unique_ptr<SoundDevice> device{new SoundDevice};
         AudioListener() = default;
 
-        void GUI() override {
-            if (ImGui::TreeNode("Audio Listener")) {
-                if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
-                    Scene::m_Registry.remove<AudioListener>(entity);
-                }
-                ImGui::TreePop();
-            }
-        }
+        void GUI() override;
 
         void Update() {
             auto &transform = Scene::m_Registry.get<Transform>(entity);

@@ -7,7 +7,7 @@
 
 namespace HyperAPI::Experimental {
     void CameraComponent::GUI() {
-        if (ImGui::TreeNode("Camera")) {
+        if (ImGui::CollapsingHeader("Camera")) {
             if (camera != nullptr) {
                 // multiple selectable combo boxes for Scene::layers
                 if (ImGui::BeginCombo("Layers", "Select Layers")) {
@@ -71,7 +71,6 @@ namespace HyperAPI::Experimental {
                 // Scene::cameras.end(), camera), Scene::cameras.end());
                 m_GameObject->RemoveComponent<CameraComponent>();
             }
-            ImGui::TreePop();
         }
     }
 

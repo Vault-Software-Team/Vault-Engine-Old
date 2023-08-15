@@ -2,7 +2,7 @@
 #include "ParticleSystem.hpp"
 namespace HyperAPI::Experimental {
     void ParticleEmitter::GUI() {
-        if (ImGui::TreeNode("Particle Emitter")) {
+        if (ImGui::CollapsingHeader("Particle Emitter")) {
             if (sprite != nullptr) {
                 HYPER_LOG("kILL YOURSELF BITCH")
                 ImGui::ImageButton((void *)sprite->tex->ID,
@@ -23,8 +23,6 @@ namespace HyperAPI::Experimental {
                 DeleteComp();
                 Scene::m_Registry.remove<ParticleEmitter>(entity);
             }
-
-            ImGui::TreePop();
         }
     }
 

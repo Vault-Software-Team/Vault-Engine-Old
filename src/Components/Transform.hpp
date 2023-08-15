@@ -15,23 +15,7 @@ namespace HyperAPI::Experimental {
         glm::vec3 up;
         glm::vec3 right;
 
-        void GUI() {
-            ImGui::PushStyleColor(ImGuiCol_Header,
-                                  ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
-            if (ImGui::TreeNode("Transform")) {
-                DrawVec3Control("Position", position);
-                rotation = glm::degrees(rotation);
-                DrawVec3Control("Rotation", rotation);
-                rotation = glm::radians(rotation);
-                // move the scale up by a bit
-                ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(),
-                                           ImGui::GetCursorPosY() - 0.6f));
-                DrawVec3Control("Scale", scale, 1);
-
-                ImGui::TreePop();
-            }
-            ImGui::PopStyleColor();
-        }
+        void GUI();
 
         void Update() {
             transform = glm::translate(glm::mat4(1.0f), position) *

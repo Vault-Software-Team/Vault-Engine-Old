@@ -22,24 +22,7 @@ namespace HyperAPI::Experimental {
 
         CircleCollider2D() = default;
 
-        void GUI() {
-            if (ImGui::TreeNode("Circle Collider 2D")) {
-                DrawVec2Control("Offset", offset);
-                ImGui::DragFloat("Radius", &radius);
-                ImGui::Checkbox("Trigger", &trigger);
-                ImGui::DragFloat("Density", &density, 0.01f);
-                ImGui::DragFloat("Friction", &friction, 0.01f);
-                ImGui::DragFloat("Restitution", &restitution, 0.01f);
-                ImGui::DragFloat("Restitution Threshold", &restitutionThreshold,
-                                 0.01f);
-
-                ImGui::NewLine();
-                if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
-                    Scene::m_Registry.remove<CircleCollider2D>(entity);
-                }
-                ImGui::TreePop();
-            }
-        }
+        void GUI();
 
         void Update() {
             if (fixture != nullptr) {

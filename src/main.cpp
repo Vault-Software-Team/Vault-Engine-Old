@@ -1766,7 +1766,7 @@ int main(int argc, char **argv) {
                             style.Colors[ImGuiCol_ChildBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
                             style.Colors[ImGuiCol_PopupBg] = ImVec4(0.1882352977991104f, 0.1882352977991104f, 0.1882352977991104f, 0.9200000166893005f);
                             style.Colors[ImGuiCol_Border] = ImVec4(0.1882352977991104f, 0.1882352977991104f, 0.1882352977991104f, 0.2899999916553497f);
-                            style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 0.239999994635582f);
+                            style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 1);
                             style.Colors[ImGuiCol_FrameBg] = ImVec4(0.0470588244497776f, 0.0470588244497776f, 0.0470588244497776f, 0.5400000214576721f);
                             style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.1882352977991104f, 0.1882352977991104f, 0.1882352977991104f, 0.5400000214576721f);
                             style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.2000000029802322f, 0.2196078449487686f, 0.2274509817361832f, 1.0f);
@@ -1781,7 +1781,7 @@ int main(int argc, char **argv) {
                             style.Colors[ImGuiCol_CheckMark] = ImVec4(0.3294117748737335f, 0.6666666865348816f, 0.8588235378265381f, 1.0f);
                             style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.3372549116611481f, 0.3372549116611481f, 0.3372549116611481f, 0.5400000214576721f);
                             style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.5568627715110779f, 0.5568627715110779f, 0.5568627715110779f, 0.5400000214576721f);
-                            style.Colors[ImGuiCol_Button] = ImVec4(9.999999974752427e-07f, 9.999899930335232e-07f, 9.999899930335232e-07f, 0.5400000214576721f);
+                            style.Colors[ImGuiCol_Button] = ImVec4(9.999999974752427e-07f, 9.999899930335232e-07f, 9.999899930335232e-07f, 1);
                             style.Colors[ImGuiCol_ButtonHovered] = ImVec4(1.0f, 0.2317596673965454f, 0.2317596673965454f, 0.5400000214576721f);
                             style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.3690987229347229f, 0.1093039140105247f, 0.1093039140105247f, 1.0f);
                             style.Colors[ImGuiCol_Header] = ImVec4(0.0f, 0.0f, 0.0f, 0.5199999809265137f);
@@ -1808,7 +1808,7 @@ int main(int argc, char **argv) {
                             style.Colors[ImGuiCol_TableRowBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
                             style.Colors[ImGuiCol_TableRowBgAlt] = ImVec4(1.0f, 1.0f, 1.0f, 0.05999999865889549f);
                             style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.2000000029802322f, 0.2196078449487686f, 0.2274509817361832f, 1.0f);
-                            style.Colors[ImGuiCol_DragDropTarget] = ImVec4(0.3294117748737335f, 0.6666666865348816f, 0.8588235378265381f, 1.0f);
+                            style.Colors[ImGuiCol_DragDropTarget] = ImVec4(1.0f, 0.1f, 0.1f, 1.0f);
                             style.Colors[ImGuiCol_NavHighlight] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
                             style.Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.0f, 0.0f, 0.0f, 0.699999988079071f);
                             style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(1.0f, 0.0f, 0.0f, 0.2000000029802322f);
@@ -1874,7 +1874,7 @@ int main(int argc, char **argv) {
                             style.PopupBorderSize = 1.0f;
                             style.FramePadding = ImVec2(5.0f, 5.0f);
                             style.FrameRounding = 5.0f;
-                            style.FrameBorderSize = 0.0f;
+                            style.FrameBorderSize = 1.0f;
                             style.ItemSpacing = ImVec2(8.0f, 5.0f);
                             style.ItemInnerSpacing = ImVec2(5.0f, 5.0f);
                             style.CellPadding = ImVec2(5.0f, 5.0f);
@@ -1980,7 +1980,7 @@ int main(int argc, char **argv) {
                             style.PopupBorderSize = 1.0f;
                             style.FramePadding = ImVec2(5.0f, 5.0f);
                             style.FrameRounding = 5.0f;
-                            style.FrameBorderSize = 0.0f;
+                            style.FrameBorderSize = 1.0f;
                             style.ItemSpacing = ImVec2(8.0f, 5.0f);
                             style.ItemInnerSpacing = ImVec2(5.0f, 5.0f);
                             style.CellPadding = ImVec2(5.0f, 5.0f);
@@ -2158,7 +2158,7 @@ int main(int argc, char **argv) {
                             style.PopupBorderSize = 1.0f;
                             style.FramePadding = ImVec2(4.0f, 3.0f);
                             style.FrameRounding = 0.0f;
-                            style.FrameBorderSize = 0.0f;
+                            style.FrameBorderSize = 1.0f;
                             style.ItemSpacing = ImVec2(8.0f, 4.0f);
                             style.ItemInnerSpacing = ImVec2(4.0f, 4.0f);
                             style.CellPadding = ImVec2(4.0f, 2.0f);
@@ -2247,7 +2247,7 @@ int main(int argc, char **argv) {
                             style.PopupBorderSize = 1.0f;
                             style.FramePadding = ImVec2(4.0f, 3.0f);
                             style.FrameRounding = 3.0f;
-                            style.FrameBorderSize = 0.0f;
+                            style.FrameBorderSize = 1.0f;
                             style.ItemSpacing = ImVec2(8.0f, 4.0f);
                             style.ItemInnerSpacing = ImVec2(4.0f, 4.0f);
                             style.CellPadding = ImVec2(4.0f, 2.0f);
@@ -2337,7 +2337,7 @@ int main(int argc, char **argv) {
                             style.PopupBorderSize = 1.0f;
                             style.FramePadding = ImVec2(4.0f, 2.0f);
                             style.FrameRounding = 4.0f;
-                            style.FrameBorderSize = 0.0f;
+                            style.FrameBorderSize = 1.0f;
                             style.ItemSpacing = ImVec2(10.0f, 2.0f);
                             style.ItemInnerSpacing = ImVec2(4.0f, 4.0f);
                             style.CellPadding = ImVec2(4.0f, 2.0f);
@@ -2427,7 +2427,7 @@ int main(int argc, char **argv) {
                             style.PopupBorderSize = 1.0f;
                             style.FramePadding = ImVec2(5.0f, 3.0f);
                             style.FrameRounding = 3.0f;
-                            style.FrameBorderSize = 0.0f;
+                            style.FrameBorderSize = 1.0f;
                             style.ItemSpacing = ImVec2(6.0f, 6.0f);
                             style.ItemInnerSpacing = ImVec2(3.0f, 2.0f);
                             style.CellPadding = ImVec2(3.0f, 3.0f);
@@ -2515,7 +2515,7 @@ int main(int argc, char **argv) {
                         style.PopupBorderSize = 1.0f;
                         style.FramePadding = ImVec2(5.0f, 5.0f);
                         style.FrameRounding = 5.0f;
-                        style.FrameBorderSize = 0.0f;
+                        style.FrameBorderSize = 1.0f;
                         style.ItemSpacing = ImVec2(8.0f, 5.0f);
                         style.ItemInnerSpacing = ImVec2(5.0f, 5.0f);
                         style.CellPadding = ImVec2(5.0f, 5.0f);
@@ -3890,7 +3890,11 @@ int main(int argc, char **argv) {
                     Scene::m_Object->name = Scene::name;
                     Scene::m_Object->layer = Scene::layer;
 
-                    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+                    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 0.9f));
+                    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.0f, 0.0f, 0.0f, 0.3f));
+                    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.2f, 0.2f, 0.2f, 0.24f));
+                    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+
                     if (Scene::m_Object->HasComponent<Transform>()) {
                         auto &comp = Scene::m_Object->GetComponent<Transform>();
                         if (comp.hasGUI)
@@ -4133,7 +4137,8 @@ int main(int argc, char **argv) {
                         if (comp.hasGUI)
                             comp.GUI();
                     }
-                    ImGui::PopStyleColor();
+                    ImGui::PopStyleColor(3);
+                    ImGui::PopStyleVar();
 
                     ImGui::Separator();
 
@@ -5216,7 +5221,6 @@ void NewScript::Update() {})";
                 style.PopupBorderSize = 1.0f;
                 style.FramePadding = ImVec2(5.0f, 2.0f);
                 style.FrameRounding = 3.0f;
-                style.FrameBorderSize = 1.0f;
                 style.ItemSpacing = ImVec2(6.0f, 6.0f);
                 style.ItemInnerSpacing = ImVec2(6.0f, 6.0f);
                 style.CellPadding = ImVec2(6.0f, 6.0f);
@@ -5239,7 +5243,7 @@ void NewScript::Update() {})";
                 style.Colors[ImGuiCol_ChildBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
                 style.Colors[ImGuiCol_PopupBg] = ImVec4(0.1882352977991104f, 0.1882352977991104f, 0.1882352977991104f, 0.9200000166893005f);
                 style.Colors[ImGuiCol_Border] = ImVec4(0.1882352977991104f, 0.1882352977991104f, 0.1882352977991104f, 0.2899999916553497f);
-                style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 0.239999994635582f);
+                style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 1);
                 style.Colors[ImGuiCol_FrameBg] = ImVec4(0.0470588244497776f, 0.0470588244497776f, 0.0470588244497776f, 0.5400000214576721f);
                 style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.1882352977991104f, 0.1882352977991104f, 0.1882352977991104f, 0.5400000214576721f);
                 style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.2000000029802322f, 0.2196078449487686f, 0.2274509817361832f, 1.0f);
@@ -5254,7 +5258,7 @@ void NewScript::Update() {})";
                 style.Colors[ImGuiCol_CheckMark] = ImVec4(0.3294117748737335f, 0.6666666865348816f, 0.8588235378265381f, 1.0f);
                 style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.3372549116611481f, 0.3372549116611481f, 0.3372549116611481f, 0.5400000214576721f);
                 style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.5568627715110779f, 0.5568627715110779f, 0.5568627715110779f, 0.5400000214576721f);
-                style.Colors[ImGuiCol_Button] = ImVec4(9.999999974752427e-07f, 9.999899930335232e-07f, 9.999899930335232e-07f, 0.5400000214576721f);
+                style.Colors[ImGuiCol_Button] = ImVec4(9.999999974752427e-07f, 9.999899930335232e-07f, 9.999899930335232e-07f, 1);
                 style.Colors[ImGuiCol_ButtonHovered] = ImVec4(1.0f, 0.2317596673965454f, 0.2317596673965454f, 0.5400000214576721f);
                 style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.3690987229347229f, 0.1093039140105247f, 0.1093039140105247f, 1.0f);
                 style.Colors[ImGuiCol_Header] = ImVec4(0.0f, 0.0f, 0.0f, 0.5199999809265137f);
@@ -5281,7 +5285,7 @@ void NewScript::Update() {})";
                 style.Colors[ImGuiCol_TableRowBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
                 style.Colors[ImGuiCol_TableRowBgAlt] = ImVec4(1.0f, 1.0f, 1.0f, 0.05999999865889549f);
                 style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.2000000029802322f, 0.2196078449487686f, 0.2274509817361832f, 1.0f);
-                style.Colors[ImGuiCol_DragDropTarget] = ImVec4(0.3294117748737335f, 0.6666666865348816f, 0.8588235378265381f, 1.0f);
+                style.Colors[ImGuiCol_DragDropTarget] = ImVec4(1.0f, 0.1f, 0.1f, 1.0f);
                 style.Colors[ImGuiCol_NavHighlight] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
                 style.Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.0f, 0.0f, 0.0f, 0.699999988079071f);
                 style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(1.0f, 0.0f, 0.0f, 0.2000000029802322f);
@@ -5301,7 +5305,7 @@ void NewScript::Update() {})";
                 style.PopupBorderSize = 1.0f;
                 style.FramePadding = ImVec2(5.0f, 5.0f);
                 style.FrameRounding = 5.0f;
-                style.FrameBorderSize = 0.0f;
+                style.FrameBorderSize = 1.0f;
                 style.ItemSpacing = ImVec2(8.0f, 5.0f);
                 style.ItemInnerSpacing = ImVec2(5.0f, 5.0f);
                 style.CellPadding = ImVec2(5.0f, 5.0f);

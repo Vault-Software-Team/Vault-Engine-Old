@@ -2,6 +2,21 @@
 #include "Rigidbody3D.hpp"
 
 namespace HyperAPI::Experimental {
+    void Rigidbody3D::GUI() {
+        if (ImGui::CollapsingHeader("Rigidbody 3D")) {
+            ImGui::DragFloat("Mass", &mass, 0.01f);
+            ImGui::DragFloat("Friction", &friction, 0.01f);
+            ImGui::DragFloat("Restitution", &restitution, 0.01f);
+            ImGui::Checkbox("Trigger", &trigger);
+            ImGui::Checkbox("Fixed Rotation", &fixedRotation);
+
+            ImGui::NewLine();
+            if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
+                Scene::m_Registry.remove<Rigidbody3D>(entity);
+            }
+        }
+    }
+
     void Rigidbody3D::CreateBody(btCollisionShape *shape) {
         ref = shape;
         bt_transform = new btTransform();

@@ -78,8 +78,7 @@ namespace HyperAPI::Experimental {
         c_Light2D() = default;
 
         void GUI() {
-
-            if (ImGui::TreeNode("2D Light")) {
+            if (ImGui::CollapsingHeader("2D Light")) {
                 ImGui::ColorEdit4("Color", &color.x, 0);
                 ImGui::DragFloat("Range", &range, 0.01f);
 
@@ -92,8 +91,6 @@ namespace HyperAPI::Experimental {
                     delete light;
                     Scene::m_Registry.remove<c_Light2D>(entity);
                 }
-
-                ImGui::TreePop();
             }
         }
 
@@ -126,7 +123,7 @@ namespace HyperAPI::Experimental {
         }
 
         void GUI() {
-            if (ImGui::TreeNode("Spot Light")) {
+            if (ImGui::CollapsingHeader("Spot Light")) {
                 ImGui::ColorEdit4("Color", &color.x, 0);
 
                 ImGui::NewLine();
@@ -138,7 +135,6 @@ namespace HyperAPI::Experimental {
                     delete light;
                     Scene::m_Registry.remove<c_SpotLight>(entity);
                 }
-                ImGui::TreePop();
             }
         }
 
@@ -166,7 +162,7 @@ namespace HyperAPI::Experimental {
             auto &transform = Scene::m_Registry.get<Transform>(entity);
             lightPos = transform.position;
 
-            if (ImGui::TreeNode("Directional Light")) {
+            if (ImGui::CollapsingHeader("Directional Light")) {
                 ImGui::ColorEdit4("Color", &color.x, 0);
                 ImGui::DragFloat("Intensity", &intensity, 0.01f);
 
@@ -179,7 +175,6 @@ namespace HyperAPI::Experimental {
                     delete light;
                     Scene::m_Registry.remove<c_DirectionalLight>(entity);
                 }
-                ImGui::TreePop();
             }
 
             light->lightPos = lightPos;

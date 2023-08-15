@@ -2,7 +2,7 @@
 
 namespace HyperAPI::Experimental {
     void MeshRenderer::GUI() {
-        if (ImGui::TreeNode("Mesh Renderer")) {
+        if (ImGui::CollapsingHeader("Mesh Renderer")) {
             if (!m_Model) {
                 if (ImGui::TreeNode("Mesh")) {
                     ImVec2 windowSize = ImGui::GetWindowSize();
@@ -314,8 +314,6 @@ namespace HyperAPI::Experimental {
                 DeleteComp();
                 Scene::m_Registry.remove<MeshRenderer>(entity);
             }
-
-            ImGui::TreePop();
         }
     } // namespace HyperAPI::Experimental
 
