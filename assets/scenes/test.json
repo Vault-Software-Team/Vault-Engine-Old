@@ -1,193 +1,43 @@
 [
 	{
-		"ID": "80350ff2-1ca1-4924-966b-bd01d8c4752c",
+		"ID": "2b25c890-f3fb-4d11-a9ae-dba97b3a8f06",
 		"active": true,
 		"components": [
 			{
-				"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"position": { "x": -2.2300000190734863, "y": 15.859999656677246, "z": -4.082784175872803 },
 				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
-				"scale": { "x": 150.0, "y": 150.0, "z": 150.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
 				"type": "Transform"
 			},
 			{
-				"material": "assets/materials/texl.material",
-				"mesh": { "custom": false, "mesh": "Plane", "mesh_index": -1 },
-				"type": "MeshRenderer"
-			},
-			{ "fixedRotation": false, "friction": 0.5, "mass": 0.0, "restitution": 1.0, "trigger": false, "type": "Rigidbody3D" },
-			{ "size": { "x": 150.0, "y": 0.05000000074505806, "z": 150.0 }, "type": "BoxCollider3D" }
+				"color": { "b": 1.0, "g": 1.0, "r": 1.0 },
+				"farPlane": 100.0,
+				"intensity": 1.0,
+				"renderShadows": true,
+				"type": "PointLight"
+			}
 		],
 		"layer": "Default",
-		"name": "Floor",
+		"name": "Light",
 		"parentID": "NO_PARENT",
 		"schedule": false,
 		"setted_schedule": false,
 		"tag": "Untagged"
 	},
 	{
-		"ID": "d8d5a27c-6445-478d-a9ed-696642048ef7",
+		"ID": "dad6512e-b8e0-4001-a917-f6706c6ceda4",
 		"active": true,
 		"components": [
 			{
-				"position": { "x": -11.113389015197754, "y": 7.384361743927002, "z": 12.590398788452148 },
-				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
-				"scale": { "x": 3.0, "y": 3.0, "z": 3.0 },
-				"type": "Transform"
-			},
-			{
-				"material": "assets/materials/plastic.material",
-				"mesh": { "custom": false, "mesh": "Sphere", "mesh_index": -1 },
-				"type": "MeshRenderer"
-			},
-			{ "fixedRotation": false, "friction": 0.5, "mass": 1.0, "restitution": 1.0, "trigger": false, "type": "Rigidbody3D" },
-			{ "size": { "x": 3.0, "y": 3.0, "z": 3.0 }, "type": "MeshCollider3D" }
-		],
-		"layer": "Default",
-		"name": "Sphere",
-		"parentID": "NO_PARENT",
-		"schedule": false,
-		"setted_schedule": false,
-		"tag": "Untagged"
-	},
-	{
-		"ID": "465830f7-420e-4894-a476-275812b0a565",
-		"active": true,
-		"components": [
-			{
-				"position": { "x": 11.578720092773438, "y": 7.384360313415527, "z": -10.111600875854492 },
-				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
-				"scale": { "x": 4.590000152587891, "y": 4.590000152587891, "z": 4.590000152587891 },
-				"type": "Transform"
-			},
-			{
-				"material": "assets/materials/green_plastic.material",
-				"mesh": { "custom": false, "mesh": "Cube", "mesh_index": -1 },
-				"type": "MeshRenderer"
-			},
-			{ "fixedRotation": false, "friction": 0.5, "mass": 1.0, "restitution": 0.0, "trigger": false, "type": "Rigidbody3D" },
-			{ "size": { "x": 4.590000152587891, "y": 4.590000152587891, "z": 4.590000152587891 }, "type": "BoxCollider3D" }
-		],
-		"layer": "Default",
-		"name": "Cube",
-		"parentID": "NO_PARENT",
-		"schedule": false,
-		"setted_schedule": false,
-		"tag": "Untagged"
-	},
-	{
-		"ID": "cfed996c-78ea-48ae-9f17-0e1c5f58291f",
-		"active": true,
-		"components": [
-			{
-				"position": { "x": 21.157135009765625, "y": 7.765039443969727, "z": 14.444604873657227 },
-				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
-				"scale": { "x": 3.0, "y": 3.0, "z": 3.0 },
-				"type": "Transform"
-			},
-			{
-				"material": "assets/materials/plastic.material",
-				"mesh": { "custom": false, "mesh": "Cone", "mesh_index": -1 },
-				"type": "MeshRenderer"
-			},
-			{ "fixedRotation": false, "friction": 0.5, "mass": 1.0, "restitution": 2.0, "trigger": false, "type": "Rigidbody3D" },
-			{ "size": { "x": 3.0, "y": 3.0, "z": 3.0 }, "type": "MeshCollider3D" }
-		],
-		"layer": "Default",
-		"name": "Cone",
-		"parentID": "NO_PARENT",
-		"schedule": false,
-		"setted_schedule": false,
-		"tag": "Untagged"
-	},
-	{
-		"ID": "b1a1af1c-5ab9-4d4c-8a70-8019d3cf7670",
-		"active": true,
-		"components": [
-			{
-				"position": { "x": 7.924196720123291, "y": 7.526780605316162, "z": 8.463277816772461 },
-				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
-				"scale": { "x": 3.0, "y": 3.0, "z": 3.0 },
-				"type": "Transform"
-			},
-			{
-				"material": "assets/materials/plastic.material",
-				"mesh": { "custom": false, "mesh": "Capsule", "mesh_index": -1 },
-				"type": "MeshRenderer"
-			},
-			{ "fixedRotation": false, "friction": 0.5, "mass": 50.0, "restitution": 1.0, "trigger": false, "type": "Rigidbody3D" },
-			{ "size": { "x": 3.0, "y": 3.0, "z": 3.0 }, "type": "MeshCollider3D" }
-		],
-		"layer": "Default",
-		"name": "Capsule",
-		"parentID": "NO_PARENT",
-		"schedule": false,
-		"setted_schedule": false,
-		"tag": "Untagged"
-	},
-	{
-		"ID": "2d37a140-86a1-492f-8927-26f588301750",
-		"active": true,
-		"components": [
-			{
-				"position": { "x": -0.5852293968200684, "y": 7.765323638916016, "z": 15.634143829345703 },
-				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
-				"scale": { "x": 3.0, "y": 3.0, "z": 3.0 },
-				"type": "Transform"
-			},
-			{
-				"material": "assets/materials/plastic.material",
-				"mesh": { "custom": false, "mesh": "Torus", "mesh_index": -1 },
-				"type": "MeshRenderer"
-			},
-			{ "fixedRotation": false, "friction": 10.0, "mass": 1.0, "restitution": 1.0, "trigger": false, "type": "Rigidbody3D" },
-			{ "size": { "x": 3.0, "y": 3.0, "z": 3.0 }, "type": "MeshCollider3D" }
-		],
-		"layer": "Default",
-		"name": "Torus",
-		"parentID": "NO_PARENT",
-		"schedule": false,
-		"setted_schedule": false,
-		"tag": "Untagged"
-	},
-	{
-		"ID": "21d9be62-04f5-4f13-bfe7-d7d9f93f2f53",
-		"active": true,
-		"components": [
-			{
-				"position": { "x": -11.627028465270996, "y": 7.765285015106201, "z": 1.3980762958526611 },
-				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
-				"scale": { "x": 3.0, "y": 3.0, "z": 3.0 },
-				"type": "Transform"
-			},
-			{
-				"material": "assets/materials/plastic.material",
-				"mesh": { "custom": false, "mesh": "Cylinder", "mesh_index": -1 },
-				"type": "MeshRenderer"
-			},
-			{ "fixedRotation": false, "friction": 0.5, "mass": 1.0, "restitution": 1.0, "trigger": false, "type": "Rigidbody3D" },
-			{ "size": { "x": 3.0, "y": 3.0, "z": 3.0 }, "type": "MeshCollider3D" }
-		],
-		"layer": "Default",
-		"name": "Cylinder",
-		"parentID": "NO_PARENT",
-		"schedule": false,
-		"setted_schedule": false,
-		"tag": "Untagged"
-	},
-	{
-		"ID": "ecad83de-00c9-4e46-a251-d92c3b90a4eb",
-		"active": true,
-		"components": [
-			{
-				"position": { "x": 0.0, "y": 17.200000762939453, "z": -53.599998474121094 },
-				"rotation": { "x": 0.0, "y": -0.518362820148468, "z": 2.5534167289733887 },
+				"position": { "x": -3.799999952316284, "y": 5.699999809265137, "z": -9.199999809265137 },
+				"rotation": { "x": 0.0, "y": -0.001745329238474369, "z": 0.01745329238474369 },
 				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
 				"type": "Transform"
 			},
 			{
 				"depthCamera": false,
-				"far": 1000.0,
-				"fov": 44.290000915527344,
+				"far": 100.0,
+				"fov": 53.58000183105469,
 				"layers": ["Default"],
 				"mainCamera": true,
 				"mode2D": false,
@@ -203,20 +53,230 @@
 		"tag": "Untagged"
 	},
 	{
-		"ID": "70782dbc-c866-4488-8e03-d99142db0e3c",
+		"ID": "5727b8a4-dea5-4c77-9fb7-c9269f4330ea",
 		"active": true,
 		"components": [
 			{
-				"position": { "x": -35.00657272338867, "y": 42.216041564941406, "z": -32.993133544921875 },
+				"position": { "x": 0.0, "y": 25.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": -1.0 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{
+				"depthCamera": true,
+				"far": 100.0,
+				"fov": 45.0,
+				"layers": ["UI"],
+				"mainCamera": false,
+				"mode2D": false,
+				"near": 0.10000000149011612,
+				"type": "CameraComponent"
+			}
+		],
+		"layer": "Default",
+		"name": "UI Camera",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "7cd714b5-e2fb-4e5f-9247-805a9e9b8c75",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": -3.8549790382385254, "y": 23.106311798095703, "z": -5.400000095367432 },
 				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
 				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
 				"type": "Transform"
 			},
-			{ "color": { "b": 1.0, "g": 1.0, "r": 1.0 }, "intensity": 1.0, "type": "DirectionalLight" },
-			{ "scripts": "Namethiswhateveruwant.NameThisWhatevUWant", "type": "CsharpScriptManager" }
+			{
+				"color": { "b": 1.0, "g": 1.0, "r": 1.0 },
+				"font": "/home/koki1019/Desktop/Main Projects/Vault_Engine/assets/fonts/CascadiaCodePLItalic.ttf",
+				"scale": 0.009999999776482582,
+				"text": "SCORE:",
+				"type": "Text3D",
+				"y_offset": 0.019999999552965164
+			},
+			{ "scripts": "UI.ScoreText", "type": "CsharpScriptManager" },
+			{
+				"bloomColor": { "x": 1.0, "y": 0.3178807497024536, "z": 0.0 },
+				"bloom_threshold": 0.0,
+				"dynamic_bloom": false,
+				"type": "Bloom"
+			}
+		],
+		"layer": "UI",
+		"name": "UI Text",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "fc3ef32f-1aeb-4c44-8190-1c19e8f69d05",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": -5.03000020980835, "y": 10.15999984741211, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 2.690000057220459, "y": 9.09000015258789, "z": 2.690000057220459 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets/materials/obstacle.material",
+				"mesh": { "custom": false, "mesh": "Cylinder", "mesh_index": -1 },
+				"type": "MeshRenderer"
+			},
+			{ "scripts": "Moving.Move", "type": "CsharpScriptManager" },
+			{
+				"bloomColor": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"bloom_threshold": 0.5699999928474426,
+				"dynamic_bloom": true,
+				"type": "Bloom"
+			}
 		],
 		"layer": "Default",
-		"name": "GameObject",
+		"name": "Top",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "850c8c1a-1fcd-4cb5-9318-aa6f89d2a30b",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": -5.0311126708984375, "y": -0.8199999928474426, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 2.690000057220459, "y": 8.789999961853027, "z": 2.690000057220459 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets/materials/obstacle.material",
+				"mesh": { "custom": false, "mesh": "Cylinder", "mesh_index": -1 },
+				"type": "MeshRenderer"
+			},
+			{ "scripts": "Moving.Move", "type": "CsharpScriptManager" },
+			{
+				"bloomColor": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"bloom_threshold": 0.5699999928474426,
+				"dynamic_bloom": true,
+				"type": "Bloom"
+			}
+		],
+		"layer": "Default",
+		"name": "Bottom",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "16a02f28-ce06-48dd-af40-af3574686124",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 167.4187469482422, "y": 1.0, "z": 49.62623596191406 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets/materials/bricks_floor.material",
+				"mesh": { "custom": false, "mesh": "Plane", "mesh_index": -1 },
+				"type": "MeshRenderer"
+			},
+			{ "fixedRotation": false, "friction": 0.5, "mass": 0.0, "restitution": 0.0, "trigger": false, "type": "Rigidbody3D" },
+			{ "size": { "x": 167.4199981689453, "y": 0.10000000149011612, "z": 49.630001068115234 }, "type": "BoxCollider3D" }
+		],
+		"layer": "Default",
+		"name": "Floor",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "fec724a2-104b-45d5-a252-ad71f5d5a669",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 4.837352752685547, "z": 0.0 },
+				"rotation": { "x": 0.0, "y": 0.0, "z": 1.5707963705062866 },
+				"scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets/materials/player.material",
+				"mesh": { "custom": false, "mesh": "Cone", "mesh_index": -1 },
+				"type": "MeshRenderer"
+			},
+			{ "scripts": "PlayerScripts.Player", "type": "CsharpScriptManager" },
+			{ "fixedRotation": false, "friction": 0.5, "mass": 0.0, "restitution": 0.0, "trigger": false, "type": "Rigidbody3D" },
+			{ "size": { "x": 1.0, "y": 1.0, "z": 1.0 }, "type": "MeshCollider3D" },
+			{
+				"bloomColor": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"bloom_threshold": 0.7699999809265137,
+				"dynamic_bloom": true,
+				"type": "Bloom"
+			}
+		],
+		"layer": "Default",
+		"name": "Player",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "f757a2eb-12ee-4a21-a6c5-49f4c863d23b",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": 0.0, "y": 12.262540817260742, "z": 11.511608123779297 },
+				"rotation": { "x": -1.5707963705062866, "y": 0.0, "z": 0.0 },
+				"scale": { "x": 167.4187469482422, "y": 1.0, "z": 49.62623596191406 },
+				"type": "Transform"
+			},
+			{
+				"material": "assets/materials/bricks.material",
+				"mesh": { "custom": false, "mesh": "Plane", "mesh_index": -1 },
+				"type": "MeshRenderer"
+			},
+			{
+				"bloomColor": { "x": 0.0, "y": 0.0, "z": 0.0 },
+				"bloom_threshold": 0.46000000834465027,
+				"dynamic_bloom": true,
+				"type": "Bloom"
+			}
+		],
+		"layer": "Default",
+		"name": "Floor",
+		"parentID": "NO_PARENT",
+		"schedule": false,
+		"setted_schedule": false,
+		"tag": "Untagged"
+	},
+	{
+		"ID": "c67f29da-733a-44da-b456-980846e1455c",
+		"active": true,
+		"components": [
+			{
+				"position": { "x": -3.471101760864258, "y": 5.369426250457764, "z": 10.745166778564453 },
+				"rotation": { "x": -3.1415927410125732, "y": -0.07951810210943222, "z": 3.1415927410125732 },
+				"scale": { "x": 36.16050720214844, "y": 19.30797004699707, "z": 19.307968139648438 },
+				"type": "Transform"
+			},
+			{
+				"color": { "a": 1.0, "b": 1.0, "g": 1.0, "r": 1.0 },
+				"sprite": "assets/textures/logo_github.png",
+				"type": "SpriteRenderer"
+			}
+		],
+		"layer": "Default",
+		"name": "Banner",
 		"parentID": "NO_PARENT",
 		"schedule": false,
 		"setted_schedule": false,

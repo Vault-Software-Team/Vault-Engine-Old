@@ -1,0 +1,19 @@
+{
+    "baseColor": {
+        "a": 1.0,
+        "b": 1.0,
+        "g": 1.0,
+        "r": 1.0
+    },
+    "diffuse": "assets/textures/bricks2.jpg",
+    "height": "nullptr",
+    "metallic": 0.0,
+    "normal": "assets/textures/bricks2_normal.jpg",
+    "roughness": 0.0,
+    "shininess": 25.0,
+    "specular": "assets/textures/bricks2.jpg",
+    "texUV": {
+        "x": 15.0,
+        "y": 5.0
+    }
+}

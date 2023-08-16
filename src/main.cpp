@@ -949,12 +949,16 @@ void m_HandleCollisionCallbacks(GameObject *gameObjectA, GameObject *gameObjectB
     }
 
     if (gameObjectA->HasComponent<CsharpScriptManager>()) {
+        std::cout << gameObjectA->name << std::endl;
         auto &scriptManager = gameObjectA->GetComponent<CsharpScriptManager>();
 
         for (auto klass : scriptManager.selectedScripts) {
+            if (klass.second == "")
+                continue;
             MonoObject *exception = nullptr;
             MonoScriptClass *behaviour =
-                CsharpScriptEngine::instances[klass.first];
+                scriptManager.behaviours[klass.first];
+
             MonoMethod *method = behaviour->GetMethod("OnCollisionEnter3D", 1);
             if (!method)
                 continue;
@@ -968,9 +972,11 @@ void m_HandleCollisionCallbacks(GameObject *gameObjectA, GameObject *gameObjectB
         auto &scriptManager = gameObjectB->GetComponent<CsharpScriptManager>();
 
         for (auto klass : scriptManager.selectedScripts) {
+            if (klass.second == "")
+                continue;
             MonoObject *exception = nullptr;
             MonoScriptClass *behaviour =
-                CsharpScriptEngine::instances[klass.first];
+                scriptManager.behaviours[klass.first];
             MonoMethod *method = behaviour->GetMethod("OnCollisionEnter3D", 1);
             if (!method)
                 continue;
@@ -1226,7 +1232,11 @@ void SetupAddComponentGUI() {
     }));
 }
 
+using v8::HandleScope;
+
 int main(int argc, char **argv) {
+    JSEngine js_engine(argv);
+
     SetupAddComponentGUI();
     config.editorCamera.shiftSpeed = 0.4f;
 
@@ -4185,11 +4195,6 @@ int main(int argc, char **argv) {
                     Scene::m_Object->name = Scene::name;
                     Scene::m_Object->layer = Scene::layer;
 
-                    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 0.9f));
-                    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.0f, 0.0f, 0.0f, 0.3f));
-                    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.2f, 0.2f, 0.2f, 0.24f));
-                    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
-
                     if (Scene::m_Object->HasComponent<Transform>()) {
                         auto &comp = Scene::m_Object->GetComponent<Transform>();
                         if (comp.hasGUI)
@@ -4432,8 +4437,6 @@ int main(int argc, char **argv) {
                         if (comp.hasGUI)
                             comp.GUI();
                     }
-                    ImGui::PopStyleColor(3);
-                    ImGui::PopStyleVar();
 
                     ImGui::Separator();
 
@@ -4941,6 +4944,7 @@ void NewScript::Update() {})";
                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollWithMouse |
                 ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground;
             ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.09803921729326248f, 0.09803921729326248f, 0.09803921729326248f, 0.5f));
             if (ImGui::Begin("StatusBar", nullptr, flags)) {
                 int errors = 0, warnings = 0, logs = 0;
 
@@ -4971,6 +4975,7 @@ void NewScript::Update() {})";
                 ImGui::End();
             }
             ImGui::PopStyleVar();
+            ImGui::PopStyleColor();
             // End of ImGui
         };
 #else
@@ -5070,6 +5075,23 @@ void NewScript::Update() {})";
 
     app.Run(
         [&](uint32_t &shadowMapTex, Shader &framebufferShader) {
+            for (auto *gameObject : *Scene::m_GameObjects) {
+                if (gameObject->HasComponent<Transform>()) {
+                    auto &comp = gameObject->GetComponent<Transform>();
+                    comp.Update();
+                    if (gameObject->HasComponent<Rigidbody3D>()) {
+                        auto &rigidbody =
+                            gameObject->GetComponent<Rigidbody3D>();
+                        if (rigidbody.body != nullptr) {
+                            btRigidBody *body = (btRigidBody *)rigidbody.body;
+                            body->getWorldTransform().setOrigin(
+                                btVector3(comp.position.x, comp.position.y,
+                                          comp.position.z));
+                        }
+                    }
+                }
+            }
+
             framebufferShader.Bind();
             framebufferShader.SetUniform1i("deferredShading", config.deferredShading);
             framebufferShader.SetUniform1f("ambient", config.ambientLight);
@@ -5685,6 +5707,7 @@ void NewScript::Update() {})";
                     rigidbody.transform =
                         &Scene::m_Registry.get<Transform>(e);
                     rigidbody.Update();
+                    rigidbody.transform->Update();
                 }
             }
 
@@ -5709,16 +5732,24 @@ void NewScript::Update() {})";
 
                 if (!gameObject->enabled)
                     continue;
-                if (gameObject->prefab)
-                    continue;
-
                 if (!gameObject)
                     return;
 
                 gameObject->Update();
 
                 if (gameObject->HasComponent<Transform>()) {
-                    gameObject->GetComponent<Transform>().Update();
+                    auto &comp = gameObject->GetComponent<Transform>();
+                    comp.Update();
+                    if (gameObject->HasComponent<Rigidbody3D>()) {
+                        auto &rigidbody =
+                            gameObject->GetComponent<Rigidbody3D>();
+                        if (rigidbody.body != nullptr) {
+                            btRigidBody *body = (btRigidBody *)rigidbody.body;
+                            body->getWorldTransform().setOrigin(
+                                btVector3(comp.position.x, comp.position.y,
+                                          comp.position.z));
+                        }
+                    }
                 }
 
                 // if (gameObject->HasComponent<m_LuaScriptComponent>()) {
@@ -5767,33 +5798,27 @@ void NewScript::Update() {})";
                 if (gameObject->HasComponent<Audio3D>()) {
                     gameObject->GetComponent<Audio3D>().Update();
                 }
-            }
 
-            auto csharp_view = Scene::m_Registry.view<CsharpScriptManager>();
-            auto lua_view = Scene::m_Registry.view<m_LuaScriptComponent>();
-            auto cpp_view = Scene::m_Registry.view<CppScriptManager>();
+                if (gameObject->HasComponent<m_LuaScriptComponent>()) {
+                    auto &script = gameObject->GetComponent<m_LuaScriptComponent>();
+                    if (HyperAPI::isRunning) {
+                        script.Update();
+                    }
+                }
 
-            for (auto e : lua_view) {
-                auto &script =
-                    Scene::m_Registry.get<m_LuaScriptComponent>(e);
-                if (HyperAPI::isRunning) {
-                    script.Update();
+                if (gameObject->HasComponent<CppScriptManager>()) {
+                    auto &script = gameObject->GetComponent<CppScriptManager>();
+                    if (HyperAPI::isRunning) {
+                        script.Update();
+                    }
+                }
+                if (gameObject->HasComponent<CsharpScriptManager>()) {
+                    auto &script = gameObject->GetComponent<CsharpScriptManager>();
+                    if (HyperAPI::isRunning) {
+                        script.Update();
+                    }
                 }
             }
-            for (auto e : cpp_view) {
-                auto &script = Scene::m_Registry.get<CppScriptManager>(e);
-                if (HyperAPI::isRunning) {
-                    script.Update();
-                }
-            }
-            for (auto e : csharp_view) {
-                auto &script =
-                    Scene::m_Registry.get<CsharpScriptManager>(e);
-                if (HyperAPI::isRunning) {
-                    script.Update();
-                }
-            }
-
             // Draw calls
             glEnable(GL_CULL_FACE);
             glCullFace(GL_BACK);

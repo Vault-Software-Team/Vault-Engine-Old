@@ -50,6 +50,7 @@
 #include "../Renderer/BulletPhysicsWorld.hpp"
 #include "../Renderer/Camera.hpp"
 #include "../Scripting/CXX/CppScripting.hpp"
+#include "../Scripting/JS/JSEngine.hpp"
 #include "../Renderer/DecomposeTransform.hpp"
 #include "../Renderer/Log.hpp"
 #include "../Renderer/Material.hpp"

@@ -12,6 +12,9 @@ namespace HyperAPI::Experimental {
         if (Scene::stop_scripts)
             return;
         for (auto klass : selectedScripts) {
+            if (klass.second == "")
+                continue;
+
             MonoObject *exception = nullptr;
             MonoScriptClass *behaviour = nullptr;
             if (behaviours.find(klass.first) == behaviours.end()) {
@@ -19,11 +22,20 @@ namespace HyperAPI::Experimental {
             } else {
                 behaviour = behaviours[klass.first];
             }
+            if (!behaviour) {
+                Start();
+            }
+            if (!behaviour)
+                continue;
+
+            typedef void (*OnUpdateType)(MonoObject *, MonoObject **);
             MonoMethod *onUpdate = behaviour->GetMethod("OnUpdate", 0);
+            OnUpdateType func_onUpdate = (OnUpdateType)mono_method_get_unmanaged_thunk(onUpdate);
+            func_onUpdate(behaviour->f_GetObject(), &exception);
 
-            void *params[0] = {};
+            // void *params[0] = {};
 
-            mono_runtime_invoke(onUpdate, behaviour->f_GetObject(), params, &exception);
+            // mono_runtime_invoke(onUpdate, behaviour->f_GetObjectGC(), params, &exception);
             if (exception) {
                 MonoObject *exc = NULL;
                 MonoString *str = mono_object_to_string(exception, &exc);
@@ -43,6 +55,8 @@ namespace HyperAPI::Experimental {
 
     void CsharpScriptManager::Start() {
         for (auto klass : selectedScripts) {
+            if (klass.second == "")
+                continue;
             MonoObject *exception = nullptr;
             std::istringstream iss(klass.first);
             std::vector<std::string> tokens;
@@ -72,7 +86,7 @@ namespace HyperAPI::Experimental {
             //     std::endl;
             // }
 
-            mono_runtime_invoke(onStart, behaviour->f_GetObject(), params, &exception);
+            mono_runtime_invoke(onStart, behaviour->f_GetObjectGC(), params, &exception);
             if (exception) {
                 MonoObject *exc = NULL;
                 MonoString *str = mono_object_to_string(exception, &exc);

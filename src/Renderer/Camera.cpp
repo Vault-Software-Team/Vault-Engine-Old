@@ -25,7 +25,7 @@ namespace HyperAPI {
         } else {
             TransformComponent transform;
             transform.position = position;
-            transform.rotation = glm::vec3(0.0f, 0.0f, -1.0f);
+            transform.rotation = glm::vec3(0.0f, 0.0f, glm::radians(-1.0f));
             AddComponent(transform);
         }
     }

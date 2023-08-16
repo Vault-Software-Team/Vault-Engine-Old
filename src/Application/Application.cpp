@@ -538,44 +538,6 @@ namespace Hyper {
 
                 using namespace HyperAPI::Experimental;
 
-                if (HyperAPI::isRunning) {
-                    for (auto &overObject : mouseOverObjects) {
-                        if (overObject->entity != (entt::entity)entityId) {
-                            if (overObject
-                                    ->HasComponent<m_LuaScriptComponent>()) {
-                                auto &nativeManager =
-                                    overObject
-                                        ->GetComponent<m_LuaScriptComponent>();
-                                for (auto &script : nativeManager.scripts) {
-                                    script.OnMouseExit();
-                                    mouseOverObjects.push_back(overObject);
-                                }
-                            }
-
-                            if (overObject->HasComponent<CsharpScriptManager>()) {
-                                auto &scriptManager = overObject->GetComponent<CsharpScriptManager>();
-                                for (auto klass : scriptManager.selectedScripts) {
-                                    MonoObject *exception = nullptr;
-                                    MonoScriptClass *behaviour =
-                                        HyperAPI::CsharpScriptEngine::instances[klass.first];
-                                    MonoMethod *method = behaviour->GetMethod("OnMouseExit", 0);
-                                    if (!method)
-                                        continue;
-
-                                    void *params[0] = {};
-                                    mono_runtime_invoke(method, behaviour->f_GetObject(), params, &exception);
-                                }
-                            }
-
-                            mouseOverObjects.erase(
-                                std::remove(mouseOverObjects.begin(),
-                                            mouseOverObjects.end(), overObject),
-                                mouseOverObjects.end());
-                            break;
-                        }
-                    }
-                }
-
                 if (gameObject->entity == (entt::entity)entityId) {
                     currently_hovering_over = gameObject;
                     if (HyperAPI::isRunning) {

@@ -45,6 +45,7 @@
 #include "../vendor/entt/entt.hpp"
 #include "../vendor/icons/icons.h"
 #include "csharp.hpp"
+#include <lemon/Lemon.hpp>
 
 // C++ Libraries
 #include <any>
@@ -121,6 +122,7 @@ namespace uuid {
 } // namespace uuid
 
 namespace HyperAPI {
+    DLL_API extern json component_copy_buffer;
     DLL_API extern float runTime;
     DLL_API extern std::string cwd;
     DLL_API extern std::string dirPayloadData;

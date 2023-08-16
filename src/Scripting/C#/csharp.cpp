@@ -275,6 +275,15 @@ namespace HyperAPI::CsharpScriptEngine {
         MonoAssembly *assembly = mono_assembly_load_from_full(image, assemblyPath.c_str(), &status, 0);
         mono_image_close(image);
 
+        std::filesystem::path pdbPath("cs-assembly/bin/Debug/net6.0/cs-assembly.dll");
+        pdbPath.replace_extension(".pdb");
+
+        if (std::filesystem::exists(pdbPath)) {
+            uint32_t pdbFileSize = 0;
+            char *pdbFileData = ReadBytes(pdbPath, &pdbFileSize);
+            mono_debug_open_image_from_memory(image, (const mono_byte *)pdbFileData, (int)pdbFileSize);
+        }
+
         // Don't forget to free the file data
         delete[] fileData;
 
@@ -331,7 +340,16 @@ namespace HyperAPI::CsharpScriptEngine {
     void RuntimeInit() {
         using namespace CsharpVariables;
         if (rootDomain == nullptr) {
+            const char *argv[2] = {
+                "--debugger-agent=transport=dt_socket,server=y,address=127.0.0.1:55555,suspend=n,loglevel=3,logfile=logs/MonoDebugger.log",
+                "--soft-breakpoints"};
+
+            mono_jit_parse_options(2, (char **)argv);
+            mono_debug_init(MONO_DEBUG_FORMAT_MONO);
             rootDomain = mono_jit_init("VaultJITRuntime");
+
+            mono_debug_domain_create(rootDomain);
+            mono_thread_set_main(mono_thread_current());
 
             if (rootDomain == nullptr)
                 exit(1);
@@ -356,7 +374,6 @@ namespace HyperAPI::CsharpScriptEngine {
 
             // mono_jit_parse_options(2, (char **)argv);
             RuntimeInit();
-
             // mono_debug_init(MONO_DEBUG_FORMAT_MONO);
             // mono_debug_domain_create(rootDomain);
 
@@ -488,10 +505,16 @@ MonoScriptClass::MonoScriptClass(const std::string &nameSpace, const std::string
     MonoImage *image = mono_assembly_get_image(coreAssembly);
     klass = mono_class_from_name(image, nameSpace.c_str(), name.c_str());
     instance = mono_object_new(appDomain, klass);
+    gc_handle = mono_gchandle_new(instance, false);
+    gc_instance = mono_gchandle_get_target(gc_handle);
 }
 
 MonoObject *MonoScriptClass::f_GetObject() const {
     return instance;
+}
+
+MonoObject *MonoScriptClass::f_GetObjectGC() const {
+    return gc_instance;
 }
 
 MonoMethod *MonoScriptClass::GetMethod(const std::string method, int parameterCount) const {

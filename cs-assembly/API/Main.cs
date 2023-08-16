@@ -54,6 +54,8 @@ namespace Vault
 
     public class Main
     {
+        public static float PI = 3.14159265358979f;
+
         public Main()
         {
             Vector3 vector = new Vector3(1, 2, 3);
@@ -61,6 +63,11 @@ namespace Vault
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static float cpp_DeltaTime();
+
+        public static float ToRad(float degrees)
+        {
+            return degrees * (PI / 180);
+        }
 
         public static float deltaTime
         {

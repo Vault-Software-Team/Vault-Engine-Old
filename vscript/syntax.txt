@@ -1,0 +1,20 @@
+# Defining variables
+var number: int = 5
+
+# script classes
+script {
+    var speed: float = 15.5;
+    var transform: Transform; 
+
+    func OnStart() {
+        transform = GetComponent<Transform>();
+    }
+
+    func OnUpdate() {
+        transform.position.x = speed * Main.deltaTime;
+    }
+
+    func OnGUI() {
+
+    }
+}
