@@ -16,7 +16,7 @@ namespace UI
 
         void OnUpdate()
         {
-            // text.text = "Score: " + Managers.GameManager.score.ToString();
+            text.text = "Score: " + Managers.GameManager.score.ToString();
         }
     }
 }

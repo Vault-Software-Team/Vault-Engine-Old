@@ -15,7 +15,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
     void Entity_RemoveGO(MonoString *id) {
         const std::string m_id = mono_string_to_utf8(id);
-        auto *obj = f_GameObject::FindGameObjectByID(nextId);
+        auto *obj = f_GameObject::FindGameObjectByID(m_id);
         obj->DeleteGameObject();
     }
 

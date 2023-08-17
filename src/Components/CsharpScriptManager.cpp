@@ -16,22 +16,19 @@ namespace HyperAPI::Experimental {
                 continue;
 
             MonoObject *exception = nullptr;
-            MonoScriptClass *behaviour = nullptr;
-            if (behaviours.find(klass.first) == behaviours.end()) {
-                behaviour = behaviours[klass.first];
+            CsharpScript *behaviour = nullptr;
+            if (behaviours.find(klass.first) != behaviours.end()) {
+                behaviour = &behaviours[klass.first];
             } else {
-                behaviour = behaviours[klass.first];
-            }
-            if (!behaviour) {
                 Start();
+                behaviour = &behaviours[klass.first];
             }
+
             if (!behaviour)
                 continue;
 
             typedef void (*OnUpdateType)(MonoObject *, MonoObject **);
-            MonoMethod *onUpdate = behaviour->GetMethod("OnUpdate", 0);
-            OnUpdateType func_onUpdate = (OnUpdateType)mono_method_get_unmanaged_thunk(onUpdate);
-            func_onUpdate(behaviour->f_GetObject(), &exception);
+            behaviour->onUpdateThunk(behaviour->behaviour->f_GetObjectGC(), &exception);
 
             // void *params[0] = {};
 
@@ -55,6 +52,7 @@ namespace HyperAPI::Experimental {
 
     void CsharpScriptManager::Start() {
         for (auto klass : selectedScripts) {
+
             if (klass.second == "")
                 continue;
             MonoObject *exception = nullptr;
@@ -66,13 +64,24 @@ namespace HyperAPI::Experimental {
                     tokens.push_back(token);
             }
 
-            MonoScriptClass *behaviour =
-                new MonoScriptClass(tokens[0], tokens[1]);
-            behaviours[klass.first] = behaviour;
-            behaviour->CallConstructor();
+            CsharpScript *behaviour = nullptr;
+            if (behaviours.find(klass.second) != behaviours.end()) {
+                behaviour = &behaviours[klass.second];
+            } else {
+                CsharpScript script;
+                script.behaviour = new MonoScriptClass(tokens[0], tokens[1]);
+                script.updateMethod = script.behaviour->GetMethod("OnUpdate", 0);
+                script.startMethod = script.behaviour->GetMethod("OnStart", 0);
+                script.onUpdateThunk = (OnUpdateType)mono_method_get_unmanaged_thunk(script.updateMethod);
+                script.onStartThunk = (OnStartType)mono_method_get_unmanaged_thunk(script.startMethod);
+                behaviours[klass.second] = script;
+                behaviour = &behaviours[klass.second];
+            }
+
+            behaviour->behaviour->CallConstructor();
             CsharpScriptEngine::nextId = ID;
             void *params[0] = {};
-            MonoMethod *onStart = behaviour->GetMethod("OnStart", 0);
+            behaviour->onStartThunk(behaviour->behaviour->f_GetObjectGC(), &exception);
 
             // void *iterator = nullptr;
             // while(MonoClassField *field =
@@ -86,7 +95,7 @@ namespace HyperAPI::Experimental {
             //     std::endl;
             // }
 
-            mono_runtime_invoke(onStart, behaviour->f_GetObjectGC(), params, &exception);
+            // mono_runtime_invoke(onStart, behaviour->f_GetObjectGC(), params, &exception);
             if (exception) {
                 MonoObject *exc = NULL;
                 MonoString *str = mono_object_to_string(exception, &exc);
@@ -96,7 +105,7 @@ namespace HyperAPI::Experimental {
                     Log log(mono_string_to_utf8(str), LOG_ERROR);
                 }
             }
-            CsharpScriptEngine::instances[klass.first] = behaviour;
+            CsharpScriptEngine::instances[klass.first] = behaviour->behaviour;
         }
     }
 
@@ -114,7 +123,6 @@ namespace HyperAPI::Experimental {
                                       false)) {
                     if (selectedScripts[klass.first] == klass.first) {
                         if (behaviours.find(klass.first) != behaviours.end()) {
-                            delete behaviours[klass.first];
                             behaviours.erase(behaviours.find(klass.first));
                         }
 
@@ -128,9 +136,13 @@ namespace HyperAPI::Experimental {
                                 tokens.push_back(token);
                         }
 
-                        MonoScriptClass *behaviour = new MonoScriptClass(tokens[0], tokens[1]);
-                        behaviours[klass.first] = behaviour;
-
+                        CsharpScript script;
+                        script.behaviour = new MonoScriptClass(tokens[0], tokens[1]);
+                        script.updateMethod = script.behaviour->GetMethod("OnUpdate", 0);
+                        script.startMethod = script.behaviour->GetMethod("OnStart", 0);
+                        script.onUpdateThunk = (OnStartType)mono_method_get_unmanaged_thunk(script.updateMethod);
+                        script.onStartThunk = (OnStartType)mono_method_get_unmanaged_thunk(script.startMethod);
+                        behaviours[klass.first] = script;
                         selectedScripts[klass.first] = klass.first;
                     }
                 }

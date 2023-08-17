@@ -506,7 +506,6 @@ MonoScriptClass::MonoScriptClass(const std::string &nameSpace, const std::string
     klass = mono_class_from_name(image, nameSpace.c_str(), name.c_str());
     instance = mono_object_new(appDomain, klass);
     gc_handle = mono_gchandle_new(instance, false);
-    gc_instance = mono_gchandle_get_target(gc_handle);
 }
 
 MonoObject *MonoScriptClass::f_GetObject() const {
@@ -514,7 +513,7 @@ MonoObject *MonoScriptClass::f_GetObject() const {
 }
 
 MonoObject *MonoScriptClass::f_GetObjectGC() const {
-    return gc_instance;
+    return mono_gchandle_get_target(gc_handle);
 }
 
 MonoMethod *MonoScriptClass::GetMethod(const std::string method, int parameterCount) const {

@@ -38,6 +38,7 @@ namespace HyperAPI::BulletPhysicsWorld {
     void CollisionCallback(
         std::function<void(const std::string &, const std::string &)>
             HandleEntities) {
+        dynamicsWorld->performDiscreteCollisionDetection();
         int numManifolds = dynamicsWorld->getDispatcher()->getNumManifolds();
         // do collision callback on all rigid bodies
         for (int i = 0; i < numManifolds; i++) {
@@ -47,6 +48,8 @@ namespace HyperAPI::BulletPhysicsWorld {
                 contactManifold->getBody0());
             const auto *obB = static_cast<const btCollisionObject *>(
                 contactManifold->getBody1());
+
+            std::cout << "hi" << std::endl;
 
             // get the entity names
             auto *entityA = static_cast<std::string *>(obA->getUserPointer());

@@ -568,7 +568,7 @@ namespace Hyper {
                                     continue;
 
                                 void *params[0] = {};
-                                mono_runtime_invoke(method, behaviour->f_GetObject(), params, &exception);
+                                mono_runtime_invoke(method, behaviour->f_GetObjectGC(), params, &exception);
                             }
                         }
                     }

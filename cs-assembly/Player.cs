@@ -6,7 +6,6 @@ namespace PlayerScripts
 {
     class Player : Entity
     {
-        Rigidbody3D rigidbody;
         Transform transform;
 
         float force_speed = 20;
@@ -24,10 +23,11 @@ namespace PlayerScripts
         void OnStart()
         {
             SetObjectID();
-            rigidbody = GetComponent<Rigidbody3D>();
             transform = GetComponent<Transform>();
             Debug.Log("Player Script Started!");
         }
+
+        bool delete_key = false;
 
         void OnUpdate()
         {
@@ -67,7 +67,12 @@ namespace PlayerScripts
 
             transform.position = pos;
             transform.rotation = rot;
-            rigidbody.SetPosition(pos);
+
+            if (Input.IsKeyPressed(Input.KEY_Q) && !delete_key)
+            {
+                delete_key = true;
+                GameObject.RemoveGameObject(ID);
+            }
         }
 
         void OnGUI()
@@ -76,6 +81,11 @@ namespace PlayerScripts
         }
 
         void OnCollisionEnter3D(string ID)
+        {
+            Debug.Log(ID);
+        }
+
+        void OnCollisionEnter2D(string ID)
         {
             Debug.Log(ID);
         }

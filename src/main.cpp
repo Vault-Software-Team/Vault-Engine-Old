@@ -81,6 +81,7 @@ public:
 
         auto *gameObjectA = (GameObject *)bodyUserDataA.pointer;
         auto *gameObjectB = (GameObject *)bodyUserDataB.pointer;
+        std::cout << "yho?" << std::endl;
         // TODO: C# Events (Collision2D)
 
         if (gameObjectA->HasComponent<m_LuaScriptComponent>()) {
@@ -127,7 +128,7 @@ public:
                     continue;
 
                 void *params = mono_string_new(CsharpVariables::appDomain, gameObjectB->ID.c_str());
-                mono_runtime_invoke(method, behaviour->f_GetObject(), &params, &exception);
+                mono_runtime_invoke(method, behaviour->f_GetObjectGC(), &params, &exception);
             }
         }
 
@@ -143,7 +144,7 @@ public:
                     continue;
 
                 void *params = mono_string_new(CsharpVariables::appDomain, gameObjectA->ID.c_str());
-                mono_runtime_invoke(method, behaviour->f_GetObject(), &params, &exception);
+                mono_runtime_invoke(method, behaviour->f_GetObjectGC(), &params, &exception);
             }
         }
     }
@@ -202,7 +203,7 @@ public:
                     continue;
 
                 void *params = mono_string_new(CsharpVariables::appDomain, gameObjectB->ID.c_str());
-                mono_runtime_invoke(method, behaviour->f_GetObject(), &params, &exception);
+                mono_runtime_invoke(method, behaviour->f_GetObjectGC(), &params, &exception);
             }
         }
 
@@ -218,7 +219,7 @@ public:
                     continue;
 
                 void *params = mono_string_new(CsharpVariables::appDomain, gameObjectA->ID.c_str());
-                mono_runtime_invoke(method, behaviour->f_GetObject(), &params, &exception);
+                mono_runtime_invoke(method, behaviour->f_GetObjectGC(), &params, &exception);
             }
         }
     }
@@ -957,14 +958,14 @@ void m_HandleCollisionCallbacks(GameObject *gameObjectA, GameObject *gameObjectB
                 continue;
             MonoObject *exception = nullptr;
             MonoScriptClass *behaviour =
-                scriptManager.behaviours[klass.first];
+                scriptManager.behaviours[klass.first].behaviour;
 
             MonoMethod *method = behaviour->GetMethod("OnCollisionEnter3D", 1);
             if (!method)
                 continue;
 
             void *params = mono_string_new(CsharpVariables::appDomain, gameObjectB->ID.c_str());
-            mono_runtime_invoke(method, behaviour->f_GetObject(), &params, &exception);
+            mono_runtime_invoke(method, behaviour->f_GetObjectGC(), &params, &exception);
         }
     }
 
@@ -976,13 +977,13 @@ void m_HandleCollisionCallbacks(GameObject *gameObjectA, GameObject *gameObjectB
                 continue;
             MonoObject *exception = nullptr;
             MonoScriptClass *behaviour =
-                scriptManager.behaviours[klass.first];
+                scriptManager.behaviours[klass.first].behaviour;
             MonoMethod *method = behaviour->GetMethod("OnCollisionEnter3D", 1);
             if (!method)
                 continue;
 
             void *params = mono_string_new(CsharpVariables::appDomain, gameObjectA->ID.c_str());
-            mono_runtime_invoke(method, behaviour->f_GetObject(), &params, &exception);
+            mono_runtime_invoke(method, behaviour->f_GetObjectGC(), &params, &exception);
         }
     }
 }
@@ -1235,7 +1236,6 @@ void SetupAddComponentGUI() {
 using v8::HandleScope;
 
 int main(int argc, char **argv) {
-    JSEngine js_engine(argv);
 
     SetupAddComponentGUI();
     config.editorCamera.shiftSpeed = 0.4f;
@@ -4991,7 +4991,7 @@ void NewScript::Update() {})";
                     MonoObject *exception = nullptr;
                     void *params[0] = {};
 
-                    mono_runtime_invoke(OnGUI, behaviour.second->f_GetObject(), params, &exception);
+                    mono_runtime_invoke(OnGUI, behaviour.second->f_GetObjectGC(), params, &exception);
                     if (exception) {
                         MonoObject *exc = NULL;
                         MonoString *str = mono_object_to_string(exception, &exc);
@@ -5088,6 +5088,18 @@ void NewScript::Update() {})";
                                 btVector3(comp.position.x, comp.position.y,
                                           comp.position.z));
                         }
+                    }
+
+                    if (gameObject->HasComponent<Rigidbody2D>()) {
+                        auto &rigidbody =
+                            gameObject
+                                ->GetComponent<Rigidbody2D>();
+
+                        b2Body *body = (b2Body *)rigidbody.body;
+                        if (body)
+                            body->SetTransform(
+                                b2Vec2(comp.position.x, comp.position.y),
+                                body->GetAngle());
                     }
                 }
             }

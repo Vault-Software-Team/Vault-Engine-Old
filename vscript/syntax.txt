@@ -2,12 +2,14 @@
 var number: int = 5
 
 # script classes
-script {
-    var speed: float = 15.5;
-    var transform: Transform; 
+class NewScript {
+    var speed: float = 15.5
+    var transform: Transform
+
+    constructor() {}
 
     func OnStart() {
-        transform = GetComponent<Transform>();
+        transform = GetComponent<Transform>()
     }
 
     func OnUpdate() {
@@ -18,3 +20,20 @@ script {
 
     }
 }
+
+# function declaration 
+func Name(): void {
+    Debug.Log("hi gang gang");
+}
+
+# class declaration
+
+# Structures
+struct Vector3 {
+    var x: float = 0;
+    var y: float = 0;
+    var z: float = 0;
+}
+
+# C++ Internal calls
+internal cpp_getkey(var: string) -> void
