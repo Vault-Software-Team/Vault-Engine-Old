@@ -4991,11 +4991,11 @@ void NewScript::Update() {})";
                 auto &scriptManager = Scene::m_Registry.get<CsharpScriptManager>(e);
 
                 for (auto &behaviour : scriptManager.behaviours) {
-                    MonoMethod *OnGUI = behaviour.second->GetMethod("OnGUI", 0);
+                    MonoMethod *OnGUI = behaviour.second.behaviour->GetMethod("OnGUI", 0);
                     MonoObject *exception = nullptr;
                     void *params[0] = {};
 
-                    mono_runtime_invoke(OnGUI, behaviour.second->f_GetObjectGC(), params, &exception);
+                    mono_runtime_invoke(OnGUI, behaviour.second.behaviour->f_GetObjectGC(), params, &exception);
                     if (exception) {
                         MonoObject *exc = NULL;
                         MonoString *str = mono_object_to_string(exception, &exc);

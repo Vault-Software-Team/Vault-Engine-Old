@@ -956,7 +956,7 @@ namespace HyperAPI::Experimental {
 
                 // meshRenderer.m_Mesh->material.diffuse = new Texture((m_path + std::string(texture_name.C_Str())).c_str(), 0, "texture_diffuse");
                 // meshRenderer.m_Mesh->material.specular = new Texture((m_path + std::string(texture_name.C_Str())).c_str(), 0, "texture_specular");
-                meshRenderer.matPath = "assets/models/scene_materials/" + std::string(texture_name.C_Str()) + ".material";
+                meshRenderer.matPath = "assets/models/scene_materials/" + m_uuid + ".material";
             }
 
             Scene::m_GameObjects->push_back(gameObject);
