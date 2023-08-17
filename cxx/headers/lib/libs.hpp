@@ -121,6 +121,8 @@ namespace uuid {
 } // namespace uuid
 
 namespace HyperAPI {
+    DLL_API extern json component_copy_buffer;
+    DLL_API extern float runTime;
     DLL_API extern std::string cwd;
     DLL_API extern std::string dirPayloadData;
     DLL_API extern bool isRunning;
@@ -128,6 +130,7 @@ namespace HyperAPI {
     DLL_API extern glm::vec3 mousePosWorld, mousePosCamWorld;
     DLL_API extern float sceneMouseX, sceneMouseY;
     DLL_API extern b2ContactListener *b2_listener;
+    DLL_API extern std::string currentHyperLog;
 
 #ifdef _WIN32
     __declspec(dllexport) void test_dll_function();
@@ -160,6 +163,10 @@ namespace HyperAPI {
                 float intensity;
             } chromaticAberration;
         } postProcessing;
+
+        struct DLL_API EditorCamera {
+            float shiftSpeed = 0.4f;
+        } editorCamera;
 
         char linuxCompiler[500];
         char windowsCompiler[500];

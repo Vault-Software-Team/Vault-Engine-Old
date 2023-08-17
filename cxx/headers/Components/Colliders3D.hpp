@@ -28,17 +28,7 @@ namespace HyperAPI::Experimental {
             shape->setMargin(0.05f);
         }
 
-        void GUI() override {
-            if (ImGui::TreeNode("Box Collider 3D")) {
-                DrawVec3Control("Size", size);
-
-                ImGui::NewLine();
-                if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
-                    Scene::m_Registry.remove<BoxCollider3D>(entity);
-                }
-                ImGui::TreePop();
-            }
-        }
+        void GUI() override;
     };
 
     struct DLL_API MeshCollider3D : Collider3D {
@@ -62,16 +52,6 @@ namespace HyperAPI::Experimental {
             }
         }
 
-        void GUI() override {
-            if (ImGui::TreeNode("Mesh Collider 3D")) {
-                DrawVec3Control("Size", size);
-
-                ImGui::NewLine();
-                if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
-                    Scene::m_Registry.remove<MeshCollider3D>(entity);
-                }
-                ImGui::TreePop();
-            }
-        }
+        void GUI() override;
     };
 } // namespace HyperAPI::Experimental

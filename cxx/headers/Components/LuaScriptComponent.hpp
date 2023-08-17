@@ -39,7 +39,7 @@ namespace HyperAPI::Experimental {
         bool isTyping = false;
 
         void GUI() {
-            if (ImGui::TreeNode("Lua Scripts")) {
+            if (ImGui::CollapsingHeader("Lua Scripts")) {
                 for (int i = 0; i < scripts.size(); i++) {
                     if (ImGui::TreeNode(scripts[i].pathToScript.c_str())) {
                         if (!isRunning && !isTyping) {
@@ -104,8 +104,6 @@ namespace HyperAPI::Experimental {
                 if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
                     Scene::m_Registry.remove<m_LuaScriptComponent>(entity);
                 }
-
-                ImGui::TreePop();
             }
         }
     };

@@ -1,6 +1,7 @@
 #include "Camera.hpp"
 #include "Shader.hpp"
 #include "../Components/Transform.hpp"
+#include "Timestep.hpp"
 
 namespace HyperAPI {
     Camera::Camera(bool mode2D, int width, int height, glm::vec3 position,
@@ -25,7 +26,7 @@ namespace HyperAPI {
         } else {
             TransformComponent transform;
             transform.position = position;
-            transform.rotation = glm::vec3(0.0f, 0.0f, glm::radians(-1.0f));
+            transform.rotation = glm::vec3(0.0f, 0.0f, -1.0f);
             AddComponent(transform);
         }
     }
@@ -307,7 +308,7 @@ namespace HyperAPI {
                 speed = config.editorCamera.shiftSpeed;
             } else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) ==
                        GLFW_RELEASE) {
-                speed = 0.1f;
+                speed = 10.0f;
             }
 
             if (!mode2D) {
@@ -356,37 +357,37 @@ namespace HyperAPI {
             auto transform = GetComponent<TransformComponent>();
             if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
                 if (!mode2D) {
-                    transform.position += speed * transform.rotation;
+                    transform.position += (speed * Timestep::deltaTime) * transform.rotation;
                 } else {
-                    transform.position.y += speed;
+                    transform.position.y += (speed * Timestep::deltaTime);
                 }
             }
             if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
                 transform.position +=
-                    speed * -glm::normalize(glm::cross(transform.rotation, Up));
+                    (speed * Timestep::deltaTime) * -glm::normalize(glm::cross(transform.rotation, Up));
             }
             if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
                 if (!mode2D) {
-                    transform.position += speed * -transform.rotation;
+                    transform.position += (speed * Timestep::deltaTime) * -transform.rotation;
                 } else {
-                    transform.position.y -= speed;
+                    transform.position.y -= (speed * Timestep::deltaTime);
                 }
             }
             if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
                 transform.position +=
-                    speed * glm::normalize(glm::cross(transform.rotation, Up));
+                    (speed * Timestep::deltaTime) * glm::normalize(glm::cross(transform.rotation, Up));
             }
             if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-                transform.position += speed * Up;
+                transform.position += (speed * Timestep::deltaTime) * Up;
             }
             if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-                transform.position += speed * -Up;
+                transform.position += (speed * Timestep::deltaTime) * -Up;
             }
             if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
                 speed = config.editorCamera.shiftSpeed;
             } else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) ==
                        GLFW_RELEASE) {
-                speed = 0.1f;
+                speed = 13.0f;
             }
 
             if (!mode2D) {

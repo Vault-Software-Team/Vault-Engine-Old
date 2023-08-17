@@ -23,6 +23,8 @@ class DLL_API MonoScriptClass {
 private:
     MonoClass *klass;
     MonoObject *instance;
+    uint32_t gc_handle;
+    MonoObject *gc_instance;
 
 public:
     std::string name_space, name;
@@ -33,6 +35,7 @@ public:
     MonoClass *GetClass() const;
     MonoMethod *GetMethod(const std::string method, int parameterCount) const;
     MonoObject *f_GetObject() const;
+    MonoObject *f_GetObjectGC() const;
 };
 
 namespace HyperAPI {

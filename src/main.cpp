@@ -1237,12 +1237,12 @@ void SetupAddComponentGUI() {
     }));
 }
 
-using v8::HandleScope;
-
 int main(int argc, char **argv) {
+    if (!fs::exists("logs"))
+        fs::create_directory("logs");
 
     SetupAddComponentGUI();
-    config.editorCamera.shiftSpeed = 0.4f;
+    config.editorCamera.shiftSpeed = 30.0f;
 
     HyperAPI::b2_listener = listener;
     {
@@ -5381,10 +5381,6 @@ void NewScript::Update() {})";
 
             // animator.UpdateAnimation(Timestep::deltaTime);
             runTime += Timestep::deltaTime;
-            shader.Bind();
-            shader.SetUniform1f("delta_time", Timestep::deltaTime);
-            shader.SetUniform1f("iTime", runTime);
-            shader.SetUniform1i("deferredShading", config.deferredShading);
 
             // std::vector<Shader*> shaders = {&shader};
             PostProcessingEffects(shader, camera);
@@ -5619,6 +5615,9 @@ void NewScript::Update() {})";
             shader.Bind();
             shader.SetUniform1f("ambient", config.ambientLight);
             shader.SetUniform3f("ambient_color", ambient_color.x, ambient_color.y, ambient_color.z);
+            shader.SetUniform1f("delta_time", Timestep::deltaTime);
+            shader.SetUniform1f("iTime", runTime);
+            shader.SetUniform1i("deferredShading", config.deferredShading);
 
             // Rigidbody2D Physics update
             //& (now - lastFrameTime) >= fpsLimit
@@ -5851,8 +5850,6 @@ void NewScript::Update() {})";
 
             glEnable(GL_DEPTH_TEST);
             glDisable(GL_CULL_FACE);
-            Material material(Vector4(1, 1, 1, 1));
-            shader.Bind();
             glActiveTexture(GL_TEXTURE21);
             glBindTexture(GL_TEXTURE_CUBE_MAP,
                           skybox.cubemapTexture);

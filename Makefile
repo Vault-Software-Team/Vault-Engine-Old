@@ -48,30 +48,6 @@ other_stuff += $(wildcard src/Experimental/*.cpp)
 other_stuff += $(wildcard src/scene.cpp)
 other_stuff += $(wildcard src/InputEvents.cpp)
 
-lemon_js = $(wildcard src/vendor/lemon/*.cpp)
-lemon_js += $(wildcard src/vendor/lemon/*/*.cpp)
-lemon_js += $(wildcard src/vendor/lemon/*/*/*.cpp)
-lemon_js += $(wildcard src/vendor/lemon/*/*/*/*.cpp)
-lemon_js += $(wildcard src/vendor/lemon/*/*/*/*/*.cpp)
-lemon_js += $(wildcard src/vendor/lemon/*/*/*/*/*/*.cpp)
-lemon_js += $(wildcard src/vendor/lemon/*/*/*/*/*/*/*.cpp)
-lemon_js += $(wildcard src/vendor/lemon/*/*.c)
-lemon_js += $(wildcard src/vendor/lemon/*/*/*.c)
-lemon_js += $(wildcard src/vendor/lemon/*/*/*/*.c)
-lemon_js += $(wildcard src/vendor/lemon/*/*/*/*/*.c)
-lemon_js += $(wildcard src/vendor/lemon/*/*/*/*/*/*.c)
-lemon_js += $(wildcard src/vendor/lemon/*/*/*/*/*/*/*.c)
-lemon_v8_obj = $(wildcard src/vendor/lemon/*.o)
-lemon_v8_obj += $(wildcard src/vendor/lemon/*/*.o)
-lemon_v8_obj += $(wildcard src/vendor/lemon/*/*/*.o)
-lemon_v8_obj += $(wildcard src/vendor/lemon/*/*/*/*.o)
-lemon_v8_obj += $(wildcard src/vendor/lemon/*/*/*/*/*.o)
-lemon_v8_obj += $(wildcard src/vendor/lemon/*/*/*/*/*/*.o)
-lemon_v8_obj += $(wildcard src/vendor/lemon/*/*/*/*/*/*/*/*.o)
-lemon_v8_obj += $(wildcard src/vendor/lemon/*/*/*/*/*/*/*/*/*.o)
-lemon_v8_obj += $(wildcard src/vendor/lemon/*/*/*/*/*/*/*/*/*/*.o)
-lemon_v8_obj += $(wildcard src/vendor/lemon/*/*/*/*/*/*/*/*/*/*/*.o)
-lemon_v8_obj += $(wildcard src/vendor/lemon/*/*/*/*/*/*/*/*/*/*/*/*.o)
 
 V8 = src/vendor/lemon/lib/v8
 
@@ -101,8 +77,8 @@ MONO_LIB=-I"$(cwd)/mono/include/mono-2.0" -D_REENTRANT  -L"$(cwd)/mono/lib" -lmo
 bullet_physics_linker_flags = -lBulletDynamics -lBulletCollision -lLinearMath
 bullet_physics_linker_flags_windows = -lBulletDynamics.dll -lBulletCollision.dll -lLinearMath.dll
 rusty = -lrusty_vault
-flags = $ -w -fno-stack-protector -std=c++20 -lstdc++fs -g -L $$LIB -l $$OBJ -L"./lib" -lluajit-5.1 -I"./src" -I./src/vendor/lemon/lib/v8/include -I"./src/vendor" -I"./src/vendor/bullet/bullet" -I"./src/vendor/NoesisGUI" -I"./src/lib" -lmono-2.0 -lbacktrace -lfreetype -lGL -lbox2d -lGLU -lglfw -lm -lSDL2_mixer -lassimp -ltinyxml2 -lXrandr -lXi -lbox2d -lX11 -lXxf86vm -lpthread -ldl -lsndfile -lopenal -lXinerama -lzlib -lXcursor -lGLEW -ldiscord-rpc $(bullet_physics_linker_flags) -rdynamic
-win_flags = -lstdc++fs -L"./win_libs" -I"./src/lib" -I"./src" -I"./src/vendor/NoesisGUI" -I"./src/vendor" -I"./src/vendor/bullet/bullet" -lsndfile.dll -lopenal.dll -lmono-2.0.dll -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype.dll -lSDL2.dll -lSDL2_mixer.dll -ltinyxml2 -ldiscord-rpc.dll $(bullet_physics_linker_flags_windows)
+flags = -w -Wfatal-errors -fno-stack-protector -std=c++20 -lstdc++fs -g -L"./lib" -lluajit-5.1 -I"./src" -I./src/vendor/lemon/lib/v8/include -I"./src/vendor" -I"./src/vendor/bullet/bullet" -I"./src/vendor/NoesisGUI" -I"./src/lib" -lmono-2.0 -lbacktrace -lfreetype -lGL -lbox2d -lGLU -lglfw -lm -lSDL2_mixer -lassimp -ltinyxml2 -lXrandr -lXi -lbox2d -lX11 -lXxf86vm -lpthread -ldl -lsndfile -lopenal -lXinerama -lzlib -lXcursor -lGLEW -ldiscord-rpc $(bullet_physics_linker_flags) -rdynamic
+win_flags = -Wfatal-errors -lstdc++fs -L"./win_libs" -I"./src/lib" -I"./src" -I"./src/vendor/NoesisGUI" -I"./src/vendor" -I"./src/vendor/bullet/bullet" -lsndfile.dll -lopenal.dll -lmono-2.0.dll -lglfw3dll -lstdc++fs -lluajit-5.1 -lbox2d -lassimp.dll -lfreetype.dll -lSDL2.dll -lSDL2_mixer.dll -ltinyxml2 -ldiscord-rpc.dll $(bullet_physics_linker_flags_windows)
 
 all:
 	$(GNU_LINUX_COMPILER) $(sources) src/api.cpp -o $(exec) $(flags)
@@ -171,7 +147,7 @@ debugging:
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
 
 one_file:
-	$(GNU_LINUX_COMPILER) -c src/main.cpp src/Scripting/C#/csharp.cpp src/Scripting/C#/MainFunctions.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c src/main.cpp src/Renderer/Camera.cpp $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
@@ -276,7 +252,7 @@ win_cxx:
 	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) -Wl,--export-all-symbols,--out-implib,libhost.a $(win_flags)
 
 win_assemble:
-	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp src/Renderer/Material.cpp $(win_flags) -lrusty_vault
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp src/Renderer/Camera.cpp $(win_flags) -lrusty_vault
 	mv *.o bin_win
 
 	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) -Wl,--export-all-symbols,--out-implib,libhost.a $(win_flags) -lrusty_vault

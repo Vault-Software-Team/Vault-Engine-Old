@@ -17,6 +17,8 @@ namespace HyperAPI {
     };
 
     DLL_API extern std::vector<m_Texture *> textures;
+    DLL_API extern std::vector<m_Texture *> image_textures;
+
     class DLL_API Texture {
     public:
         std::string texPath;

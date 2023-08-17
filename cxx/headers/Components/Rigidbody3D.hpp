@@ -58,24 +58,11 @@ namespace HyperAPI::Experimental {
 
         void Update();
 
-        void GUI() override {
-            if (ImGui::TreeNode("Rigidbody 3D")) {
-                ImGui::DragFloat("Mass", &mass, 0.01f);
-                ImGui::DragFloat("Friction", &friction, 0.01f);
-                ImGui::DragFloat("Restitution", &restitution, 0.01f);
-                ImGui::Checkbox("Trigger", &trigger);
-                ImGui::Checkbox("Fixed Rotation", &fixedRotation);
-
-                ImGui::NewLine();
-                if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
-                    Scene::m_Registry.remove<Rigidbody3D>(entity);
-                }
-                ImGui::TreePop();
-            }
-        }
+        void GUI() override;
 
         // Rigidbody functions
-        void AddForce(const Vector3 &force) {
+        void
+        AddForce(const Vector3 &force) {
             body->applyCentralForce(btVector3(force.x, force.y, force.z));
         }
 

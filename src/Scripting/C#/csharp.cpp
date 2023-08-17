@@ -300,15 +300,6 @@ namespace HyperAPI::CsharpScriptEngine {
         MonoAssembly *assembly = mono_assembly_load_from_full(image, assemblyPath.c_str(), &status, 0);
         mono_image_close(image);
 
-        std::filesystem::path pdbPath("cs-assembly/bin/Debug/net6.0/cs-assembly.dll");
-        pdbPath.replace_extension(".pdb");
-
-        if (std::filesystem::exists(pdbPath)) {
-            uint32_t pdbFileSize = 0;
-            char *pdbFileData = ReadBytes(pdbPath, &pdbFileSize);
-            mono_debug_open_image_from_memory(image, (const mono_byte *)pdbFileData, (int)pdbFileSize);
-        }
-
         // Don't forget to free the file data
         delete[] fileData;
 

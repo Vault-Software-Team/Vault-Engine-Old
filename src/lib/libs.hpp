@@ -45,7 +45,6 @@
 #include "../vendor/entt/entt.hpp"
 #include "../vendor/icons/icons.h"
 #include "csharp.hpp"
-#include <lemon/Lemon.hpp>
 
 // C++ Libraries
 #include <any>

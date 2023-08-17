@@ -34,7 +34,7 @@ namespace HyperAPI {
         int width;
         int height;
 
-        float speed = 0.00000000000001f;
+        float speed = 13.0f;
         float sensitivity = 100.0f;
 
         glm::mat4 camMatrix;

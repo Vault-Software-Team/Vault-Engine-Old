@@ -17,4 +17,5 @@
 
 namespace HyperAPI::CsharpScriptEngine::Functions {
     float cpp_DeltaTime();
+    void ExitProgram();
 } // namespace HyperAPI::CsharpScriptEngine::Functions
