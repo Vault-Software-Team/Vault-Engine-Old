@@ -31,4 +31,19 @@ namespace HyperAPI::Experimental {
             }
         }
     }
+
+    void Audio3D::Update() {
+        if (m_src == nullptr)
+            Start();
+        m_src->pitch = src.pitch;
+        m_src->volume = src.volume;
+        m_src->max_distance = src.max_distance;
+        m_src->loop = src.loop;
+        m_src->positions = src.positions;
+        m_src->velocity = src.velocity;
+
+        auto &transform = Scene::m_Registry.get<Transform>(entity);
+        m_src->SetPosition(transform.position);
+        m_src->Update();
+    }
 } // namespace HyperAPI::Experimental

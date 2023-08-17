@@ -484,7 +484,6 @@ void DirIter(const std::string &path) {
                     t = new m_Texture();
                     t->sharing++;
 
-                    stbi_set_flip_vertically_on_load(true);
                     t->texType = "texture_image";
                     t->texStarterPath = entry.path().string().c_str();
                     t->slot = 0;
