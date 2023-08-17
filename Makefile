@@ -252,8 +252,8 @@ win_cxx:
 	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) -Wl,--export-all-symbols,--out-implib,libhost.a $(win_flags)
 
 win_assemble:
-	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp src/Renderer/Camera.cpp $(win_flags) -lrusty_vault
-	mv *.o bin_win
+	# $(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp src/Renderer/Camera.cpp $(win_flags) -lrusty_vault
+	# mv *.o bin_win
 
 	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) -Wl,--export-all-symbols,--out-implib,libhost.a $(win_flags) -lrusty_vault
 	mv libhost.a cxx/windows/libvault_api.a
