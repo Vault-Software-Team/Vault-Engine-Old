@@ -72,6 +72,7 @@ char asciitolower(char in) {
 class DLL_API CollisionListener : public b2ContactListener {
 public:
     void BeginContact(b2Contact *contact) override {
+
         b2Fixture *fixtureA = contact->GetFixtureA();
         b2Fixture *fixtureB = contact->GetFixtureB();
         // getuser data
@@ -147,6 +148,8 @@ public:
                 mono_runtime_invoke(method, behaviour->f_GetObjectGC(), &params, &exception);
             }
         }
+
+        Scene::world->SetContactListener(b2_listener);
     }
 
     void EndContact(b2Contact *contact) override {
@@ -222,6 +225,8 @@ public:
                 mono_runtime_invoke(method, behaviour->f_GetObjectGC(), &params, &exception);
             }
         }
+
+        Scene::world->SetContactListener(b2_listener);
     }
 };
 

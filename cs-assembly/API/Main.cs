@@ -64,6 +64,9 @@ namespace Vault
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static float cpp_DeltaTime();
 
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static float ExitProgram();
+
         public static float ToRad(float degrees)
         {
             return degrees * (PI / 180);

@@ -6,8 +6,9 @@ namespace HyperAPI::Experimental {
         if (ImGui::CollapsingHeader("Rigidbody 2D")) {
             ImGui::Text("Type");
             ImGui::RadioButton("Static", (int *)&type, 0);
-            ImGui::RadioButton("Dynamic", (int *)&type, 1);
-            ImGui::RadioButton("Kinematic", (int *)&type, 2);
+            ImGui::RadioButton("Kinematic", (int *)&type, 1);
+            ImGui::RadioButton("Dynamic", (int *)&type, 2);
+
             ImGui::Checkbox("Fixed Rotation", &fixedRotation);
             ImGui::DragFloat("Gravity Scale", &gravityScale, 0.01f);
 

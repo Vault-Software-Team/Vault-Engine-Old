@@ -51,6 +51,7 @@ namespace HyperAPI::Experimental {
     }
 
     void CsharpScriptManager::Start() {
+        behaviours.clear();
         for (auto klass : selectedScripts) {
 
             if (klass.second == "")
@@ -65,6 +66,7 @@ namespace HyperAPI::Experimental {
             }
 
             CsharpScript *behaviour = nullptr;
+            bool is_new = false;
             if (behaviours.find(klass.second) != behaviours.end()) {
                 behaviour = &behaviours[klass.second];
             } else {
@@ -76,6 +78,7 @@ namespace HyperAPI::Experimental {
                 script.onStartThunk = (OnStartType)mono_method_get_unmanaged_thunk(script.startMethod);
                 behaviours[klass.second] = script;
                 behaviour = &behaviours[klass.second];
+                is_new = true;
             }
 
             behaviour->behaviour->CallConstructor();

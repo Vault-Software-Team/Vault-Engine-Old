@@ -50,14 +50,20 @@ namespace HyperAPI::Experimental {
         if (trigger) {
             body->setCollisionFlags(
                 body->getCollisionFlags() |
-                btCollisionObject::CF_NO_CONTACT_RESPONSE);
+                btCollisionObject::CO_GHOST_OBJECT);
+
+            body->setCollisionFlags(
+                body->getCollisionFlags() |
+                btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+
+            body = (btRigidBody *)(new btGhostObject());
         }
 
         if (fixedRotation) {
             body->setAngularFactor(btVector3(0, 0, 0));
         }
 
-        BulletPhysicsWorld::dynamicsWorld->addRigidBody(body);
+        BulletPhysicsWorld::dynamicsWorld->addRigidBody(body, 1, 1);
     }
 
     void Rigidbody3D::Update() {

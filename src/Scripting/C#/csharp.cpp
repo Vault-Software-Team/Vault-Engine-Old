@@ -42,6 +42,7 @@
 #include "DiscordFunctions.hpp"
 #include "ImGuiFunctions.hpp"
 #include "LightsFunctions.hpp"
+#include "MathfFunctions.hpp"
 
 namespace CsharpVariables {
     DLL_API MonoDomain *rootDomain;
@@ -103,8 +104,32 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("ImGui.Colors::Push", reinterpret_cast<void *(*)>(ImGui_ColorsPush));
         mono_add_internal_call("ImGui.Colors::Pop", reinterpret_cast<void *(*)>(ImGui_ColorsPop));
 
+        // Mathf Functions
+        mono_add_internal_call("Vault.Mathf::Deg2Rad", reinterpret_cast<void *(*)>(Deg2Rad));
+        mono_add_internal_call("Vault.Mathf::Rad2Deg", reinterpret_cast<void *(*)>(Rad2Deg));
+        mono_add_internal_call("Vault.Mathf::Abs", reinterpret_cast<void *(*)>(Abs));
+        mono_add_internal_call("Vault.Mathf::Acos", reinterpret_cast<void *(*)>(Acos));
+        mono_add_internal_call("Vault.Mathf::Asin", reinterpret_cast<void *(*)>(Asin));
+        mono_add_internal_call("Vault.Mathf::Atan", reinterpret_cast<void *(*)>(Atan));
+        mono_add_internal_call("Vault.Mathf::Atan2", reinterpret_cast<void *(*)>(Atan2));
+        mono_add_internal_call("Vault.Mathf::Ceil", reinterpret_cast<void *(*)>(Ceil));
+        mono_add_internal_call("Vault.Mathf::Clamp", reinterpret_cast<void *(*)>(Clamp));
+        mono_add_internal_call("Vault.Mathf::Cos", reinterpret_cast<void *(*)>(Cos));
+        mono_add_internal_call("Vault.Mathf::Sin", reinterpret_cast<void *(*)>(Sin));
+        mono_add_internal_call("Vault.Mathf::Sqrt", reinterpret_cast<void *(*)>(Sqrt));
+        mono_add_internal_call("Vault.Mathf::Tan", reinterpret_cast<void *(*)>(Tan));
+        mono_add_internal_call("Vault.Mathf::Round", reinterpret_cast<void *(*)>(Round));
+        mono_add_internal_call("Vault.Mathf::Pow", reinterpret_cast<void *(*)>(Pow));
+        mono_add_internal_call("Vault.Mathf::Log", reinterpret_cast<void *(*)>(Log));
+        mono_add_internal_call("Vault.Mathf::Log10", reinterpret_cast<void *(*)>(Log10));
+        mono_add_internal_call("Vault.Mathf::Max", reinterpret_cast<void *(*)>(Max));
+        mono_add_internal_call("Vault.Mathf::Min", reinterpret_cast<void *(*)>(Min));
+        mono_add_internal_call("Vault.Mathf::Exp", reinterpret_cast<void *(*)>(Exp));
+        mono_add_internal_call("Vault.Mathf::Lerp", reinterpret_cast<void *(*)>(Lerp));
+
         // Main Functions
         mono_add_internal_call("Vault.Main::cpp_DeltaTime", reinterpret_cast<void *(*)>(cpp_DeltaTime));
+        mono_add_internal_call("Vault.Main::ExitProgram", reinterpret_cast<void *(*)>(ExitProgram));
 
         // Discord Functions
         mono_add_internal_call("Vault.Discord::Init", reinterpret_cast<void *(*)>(Discord_InitRPC));
@@ -525,5 +550,5 @@ MonoClass *MonoScriptClass::GetClass() const {
 };
 
 void MonoScriptClass::CallConstructor() {
-    mono_runtime_object_init(instance);
+    mono_runtime_object_init(f_GetObjectGC());
 }
