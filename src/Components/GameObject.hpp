@@ -15,6 +15,7 @@ namespace HyperAPI::Experimental {
     public:
         bool enabled = true;
         bool schedule = false;
+        bool schedule_deletion = false;
         bool setted_schedule = false;
         bool keyDown = false;
         bool isFolder = false;

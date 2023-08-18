@@ -8,15 +8,11 @@ namespace Garbage
         void OnStart()
         {
             SetObjectID();
-
-            bla.Camera cam = GetEntity(GameObject.GetIDByName("Camera")).As<bla.Camera>();
-            if (cam != null)
-                Debug.Log(cam.deez);
         }
 
         void OnUpdate()
         {
-            Main.ambient = 0.2f;
+            if (Input.IsKeyPressed(Input.KEY_Q)) GameObject.RemoveGameObject(ID);
         }
 
         // This function will get called if a mouse is over the GameObject

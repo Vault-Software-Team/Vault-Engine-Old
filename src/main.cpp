@@ -5856,6 +5856,10 @@ void NewScript::Update() {})";
                         script.Update();
                     }
                 }
+
+                if (gameObject->schedule_deletion) {
+                    gameObject->DeleteGameObject();
+                }
             }
             // Draw calls
             glEnable(GL_CULL_FACE);

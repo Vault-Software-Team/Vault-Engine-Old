@@ -61,7 +61,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         auto *go = f_GameObject::FindGameObjectByID(m_id);
         if (go) {
-            go->DeleteGameObject();
+            go->schedule_deletion = true;
         }
     }
 
