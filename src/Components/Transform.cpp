@@ -4,7 +4,6 @@
 namespace HyperAPI::Experimental {
     void Transform::GUI() {
         if (ImGui::CollapsingHeader("Transform")) {
-            ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
             DrawVec3Control("Position", position);
             rotation = glm::degrees(rotation);
             ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(),
@@ -15,7 +14,6 @@ namespace HyperAPI::Experimental {
             ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX(),
                                        ImGui::GetCursorPosY() - 1.4f));
             DrawVec3Control("Scale", scale, 1);
-            ImGui::PopStyleVar();
         }
     }
 } // namespace HyperAPI::Experimental

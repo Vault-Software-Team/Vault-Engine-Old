@@ -476,6 +476,7 @@ namespace HyperAPI::Experimental {
         ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.5f);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
         float lineHeight =
             GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
@@ -529,7 +530,7 @@ namespace HyperAPI::Experimental {
         ImGui::PopItemWidth();
         ImGui::SameLine();
         ImGui::Columns(1);
-        ImGui::PopStyleVar(2);
+        ImGui::PopStyleVar(3);
         ImGui::PopID();
     }
 
@@ -543,7 +544,8 @@ namespace HyperAPI::Experimental {
 
         ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.5f);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
         float lineHeight =
             GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
@@ -583,7 +585,7 @@ namespace HyperAPI::Experimental {
         ImGui::SameLine();
 
         ImGui::Columns(1);
-        ImGui::PopStyleVar(2);
+        ImGui::PopStyleVar(3);
         ImGui::PopID();
     }
 
