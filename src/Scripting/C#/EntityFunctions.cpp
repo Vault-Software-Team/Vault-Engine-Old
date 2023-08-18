@@ -90,4 +90,26 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
                 gameObject->AddComponent<Transform>();
         }
     }
+
+    MonoObject *Entity_GetClassInstance(MonoString *ID, MonoString *type) {
+        using namespace Experimental;
+        auto *gameObject = f_GameObject::FindGameObjectByID(mono_string_to_utf8(ID));
+        const std::string m_type = mono_string_to_utf8(type);
+
+        auto &manager = gameObject->GetComponent<CsharpScriptManager>();
+
+        for (auto &script : manager.selectedScripts) {
+            if (script.second == "")
+                continue;
+
+            if (script.second.find(m_type) != std::string::npos) {
+                if (manager.behaviours.find(script.second) != manager.behaviours.end()) {
+                    CsharpScript &klass = manager.behaviours[script.second];
+                    return klass.behaviour->f_GetObject();
+                }
+            }
+        }
+
+        return NULL;
+    }
 } // namespace HyperAPI::CsharpScriptEngine::Functions

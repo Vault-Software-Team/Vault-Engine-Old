@@ -67,6 +67,9 @@ namespace Vault
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static float ExitProgram();
 
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static float cpp_Ambient(bool toGet = true, float value = 0);
+
         public static float ToRad(float degrees)
         {
             return degrees * (PI / 180);
@@ -77,6 +80,12 @@ namespace Vault
             get { return cpp_DeltaTime(); }
             set
             { }
+        }
+
+        public static float ambient
+        {
+            get { return cpp_Ambient(); }
+            set { cpp_Ambient(false, value); }
         }
     }
 
@@ -298,10 +307,13 @@ namespace Vault
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static void cpp_RemoveGO(string id);
 
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static object cpp_GetClassInstance(string id, string type);
+
         public string parentID = "NO_PARENT";
-        public string ID;
-        public string name;
-        public string tag;
+        public string ID = "";
+        public string name = "";
+        public string tag = "";
 
         public bool enabled
         {
@@ -315,6 +327,8 @@ namespace Vault
             }
         }
 
+        public Transform transform;
+
         protected virtual void OnStart() { }
         protected virtual void OnUpdate(float ts) { }
         protected virtual void OnGUI() { }
@@ -327,6 +341,7 @@ namespace Vault
 
         protected void SetObjectID()
         {
+            transform = GetComponent<Transform>();
             GetID(out string result);
             string[] data = result.Split(",");
             ID = data[0];
@@ -363,6 +378,12 @@ namespace Vault
         {
             cpp_AddComponent(ID, typeof(T).Name);
             return GetComponent<T>();
+        }
+
+        public T? As<T>() where T : Entity, new()
+        {
+            object instance = cpp_GetClassInstance(ID, typeof(T).Name);
+            return instance as T;
         }
     }
 

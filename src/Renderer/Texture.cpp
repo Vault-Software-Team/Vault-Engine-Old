@@ -15,7 +15,7 @@ namespace HyperAPI {
     Texture::Texture(const char *texturePath, uint32_t slot, const char *textureType) {
         std::cout << texturePath << std::endl;
         texPath = std::string(texturePath);
-        if (std::string(textureType) != "texture_normal") {
+        if (std::string(textureType) != "texture_image") {
             for (auto *m_tex : textures) {
                 if (m_tex->texPath == std::string(texturePath)) {
                     tex = m_tex;

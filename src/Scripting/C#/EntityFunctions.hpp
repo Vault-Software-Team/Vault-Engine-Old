@@ -22,4 +22,5 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
     bool Entity_GetEnabled(MonoString *id);
     void Entity_SetEnabled(MonoString *id, bool value);
     void Entity_AddComponent(MonoString *id, MonoString *type);
+    MonoObject *Entity_GetClassInstance(MonoString *ID, MonoString *type);
 } // namespace HyperAPI::CsharpScriptEngine::Functions

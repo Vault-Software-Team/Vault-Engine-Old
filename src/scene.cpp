@@ -1249,8 +1249,12 @@ namespace HyperAPI {
                 auto &scriptManager = gameObject->GetComponent<Experimental::CsharpScriptManager>();
                 JSON[i]["components"][componentOffset]["type"] = "CsharpScriptManager";
 
+                int index = 0;
                 for (auto klass : scriptManager.selectedScripts) {
-                    JSON[i]["components"][componentOffset]["scripts"] = klass.first;
+                    if (klass.second == "")
+                        continue;
+                    JSON[i]["components"][componentOffset]["scripts"][index] = klass.second;
+                    index++;
                 }
 
                 componentOffset++;

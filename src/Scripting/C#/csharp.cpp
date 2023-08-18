@@ -129,6 +129,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         // Main Functions
         mono_add_internal_call("Vault.Main::cpp_DeltaTime", reinterpret_cast<void *(*)>(cpp_DeltaTime));
+        mono_add_internal_call("Vault.Main::cpp_Ambient", reinterpret_cast<void *(*)>(cpp_Ambient));
         mono_add_internal_call("Vault.Main::ExitProgram", reinterpret_cast<void *(*)>(ExitProgram));
 
         // Discord Functions
@@ -159,6 +160,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("Vault.Entity::cpp_AddComponent", reinterpret_cast<void *(*)>(Entity_AddComponent));
         mono_add_internal_call("Vault.Entity::cpp_GetEnabled", reinterpret_cast<void *(*)>(Entity_GetEnabled));
         mono_add_internal_call("Vault.Entity::cpp_SetEnabled", reinterpret_cast<void *(*)>(Entity_SetEnabled));
+        mono_add_internal_call("Vault.Entity::cpp_GetClassInstance", reinterpret_cast<void *(*)>(Entity_GetClassInstance));
 
         // Input Keyboard
         mono_add_internal_call("Vault.Input::IsKeyPressed", reinterpret_cast<void *(*)>(Input_IsKeyPressed));

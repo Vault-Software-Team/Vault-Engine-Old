@@ -1,0 +1,6 @@
+C# Scripting:
+- Added API To access other script instances, while you could do this with just Entity classes to get their components, now you can get the entire Script class instance!
+- Fixed some stuff
+
+3D Physics:
+- Fixed gravity being set at 0 always

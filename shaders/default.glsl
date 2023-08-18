@@ -25,6 +25,7 @@ uniform mat4 transforms[MAX_TRANSFORMS];
 
 uniform float delta_time;
 uniform float iTime;
+uniform bool isPlane;
 
 // Shadow Mapping
 uniform mat4 lightProjection;
@@ -131,6 +132,9 @@ void main() {
     Color = color;
     // make normal apply rotation
     // Normal = mat3(transpose(inverse(model))) * aNormal;
+    // Normal = mat3(transpose(inverse(model))) * aNormal;
+
+    // if(isPlane) Normal = aNormal;
     Normal = mat3(transpose(inverse(model))) * aNormal;
 
 

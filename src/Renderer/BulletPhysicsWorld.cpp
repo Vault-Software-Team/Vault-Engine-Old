@@ -12,6 +12,7 @@ namespace HyperAPI::BulletPhysicsWorld {
     DLL_API btAlignedObjectArray<btPairCachingGhostObject *> ghostObjects;
     DLL_API btAlignedObjectArray<btTypedConstraint *> constraints;
     DLL_API btAlignedObjectArray<btCollisionObject *> collisionObjects;
+    DLL_API glm::vec3 gravity = glm::vec3(0, -9.81, 0);
 
     void Delete() {
         delete dynamicsWorld;
@@ -28,11 +29,12 @@ namespace HyperAPI::BulletPhysicsWorld {
         solver = new btSequentialImpulseConstraintSolver;
         dynamicsWorld = new btDiscreteDynamicsWorld(
             dispatcher, broadphase, solver, collisionConfiguration);
-        dynamicsWorld->setGravity(btVector3(0, -9.81, 0));
+        dynamicsWorld->setGravity(btVector3(gravity.x, gravity.y, gravity.z));
         // dynamicsWorld->setGravity(btVector3(0, 0, 0));
     }
 
     void UpdatePhysics() {
+        dynamicsWorld->setGravity(btVector3(gravity.x, gravity.y, gravity.z));
         dynamicsWorld->stepSimulation(Timestep::deltaTime, 10);
     }
 
@@ -49,8 +51,6 @@ namespace HyperAPI::BulletPhysicsWorld {
                 contactManifold->getBody0());
             const auto *obB = static_cast<const btCollisionObject *>(
                 contactManifold->getBody1());
-
-            std::cout << "hi" << std::endl;
 
             // get the entity names
             auto *entityA = static_cast<std::string *>(obA->getUserPointer());

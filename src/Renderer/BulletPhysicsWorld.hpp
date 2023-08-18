@@ -21,6 +21,7 @@ namespace HyperAPI::BulletPhysicsWorld {
     DLL_API extern btAlignedObjectArray<btPairCachingGhostObject *> ghostObjects;
     DLL_API extern btAlignedObjectArray<btTypedConstraint *> constraints;
     DLL_API extern btAlignedObjectArray<btCollisionObject *> collisionObjects;
+    DLL_API extern glm::vec3 gravity;
 
     void Delete();
     void Init();
