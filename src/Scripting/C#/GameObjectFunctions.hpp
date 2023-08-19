@@ -20,6 +20,6 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
     MonoString *GameObject_GetIDByTag(MonoString *tag);
     void GameObject_AddGameObject(MonoString *name, MonoString *tag, MonoString **m_id);
     void GameObject_RemoveGameObject(MonoString *id);
-    void GameObject_InstantiatePrefab(MonoString *prefab_path);
-    void GameObject_InstantiatePrefabWithProperties(MonoString *prefab_path, float px, float py, float pz, float rx, float ry, float rz, MonoString *parent_id);
+    MonoString *GameObject_InstantiatePrefab(MonoString *prefab_path);
+    MonoString *GameObject_InstantiatePrefabWithProperties(MonoString *prefab_path, float px, float py, float pz, float rx, float ry, float rz, MonoString *parent_id, MonoString *object_name, MonoString *object_tag, MonoString *custom_uuid);
 } // namespace HyperAPI::CsharpScriptEngine::Functions

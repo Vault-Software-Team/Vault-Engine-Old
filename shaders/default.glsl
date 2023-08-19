@@ -536,7 +536,7 @@ vec4 light2d(Light2D light) {
         if (distance <= light.range)
         diffuse =  1.0 - abs(distance / light.range);
 
-        return vec4(min(frag_color.rgb * ((light.color * diffuse)), frag_color.rgb), texture(texture_diffuse0, texCoords).a * baseColor.a);
+        return vec4(min(frag_color.rgb * ((light.color * diffuse + ambient)), frag_color.rgb), texture(texture_diffuse0, texCoords).a * baseColor.a);
     } else {
         vec4 frag_color = baseColor;
         if(frag_color.a < 0.1)
@@ -548,7 +548,7 @@ vec4 light2d(Light2D light) {
         if (distance <= light.range)
         diffuse =  1.0 - abs(distance / light.range);
 
-        return vec4(frag_color.rgb * ((light.color * diffuse)), frag_color.rgb);
+        return vec4(frag_color.rgb * ((light.color * diffuse + ambient)), frag_color.rgb);
     }
 }
 

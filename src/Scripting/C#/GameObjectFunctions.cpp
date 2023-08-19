@@ -65,31 +65,51 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         }
     }
 
-    void GameObject_InstantiatePrefab(MonoString *prefab_path) {
+    MonoString *GameObject_InstantiatePrefab(MonoString *prefab_path) {
         using namespace Experimental;
         using namespace CsharpVariables;
 
         const std::string path = mono_string_to_utf8(prefab_path);
-        Scene::LoadPrefab(path);
+        PrefabSchedule prefab;
+        prefab.id = uuid::generate_uuid_v4();
+        prefab.name = "Prefab";
+        prefab.path = path;
+
+        schedule_prefab_spawn.push_back(prefab);
+        return mono_string_new(appDomain, prefab.id.c_str());
+        // Scene::LoadPrefab(path);
     }
 
-    void GameObject_InstantiatePrefabWithProperties(MonoString *prefab_path, float px, float py, float pz, float rx, float ry, float rz, MonoString *parent_id) {
+    MonoString *GameObject_InstantiatePrefabWithProperties(MonoString *prefab_path, float px, float py, float pz, float rx, float ry, float rz, MonoString *parent_id, MonoString *object_name, MonoString *object_tag, MonoString *custom_uuid) {
         using namespace Experimental;
         using namespace CsharpVariables;
 
         const std::string path = mono_string_to_utf8(prefab_path);
         const std::string m_parent_id = mono_string_to_utf8(parent_id);
-        auto *go = Scene::LoadPrefab(path);
+        const std::string m_object_name = mono_string_to_utf8(object_name);
+        const std::string m_object_tag = mono_string_to_utf8(object_tag);
+        const std::string m_custom_uuid = mono_string_to_utf8(custom_uuid);
+        // auto *go = Scene::LoadPrefab(path);
+        PrefabSchedule prefab;
+        prefab.id = m_custom_uuid == "GENERATE_RANDOM" ? uuid::generate_uuid_v4() : m_custom_uuid;
+        prefab.name = m_object_name;
+        prefab.path = path;
+        prefab.parent_id = m_parent_id;
+        prefab.tag = m_object_tag;
 
-        go->parentID = m_parent_id;
+        schedule_prefab_spawn.push_back(prefab);
 
-        auto &transform = go->GetComponent<Transform>();
-        transform.position.x = px;
-        transform.position.y = py;
-        transform.position.z = pz;
+        // go->parentID = m_parent_id;
 
-        transform.rotation.x = rx;
-        transform.rotation.y = ry;
-        transform.rotation.z = rz;
+        // auto &transform = go->GetComponent<Transform>();
+        prefab.pos.x = px;
+        prefab.pos.y = py;
+        prefab.pos.z = pz;
+
+        prefab.rot.x = rx;
+        prefab.rot.y = ry;
+        prefab.rot.z = rz;
+
+        return mono_string_new(appDomain, prefab.id.c_str());
     }
 } // namespace HyperAPI::CsharpScriptEngine::Functions

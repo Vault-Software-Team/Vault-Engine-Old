@@ -411,7 +411,7 @@ namespace Vault
         extern public static string cpp_InstantiatePrefab(string prefab_path);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        extern public static string cpp_InstantiatePrefabWithProperties(string prefab_path, float px, float py, float pz, float rx, float ry, float rz, string parent_id = "NO_PARENT");
+        extern public static string cpp_InstantiatePrefabWithProperties(string prefab_path, float px, float py, float pz, float rx, float ry, float rz, string parent_id = "NO_PARENT", string object_name = "Prefab", string object_tag = "Untagged", string custom_uuid = "GENERATE_RANDOM");
 
         public static void RemoveGameObject(GameObject game_object)
         {
@@ -428,7 +428,7 @@ namespace Vault
             cpp_InstantiatePrefab(prefab_path);
         }
 
-        public static void InstantiatePrefabWithProperties(string prefab_path, Vector3 position, Vector3 rotation, string parent_id = "NO_PARENT")
+        public static void InstantiatePrefabWithProperties(string prefab_path, Vector3 position, Vector3 rotation, string parent_id = "NO_PARENT", string object_name = "Prefab", string object_tag = "Untagged", string custom_uuid = "GENERATE_RANDOM")
         {
             cpp_InstantiatePrefabWithProperties(prefab_path, position.x, position.y, position.z, rotation.x, rotation.y, rotation.z, parent_id);
         }

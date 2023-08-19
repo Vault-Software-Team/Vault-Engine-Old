@@ -69,6 +69,27 @@ char asciitolower(char in) {
     return in;
 }
 
+DLL_API std::vector<glm::vec4> getFrustumCornersWorldSpace(const glm::mat4 &proj, const glm::mat4 &view) {
+    const auto inv = glm::inverse(proj * view);
+
+    std::vector<glm::vec4> frustumCorners;
+    for (uint32_t x = 0; x < 2; ++x) {
+        for (uint32_t y = 0; y < 2; ++y) {
+            for (uint32_t z = 0; z < 2; ++z) {
+                const glm::vec4 pt =
+                    inv * glm::vec4(
+                              2.0f * x - 1.0f,
+                              2.0f * y - 1.0f,
+                              2.0f * z - 1.0f,
+                              1.0f);
+                frustumCorners.push_back(pt / pt.w);
+            }
+        }
+    }
+
+    return frustumCorners;
+}
+
 class DLL_API CollisionListener : public b2ContactListener {
 public:
     void BeginContact(b2Contact *contact) override {
@@ -1557,6 +1578,25 @@ int main(int argc, char **argv) {
 #ifndef GAME_BUILD
     Scene::mainCamera = camera;
 #endif
+
+    // Cascaded
+    // const auto proj = glm::perspective(
+    //     glm::radians(camera->cam_fov),
+    //     (float)app.width / (float)app.height,
+    //     camera->cam_near,
+    //     camera->cam_far);
+
+    // auto corners = getFrustumCornersWorldSpace(camera->proj, camera->view);
+    // glm::vec3 center = glm::vec3(0, 0, 0);
+    // for (const auto &v : corners) {
+    //     center += glm::vec3(v);
+    // }
+    // center /= corners.size();
+
+    // const auto lightView = glm::lookAt(
+    //     center + lightDir,
+    //     center,
+    //     glm::vec3(0.0f, 1.0f, 0.0f));
 
     uint32_t shadowMapFBO;
     glGenFramebuffers(1, &shadowMapFBO);
@@ -6986,6 +7026,25 @@ void NewScript::Update() {})";
                         glViewport(0, 0, app.width, app.height);
                     }
                 }
+            }
+
+            // Schedules
+            for (auto &prefab : CsharpVariables::schedule_prefab_spawn) {
+                GameObject *object_prefab = Scene::LoadPrefab(prefab.path);
+                auto &transform = object_prefab->GetComponent<Transform>();
+                transform.position = prefab.pos;
+                transform.rotation = prefab.rot;
+                object_prefab->name = prefab.name;
+                object_prefab->tag = prefab.tag;
+                object_prefab->parentID = prefab.parent_id;
+            }
+            if (CsharpVariables::schedule_prefab_spawn.size() > 0)
+                CsharpVariables::schedule_prefab_spawn.clear();
+
+            if (CsharpVariables::scene_schedule.scheduled) {
+                nlohmann::json m_json;
+                CsharpVariables::scene_schedule.scheduled = false;
+                Scene::LoadScene(CsharpVariables::scene_schedule.scene_path, m_json);
             }
 
             // Ending of draw calls

@@ -10,6 +10,7 @@
 #include <fstream>
 #include <string>
 #include <unordered_map>
+#include <glm/ext.hpp>
 
 namespace CsharpVariables {
     DLL_API extern MonoDomain *rootDomain;
@@ -17,6 +18,25 @@ namespace CsharpVariables {
     DLL_API extern MonoAssembly *coreAssembly;
     DLL_API extern bool compiledAssembly;
     DLL_API extern std::string oldCwd;
+
+    struct SceneSchedule {
+        std::string scene_path = "";
+        bool scheduled = false;
+    };
+
+    DLL_API extern SceneSchedule scene_schedule;
+
+    struct PrefabSchedule {
+        std::string path = "";
+        std::string name = "Prefab";
+        std::string tag = "Untagged";
+        std::string parent_id = "NO_PARENT";
+        std::string id;
+        glm::vec3 pos = glm::vec3(0, 0, 0);
+        glm::vec3 rot = glm::vec3(0, 0, 0);
+    };
+
+    DLL_API extern std::vector<PrefabSchedule> schedule_prefab_spawn;
 } // namespace CsharpVariables
 
 class DLL_API MonoScriptClass {

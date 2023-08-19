@@ -51,6 +51,8 @@ namespace CsharpVariables {
 
     DLL_API bool compiledAssembly = false;
     DLL_API std::string oldCwd;
+    DLL_API std::vector<PrefabSchedule> schedule_prefab_spawn;
+    DLL_API SceneSchedule scene_schedule;
 } // namespace CsharpVariables
 
 namespace HyperAPI::CsharpScriptEngine::Functions {
