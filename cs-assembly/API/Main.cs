@@ -430,7 +430,7 @@ namespace Vault
 
         public static void InstantiatePrefabWithProperties(string prefab_path, Vector3 position, Vector3 rotation, string parent_id = "NO_PARENT", string object_name = "Prefab", string object_tag = "Untagged", string custom_uuid = "GENERATE_RANDOM")
         {
-            cpp_InstantiatePrefabWithProperties(prefab_path, position.x, position.y, position.z, rotation.x, rotation.y, rotation.z, parent_id);
+            cpp_InstantiatePrefabWithProperties(prefab_path, position.x, position.y, position.z, rotation.x, rotation.y, rotation.z, parent_id, object_name, object_tag, custom_uuid);
         }
 
         public string name;

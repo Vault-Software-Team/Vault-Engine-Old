@@ -7032,6 +7032,7 @@ void NewScript::Update() {})";
             for (auto &prefab : CsharpVariables::schedule_prefab_spawn) {
                 GameObject *object_prefab = Scene::LoadPrefab(prefab.path);
                 auto &transform = object_prefab->GetComponent<Transform>();
+                std::cout << prefab.pos.y << std::endl;
                 transform.position = prefab.pos;
                 transform.rotation = prefab.rot;
                 object_prefab->name = prefab.name;

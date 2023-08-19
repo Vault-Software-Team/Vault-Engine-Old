@@ -97,8 +97,6 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         prefab.parent_id = m_parent_id;
         prefab.tag = m_object_tag;
 
-        schedule_prefab_spawn.push_back(prefab);
-
         // go->parentID = m_parent_id;
 
         // auto &transform = go->GetComponent<Transform>();
@@ -109,6 +107,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         prefab.rot.x = rx;
         prefab.rot.y = ry;
         prefab.rot.z = rz;
+        schedule_prefab_spawn.push_back(prefab);
 
         return mono_string_new(appDomain, prefab.id.c_str());
     }
