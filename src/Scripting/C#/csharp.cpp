@@ -128,6 +128,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("Vault.Mathf::Min", reinterpret_cast<void *(*)>(Min));
         mono_add_internal_call("Vault.Mathf::Exp", reinterpret_cast<void *(*)>(Exp));
         mono_add_internal_call("Vault.Mathf::Lerp", reinterpret_cast<void *(*)>(Lerp));
+        mono_add_internal_call("Vault.Mathf::RandomRange", reinterpret_cast<void *(*)>(RandomRange));
 
         // Main Functions
         mono_add_internal_call("Vault.Main::cpp_DeltaTime", reinterpret_cast<void *(*)>(cpp_DeltaTime));
@@ -380,7 +381,7 @@ namespace HyperAPI::CsharpScriptEngine {
         using namespace Functions;
         using namespace CsharpVariables;
 
-        if (fs::exists("cs-assembly/bin/Debug/net6.0/cs-assembly.dll")) {
+        if (fs::exists("assets/VAULT_OUT/cs-assembly.dll")) {
 
 #ifdef _WIN32
             mono_set_assemblies_path((std::string(CsharpVariables::oldCwd) + "\\mono\\lib").c_str());
@@ -402,7 +403,7 @@ namespace HyperAPI::CsharpScriptEngine {
 
             RegisterFunctions();
 
-            coreAssembly = LoadCSharpAssembly("cs-assembly/bin/Debug/net6.0/cs-assembly.dll");
+            coreAssembly = LoadCSharpAssembly("assets/VAULT_OUT/cs-assembly.dll");
             PrintAssemblyTypes(coreAssembly);
             LoadAssemblyClasses(coreAssembly);
 
@@ -427,7 +428,7 @@ namespace HyperAPI::CsharpScriptEngine {
         using namespace Functions;
         using namespace CsharpVariables;
 
-        if (!fs::exists("cs-assembly/bin/Debug/net6.0/cs-assembly.dll"))
+        if (!fs::exists("assets/VAULT_OUT/cs-assembly.dll"))
             return;
 
         mono_domain_set(mono_get_root_domain(), false);
@@ -441,7 +442,7 @@ namespace HyperAPI::CsharpScriptEngine {
         std::thread *compilerThread = new std::thread([&] {
             std::array<char, 1000> buffer;
             std::string result;
-            std::unique_ptr<FILE, decltype(&pclose)> pipe(popen("cd cs-assembly && dotnet build", "r"), pclose);
+            std::unique_ptr<FILE, decltype(&pclose)> pipe(popen("cd assets && dotnet build -o VAULT_OUT", "r"), pclose);
 
             if (!pipe) {
                 throw std::runtime_error("popen() failed!");

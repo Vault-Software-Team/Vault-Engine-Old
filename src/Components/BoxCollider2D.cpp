@@ -15,6 +15,11 @@ namespace HyperAPI::Experimental {
                              0.01f);
 
             ImGui::NewLine();
+            ImGui::Checkbox("Joints", &enable_joint);
+            ImGui::InputText("Body 1", joint_body1, 256);
+            ImGui::InputText("Body 2", joint_body2, 256);
+
+            ImGui::NewLine();
             if (ImGui::Button(ICON_FA_TRASH " Remove Component")) {
                 Scene::m_Registry.remove<BoxCollider2D>(entity);
             }

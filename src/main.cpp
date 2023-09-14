@@ -103,7 +103,26 @@ public:
 
         auto *gameObjectA = (GameObject *)bodyUserDataA.pointer;
         auto *gameObjectB = (GameObject *)bodyUserDataB.pointer;
-        std::cout << "yho?" << std::endl;
+#ifdef _WIN32
+        if (IsBadReadPtr(gameObjectA, sizeof(GameObject)))
+            return;
+
+        if (IsBadReadPtr(gameObjectB, sizeof(GameObject)))
+            return;
+#else
+        int nullfd = open("/dev/random", O_WRONLY);
+        if (write(nullfd, gameObjectA, sizeof(GameObject)) < 0) {
+            return;
+        }
+        if (write(nullfd, gameObjectB, sizeof(GameObject)) < 0) {
+            return;
+        }
+        close(nullfd);
+#endif
+        if (gameObjectA == nullptr || gameObjectB == nullptr)
+            return;
+        if (gameObjectA->schedule_deletion || gameObjectB->schedule_deletion)
+            return;
         // TODO: C# Events (Collision2D)
 
         if (gameObjectA->HasComponent<m_LuaScriptComponent>()) {
@@ -182,6 +201,28 @@ public:
 
         auto *gameObjectA = (GameObject *)bodyUserDataA.pointer;
         auto *gameObjectB = (GameObject *)bodyUserDataB.pointer;
+        if (gameObjectA == nullptr || gameObjectB == nullptr)
+            return;
+
+#ifdef _WIN32
+        if (IsBadReadPtr(gameObjectA, sizeof(GameObject)))
+            return;
+
+        if (IsBadReadPtr(gameObjectB, sizeof(GameObject)))
+            return;
+#else
+        int nullfd = open("/dev/random", O_WRONLY);
+        if (write(nullfd, gameObjectA, sizeof(GameObject)) < 0) {
+            return;
+        }
+        if (write(nullfd, gameObjectB, sizeof(GameObject)) < 0) {
+            return;
+        }
+        close(nullfd);
+#endif
+
+        if (gameObjectA->schedule_deletion || gameObjectB->schedule_deletion)
+            return;
 
         if (gameObjectA->HasComponent<m_LuaScriptComponent>()) {
             auto &scriptManager =
@@ -316,6 +357,7 @@ fs::path relative(fs::path p, fs::path base) {
 fs::path currentDirectory = fs::path("assets");
 
 auto langDef = TextEditor::LanguageDefinition::Lua();
+auto csDef = TextEditor::LanguageDefinition::C();
 auto glslDef = TextEditor::LanguageDefinition::GLSL();
 std::vector<std::string> file_images = {};
 void DirIter(const std::string &path) {
@@ -382,6 +424,18 @@ void DirIter(const std::string &path) {
     for (const auto &entry : folders) {
         std::string path = entry.path().string();
         fs::path relativePath = relative(entry.path(), currentDirectory);
+
+        if (entry.path().string().find("VAULT_API", 0) != std::string::npos) {
+            continue;
+        }
+
+        if (entry.path().string().find("VAULT_OUT", 0) != std::string::npos) {
+            continue;
+        }
+
+        if (entry.path().string().find("cs-assembly.proj", 0) != std::string::npos) {
+            continue;
+        }
 
         if (fs::is_directory(entry)) {
             // move the button text down
@@ -466,6 +520,17 @@ void DirIter(const std::string &path) {
                                     std::istreambuf_iterator<char>());
                     editor.SetText(str);
                     editor.SetLanguageDefinition(langDef);
+                    currentFilePath = entry.path().string();
+                }
+            } else if (ends_with(entry.path().string(), ".cs")) {
+                ImGui::Button(ICON_FA_CODE,
+                              ImVec2(buttonSize, buttonSize - 30));
+                if (item) {
+                    std::ifstream file(entry.path().string());
+                    std::string str((std::istreambuf_iterator<char>(file)),
+                                    std::istreambuf_iterator<char>());
+                    editor.SetText(str);
+                    editor.SetLanguageDefinition(csDef);
                     currentFilePath = entry.path().string();
                 }
             } else if (ends_with(entry.path().string(), ".cpp") || ends_with(entry.path().string(), ".cc") || ends_with(entry.path().string(), ".cxx") || ends_with(entry.path().string(), ".hpp")) {
@@ -1297,10 +1362,19 @@ int main(int argc, char **argv) {
     std::cout << m_cwd << std::endl;
     std::cout << CsharpVariables::oldCwd << std::endl;
     if (CsharpVariables::oldCwd != std::string(m_cwd)) {
-        if (fs::exists("cs-assembly/API") && fs::exists("cs-assembly")) {
-            fs::remove_all("cs-assembly/API");
-            fs::copy(CsharpVariables::oldCwd + "/cs-assembly/API", "cs-assembly/API", fs::copy_options::recursive);
+        if (fs::exists("assets/cs-assembly.csproj")) {
+            fs::remove("assets/cs-assembly.csproj");
+            fs::remove_all("assets/VAULT_API");
+            fs::copy(CsharpVariables::oldCwd + "/cs-assembly/cs-assembly.csproj", "assets/cs-assembly.csproj", fs::copy_options::recursive);
+            fs::copy(CsharpVariables::oldCwd + "/cs-assembly/API", "assets/VAULT_API", fs::copy_options::recursive);
+        } else {
+            fs::copy(CsharpVariables::oldCwd + "/cs-assembly/cs-assembly.csproj", "assets/cs-assembly.csproj", fs::copy_options::recursive);
+            fs::copy(CsharpVariables::oldCwd + "/cs-assembly/API", "assets/VAULT_API", fs::copy_options::recursive);
         }
+        // if (fs::exists("cs-assembly/API") && fs::exists("cs-assembly")) {
+        //     fs::remove_all("cs-assembly/API");
+        //     fs::copy(CsharpVariables::oldCwd + "/cs-assembly/API", "cs-assembly/API", fs::copy_options::recursive);
+        // }
 
         if (fs::exists("shaders")) {
             fs::remove_all("shaders");
@@ -1981,9 +2055,9 @@ int main(int argc, char **argv) {
                         }
                     }
 
-                    if (ImGui::MenuItem("Create C# Project")) {
-                        CsharpScriptEngine::CreateCsharpProject();
-                    }
+                    // if (ImGui::MenuItem("Create C# Project")) {
+                    //     CsharpScriptEngine::CreateCsharpProject();
+                    // }
 
                     if (ImGui::MenuItem("Compile C++ Scripts (Linux)")) {
                         CompileLinuxScripts();
@@ -4785,7 +4859,7 @@ void NewScript::Update() {})";
                         }
 
                         if (ImGui::Button("Delete", ImVec2(200, 0))) {
-                            fs::remove(m_originalName);
+                            fs::remove_all(m_originalName);
                             ImGui::CloseCurrentPopup();
                         }
                     } else {
@@ -5744,6 +5818,36 @@ void NewScript::Update() {})";
                     transform.rotation.z = body->GetAngle();
                 }
 
+                for (auto e : view) {
+                    GameObject *m_GameObject;
+                    for (auto &gameObject : *Scene::m_GameObjects) {
+                        if (gameObject->entity == e) {
+                            m_GameObject = gameObject;
+                        }
+                    }
+
+                    auto &transform = m_GameObject->GetComponent<Transform>();
+
+                    if (m_GameObject->HasComponent<BoxCollider2D>()) {
+                        auto &boxCollider2D =
+                            m_GameObject->GetComponent<BoxCollider2D>();
+
+                        // if (boxCollider2D.enable_joint) {
+                        //     if (boxCollider2D.joint != nullptr && boxCollider2D.enable_joint) {
+                        //         GameObject *bodyA = f_GameObject::FindGameObjectByName(boxCollider2D.joint_body1);
+                        //         GameObject *bodyB = f_GameObject::FindGameObjectByName(boxCollider2D.joint_body2);
+
+                        //         if (bodyA && bodyB) {
+                        //             boxCollider2D.joint_def.bodyA = (b2Body *)bodyA->GetComponent<Rigidbody2D>().body;
+                        //             boxCollider2D.joint_def.bodyB = (b2Body *)bodyB->GetComponent<Rigidbody2D>().body;
+                        //             boxCollider2D.joint_def.collideConnected = true;
+                        //         }
+                        //     }
+                        //     boxCollider2D.joint = Scene::world->CreateJoint(&boxCollider2D.joint_def);
+                        // }
+                    }
+                }
+
                 // auto view_csharp = Scene::m_Registry.view<CsharpScriptManager>();
                 // for (auto e : view_csharp) {
                 //     GameObject *m_GameObject = f_GameObject::FindGameObjectByEntt(e);
@@ -5898,7 +6002,9 @@ void NewScript::Update() {})";
                 }
 
                 if (gameObject->schedule_deletion) {
-                    gameObject->DeleteGameObject();
+                    gameObject->enabled = false;
+                    // gameObject->DeleteGameObject();
+                } else {
                 }
             }
             // Draw calls
@@ -7039,6 +7145,7 @@ void NewScript::Update() {})";
                 object_prefab->tag = prefab.tag;
                 object_prefab->parentID = prefab.parent_id;
             }
+
             if (CsharpVariables::schedule_prefab_spawn.size() > 0)
                 CsharpVariables::schedule_prefab_spawn.clear();
 

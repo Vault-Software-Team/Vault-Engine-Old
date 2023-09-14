@@ -223,7 +223,8 @@ namespace HyperAPI::Experimental {
                             Scene::DirLights.end(),
                             GetComponent<c_DirectionalLight>().light),
                 Scene::DirLights.end());
-            delete GetComponent<c_DirectionalLight>().light;
+            // delete GetComponent<c_DirectionalLight>().light;
+            Scene::m_Registry.remove<c_DirectionalLight>(entity);
         }
 
         if (HasComponent<c_PointLight>()) {
@@ -232,7 +233,8 @@ namespace HyperAPI::Experimental {
                             Scene::PointLights.end(),
                             GetComponent<c_PointLight>().light),
                 Scene::PointLights.end());
-            delete GetComponent<c_PointLight>().light;
+            // delete GetComponent<c_PointLight>().light;
+            Scene::m_Registry.remove<c_PointLight>(entity);
         }
 
         if (HasComponent<c_SpotLight>()) {
@@ -241,7 +243,8 @@ namespace HyperAPI::Experimental {
                             Scene::SpotLights.end(),
                             GetComponent<c_SpotLight>().light),
                 Scene::SpotLights.end());
-            delete GetComponent<c_SpotLight>().light;
+            Scene::m_Registry.remove<c_SpotLight>(entity);
+            // delete GetComponent<c_SpotLight>().light;
         }
 
         if (HasComponent<c_Light2D>()) {
@@ -249,16 +252,18 @@ namespace HyperAPI::Experimental {
                 std::remove(Scene::Lights2D.begin(), Scene::Lights2D.end(),
                             GetComponent<c_Light2D>().light),
                 Scene::Lights2D.end());
-            delete GetComponent<c_Light2D>().light;
+            // delete GetComponent<c_Light2D>().light;
+            Scene::m_Registry.remove<c_Light2D>(entity);
         }
 
-        Scene::m_Object = nullptr;
+        if (Scene::m_Object == this)
+            Scene::m_Object = nullptr;
 
-        Scene::m_Registry.remove_all(entity);
-        Scene::m_Registry.remove(entity);
-        Scene::m_Registry.destroy(entity);
+        enabled = false;
+        // Scene::m_Registry.remove_all(entity);
+        // Scene::m_Registry.destroy(entity);
 
-        Scene::m_GameObjects->erase(std::remove(Scene::m_GameObjects->begin(), Scene::m_GameObjects->end(), this), Scene::m_GameObjects->end());
+        // Scene::m_GameObjects->erase(std::remove(Scene::m_GameObjects->begin(), Scene::m_GameObjects->end(), this), Scene::m_GameObjects->end());
 
         for (auto &gameObject : (*Scene::m_GameObjects)) {
             if (gameObject->parentID == ID) {

@@ -96,6 +96,9 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         auto *gameObject = f_GameObject::FindGameObjectByID(mono_string_to_utf8(ID));
         const std::string m_type = mono_string_to_utf8(type);
 
+        if (gameObject == nullptr)
+            return NULL;
+
         auto &manager = gameObject->GetComponent<CsharpScriptManager>();
 
         for (auto &script : manager.selectedScripts) {

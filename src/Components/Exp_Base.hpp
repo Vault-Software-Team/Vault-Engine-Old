@@ -13,7 +13,7 @@ namespace HyperAPI::Experimental {
         std::string tag = "Untagged";
         bool prefab = false;
 
-        entt::entity entity;
+        entt::entity entity = entt::null;
 
         ComponentEntity() {
             entity = Scene::m_Registry.create();

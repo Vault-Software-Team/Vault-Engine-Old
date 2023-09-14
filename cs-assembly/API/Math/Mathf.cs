@@ -52,6 +52,9 @@ namespace Vault
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static float Lerp(float from, float to, float lerp_speed);
 
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static int RandomRange(int min, int max);
+
 
         public static readonly float zero = 0;
         public static readonly float PI = 3.141592653589793f;

@@ -383,6 +383,7 @@ namespace Vault
         public T? As<T>() where T : Entity, new()
         {
             object instance = cpp_GetClassInstance(ID, typeof(T).Name);
+            if (instance == null) return null;
             return instance as T;
         }
     }
