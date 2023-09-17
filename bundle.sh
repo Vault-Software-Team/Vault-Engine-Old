@@ -28,6 +28,8 @@ if [ "$PLATFORM" = "windows" ]; then
     cp -r windows/bin dist/windows/bin
     cp -r bin/game.out dist/windows/bin/game.out
     cp -r LaunchGame.sh dist/windows/bin/LaunchGame.sh
+    cp -r game.config dist/windows/game.config
+    cp -r lib/extractor.exe dist/linux/lib/extractor.exe
     cp windows/Vault\ Engine.bat dist/windows/Vault\ Engine.bat
     cp -r cxx dist/windows/cxx
 elif [ "$PLATFORM" == "linux_install" ]; then
@@ -53,6 +55,7 @@ elif [ "$PLATFORM" == "linux_install" ]; then
     cp -r windows/bin/game.exe /opt/vault-engine/bin/game.exe
     cp -r windows/LaunchGame.bat /opt/vault-engine/bin/LaunchGame.bat
     cp -r LaunchGame.sh /opt/vault-engine/bin/LaunchGame.sh
+    cp -r game.config /opt/vault-engine/game.config
     cp -r Vault\ Engine.sh /opt/vault-engine/vault.sh
     cp -r vault.desktop /usr/share/applications/vault.desktop
 
@@ -103,6 +106,8 @@ else
     cp -r windows/bin/game.exe dist/linux/bin/game.exe
     cp -r windows/LaunchGame.bat dist/linux/bin/LaunchGame.bat
     cp -r LaunchGame.sh dist/linux/bin/LaunchGame.sh
+    cp -r game.config dist/linux/game.config
+    cp -r lib/extractor dist/linux/lib/extractor
     cp -r Vault\ Engine.sh dist/linux/Vault\ Engine.sh
 
     cp -r dist/distribute_assets dist/linux/assets

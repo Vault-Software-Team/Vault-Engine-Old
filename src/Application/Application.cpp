@@ -661,6 +661,10 @@ namespace Hyper {
         }
 
         HYPER_LOG("Closing Vault Engine")
+        #ifdef GAME_BUILD
+        if (fs::exists("assets"))
+            fs::remove_all("assets");
+        #endif
     }
 
     MousePicker::MousePicker(Application *app, HyperAPI::Camera *camera,

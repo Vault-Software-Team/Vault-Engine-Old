@@ -1327,6 +1327,20 @@ void SetupAddComponentGUI() {
     }));
 }
 
+void BuildAssetPack() {
+    if (fs::exists("asset_pack.vault_pack")) {
+        fs::remove("asset_pack.vault_pack");
+    }
+    std::string m_cwd = CsharpVariables::oldCwd;
+
+#ifdef _WIN32
+    system(("\"" + m_cwd + std::string(("\\lib\\extractor.exe\" a asset_pack assets -p\"") + std::string(config.name) + "\"")).c_str());
+#else
+    system(("\"" + m_cwd + std::string(("/lib/extractor\" a asset_pack assets -p\"") + std::string(config.name) + "\"")).c_str());
+#endif
+    fs::rename("asset_pack.7z", "asset_pack.vault_pack");
+}
+
 int main(int argc, char **argv) {
     if (!fs::exists("logs"))
         fs::create_directory("logs");
@@ -1391,8 +1405,6 @@ int main(int argc, char **argv) {
             fs::copy(CsharpVariables::oldCwd + "/shaders", "shaders", fs::copy_options::recursive);
         }
     }
-
-    CsharpScriptEngine::InitMono();
 
     // if (!fs::exists("cs-assembly"))
     // fs::create_directory("cs-assembly");
@@ -1462,7 +1474,7 @@ int main(int argc, char **argv) {
     bool enableSpotLightShadowMap = false;
 
     // check if game.config exists
-    std::ifstream file("assets/game.config");
+    std::ifstream file("game.config");
     bool mainSceneFound = false;
     if (file.is_open()) {
         nlohmann::json JSON = nlohmann::json::parse(file);
@@ -1566,12 +1578,23 @@ int main(int argc, char **argv) {
                                                               {"intensity", config.postProcessing.chromaticAberration.intensity},
                                                           }}}}};
 
-        std::ofstream o("assets/game.config");
+        std::ofstream o("game.config");
         o << std::setw(4) << j << std::endl;
     }
 
 // if the build is a game
 #ifdef GAME_BUILD
+    if (fs::exists("asset_pack.vault_pack")) {
+        if (fs::exists("assets"))
+            fs::remove_all("assets");
+
+#ifdef _WIN32
+        system((std::string(".\\lib\\extractor.exe x asset_pack.vault_pack -p\"") + config.name + "\"").c_str());
+#else
+        system(("\"" + CsharpVariables::oldCwd + "/lib/extractor\" x asset_pack.vault_pack -p\"" + config.name + "\"").c_str());
+#endif
+    }
+
     Hyper::Application app(
         1280, 720, config.name, config.fullscreenOnLaunch, config.resizable,
         false, [&]() {
@@ -1634,6 +1657,8 @@ int main(int argc, char **argv) {
     ImGui::GetIO().Fonts->AddFontFromFileTTF(
         "assets/fonts/fa-solid-900.ttf", 55.0f, &icons_config, icons_ranges);
 #endif
+    CsharpScriptEngine::InitMono();
+
     // if the build is a game
 
     Input::window = app.renderer->window;
@@ -2120,12 +2145,7 @@ int main(int argc, char **argv) {
                     }
 
                     if (ImGui::MenuItem("Build Asset Pack")) {
-                        if (fs::exists("asset_pack.vault_pack")) {
-                            fs::remove("asset_pack.vault_pack");
-                        }
-
-                        system((std::string(("./bin/7zz a asset_pack assets -p\"") + std::string(config.name) + "\"")).c_str());
-                        fs::rename("asset_pack.7z", "asset_pack.vault_pack");
+                        BuildAssetPack();
                     }
 
                     if (ImGui::MenuItem("Run Instance", "CTRL+I")) {
@@ -3008,7 +3028,7 @@ int main(int argc, char **argv) {
                     if (ImGui::TreeNode("New Layer")) {
                         ImGui::InputText("Name", layerName, 32);
                         if (ImGui::Button("Create")) {
-                            std::ofstream file("assets/game.config");
+                            std::ofstream file("game.config");
                             Scene::layers[layerName] = true;
                             strcpy(layerName, "New Layer");
                             std::vector<std::string> layerStarters;
@@ -3525,7 +3545,7 @@ int main(int argc, char **argv) {
                                                                           {"intensity", config.postProcessing.chromaticAberration.intensity},
                                                                       }}}}};
 
-                    std::ofstream o("assets/game.config");
+                    std::ofstream o("game.config");
                     o << std::setw(4) << j << std::endl;
 
 #ifndef GAME_BUILD

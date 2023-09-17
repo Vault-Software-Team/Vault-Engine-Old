@@ -206,7 +206,7 @@ m_client:
 
 	$(GNU_LINUX_COMPILER) bin/client.o -o bin/client.out $(flags)
 app:
-	$(GNU_LINUX_COMPILER) -c src/main.cpp $(flags)
+	$(GNU_LINUX_COMPILER) -c src/main.cpp src/Application/Application.cpp $(flags)
 	mv *.o bin
 
 	$(GNU_LINUX_COMPILER) bin/*.o -o $(exec) $(flags)
@@ -228,7 +228,7 @@ linux:
 	make app
 
 linux_game:
-	g++ -c src/main.cpp src/Scripting/C#/ImGuiFunctions.cpp -DGAME_BUILD $(flags)
+	g++ -c src/main.cpp src/Application/Application.cpp -DGAME_BUILD $(flags)
 	mv *.o bin
 	
 	g++ bin/*.o -o $(exec_game) -DGAME_BUILD $(flags)
@@ -314,7 +314,7 @@ win_scripting:
 	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(win_exec) $(win_flags)
 
 win_game:
-	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp src/Renderer/Texture.cpp -DGAME_BUILD $(win_flags)
+	$(MINGW_COMPILER) -c -static -g -Og -std=c++20 -Wa,-mbig-obj src/main.cpp src/Application/Application.cpp -DGAME_BUILD $(win_flags)
 	mv *.o bin_win
 	$(MINGW_COMPILER) -static -g -Og -std=c++20 -Wa,-mbig-obj bin_win/*.o -o $(exec_win_game) $(win_flags)
 
