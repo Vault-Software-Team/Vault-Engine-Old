@@ -27,10 +27,7 @@ namespace HyperAPI::Experimental {
         b2Joint *joint = nullptr;
         b2JointDef joint_def;
 
-        BoxCollider2D() {
-            enable_joint = false;
-            HYPER_LOG("Created BoxCollider2D")
-        };
+        BoxCollider2D() = default;
 
         void GUI();
 

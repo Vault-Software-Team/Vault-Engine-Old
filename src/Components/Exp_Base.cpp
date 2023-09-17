@@ -260,10 +260,10 @@ namespace HyperAPI::Experimental {
             Scene::m_Object = nullptr;
 
         enabled = false;
-        // Scene::m_Registry.remove_all(entity);
-        // Scene::m_Registry.destroy(entity);
+        Scene::m_Registry.remove_all(entity);
+        Scene::m_Registry.destroy(entity);
 
-        // Scene::m_GameObjects->erase(std::remove(Scene::m_GameObjects->begin(), Scene::m_GameObjects->end(), this), Scene::m_GameObjects->end());
+        Scene::m_GameObjects->erase(std::remove(Scene::m_GameObjects->begin(), Scene::m_GameObjects->end(), this), Scene::m_GameObjects->end());
 
         for (auto &gameObject : (*Scene::m_GameObjects)) {
             if (gameObject->parentID == ID) {

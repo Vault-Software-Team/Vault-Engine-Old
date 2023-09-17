@@ -18,6 +18,7 @@ namespace CsharpVariables {
     DLL_API extern MonoAssembly *coreAssembly;
     DLL_API extern bool compiledAssembly;
     DLL_API extern std::string oldCwd;
+    DLL_API extern std::string dotnet_path;
 
     struct SceneSchedule {
         std::string scene_path = "";

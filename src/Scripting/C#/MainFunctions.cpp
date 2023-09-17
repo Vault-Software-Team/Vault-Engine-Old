@@ -12,6 +12,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         return config.ambientLight;
     }
 
+    int cpp_RandomInt(int min, int max) {
+        return rand() % (max - min + 1) + min;
+    }
+
     void ExitProgram() {
 #ifdef GAME_BUILD
         exit(0)

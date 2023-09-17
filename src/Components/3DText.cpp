@@ -21,8 +21,23 @@ namespace HyperAPI::Experimental {
                         G_END_WITH(dirPayloadData, ".otf")) {
                         if (font != nullptr)
                             delete font;
+                        std::string joined, line;
+                        bool to_add = false;
+                        std::stringstream ss(dirPayloadData);
+                        while (getline(ss, line, '/') || getline(ss, line, '\\')) {
+                            if (line == "assets")
+                                to_add = true;
 
-                        font = new Font(dirPayloadData.c_str(), 48);
+#ifdef _WIN32
+                            if (to_add)
+                                joined += line + "\\";
+#else
+                            if (to_add)
+                                joined += line + "/";
+#endif
+                        }
+                        joined.pop_back();
+                        font = new Font(joined.c_str(), 48);
                     }
                 }
             }

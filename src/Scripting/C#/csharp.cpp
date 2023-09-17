@@ -48,11 +48,11 @@ namespace CsharpVariables {
     DLL_API MonoDomain *rootDomain;
     DLL_API MonoDomain *appDomain;
     DLL_API MonoAssembly *coreAssembly;
-
     DLL_API bool compiledAssembly = false;
     DLL_API std::string oldCwd;
     DLL_API std::vector<PrefabSchedule> schedule_prefab_spawn;
     DLL_API SceneSchedule scene_schedule;
+    DLL_API std::string dotnet_path;
 } // namespace CsharpVariables
 
 namespace HyperAPI::CsharpScriptEngine::Functions {
@@ -134,6 +134,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("Vault.Main::cpp_DeltaTime", reinterpret_cast<void *(*)>(cpp_DeltaTime));
         mono_add_internal_call("Vault.Main::cpp_Ambient", reinterpret_cast<void *(*)>(cpp_Ambient));
         mono_add_internal_call("Vault.Main::ExitProgram", reinterpret_cast<void *(*)>(ExitProgram));
+        mono_add_internal_call("Vault.Main::RandomInt", reinterpret_cast<void *(*)>(cpp_RandomInt));
 
         // Discord Functions
         mono_add_internal_call("Vault.Discord::Init", reinterpret_cast<void *(*)>(Discord_InitRPC));
@@ -442,7 +443,11 @@ namespace HyperAPI::CsharpScriptEngine {
         std::thread *compilerThread = new std::thread([&] {
             std::array<char, 1000> buffer;
             std::string result;
-            std::unique_ptr<FILE, decltype(&pclose)> pipe(popen("cd assets && dotnet build -o VAULT_OUT", "r"), pclose);
+            std::string build_command = "cd assets";
+            build_command += " && \"";
+            build_command += CsharpVariables::dotnet_path;
+            build_command += "\" build -o VAULT_OUT";
+            std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(build_command.c_str(), "r"), pclose);
 
             if (!pipe) {
                 throw std::runtime_error("popen() failed!");

@@ -35,6 +35,7 @@ namespace HyperAPI::Experimental {
     void Audio3D::Update() {
         if (m_src == nullptr)
             Start();
+
         m_src->pitch = src.pitch;
         m_src->volume = src.volume;
         m_src->max_distance = src.max_distance;

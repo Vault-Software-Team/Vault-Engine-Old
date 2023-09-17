@@ -343,27 +343,27 @@ vec4 pointLight(PointLight light) {
     specular = specular * _smoothness;
 
     float shadow = 0.0f;
-    if(shadow_cubemap_set == 1) {
-        vec3 fragToLight = currentPosition - pointLightPos;
-        float currentDepth = length(fragToLight);
-        float bias = max(0.5f * (1.0f - dot(normal, lightDir)), 0.0005f);
+    // if(shadow_cubemap_set == 1) {
+    //     vec3 fragToLight = currentPosition - pointLightPos;
+    //     float currentDepth = length(fragToLight);
+    //     float bias = max(0.5f * (1.0f - dot(normal, lightDir)), 0.0005f);
 
-        int sampleRadius = 2;
-        float pixelSize = 1.0f / 1024.0f;
+    //     int sampleRadius = 2;
+    //     float pixelSize = 1.0f / 1024.0f;
 
-        for(int z = -sampleRadius; z < sampleRadius; z++) {
-            for(int y = -sampleRadius; y < sampleRadius; y++) {
-                for(int x = -sampleRadius; x < sampleRadius; x++) {
-                    float closestDepth = texture(shadow_cubemap_buffer, fragToLight + vec3(x,y,z)  * pixelSize).r;
-                    closestDepth *= farPlane;
-                    if(currentDepth > closestDepth + bias) {
-                        shadow += 1;
-                    }
-                }
-            } 
-        }
-        shadow /= pow((sampleRadius *2 + 1), 3);
-    }
+    //     for(int z = -sampleRadius; z < sampleRadius; z++) {
+    //         for(int y = -sampleRadius; y < sampleRadius; y++) {
+    //             for(int x = -sampleRadius; x < sampleRadius; x++) {
+    //                 float closestDepth = texture(shadow_cubemap_buffer, fragToLight + vec3(x,y,z)  * pixelSize).r;
+    //                 closestDepth *= farPlane;
+    //                 if(currentDepth > closestDepth + bias) {
+    //                     shadow += 1;
+    //                 }
+    //             }
+    //         } 
+    //     }
+    //     shadow /= pow((sampleRadius *2 + 1), 3);
+    // }
 
     if(isTex == 1) {
         return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * baseColor * ((diffuse  * (1.0f - shadow) * inten + (vec4(ambient_color, 1) * ambient))) + specularTexture * ((specular * inten) * (1.0f - shadow)))  * vec4(light.color, 1);

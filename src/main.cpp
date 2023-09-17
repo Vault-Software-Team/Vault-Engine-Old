@@ -34,6 +34,8 @@
 #include "mono/metadata/object-forward.h"
 #include "vendor/json/json.hpp"
 #include "lib/csharp.hpp"
+#include "vendor/zlib/zlib.h"
+#include "vendor/libcurl/curl.h"
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -353,6 +355,8 @@ fs::path relative(fs::path p, fs::path base) {
     return ret;
 }
 
+// #define PROJECT_MENU
+
 #ifndef PROJECT_MENU
 fs::path currentDirectory = fs::path("assets");
 
@@ -433,7 +437,7 @@ void DirIter(const std::string &path) {
             continue;
         }
 
-        if (entry.path().string().find("cs-assembly.proj", 0) != std::string::npos) {
+        if (entry.path().string().find("cs-assembly.csproj", 0) != std::string::npos) {
             continue;
         }
 
@@ -1337,6 +1341,12 @@ int main(int argc, char **argv) {
         CsharpVariables::oldCwd = cwd;
     }
 
+    if (argc > 2) {
+        CsharpVariables::dotnet_path = argv[2];
+    } else {
+        CsharpVariables::dotnet_path = "dotnet";
+    }
+
 #ifndef _WIN32
     unsetenv("TERM");
     // setenv("MONO_LOG_LEVEL", "debug", 0);
@@ -1627,12 +1637,20 @@ int main(int argc, char **argv) {
     // if the build is a game
 
     Input::window = app.renderer->window;
-    // glfw enable sticky mouse buttons
+// glfw enable sticky mouse buttons
+#ifdef _WIN32
+    Shader shader("shaders\\default.glsl");
+    Shader outlineShader("shaders\\outline.glsl");
+    Shader shadowShader("shaders\\shadowMap.glsl");
+    Shader workerShader("shaders\\worker.glsl");
+    shadowCubeMapShader = new Shader("shaders\\shadowCubeMap.glsl");
+#else
     Shader shader("shaders/default.glsl");
     Shader outlineShader("shaders/outline.glsl");
     Shader shadowShader("shaders/shadowMap.glsl");
     Shader workerShader("shaders/worker.glsl");
     shadowCubeMapShader = new Shader("shaders/shadowCubeMap.glsl");
+#endif
     outlineShader.Bind();
     outlineShader.SetUniform1f("outlining", 1.08f);
     outlineShader.Unbind();
@@ -2099,6 +2117,15 @@ int main(int argc, char **argv) {
                         ImGuiFileDialog::Instance()->OpenDialog(
                             "BuildWindowsDialog", "Build for Windows", nullptr,
                             ".");
+                    }
+
+                    if (ImGui::MenuItem("Build Asset Pack")) {
+                        if (fs::exists("asset_pack.vault_pack")) {
+                            fs::remove("asset_pack.vault_pack");
+                        }
+
+                        system((std::string(("./bin/7zz a asset_pack assets -p\"") + std::string(config.name) + "\"")).c_str());
+                        fs::rename("asset_pack.7z", "asset_pack.vault_pack");
                     }
 
                     if (ImGui::MenuItem("Run Instance", "CTRL+I")) {
@@ -4037,10 +4064,13 @@ int main(int argc, char **argv) {
                             HyperAPI::isRunning = true;
                             HyperAPI::isStopped = false;
 
-                            for (auto &camera : Scene::cameras) {
-                                if (camera->mainCamera) {
-                                    Scene::mainCamera = camera;
-                                    break;
+                            for (auto &go : *Scene::m_GameObjects) {
+                                if (go->HasComponent<CameraComponent>()) {
+                                    auto &camera = go->GetComponent<CameraComponent>();
+                                    if (camera.camera->mainCamera) {
+                                        Scene::mainCamera = camera.camera;
+                                        break;
+                                    }
                                 }
                             }
                         } else {
@@ -5124,26 +5154,26 @@ void NewScript::Update() {})";
         GUI_EXP = [&](uint32_t &PPT, uint32_t &PPFBO, uint32_t &gui_gui) {
             auto csharpView = Scene::m_Registry.view<CsharpScriptManager>();
 
-            for (auto e : csharpView) {
-                auto &scriptManager = Scene::m_Registry.get<CsharpScriptManager>(e);
+            // for (auto e : csharpView) {
+            //     auto &scriptManager = Scene::m_Registry.get<CsharpScriptManager>(e);
 
-                for (auto &behaviour : scriptManager.behaviours) {
-                    MonoMethod *OnGUI = behaviour.second.behaviour->GetMethod("OnGUI", 0);
-                    MonoObject *exception = nullptr;
-                    void *params[0] = {};
+            //     for (auto &behaviour : scriptManager.behaviours) {
+            //         MonoMethod *OnGUI = behaviour.second.behaviour->GetMethod("OnGUI", 0);
+            //         MonoObject *exception = nullptr;
+            //         void *params[0] = {};
 
-                    mono_runtime_invoke(OnGUI, behaviour.second.behaviour->f_GetObjectGC(), params, &exception);
-                    if (exception) {
-                        MonoObject *exc = NULL;
-                        MonoString *str = mono_object_to_string(exception, &exc);
-                        if (exc) {
-                            mono_print_unhandled_exception(exc);
-                        } else {
-                            Log log(mono_string_to_utf8(str), LOG_ERROR);
-                        }
-                    }
-                }
-            }
+            //         mono_runtime_invoke(OnGUI, behaviour.second.behaviour->f_GetObjectGC(), params, &exception);
+            //         if (exception) {
+            //             MonoObject *exc = NULL;
+            //             MonoString *str = mono_object_to_string(exception, &exc);
+            //             if (exc) {
+            //                 mono_print_unhandled_exception(exc);
+            //             } else {
+            //                 Log log(mono_string_to_utf8(str), LOG_ERROR);
+            //             }
+            //         }
+            //     }
+            // }
 
             DevConsole();
         };
@@ -5977,7 +6007,7 @@ void NewScript::Update() {})";
                     gameObject->GetComponent<ParticleEmitter>().Update();
                 }
 
-                if (gameObject->HasComponent<Audio3D>()) {
+                if (gameObject->HasComponent<Audio3D>() && HyperAPI::isRunning) {
                     gameObject->GetComponent<Audio3D>().Update();
                 }
 
@@ -7192,9 +7222,9 @@ void DisplayProject(GLFWwindow *window, const std::string &name,
         _getcwd(cwd, sizeof(cwd));
         std::string s_Cwd = cwd;
 
-        std::cout << s_Cwd + "\\bin\\win_build.exe \"" + path + "\"" << std::endl;
+        std::cout << s_Cwd + "\\bin\\win_build.exe \"" + path + "\" \"" + CsharpVariables::oldCwd + "\\dotnet\\dotnet\"" << std::endl;
         std::thread t(
-            [&]() { system((".\\bin\\win_build.exe \"" + path + "\"").c_str()); });
+            [&]() { system((".\\bin\\win_build.exe \"" + path + "\" \"" + +CsharpVariables::oldCwd + "\\dotnet\\dotnet\"").c_str()); });
 
         t.detach();
 #else
@@ -7202,8 +7232,10 @@ void DisplayProject(GLFWwindow *window, const std::string &name,
         getcwd(cwd, sizeof(cwd));
         std::string s_Cwd = cwd;
 
+        std::cout << "./bin/build.out \"" + path + "\" \"" + CsharpVariables::oldCwd + "/dotnet/dotnet\"" << std::endl;
+
         std::thread t([&]() {
-            system(std::string("./bin/build.out \"" + path + "\"").c_str());
+            system(std::string("./bin/build.out \"" + path + "\" \"" + CsharpVariables::oldCwd + "/dotnet/dotnet\"").c_str());
         });
         t.detach();
 #endif
@@ -7220,10 +7252,93 @@ void DisplayProject(GLFWwindow *window, const std::string &name,
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
 }
 
+static int old_version = 0;
+static int current_version = 0;
+static bool downloading_latest_version = false;
+static std::string download_link = "";
 int main() {
     char m_cwd[1024];
     getcwd(m_cwd, 1024);
     CsharpVariables::oldCwd = m_cwd;
+
+    if (!fs::exists("dotnet")) {
+        // https://download.visualstudio.microsoft.com/download/pr/f712b4d0-6b4b-42eb-865a-0c42af79eac9/9db3934d73a826a6e898abc70f41085a/dotnet-sdk-7.0.401-win-x64.zip
+
+        std::thread *curl_thread_dotnet = new std::thread([&] {
+            HYPER_LOG("Installing .NET, please wait...")
+            CURL *curl;
+            FILE *fp;
+            CURLcode res;
+// std::string url = "https://raw.githubusercontent.com/Vault-Software-Team/Vault-Engine/main/vault_version.json";
+#ifndef _WIN32
+            std::string url = "https://download.visualstudio.microsoft.com/download/pr/61f29db0-10a5-4816-8fd8-ca2f71beaea3/e15fb7288eb5bc0053b91ea7b0bfd580/dotnet-sdk-7.0.401-linux-x64.tar.gz";
+            char outfilename[FILENAME_MAX] = "dotnet_binary.tar.gz";
+#else
+            std::string url = "https://download.visualstudio.microsoft.com/download/pr/f712b4d0-6b4b-42eb-865a-0c42af79eac9/9db3934d73a826a6e898abc70f41085a/dotnet-sdk-7.0.401-win-x64.zip";
+            char outfilename[FILENAME_MAX] = "dotnet_binary.zip";
+#endif
+            curl = curl_easy_init();
+            if (curl) {
+                fp = fopen(outfilename, "wb");
+                curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+                curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+                res = curl_easy_perform(curl);
+                curl_easy_cleanup(curl);
+                fclose(fp);
+            }
+
+            HYPER_LOG(".NET Installed! Extracting...");
+            fs::create_directory("dotnet");
+#ifdef _WIN32
+            system("cd dotnet && ..\bin\7zr.exe x ..\dotnet_binary.zip");
+#else
+            HYPER_LOG(".NET Installed! Extracting...");
+            fs::create_directory("dotnet");
+            system("cd dotnet && ../bin/7zz x ../dotnet_binary.tar.gz");
+            system("cd dotnet && ../bin/7zz x dotnet_binary.tar");
+            fs::remove("dotnet/dotnet_binary.tar");
+#endif
+        });
+    }
+
+    if (fs::exists("vault_version.json")) {
+        std::ifstream file("vault_version.json");
+        // get content
+        std::string content;
+        content = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        json vault_version = json::parse(content);
+        old_version = vault_version["update_number"];
+        fs::remove("vault_version.json");
+    }
+
+    CURL *curl;
+    FILE *fp;
+    CURLcode res;
+    std::string url = "https://raw.githubusercontent.com/Vault-Software-Team/Vault-Engine/main/vault_version.json";
+    char outfilename[] = "vault_version.json";
+    curl = curl_easy_init();
+    if (curl) {
+        fp = fopen(outfilename, "wb");
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+        res = curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+        fclose(fp);
+    }
+    std::ifstream file(outfilename);
+    // get content
+    std::string content;
+    content = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    json vault_version = json::parse(content);
+    current_version = vault_version["update_number"];
+    download_link = vault_version["update_link"];
+    // if (current_version != old_version) {
+    //     downloading_latest_version = true;
+
+    //     std::thread *t = new std::thread([&] {
+
+    //     });
+    // }
 
     Hyper::Application app(
         1280, 720, "Vault Engine", false, true, false, [&]() {
@@ -7253,37 +7368,91 @@ int main() {
                                  &images[0].height, 0, 4);
     glfwSetWindowIcon(app.renderer->window, 1, images);
 
-    auto &colors = ImGui::GetStyle().Colors;
-    colors[ImGuiCol_WindowBg] = ImVec4(0.12f, 0.125f, 0.121f, 1.0f);
+    ImGuiStyle &style = ImGui::GetStyle();
+    style.Alpha = 1.0f;
+    style.DisabledAlpha = 0.6000000238418579f;
+    style.WindowPadding = ImVec2(8.0f, 8.0f);
+    style.WindowRounding = 7.0f;
+    style.WindowBorderSize = 1.0f;
+    style.WindowMinSize = ImVec2(32.0f, 32.0f);
+    style.WindowTitleAlign = ImVec2(0.0f, 0.5f);
+    style.WindowMenuButtonPosition = ImGuiDir_Left;
+    style.ChildRounding = 4.0f;
+    style.ChildBorderSize = 1.0f;
+    style.PopupRounding = 4.0f;
+    style.PopupBorderSize = 1.0f;
+    style.FramePadding = ImVec2(5.0f, 2.0f);
+    style.FrameRounding = 3.0f;
+    style.FrameBorderSize = 1.0f;
+    style.ItemSpacing = ImVec2(6.0f, 6.0f);
+    style.ItemInnerSpacing = ImVec2(6.0f, 6.0f);
+    style.CellPadding = ImVec2(6.0f, 6.0f);
+    style.IndentSpacing = 25.0f;
+    style.ColumnsMinSpacing = 6.0f;
+    style.ScrollbarSize = 15.0f;
+    style.ScrollbarRounding = 9.0f;
+    style.GrabMinSize = 10.0f;
+    style.GrabRounding = 3.0f;
+    style.TabRounding = 4.0f;
+    style.TabBorderSize = 1.0f;
+    style.TabMinWidthForCloseButton = 0.0f;
+    style.ColorButtonPosition = ImGuiDir_Right;
+    style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
+    style.SelectableTextAlign = ImVec2(0.0f, 0.0f);
 
-    colors[ImGuiCol_Header] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
-    colors[ImGuiCol_HeaderHovered] = ImVec4(0.3f, 0.305f, 0.3f, 1.0f);
-    colors[ImGuiCol_HeaderActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
-
-    colors[ImGuiCol_Button] = ImVec4(0.6f, 0.2f, 0.2f, 1.0f);
-    colors[ImGuiCol_ButtonHovered] = ImVec4(1, 0.205f, 0.2f, 1.0f);
-    colors[ImGuiCol_ButtonActive] = ImVec4(1, 0.305f, 0.3f, 1.0f);
-
-    colors[ImGuiCol_FrameBg] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
-    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.3, 0.305f, 0.3f, 1.0f);
-    colors[ImGuiCol_FrameBgActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
-
-    colors[ImGuiCol_Tab] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
-    colors[ImGuiCol_TabHovered] = ImVec4(0.3f, 0.305f, 0.3f, 1.0f);
-    colors[ImGuiCol_TabActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
-    colors[ImGuiCol_TabUnfocused] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
-    colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
-
-    colors[ImGuiCol_TitleBg] = ImVec4(0.2f, 0.205f, 0.2f, 1.0f);
-    colors[ImGuiCol_TitleBgActive] = ImVec4(0.25f, 0.255f, 0.25f, 1.0f);
-    colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.15f, 0.1505f, 0.15f, 1.0f);
-
-    colors[ImGuiCol_ResizeGrip] = ImVec4(1, 0.15, 0.15, 1);
-    colors[ImGuiCol_ResizeGripActive] = ImVec4(1, 0.30, 0.30, 1);
-    colors[ImGuiCol_ResizeGripHovered] = ImVec4(1, 0.20, 0.20, 1);
-    colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1, 0.15, 0.15, 1);
-
-    colors[ImGuiCol_DockingPreview] = ImVec4(1, 0.15, 0.15, 1);
+    style.Colors[ImGuiCol_Text] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+    style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.4980392158031464f, 0.4980392158031464f, 0.4980392158031464f, 1.0f);
+    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.09803921729326248f, 0.09803921729326248f, 0.09803921729326248f, 1.0f);
+    style.Colors[ImGuiCol_ChildBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+    style.Colors[ImGuiCol_PopupBg] = ImVec4(0.1882352977991104f, 0.1882352977991104f, 0.1882352977991104f, 0.9200000166893005f);
+    style.Colors[ImGuiCol_Border] = ImVec4(0.1882352977991104f, 0.1882352977991104f, 0.1882352977991104f, 0.2899999916553497f);
+    style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 1);
+    style.Colors[ImGuiCol_FrameBg] = ImVec4(0.0470588244497776f, 0.0470588244497776f, 0.0470588244497776f, 0.5400000214576721f);
+    style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.1882352977991104f, 0.1882352977991104f, 0.1882352977991104f, 0.5400000214576721f);
+    style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.2000000029802322f, 0.2196078449487686f, 0.2274509817361832f, 1.0f);
+    style.Colors[ImGuiCol_TitleBg] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.05882352963089943f, 0.05882352963089943f, 0.05882352963089943f, 1.0f);
+    style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+    style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.1372549086809158f, 0.1372549086809158f, 0.1372549086809158f, 1.0f);
+    style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.0470588244497776f, 0.0470588244497776f, 0.0470588244497776f, 0.5400000214576721f);
+    style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.3372549116611481f, 0.3372549116611481f, 0.3372549116611481f, 0.5400000214576721f);
+    style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.4000000059604645f, 0.4000000059604645f, 0.4000000059604645f, 0.5400000214576721f);
+    style.Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.5568627715110779f, 0.5568627715110779f, 0.5568627715110779f, 0.5400000214576721f);
+    style.Colors[ImGuiCol_CheckMark] = ImVec4(0.3294117748737335f, 0.6666666865348816f, 0.8588235378265381f, 1.0f);
+    style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.3372549116611481f, 0.3372549116611481f, 0.3372549116611481f, 0.5400000214576721f);
+    style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.5568627715110779f, 0.5568627715110779f, 0.5568627715110779f, 0.5400000214576721f);
+    style.Colors[ImGuiCol_Button] = ImVec4(9.999999974752427e-07f, 9.999899930335232e-07f, 9.999899930335232e-07f, 1);
+    style.Colors[ImGuiCol_ButtonHovered] = ImVec4(1.0f, 0.2317596673965454f, 0.2317596673965454f, 0.5400000214576721f);
+    style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.3690987229347229f, 0.1093039140105247f, 0.1093039140105247f, 1.0f);
+    style.Colors[ImGuiCol_Header] = ImVec4(0.0f, 0.0f, 0.0f, 0.5199999809265137f);
+    style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.0f, 0.0f, 0.0f, 0.3600000143051147f);
+    style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.2000000029802322f, 0.2196078449487686f, 0.2274509817361832f, 0.3300000131130219f);
+    style.Colors[ImGuiCol_Separator] = ImVec4(0.2784313857555389f, 0.2784313857555389f, 0.2784313857555389f, 0.2899999916553497f);
+    style.Colors[ImGuiCol_SeparatorHovered] = ImVec4(0.4392156898975372f, 0.4392156898975372f, 0.4392156898975372f, 0.2899999916553497f);
+    style.Colors[ImGuiCol_SeparatorActive] = ImVec4(0.4000000059604645f, 0.4392156898975372f, 0.4666666686534882f, 1.0f);
+    style.Colors[ImGuiCol_ResizeGrip] = ImVec4(0.2784313857555389f, 0.2784313857555389f, 0.2784313857555389f, 0.2899999916553497f);
+    style.Colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.4392156898975372f, 0.4392156898975372f, 0.4392156898975372f, 0.2899999916553497f);
+    style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(0.4000000059604645f, 0.4392156898975372f, 0.4666666686534882f, 1.0f);
+    style.Colors[ImGuiCol_Tab] = ImVec4(0.0f, 0.0f, 0.0f, 0.5199999809265137f);
+    style.Colors[ImGuiCol_TabHovered] = ImVec4(0.1372549086809158f, 0.1372549086809158f, 0.1372549086809158f, 1.0f);
+    style.Colors[ImGuiCol_TabActive] = ImVec4(0.2000000029802322f, 0.2000000029802322f, 0.2000000029802322f, 0.3600000143051147f);
+    style.Colors[ImGuiCol_TabUnfocused] = ImVec4(0.0f, 0.0f, 0.0f, 0.5199999809265137f);
+    style.Colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.1372549086809158f, 0.1372549086809158f, 0.1372549086809158f, 1.0f);
+    style.Colors[ImGuiCol_PlotLines] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+    style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+    style.Colors[ImGuiCol_PlotHistogram] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+    style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+    style.Colors[ImGuiCol_TableHeaderBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.5199999809265137f);
+    style.Colors[ImGuiCol_TableBorderStrong] = ImVec4(0.0f, 0.0f, 0.0f, 0.5199999809265137f);
+    style.Colors[ImGuiCol_TableBorderLight] = ImVec4(0.2784313857555389f, 0.2784313857555389f, 0.2784313857555389f, 0.2899999916553497f);
+    style.Colors[ImGuiCol_TableRowBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+    style.Colors[ImGuiCol_TableRowBgAlt] = ImVec4(1.0f, 1.0f, 1.0f, 0.05999999865889549f);
+    style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.2000000029802322f, 0.2196078449487686f, 0.2274509817361832f, 1.0f);
+    style.Colors[ImGuiCol_DragDropTarget] = ImVec4(1.0f, 0.1f, 0.1f, 1.0f);
+    style.Colors[ImGuiCol_NavHighlight] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+    style.Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.0f, 0.0f, 0.0f, 0.699999988079071f);
+    style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(1.0f, 0.0f, 0.0f, 0.2000000029802322f);
+    style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(1.0f, 0.0f, 0.0f, 0.3499999940395355f);
 
     ImGuiFileDialog::Instance()->SetFileStyle(
         IGFD_FileStyleByTypeFile, "", ImVec4(1, 1, 1, 1.0f), ICON_FA_FILE);
@@ -7351,7 +7520,7 @@ int main() {
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(25, 25));
             if (ImGui::Begin(ICON_FA_LAYER_GROUP " Projects", nullptr, flags)) {
                 if (ImGui::BeginChild("##icon stuff", ImVec2(0, 150))) {
-                    ImGui::Image((void *)logo->t->ID, ImVec2(150, 150),
+                    ImGui::Image((void *)logo->tex->ID, ImVec2(150, 150),
                                  ImVec2(0, 1), ImVec2(1, 0));
                     ImGui::EndChild();
                 }
@@ -7513,6 +7682,95 @@ int main() {
             ImGui::End();
         };
 
-    app.Run([](uint32_t &shadowMap) {}, GUI, [](Shader &shader) {});
+    app.Run([](uint32_t &shadowMap, Shader &framebufferShader) {}, GUI, [](Shader &shader) {
+        static bool once = false;
+        if(!once) {
+            once = true;
+            ImGuiStyle &style = ImGui::GetStyle();
+            style.Alpha = 1.0f;
+            style.DisabledAlpha = 0.6000000238418579f;
+            style.WindowPadding = ImVec2(8.0f, 8.0f);
+            style.WindowRounding = 7.0f;
+            style.WindowBorderSize = 1.0f;
+            style.WindowMinSize = ImVec2(32.0f, 32.0f);
+            style.WindowTitleAlign = ImVec2(0.0f, 0.5f);
+            style.WindowMenuButtonPosition = ImGuiDir_Left;
+            style.ChildRounding = 4.0f;
+            style.ChildBorderSize = 1.0f;
+            style.PopupRounding = 4.0f;
+            style.PopupBorderSize = 1.0f;
+            style.FramePadding = ImVec2(5.0f, 2.0f);
+            style.FrameRounding = 3.0f;
+            style.FrameBorderSize = 1.0f;
+            style.ItemSpacing = ImVec2(6.0f, 6.0f);
+            style.ItemInnerSpacing = ImVec2(6.0f, 6.0f);
+            style.CellPadding = ImVec2(6.0f, 6.0f);
+            style.IndentSpacing = 25.0f;
+            style.ColumnsMinSpacing = 6.0f;
+            style.ScrollbarSize = 15.0f;
+            style.ScrollbarRounding = 9.0f;
+            style.GrabMinSize = 10.0f;
+            style.GrabRounding = 3.0f;
+            style.TabRounding = 4.0f;
+            style.TabBorderSize = 1.0f;
+            style.TabMinWidthForCloseButton = 0.0f;
+            style.ColorButtonPosition = ImGuiDir_Right;
+            style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
+            style.SelectableTextAlign = ImVec2(0.0f, 0.0f);
+
+            style.Colors[ImGuiCol_Text] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+            style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.4980392158031464f, 0.4980392158031464f, 0.4980392158031464f, 1.0f);
+            style.Colors[ImGuiCol_WindowBg] = ImVec4(0.09803921729326248f, 0.09803921729326248f, 0.09803921729326248f, 1.0f);
+            style.Colors[ImGuiCol_ChildBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+            style.Colors[ImGuiCol_PopupBg] = ImVec4(0.1882352977991104f, 0.1882352977991104f, 0.1882352977991104f, 0.9200000166893005f);
+            style.Colors[ImGuiCol_Border] = ImVec4(0.1882352977991104f, 0.1882352977991104f, 0.1882352977991104f, 0.2899999916553497f);
+            style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 1);
+            style.Colors[ImGuiCol_FrameBg] = ImVec4(0.0470588244497776f, 0.0470588244497776f, 0.0470588244497776f, 0.5400000214576721f);
+            style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.1882352977991104f, 0.1882352977991104f, 0.1882352977991104f, 0.5400000214576721f);
+            style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.2000000029802322f, 0.2196078449487686f, 0.2274509817361832f, 1.0f);
+            style.Colors[ImGuiCol_TitleBg] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+            style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.05882352963089943f, 0.05882352963089943f, 0.05882352963089943f, 1.0f);
+            style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+            style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.1372549086809158f, 0.1372549086809158f, 0.1372549086809158f, 1.0f);
+            style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.0470588244497776f, 0.0470588244497776f, 0.0470588244497776f, 0.5400000214576721f);
+            style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.3372549116611481f, 0.3372549116611481f, 0.3372549116611481f, 0.5400000214576721f);
+            style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.4000000059604645f, 0.4000000059604645f, 0.4000000059604645f, 0.5400000214576721f);
+            style.Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.5568627715110779f, 0.5568627715110779f, 0.5568627715110779f, 0.5400000214576721f);
+            style.Colors[ImGuiCol_CheckMark] = ImVec4(0.3294117748737335f, 0.6666666865348816f, 0.8588235378265381f, 1.0f);
+            style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.3372549116611481f, 0.3372549116611481f, 0.3372549116611481f, 0.5400000214576721f);
+            style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.5568627715110779f, 0.5568627715110779f, 0.5568627715110779f, 0.5400000214576721f);
+            style.Colors[ImGuiCol_Button] = ImVec4(9.999999974752427e-07f, 9.999899930335232e-07f, 9.999899930335232e-07f, 1);
+            style.Colors[ImGuiCol_ButtonHovered] = ImVec4(1.0f, 0.2317596673965454f, 0.2317596673965454f, 0.5400000214576721f);
+            style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.3690987229347229f, 0.1093039140105247f, 0.1093039140105247f, 1.0f);
+            style.Colors[ImGuiCol_Header] = ImVec4(0.0f, 0.0f, 0.0f, 0.5199999809265137f);
+            style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.0f, 0.0f, 0.0f, 0.3600000143051147f);
+            style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.2000000029802322f, 0.2196078449487686f, 0.2274509817361832f, 0.3300000131130219f);
+            style.Colors[ImGuiCol_Separator] = ImVec4(0.2784313857555389f, 0.2784313857555389f, 0.2784313857555389f, 0.2899999916553497f);
+            style.Colors[ImGuiCol_SeparatorHovered] = ImVec4(0.4392156898975372f, 0.4392156898975372f, 0.4392156898975372f, 0.2899999916553497f);
+            style.Colors[ImGuiCol_SeparatorActive] = ImVec4(0.4000000059604645f, 0.4392156898975372f, 0.4666666686534882f, 1.0f);
+            style.Colors[ImGuiCol_ResizeGrip] = ImVec4(0.2784313857555389f, 0.2784313857555389f, 0.2784313857555389f, 0.2899999916553497f);
+            style.Colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.4392156898975372f, 0.4392156898975372f, 0.4392156898975372f, 0.2899999916553497f);
+            style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(0.4000000059604645f, 0.4392156898975372f, 0.4666666686534882f, 1.0f);
+            style.Colors[ImGuiCol_Tab] = ImVec4(0.0f, 0.0f, 0.0f, 0.5199999809265137f);
+            style.Colors[ImGuiCol_TabHovered] = ImVec4(0.1372549086809158f, 0.1372549086809158f, 0.1372549086809158f, 1.0f);
+            style.Colors[ImGuiCol_TabActive] = ImVec4(0.2000000029802322f, 0.2000000029802322f, 0.2000000029802322f, 0.3600000143051147f);
+            style.Colors[ImGuiCol_TabUnfocused] = ImVec4(0.0f, 0.0f, 0.0f, 0.5199999809265137f);
+            style.Colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.1372549086809158f, 0.1372549086809158f, 0.1372549086809158f, 1.0f);
+            style.Colors[ImGuiCol_PlotLines] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+            style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+            style.Colors[ImGuiCol_PlotHistogram] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+            style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+            style.Colors[ImGuiCol_TableHeaderBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.5199999809265137f);
+            style.Colors[ImGuiCol_TableBorderStrong] = ImVec4(0.0f, 0.0f, 0.0f, 0.5199999809265137f);
+            style.Colors[ImGuiCol_TableBorderLight] = ImVec4(0.2784313857555389f, 0.2784313857555389f, 0.2784313857555389f, 0.2899999916553497f);
+            style.Colors[ImGuiCol_TableRowBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+            style.Colors[ImGuiCol_TableRowBgAlt] = ImVec4(1.0f, 1.0f, 1.0f, 0.05999999865889549f);
+            style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.2000000029802322f, 0.2196078449487686f, 0.2274509817361832f, 1.0f);
+            style.Colors[ImGuiCol_DragDropTarget] = ImVec4(1.0f, 0.1f, 0.1f, 1.0f);
+            style.Colors[ImGuiCol_NavHighlight] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+            style.Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.0f, 0.0f, 0.0f, 0.699999988079071f);
+            style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(1.0f, 0.0f, 0.0f, 0.2000000029802322f);
+            style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(1.0f, 0.0f, 0.0f, 0.3499999940395355f);
+        } });
 }
 #endif

@@ -66,6 +66,8 @@ namespace Vault
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static float ExitProgram();
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static int RandomInt(int min, int max);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static float cpp_Ambient(bool toGet = true, float value = 0);

@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "oUDVObo/S8lCRt0DDNqwGzfDqEaqpJG9luTA6uk7c9ISikd4w0gAoqgS1cdITunO2o1PsHuj4nPEVRvMIxVvGA==",
+  "success": true,
+  "projectFilePath": "/home/koki1019/Desktop/VaultProjects/flappy_bird/assets/cs-assembly.csproj",
+  "expectedPackageFiles": [
+    "/home/koki1019/.nuget/packages/microsoft.netcore.app.ref/6.0.20/microsoft.netcore.app.ref.6.0.20.nupkg.sha512",
+    "/home/koki1019/.nuget/packages/microsoft.aspnetcore.app.ref/6.0.20/microsoft.aspnetcore.app.ref.6.0.20.nupkg.sha512"
+  ],
+  "logs": []
+}
