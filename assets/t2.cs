@@ -39,7 +39,6 @@ namespace Garbage
         // This function will get called if a mouse is over the GameObject
         void OnMouseEnter()
         {
-
         }
 
         // This function will get called if a mouse isn't over the GameObject anymore

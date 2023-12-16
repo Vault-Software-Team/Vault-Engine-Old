@@ -17,16 +17,19 @@ void main()
 in vec2 TexCoords;
 out vec4 color;
 out vec4 BloomColor;
+out uint EntityID;
 
 uniform sampler2D text;
 uniform vec3 textColor;
 uniform vec3 bloomColor;
+uniform uint u_EntityID;
 
 void main()
 {    
     if(texture(text, TexCoords).r < 0.1) discard;
     vec4 result = vec4(textColor, texture(text, TexCoords).r);
     color = result;
+    EntityID = u_EntityID;
 
     if((bloomColor.r > 0.5 || bloomColor.g > 0.5 || bloomColor.b > 0.5)
     && (bloomColor.r < 0.7 || bloomColor.g < 0.7 || bloomColor.b < 0.7)) {
@@ -39,4 +42,5 @@ void main()
         BloomColor = vec4(bloomColor, 1);
     }
     color.a = texture(text, TexCoords).r;
+
 }  

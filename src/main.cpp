@@ -6277,7 +6277,8 @@ void NewScript::Update() {})";
                                     m_parentTransform = parentTransform.transform;
                                 }
                             }
-
+                            font_shader->Bind();
+                            font_shader->SetUniform1ui("u_EntityID", (uint32_t)gameObject->entity);
                             renderer.font->Draw(*Scene::mainCamera, transform.transform * m_parentTransform, renderer.text, renderer.color, renderer.bloomColor, 0, 0, renderer.scale, renderer.y_offset);
                         }
 
@@ -6601,6 +6602,8 @@ void NewScript::Update() {})";
                                     }
                                 }
 
+                                font_shader->Bind();
+                                font_shader->SetUniform1ui("u_EntityID", (uint32_t)gameObject->entity);
                                 renderer.font->Draw(*cam, transform.transform * m_parentTransform, renderer.text, renderer.color, renderer.bloomColor, 0, 0, renderer.scale, renderer.y_offset);
                             }
 
