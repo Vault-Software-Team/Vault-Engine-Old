@@ -22,6 +22,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         if (m_key == "intensity") {
             *result = mono_string_new(CsharpVariables::appDomain, (std::to_string(component.intensity) + " 0 0").c_str());
         }
+
+        if (m_key == "shadows") {
+            *result = mono_string_new(CsharpVariables::appDomain, component.light->renderShadows ? "true" : "false");
+        }
     }
     void PointLight_SetKey(MonoString *key, MonoString *id, float x, float y, float z) {
         using namespace CsharpVariables;
@@ -44,6 +48,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         if (m_key == "intensity") {
             component.intensity = x;
+        }
+
+        if (m_key == "shadows") {
+            component.light->renderShadows = x == 1.0f ? true : false; // can just do x == 1.0f but just in case or some shit idk
         }
     }
 } // namespace HyperAPI::CsharpScriptEngine::Functions

@@ -23,4 +23,5 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
     void Rigidbody2D_Force(float x, float y, MonoString *id);
     void Rigidbody2D_Torque(float torque, MonoString *id);
     void Rigidbody2D_SetType(int type, MonoString *id);
+    void Rigidbody2D_MoveToPosition(float tx, float ty, float velocity, MonoString *id);
 } // namespace HyperAPI::CsharpScriptEngine::Functions

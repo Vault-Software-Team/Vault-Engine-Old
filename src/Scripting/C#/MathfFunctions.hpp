@@ -38,4 +38,5 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
     float Exp(float x);
     float Lerp(float a, float b, float t);
     int RandomRange(int min, int max);
+    float FloatRandomRange(float min, float max);
 } // namespace HyperAPI::CsharpScriptEngine::Functions

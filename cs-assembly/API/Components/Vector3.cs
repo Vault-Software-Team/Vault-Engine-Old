@@ -6,7 +6,9 @@ namespace Vault
 {
     public class Vector3
     {
-        public float x, y, z;
+        public virtual float x { get; set; }
+        public virtual float y { get; set; }
+        public virtual float z { get; set; }
 
         public Vector3(float X, float Y, float Z)
         {

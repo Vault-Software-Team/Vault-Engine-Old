@@ -19,5 +19,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
     float cpp_DeltaTime();
     float cpp_Ambient(bool toGet, float value);
     int cpp_RandomInt(int min, int max);
+    MonoString *cpp_ToStringF(float value);
+    MonoString *cpp_ToStringD(double value);
     void ExitProgram();
 } // namespace HyperAPI::CsharpScriptEngine::Functions

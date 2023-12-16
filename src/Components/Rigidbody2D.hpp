@@ -4,6 +4,9 @@
 #include "Exp_Base.hpp"
 #include "../Renderer/Structures.hpp"
 #include "../Renderer/OldStuff.hpp"
+#include "Transform.hpp"
+#include <f_GameObject/f_GameObject.hpp>
+#include "GameObject.hpp"
 
 namespace HyperAPI::Experimental {
     struct DLL_API Rigidbody2D : public BaseComponent {
@@ -11,6 +14,7 @@ namespace HyperAPI::Experimental {
         bool fixedRotation = false;
         float gravityScale = 1.0f;
         void *body = nullptr;
+        Transform *transform = nullptr;
 
         void GUI();
 
@@ -48,5 +52,7 @@ namespace HyperAPI::Experimental {
             b2Body *b = (b2Body *)body;
             b->ApplyTorque(torque, true);
         }
+
+        void MoveToPosition(Vector2 target, float velocity);
     };
 } // namespace HyperAPI::Experimental

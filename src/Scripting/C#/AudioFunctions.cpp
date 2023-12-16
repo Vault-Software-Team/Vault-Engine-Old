@@ -15,4 +15,16 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         AudioEngine::PlayMusic(str, volume, loop);
     }
+
+    bool AudioPlayingMusic() {
+        return Mix_PlayingMusic();
+    }
+
+    bool AudioPlayingChannel(int channel) {
+        return Mix_Playing(channel);
+    }
+
+    void AudioStopChannel(int channel) {
+        Mix_HaltChannel(channel);
+    }
 } // namespace HyperAPI::CsharpScriptEngine::Functions

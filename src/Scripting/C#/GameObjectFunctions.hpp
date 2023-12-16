@@ -16,6 +16,8 @@
 #include <string>
 
 namespace HyperAPI::CsharpScriptEngine::Functions {
+    extern std::vector<HyperAPI::Experimental::GameObject *> scheduled_gameobject_deletions;
+
     MonoString *GameObject_GetIDByName(MonoString *name);
     MonoString *GameObject_GetIDByTag(MonoString *tag);
     void GameObject_AddGameObject(MonoString *name, MonoString *tag, MonoString **m_id);

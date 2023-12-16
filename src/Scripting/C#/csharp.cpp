@@ -35,6 +35,7 @@
 #include "Rigidbody3DFunctions.hpp"
 #include "BoxCollider2DFunctions.hpp"
 #include "SceneFunctions.hpp"
+#include "SaveFunctions.hpp"
 #include "GameObjectFunctions.hpp"
 #include "CameraFunctions.hpp"
 #include "Audio3DFunctions.hpp"
@@ -129,12 +130,15 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("Vault.Mathf::Exp", reinterpret_cast<void *(*)>(Exp));
         mono_add_internal_call("Vault.Mathf::Lerp", reinterpret_cast<void *(*)>(Lerp));
         mono_add_internal_call("Vault.Mathf::RandomRange", reinterpret_cast<void *(*)>(RandomRange));
+        mono_add_internal_call("Vault.Mathf::FloatRandomRange", reinterpret_cast<void *(*)>(FloatRandomRange));
 
         // Main Functions
         mono_add_internal_call("Vault.Main::cpp_DeltaTime", reinterpret_cast<void *(*)>(cpp_DeltaTime));
         mono_add_internal_call("Vault.Main::cpp_Ambient", reinterpret_cast<void *(*)>(cpp_Ambient));
         mono_add_internal_call("Vault.Main::ExitProgram", reinterpret_cast<void *(*)>(ExitProgram));
         mono_add_internal_call("Vault.Main::RandomInt", reinterpret_cast<void *(*)>(cpp_RandomInt));
+        mono_add_internal_call("Vault.Format::cpp_tstrf", reinterpret_cast<void *(*)>(cpp_ToStringF));
+        mono_add_internal_call("Vault.Format::cpp_tstrd", reinterpret_cast<void *(*)>(cpp_ToStringD));
 
         // Discord Functions
         mono_add_internal_call("Vault.Discord::Init", reinterpret_cast<void *(*)>(Discord_InitRPC));
@@ -151,6 +155,9 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         // Audio
         mono_add_internal_call("Vault.Audio::Play", reinterpret_cast<void *(*)>(AudioPlay));
         mono_add_internal_call("Vault.Audio::Music", reinterpret_cast<void *(*)>(AudioMusic));
+        mono_add_internal_call("Vault.Audio::PlayingMusic", reinterpret_cast<void *(*)>(AudioPlayingMusic));
+        mono_add_internal_call("Vault.Audio::PlayingChannel", reinterpret_cast<void *(*)>(AudioPlayingChannel));
+        mono_add_internal_call("Vault.Audio::StopChannel", reinterpret_cast<void *(*)>(AudioStopChannel));
 
         // Transform Component
         mono_add_internal_call("Vault.Transform::GetKey", reinterpret_cast<void *(*)>(Transform_GetKey));
@@ -218,6 +225,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("Vault.Rigidbody2D::cpp_SetAngularVelocity", reinterpret_cast<void *(*)>(Rigidbody2D_SetAngularVelocity));
         mono_add_internal_call("Vault.Rigidbody2D::cpp_SetPosition", reinterpret_cast<void *(*)>(Rigidbody2D_SetPosition));
         mono_add_internal_call("Vault.Rigidbody2D::cpp_Force", reinterpret_cast<void *(*)>(Rigidbody2D_Force));
+        mono_add_internal_call("Vault.Rigidbody2D::cpp_MoveToPosition", reinterpret_cast<void *(*)>(Rigidbody2D_MoveToPosition));
         mono_add_internal_call("Vault.Rigidbody2D::cpp_Torque", reinterpret_cast<void *(*)>(Rigidbody2D_Torque));
 
         // Rigidbody3D Component
@@ -257,6 +265,11 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         // Scene Functions
         mono_add_internal_call("Vault.Scene::LoadScene", reinterpret_cast<void *(*)>(Scene_LoadScene));
+
+        // Save Functions
+        mono_add_internal_call("Vault.SaveFile::cpp_GetVariable", reinterpret_cast<void *(*)>(Save_GetVariable));
+        mono_add_internal_call("Vault.SaveFile::cpp_SaveVariable", reinterpret_cast<void *(*)>(Save_SaveVariable));
+        mono_add_internal_call("Vault.SaveFile::cpp_DeleteVariable", reinterpret_cast<void *(*)>(Save_DeleteVariable));
     }
 } // namespace HyperAPI::CsharpScriptEngine::Functions
 
@@ -446,7 +459,7 @@ namespace HyperAPI::CsharpScriptEngine {
             std::string build_command = "cd assets";
             build_command += " && \"";
             build_command += CsharpVariables::dotnet_path;
-            build_command += "\" build -o VAULT_OUT";
+            build_command += "\" build --property WarningLevel=0 -o VAULT_OUT";
             std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(build_command.c_str(), "r"), pclose);
 
             if (!pipe) {
@@ -543,6 +556,7 @@ MonoObject *MonoScriptClass::f_GetObjectGC() const {
 }
 
 MonoMethod *MonoScriptClass::GetMethod(const std::string method, int parameterCount) const {
+
     return mono_class_get_method_from_name(klass, method.c_str(), parameterCount);
 };
 

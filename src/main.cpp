@@ -13,8 +13,10 @@
 #include "ImGuiColorTextEdit/TextEditor.h"
 #include "ImGuizmo/ImGuizmo.h"
 #include "Renderer/AudioEngine.hpp"
+#include "Rusty/engine_logs.hpp"
+#include "Scripting/C#/GameObjectFunctions.hpp"
 #include "Scripting/CXX/CppScripting.hpp"
-#include "Rusty/hyperlog.hpp"
+#include "Rusty/engine_logs.hpp"
 #include "f_GameObject/f_GameObject.hpp"
 #include "glm/geometric.hpp"
 #include "rusty_vault.hpp"
@@ -1372,7 +1374,8 @@ int main(int argc, char **argv) {
         std::string path = argv[1];
         _chdir(argv[1]);
 #else
-        chdir(argv[1]);
+        int a = chdir(argv[1]);
+        std::cout << "CHDIR: " << a << std::endl;
 #endif
 
         // cwd
@@ -1385,16 +1388,16 @@ int main(int argc, char **argv) {
     getcwd(m_cwd, sizeof(m_cwd));
     std::cout << m_cwd << std::endl;
     std::cout << CsharpVariables::oldCwd << std::endl;
+    if (fs::exists("assets/cs-assembly.csproj")) {
+        fs::remove("assets/cs-assembly.csproj");
+        fs::remove_all("assets/VAULT_API");
+        fs::copy(CsharpVariables::oldCwd + "/cs-assembly/cs-assembly.csproj", "assets/cs-assembly.csproj", fs::copy_options::recursive);
+        fs::copy(CsharpVariables::oldCwd + "/cs-assembly/API", "assets/VAULT_API", fs::copy_options::recursive);
+    } else {
+        fs::copy(CsharpVariables::oldCwd + "/cs-assembly/cs-assembly.csproj", "assets/cs-assembly.csproj", fs::copy_options::recursive);
+        fs::copy(CsharpVariables::oldCwd + "/cs-assembly/API", "assets/VAULT_API", fs::copy_options::recursive);
+    }
     if (CsharpVariables::oldCwd != std::string(m_cwd)) {
-        if (fs::exists("assets/cs-assembly.csproj")) {
-            fs::remove("assets/cs-assembly.csproj");
-            fs::remove_all("assets/VAULT_API");
-            fs::copy(CsharpVariables::oldCwd + "/cs-assembly/cs-assembly.csproj", "assets/cs-assembly.csproj", fs::copy_options::recursive);
-            fs::copy(CsharpVariables::oldCwd + "/cs-assembly/API", "assets/VAULT_API", fs::copy_options::recursive);
-        } else {
-            fs::copy(CsharpVariables::oldCwd + "/cs-assembly/cs-assembly.csproj", "assets/cs-assembly.csproj", fs::copy_options::recursive);
-            fs::copy(CsharpVariables::oldCwd + "/cs-assembly/API", "assets/VAULT_API", fs::copy_options::recursive);
-        }
         // if (fs::exists("cs-assembly/API") && fs::exists("cs-assembly")) {
         //     fs::remove_all("cs-assembly/API");
         //     fs::copy(CsharpVariables::oldCwd + "/cs-assembly/API", "cs-assembly/API", fs::copy_options::recursive);
@@ -1474,7 +1477,7 @@ int main(int argc, char **argv) {
     bool enableSpotLightShadowMap = false;
 
     // check if game.config exists
-    std::ifstream file("game.config");
+    std::ifstream file("assets/game.config");
     bool mainSceneFound = false;
     if (file.is_open()) {
         nlohmann::json JSON = nlohmann::json::parse(file);
@@ -1578,23 +1581,12 @@ int main(int argc, char **argv) {
                                                               {"intensity", config.postProcessing.chromaticAberration.intensity},
                                                           }}}}};
 
-        std::ofstream o("game.config");
+        std::ofstream o("assets/game.config");
         o << std::setw(4) << j << std::endl;
     }
 
 // if the build is a game
 #ifdef GAME_BUILD
-    if (fs::exists("asset_pack.vault_pack")) {
-        if (fs::exists("assets"))
-            fs::remove_all("assets");
-
-#ifdef _WIN32
-        system((std::string(".\\lib\\extractor.exe x asset_pack.vault_pack -p\"") + config.name + "\"").c_str());
-#else
-        system(("\"" + CsharpVariables::oldCwd + "/lib/extractor\" x asset_pack.vault_pack -p\"" + config.name + "\"").c_str());
-#endif
-    }
-
     Hyper::Application app(
         1280, 720, config.name, config.fullscreenOnLaunch, config.resizable,
         false, [&]() {
@@ -3028,7 +3020,7 @@ int main(int argc, char **argv) {
                     if (ImGui::TreeNode("New Layer")) {
                         ImGui::InputText("Name", layerName, 32);
                         if (ImGui::Button("Create")) {
-                            std::ofstream file("game.config");
+                            std::ofstream file("assets/game.config");
                             Scene::layers[layerName] = true;
                             strcpy(layerName, "New Layer");
                             std::vector<std::string> layerStarters;
@@ -3545,7 +3537,7 @@ int main(int argc, char **argv) {
                                                                           {"intensity", config.postProcessing.chromaticAberration.intensity},
                                                                       }}}}};
 
-                    std::ofstream o("game.config");
+                    std::ofstream o("assets/game.config");
                     o << std::setw(4) << j << std::endl;
 
 #ifndef GAME_BUILD
@@ -4683,7 +4675,7 @@ int main(int argc, char **argv) {
                                       ImVec2(200, 0))) {
 #ifdef _WIN32
                         fs::path p = fs::path(currentDirectory.string() +
-                                              "\\New Script.lua");
+                                              "\\new_script.lua");
 #else
                         fs::path p = fs::path(currentDirectory.string() +
                                               "/new_script.lua");
@@ -4701,6 +4693,56 @@ int main(int argc, char **argv) {
                         }
                         ImGui::CloseCurrentPopup();
                     }
+
+                    if (ImGui::Button(ICON_FA_CODE " C# Script",
+                                      ImVec2(200, 0))) {
+#ifdef _WIN32
+                        fs::path p = fs::path(currentDirectory.string() +
+                                              "\\new_script.cs");
+#else
+                        fs::path p = fs::path(currentDirectory.string() +
+                                              "/new_script.cs");
+#endif
+
+                        if (!fs::exists(p)) {
+                            std::ofstream file(p);
+                            std::string str = R"(
+using System;
+using Vault;
+
+namespace NewScriptNamespace
+{
+    // DO NOT REMOVE THE FUNCTIONS FROM THIS SCRIPT!
+    public class NewScript : Entity
+    {
+        // This gets called when the game/scene starts
+        void OnStart()
+        {
+            // This function sets the scripts current object it is attached to, do not remove this!
+            // Type your code below this function!
+            SetObjectID();
+        }
+
+        // This gets called every frame
+        void OnUpdate() {}
+
+        // This function will get called if a mouse is over the GameObject
+        void OnMouseEnter(){}
+
+        // This function will get called if a mouse isn't over the GameObject anymore
+        void OnMouseExit(){}
+
+        void OnGUI() {}
+    }
+}
+                             )";
+
+                            file << str;
+                            file.close();
+                        }
+                        ImGui::CloseCurrentPopup();
+                    }
+
                     if (ImGui::Button(ICON_FA_CODE " C++ Script",
                                       ImVec2(200, 0))) {
 #ifdef _WIN32
@@ -5494,6 +5536,16 @@ void NewScript::Update() {})";
             }
             int vpX = (int)(((float)app.width / 2.0f) - ((float)aspectWidth / 2.0f));
             int vpY = (int)(((float)app.height / 2.0f) - ((float)aspectHeight / 2.0f));
+
+#ifdef GAME_BUILD
+            double ss_x, ss_y;
+            glfwGetCursorPos(app.renderer->window, &ss_x, &ss_y);
+            app.sceneMouseX = (int)ss_x;
+            // ss_x -= vpX;
+            // ss_y -= vpY;
+            ss_y = app.height - ss_y;
+            app.sceneMouseY = (int)ss_y;
+#endif
             if (Scene::mainCamera->EnttComp) {
                 glViewport(vpX, vpY, aspectWidth, aspectHeight);
             } else {
@@ -5506,19 +5558,19 @@ void NewScript::Update() {})";
                 Scene::mainCamera = camera;
             }
 #ifdef GAME_BUILD
-        // if (!splash_done) {
-        //     splash_done = splashScreen.Play();
-        //     if (splash_done) {
-        //         auto view = Scene::m_Registry.view<CameraComponent>();
-        //         for (auto &e : view) {
-        //             auto &camera = Scene::m_Registry.get<CameraComponent>(e);
-        //             if (camera.camera->mainCamera) {
-        //                 backupCam = camera.camera;
-        //                 break;
-        //             }
-        //         }
-        //     }
-        // }
+// if (!splash_done) {
+//     splash_done = splashScreen.Play();
+//     if (splash_done) {
+//         auto view = Scene::m_Registry.view<CameraComponent>();
+//         for (auto &e : view) {
+//             auto &camera = Scene::m_Registry.get<CameraComponent>(e);
+//             if (camera.camera->mainCamera) {
+//                 backupCam = camera.camera;
+//                 break;
+//             }
+//         }
+//     }
+// }
 #endif
 
 #ifndef GAME_BUILD
@@ -6049,12 +6101,6 @@ void NewScript::Update() {})";
                     if (HyperAPI::isRunning) {
                         script.Update();
                     }
-                }
-
-                if (gameObject->schedule_deletion) {
-                    gameObject->enabled = false;
-                    // gameObject->DeleteGameObject();
-                } else {
                 }
             }
             // Draw calls
@@ -7132,31 +7178,39 @@ void NewScript::Update() {})";
                     glBindFramebuffer(GL_FRAMEBUFFER, light.light->pointShadowMapFBO);
                     glClear(GL_DEPTH_BUFFER_BIT);
 
-                    auto rendererView = Scene::m_Registry.view<MeshRenderer>();
+                    // auto rendererView = Scene::m_Registry.view<MeshRenderer>();
+                    for (auto &gameObject : *Scene::m_GameObjects) {
+                        if (!gameObject->enabled)
+                            continue;
 
-                    for (auto &e : rendererView) {
-                        if (Scene::m_Registry.has<MeshRenderer>(e)) {
+                        if (gameObject->HasComponent<MeshRenderer>()) {
                             m_UnbindTextures();
 
                             auto meshRenderer =
-                                Scene::m_Registry.get<MeshRenderer>(e);
-                            auto transform = Scene::m_Registry.get<Transform>(e);
+                                gameObject->GetComponent<MeshRenderer>();
+                            auto transform = gameObject->GetComponent<Transform>();
                             transform.Update();
 
                             glm::mat4 extra = meshRenderer.extraMatrix;
+
                             glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                            for (auto &go : *Scene::m_GameObjects) {
+                                if (go->ID == gameObject->parentID &&
+                                    go->HasComponent<Transform>()) {
+                                    auto &parentTransform =
+                                        go->GetComponent<Transform>();
+                                    parentTransform.Update();
+                                    m_parentTransform = parentTransform.transform;
+                                }
+                            }
 
                             if (meshRenderer.m_Mesh != nullptr) {
                                 meshRenderer.m_Mesh->enttId =
-                                    (uint32_t)e;
+                                    (uint32_t)gameObject->entity;
                                 glActiveTexture(GL_TEXTURE21);
                                 glBindTexture(GL_TEXTURE_CUBE_MAP,
                                               skybox.cubemapTexture);
-
-                                // if (meshRenderer.customShader.shader != nullptr) {
-                                //     meshRenderer.customShader.shader->Bind();
-                                //     meshRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
-                                // }
 
                                 if (meshRenderer.meshType == "Plane") {
                                     meshRenderer.m_Mesh->Draw(
@@ -7173,7 +7227,167 @@ void NewScript::Update() {})";
                                 }
                             }
                         }
+
+                        if (gameObject->HasComponent<SpriteRenderer>()) {
+                            m_UnbindTextures();
+
+                            auto spriteRenderer =
+                                gameObject->GetComponent<SpriteRenderer>();
+                            auto transform = gameObject->GetComponent<Transform>();
+                            glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                            for (auto &go : *Scene::m_GameObjects) {
+                                if (go->ID == gameObject->parentID &&
+                                    go->HasComponent<Transform>()) {
+                                    auto &parentTransform =
+                                        go->GetComponent<Transform>();
+                                    parentTransform.Update();
+                                    m_parentTransform = parentTransform.transform;
+                                }
+                            }
+
+                            glActiveTexture(GL_TEXTURE21);
+                            glBindTexture(GL_TEXTURE_CUBE_MAP,
+                                          skybox.cubemapTexture);
+
+                            spriteRenderer.mesh->enttId =
+                                (uint32_t)gameObject->entity;
+
+                            if (spriteRenderer.customShader.shader != nullptr) {
+                                spriteRenderer.customShader.shader->Bind();
+                                spriteRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                            }
+
+                            spriteRenderer.mesh->Draw(
+                                *shadowCubeMapShader,
+                                *Scene::mainCamera,
+                                transform.transform * m_parentTransform);
+                        }
+
+                        if (gameObject->HasComponent<SpritesheetRenderer>()) {
+                            m_UnbindTextures();
+
+                            auto spritesheetRenderer =
+                                gameObject->GetComponent<SpritesheetRenderer>();
+                            auto transform = gameObject->GetComponent<Transform>();
+                            transform.Update();
+
+                            glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                            for (auto &go : *Scene::m_GameObjects) {
+                                if (go->ID == gameObject->parentID &&
+                                    go->HasComponent<Transform>()) {
+                                    auto &parentTransform =
+                                        go->GetComponent<Transform>();
+                                    parentTransform.Update();
+                                    m_parentTransform = parentTransform.transform;
+                                }
+                            }
+
+                            glActiveTexture(GL_TEXTURE21);
+                            glBindTexture(GL_TEXTURE_CUBE_MAP,
+                                          skybox.cubemapTexture);
+
+                            if (spritesheetRenderer.mesh != nullptr) {
+                                spritesheetRenderer.mesh->enttId =
+                                    (uint32_t)gameObject->entity;
+
+                                if (spritesheetRenderer.customShader.shader != nullptr) {
+                                    spritesheetRenderer.customShader.shader->Bind();
+                                    spritesheetRenderer.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                                }
+
+                                spritesheetRenderer.mesh->Draw(
+                                    *shadowCubeMapShader,
+                                    *Scene::mainCamera,
+                                    transform.transform * m_parentTransform);
+                            }
+                        }
+
+                        if (gameObject->HasComponent<SpriteAnimation>()) {
+                            m_UnbindTextures();
+
+                            auto spriteAnimation =
+                                gameObject->GetComponent<SpriteAnimation>();
+                            auto transform = gameObject->GetComponent<Transform>();
+                            transform.Update();
+
+                            glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                            for (auto &go : *Scene::m_GameObjects) {
+                                if (go->ID == gameObject->parentID &&
+                                    go->HasComponent<Transform>()) {
+                                    auto &parentTransform =
+                                        go->GetComponent<Transform>();
+                                    parentTransform.Update();
+                                    m_parentTransform = parentTransform.transform;
+                                }
+                            }
+
+                            spriteAnimation.Play();
+
+                            if (spriteAnimation.currMesh != nullptr) {
+                                spriteAnimation.currMesh->enttId =
+                                    (uint32_t)gameObject->entity;
+
+                                if (spriteAnimation.customShader.shader != nullptr) {
+                                    spriteAnimation.customShader.shader->Bind();
+                                    spriteAnimation.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                                }
+
+                                spriteAnimation.currMesh->Draw(
+                                    *shadowCubeMapShader,
+                                    *Scene::mainCamera,
+                                    transform.transform * m_parentTransform);
+                                // glDisable(GL_BLEND);
+                            }
+                        }
+
+                        if (gameObject->HasComponent<c_SpritesheetAnimation>()) {
+                            m_UnbindTextures();
+
+                            auto spritesheetAnimation =
+                                gameObject->GetComponent<c_SpritesheetAnimation>();
+                            auto transform = gameObject->GetComponent<Transform>();
+                            transform.Update();
+
+                            glm::mat4 m_parentTransform = glm::mat4(1.0f);
+
+                            for (auto &go : *Scene::m_GameObjects) {
+                                if (go->ID == gameObject->parentID &&
+                                    go->HasComponent<Transform>()) {
+                                    auto &parentTransform =
+                                        go->GetComponent<Transform>();
+                                    parentTransform.Update();
+                                    m_parentTransform = parentTransform.transform;
+                                }
+                            }
+
+                            spritesheetAnimation.Play();
+                            spritesheetAnimation.Update();
+
+                            glActiveTexture(GL_TEXTURE21);
+                            glBindTexture(GL_TEXTURE_CUBE_MAP,
+                                          skybox.cubemapTexture);
+
+                            if (spritesheetAnimation.mesh != nullptr) {
+                                spritesheetAnimation.mesh->enttId =
+                                    (uint32_t)gameObject->entity;
+
+                                if (spritesheetAnimation.customShader.shader != nullptr) {
+                                    spritesheetAnimation.customShader.shader->Bind();
+                                    spritesheetAnimation.customShader.shader->SetUniform1f("DeltaTime", runTime);
+                                }
+
+                                spritesheetAnimation.mesh->Draw(
+                                    *shadowCubeMapShader,
+                                    *Scene::mainCamera,
+                                    transform.transform * m_parentTransform);
+                                // glDisable(GL_BLEND);
+                            }
+                        }
                     }
+
                     // end of shadow mapping
                     glBindFramebuffer(GL_FRAMEBUFFER, 0);
                     if (Scene::mainCamera->EnttComp) {
@@ -7203,6 +7417,17 @@ void NewScript::Update() {})";
                 nlohmann::json m_json;
                 CsharpVariables::scene_schedule.scheduled = false;
                 Scene::LoadScene(CsharpVariables::scene_schedule.scene_path, m_json);
+            }
+
+            // Schedule Deletionx
+            bool clear_deletion_schedule = false;
+            for (auto *gameObject : HyperAPI::CsharpScriptEngine::Functions::scheduled_gameobject_deletions) {
+                gameObject->DeleteGameObject();
+                clear_deletion_schedule = true;
+            }
+
+            if (clear_deletion_schedule) {
+                HyperAPI::CsharpScriptEngine::Functions::scheduled_gameobject_deletions.clear();
             }
 
             // Ending of draw calls
@@ -7252,10 +7477,16 @@ void DisplayProject(GLFWwindow *window, const std::string &name,
         getcwd(cwd, sizeof(cwd));
         std::string s_Cwd = cwd;
 
+        // std::cout << "./bin/build.out \"" + path + "\" \"" + CsharpVariables::oldCwd + "/dotnet/dotnet\"" << std::endl;
+
+        // std::thread t([&]() {
+        //     system(std::string("./bin/build.out \"" + path + "\" \"" + CsharpVariables::oldCwd + "/dotnet/dotnet\"").c_str());
+        // });
+
         std::cout << "./bin/build.out \"" + path + "\" \"" + CsharpVariables::oldCwd + "/dotnet/dotnet\"" << std::endl;
 
         std::thread t([&]() {
-            system(std::string("./bin/build.out \"" + path + "\" \"" + CsharpVariables::oldCwd + "/dotnet/dotnet\"").c_str());
+            system(std::string("./bin/build.out \"" + path + "\"").c_str());
         });
         t.detach();
 #endif
@@ -7281,45 +7512,45 @@ int main() {
     getcwd(m_cwd, 1024);
     CsharpVariables::oldCwd = m_cwd;
 
-    if (!fs::exists("dotnet")) {
-        // https://download.visualstudio.microsoft.com/download/pr/f712b4d0-6b4b-42eb-865a-0c42af79eac9/9db3934d73a826a6e898abc70f41085a/dotnet-sdk-7.0.401-win-x64.zip
+    //     if (!fs::exists("dotnet")) {
+    //         // https://download.visualstudio.microsoft.com/download/pr/f712b4d0-6b4b-42eb-865a-0c42af79eac9/9db3934d73a826a6e898abc70f41085a/dotnet-sdk-7.0.401-win-x64.zip
 
-        std::thread *curl_thread_dotnet = new std::thread([&] {
-            HYPER_LOG("Installing .NET, please wait...")
-            CURL *curl;
-            FILE *fp;
-            CURLcode res;
-// std::string url = "https://raw.githubusercontent.com/Vault-Software-Team/Vault-Engine/main/vault_version.json";
-#ifndef _WIN32
-            std::string url = "https://download.visualstudio.microsoft.com/download/pr/61f29db0-10a5-4816-8fd8-ca2f71beaea3/e15fb7288eb5bc0053b91ea7b0bfd580/dotnet-sdk-7.0.401-linux-x64.tar.gz";
-            char outfilename[FILENAME_MAX] = "dotnet_binary.tar.gz";
-#else
-            std::string url = "https://download.visualstudio.microsoft.com/download/pr/f712b4d0-6b4b-42eb-865a-0c42af79eac9/9db3934d73a826a6e898abc70f41085a/dotnet-sdk-7.0.401-win-x64.zip";
-            char outfilename[FILENAME_MAX] = "dotnet_binary.zip";
-#endif
-            curl = curl_easy_init();
-            if (curl) {
-                fp = fopen(outfilename, "wb");
-                curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-                curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-                res = curl_easy_perform(curl);
-                curl_easy_cleanup(curl);
-                fclose(fp);
-            }
+    //         std::thread *curl_thread_dotnet = new std::thread([&] {
+    //             HYPER_LOG("Installing .NET, please wait...")
+    //             CURL *curl;
+    //             FILE *fp;
+    //             CURLcode res;
+    // // std::string url = "https://raw.githubusercontent.com/Vault-Software-Team/Vault-Engine/main/vault_version.json";
+    // #ifndef _WIN32
+    //             std::string url = "https://download.visualstudio.microsoft.com/download/pr/61f29db0-10a5-4816-8fd8-ca2f71beaea3/e15fb7288eb5bc0053b91ea7b0bfd580/dotnet-sdk-7.0.401-linux-x64.tar.gz";
+    //             char outfilename[FILENAME_MAX] = "dotnet_binary.tar.gz";
+    // #else
+    //             std::string url = "https://download.visualstudio.microsoft.com/download/pr/f712b4d0-6b4b-42eb-865a-0c42af79eac9/9db3934d73a826a6e898abc70f41085a/dotnet-sdk-7.0.401-win-x64.zip";
+    //             char outfilename[FILENAME_MAX] = "dotnet_binary.zip";
+    // #endif
+    //             curl = curl_easy_init();
+    //             if (curl) {
+    //                 fp = fopen(outfilename, "wb");
+    //                 curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    //                 curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+    //                 res = curl_easy_perform(curl);
+    //                 curl_easy_cleanup(curl);
+    //                 fclose(fp);
+    //             }
 
-            HYPER_LOG(".NET Installed! Extracting...");
-            fs::create_directory("dotnet");
-#ifdef _WIN32
-            system("cd dotnet && ..\bin\7zr.exe x ..\dotnet_binary.zip");
-#else
-            HYPER_LOG(".NET Installed! Extracting...");
-            fs::create_directory("dotnet");
-            system("cd dotnet && ../bin/7zz x ../dotnet_binary.tar.gz");
-            system("cd dotnet && ../bin/7zz x dotnet_binary.tar");
-            fs::remove("dotnet/dotnet_binary.tar");
-#endif
-        });
-    }
+    //             HYPER_LOG(".NET Installed! Extracting...");
+    //             fs::create_directory("dotnet");
+    // #ifdef _WIN32
+    //             system("cd dotnet && ..\bin\7zr.exe x ..\dotnet_binary.zip");
+    // #else
+    //             HYPER_LOG(".NET Installed! Extracting...");
+    //             fs::create_directory("dotnet");
+    //             system("cd dotnet && ../bin/7zz x ../dotnet_binary.tar.gz");
+    //             system("cd dotnet && ../bin/7zz x dotnet_binary.tar");
+    //             fs::remove("dotnet/dotnet_binary.tar");
+    // #endif
+    //         });
+    //     }
 
     if (fs::exists("vault_version.json")) {
         std::ifstream file("vault_version.json");
@@ -7327,7 +7558,12 @@ int main() {
         std::string content;
         content = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         json vault_version = json::parse(content);
-        old_version = vault_version["update_number"];
+
+        if (vault_version["update_number"].is_string())
+            old_version = std::stoi((std::string)vault_version["update_number"]);
+        else
+            old_version = vault_version["update_number"];
+
         fs::remove("vault_version.json");
     }
 
@@ -7350,7 +7586,11 @@ int main() {
     std::string content;
     content = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     json vault_version = json::parse(content);
-    current_version = vault_version["update_number"];
+    if (vault_version["update_number"].is_string())
+        current_version = std::stoi((std::string)vault_version["update_number"]);
+    else
+        current_version = vault_version["update_number"];
+
     download_link = vault_version["update_link"];
     // if (current_version != old_version) {
     //     downloading_latest_version = true;

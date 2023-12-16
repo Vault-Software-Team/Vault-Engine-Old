@@ -4,6 +4,8 @@
 #include "scene.hpp"
 
 namespace HyperAPI::CsharpScriptEngine::Functions {
+    std::vector<HyperAPI::Experimental::GameObject *> scheduled_gameobject_deletions;
+
     MonoString *GameObject_GetIDByName(MonoString *name) {
         using namespace Experimental;
         using namespace CsharpVariables;
@@ -61,7 +63,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
 
         auto *go = f_GameObject::FindGameObjectByID(m_id);
         if (go) {
-            go->schedule_deletion = true;
+            scheduled_gameobject_deletions.push_back(go);
         }
     }
 

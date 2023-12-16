@@ -43,13 +43,21 @@ namespace Vault
     {
         public Audio() { }
 
+        // [Obsolete("Audio.Play is obselete (it is 2D only), use Audio3D Component instead to play audio")]
+        // [Obsolete("Audio.Music is obselete (it is 2D only), use Audio3D Component instead to play audio")]
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        [Obsolete("Audio.Play is obselete (it is 2D only), use Audio3D Component instead to play audio")]
         extern public static void Play(string file, float volume, bool loop, int channel = -1);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        [Obsolete("Audio.Music is obselete (it is 2D only), use Audio3D Component instead to play audio")]
         extern public static void Music(string file, float volume, bool loop);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static bool PlayingChannel(int channel);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static bool StopChannel(int channel);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static bool PlayingMusic();
     }
 
     public class Main
@@ -448,6 +456,25 @@ namespace Vault
             tag = m_tag;
             id = m_id;
             entity = new Entity() { ID = id };
+        }
+    }
+
+    public class Format
+    {
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static string cpp_tstrf(float value);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static string cpp_tstrd(double value);
+
+        public static string ToString(float value)
+        {
+            return cpp_tstrf(value);
+        }
+
+        public static string ToString(double value)
+        {
+            return cpp_tstrd(value);
         }
     }
 }

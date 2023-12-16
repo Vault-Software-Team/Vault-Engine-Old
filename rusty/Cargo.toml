@@ -1,13 +1,13 @@
 [package]
-name = "rusty"
+name = "rusty_vault"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
 name = "rusty_vault"
-crate-type = ["rlib", "cdylib", "staticlib"]
+crate-type = ["rlib", "cdylib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 libc = "0.2.85"

@@ -26,6 +26,8 @@ namespace Vault
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static void cpp_Torque(float torque, string id);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static void cpp_MoveToPosition(float tx, float ty, float velocity, string id);
 
         public void SetVelocity(float x, float y)
         {
@@ -50,6 +52,11 @@ namespace Vault
         public void Torque(float torque)
         {
             cpp_Torque(torque, Entity.ID);
+        }
+
+        public void MoveToPosition(Vector2 target_position, float velocity)
+        {
+            cpp_MoveToPosition(target_position.x, target_position.y, velocity, Entity.ID);
         }
 
         public Vector2 velocity

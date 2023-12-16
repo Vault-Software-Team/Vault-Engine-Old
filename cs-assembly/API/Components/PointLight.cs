@@ -39,6 +39,19 @@ namespace Vault
                 SetKey("intensity", Entity.ID, value, 0, 0);
             }
         }
+
+        public bool render_shadows
+        {
+            get
+            {
+                GetKey("shadows", Entity.ID, out string result);
+                return result == "true";
+            }
+            set
+            {
+                SetKey("shadows", Entity.ID, value == true ? 1.0f : 0.0f, 0, 0);
+            }
+        }
     }
 
 }

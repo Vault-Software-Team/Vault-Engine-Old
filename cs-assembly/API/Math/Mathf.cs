@@ -54,6 +54,8 @@ namespace Vault
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern public static int RandomRange(int min, int max);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static float FloatRandomRange(float min, float max);
 
 
         public static readonly float zero = 0;

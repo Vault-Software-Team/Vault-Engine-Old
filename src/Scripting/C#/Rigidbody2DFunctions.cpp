@@ -117,4 +117,19 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         auto &rigidbody = gameObject->GetComponent<Rigidbody2D>();
         rigidbody.type = (b2BodyType)type;
     }
+
+    void Rigidbody2D_MoveToPosition(float tx, float ty, float velocity, MonoString *id) {
+        using namespace Experimental;
+        using namespace CsharpVariables;
+
+        const std::string m_id = mono_string_to_utf8(id);
+        auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
+        auto &rigidbody = gameObject->GetComponent<Rigidbody2D>();
+        rigidbody.MoveToPosition(glm::vec2(tx, ty), velocity);
+    }
 } // namespace HyperAPI::CsharpScriptEngine::Functions

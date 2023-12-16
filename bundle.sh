@@ -26,7 +26,7 @@ if [ "$PLATFORM" = "windows" ]; then
     cp -r windows/lib dist/windows/lib
     cp -r mono/lib dist/windows/lib/mono
     cp -r windows/bin dist/windows/bin
-    cp -r bin/game.out dist/windows/bin/game.out
+    # cp -r bin/game.out dist/windows/bin/game.out
     cp -r LaunchGame.sh dist/windows/bin/LaunchGame.sh
     cp -r game.config dist/windows/game.config
     cp -r lib/extractor.exe dist/linux/lib/extractor.exe
@@ -83,6 +83,8 @@ elif [ "$PLATFORM" == "cxx" ]; then
     find . -name "*.cpp" -type f -delete
     find . -name "*.c" -type f -delete
     find . -name "*.cxx" -type f -delete
+elif [ "$PLATFORM" == "game" ]; then
+    mv bin/game.out dist/linux\ copy/lib/game.out
 else 
     if [ -d dist/linux ]; then
         rm -r dist/linux

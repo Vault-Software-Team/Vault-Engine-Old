@@ -18,4 +18,7 @@
 namespace HyperAPI::CsharpScriptEngine::Functions {
     void AudioPlay(MonoString *file, float volume, bool loop, int channel = -1);
     void AudioMusic(MonoString *file, float volume, bool loop);
+    bool AudioPlayingMusic();
+    bool AudioPlayingChannel(int channel);
+    void AudioStopChannel(int channel);
 } // namespace HyperAPI::CsharpScriptEngine::Functions

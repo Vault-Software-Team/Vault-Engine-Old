@@ -65,8 +65,8 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
     float Lerp(float a, float b, float t) {
         return a + t * (b - a);
     }
+    static bool seed_set = false;
     int RandomRange(int min, int max) {
-        static bool seed_set = false;
         if (!seed_set) {
             srand((uint32_t)time(NULL));
             seed_set = true;
@@ -75,5 +75,14 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         int rnd = min + rand() % range;
 
         return rnd;
+    }
+
+    float FloatRandomRange(float min, float max) {
+        if (!seed_set) {
+            srand((uint32_t)time(NULL));
+            seed_set = true;
+        }
+        float val = ((float)rand() / RAND_MAX) * (max - min) + min;
+        return val;
     }
 } // namespace HyperAPI::CsharpScriptEngine::Functions

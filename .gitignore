@@ -24,3 +24,5 @@ rusty/target
 website
 *.gch
 test
+assets copy
+mono_crash*.*

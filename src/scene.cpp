@@ -100,7 +100,7 @@ namespace HyperAPI {
             JSON[0]["name"] = name;
             JSON[0]["ID"] = ID;
             JSON[0]["tag"] = tag;
-            JSON[0]["parentID"] = parentID;
+            JSON[0]["parentID"] = "NO_PARENT";
             JSON[0]["layer"] = layer;
             JSON[0]["components"] = nlohmann::json::array();
 
