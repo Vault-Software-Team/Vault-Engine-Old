@@ -38,7 +38,6 @@
 #include "lib/csharp.hpp"
 #include "vendor/zlib/zlib.h"
 #include "vendor/libcurl/curl.h"
-#include "vendor/czmq/czmq.h"
 
 #ifndef _WIN32
 #include <unistd.h>
