@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "kWbUMNQYZeSvKjIgiVv14pMYzCM6/S1GtNXTAhPUFAGq++W8f5x4wSOLZkadaGOoWuoBVvE6hqI1kMSeoB+t4w==",
+  "success": true,
+  "projectFilePath": "/home/koki1019/Desktop/Main Projects/Vault_Engine/server/server.csproj",
+  "expectedPackageFiles": [
+    "/home/koki1019/.nuget/packages/microsoft.aspnetcore.app.ref/7.0.11/microsoft.aspnetcore.app.ref.7.0.11.nupkg.sha512"
+  ],
+  "logs": []
+}

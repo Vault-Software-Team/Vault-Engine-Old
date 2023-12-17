@@ -18,6 +18,8 @@ namespace HyperAPI {
         entt::entity entity = entt::null;
 
         glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 Front = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 Right = glm::vec3(0.0f, 0.0f, 0.0f);
 
         glm::mat4 view, projection;
 
@@ -29,7 +31,7 @@ namespace HyperAPI {
 
         bool firstClick = true;
         bool mode2D = false;
-        bool mainCamera = false;
+        bool main_camera;
 
         int width;
         int height;

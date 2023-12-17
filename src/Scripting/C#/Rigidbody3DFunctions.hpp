@@ -16,6 +16,7 @@
 #include <string>
 
 namespace HyperAPI::CsharpScriptEngine::Functions {
+    void Rigidbody3D_GetKey(MonoString *key, MonoString *id, MonoString **result);
     void Rigidbody3D_SetPosition(float x, float y, float z, MonoString *id);
     void Rigidbody3D_AddForce(float x, float y, float z, MonoString *id);
     void Rigidbody3D_AddTorque(float x, float y, float z, MonoString *id);

@@ -41,6 +41,9 @@ namespace HyperAPI {
             auto &transform =
                 Scene::m_Registry.get<Experimental::Transform>(entity);
 
+            Front = glm::rotate(glm::inverse(glm::quat(transform.rotation)), glm::vec3(0.0, 0.0, -1.0));
+            Right = glm::rotate(glm::inverse(glm::quat(transform.rotation)), glm::vec3(1.0, 0.0, 0.0));
+
             view = glm::mat4(1.0f);
             projection = glm::mat4(1.0f);
 
@@ -103,6 +106,9 @@ namespace HyperAPI {
 
             view = glm::mat4(1.0f);
             projection = glm::mat4(1.0f);
+
+            Front = glm::rotate(glm::inverse(glm::quat(transform.rotation)), glm::vec3(0.0, 0.0, -1.0));
+            Right = glm::rotate(glm::inverse(glm::quat(transform.rotation)), glm::vec3(1.0, 0.0, 0.0));
 
             width = winSize.x;
             height = winSize.y;

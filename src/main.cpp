@@ -38,6 +38,7 @@
 #include "lib/csharp.hpp"
 #include "vendor/zlib/zlib.h"
 #include "vendor/libcurl/curl.h"
+#include "vendor/czmq/czmq.h"
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -864,7 +865,7 @@ void DevConsole() {
                         real_string += string;
                         real_string += " ";
                     }
-                    Log log(real_string, HyperAPI::LOG_WARNING);
+                    Log log(real_string, (HyperAPI::LOG_TYPE)1);
                 } else if (ccode_StartsWith(consoleBuffer, "error")) {
                     std::vector<std::string> out = console_GetArguments(consoleBuffer);
 
@@ -873,7 +874,7 @@ void DevConsole() {
                         real_string += string;
                         real_string += " ";
                     }
-                    Log log(real_string, HyperAPI::LOG_ERROR);
+                    Log log(real_string, (HyperAPI::LOG_TYPE)2);
                 } else if (ccode_StartsWith(consoleBuffer, "print")) {
                     std::stringstream ss(consoleBuffer);
 
@@ -883,11 +884,11 @@ void DevConsole() {
                         real_string += string;
                         real_string += " ";
                     }
-                    Log log(real_string, HyperAPI::LOG_INFO);
+                    Log log(real_string, (HyperAPI::LOG_TYPE)0);
                 } else if (ccode_StartsWith(consoleBuffer, "wireframe")) {
                     wireframe_rendering = !wireframe_rendering;
                     Hyper::Application::instance->renderer->wireframe = wireframe_rendering;
-                    Log log(wireframe_rendering ? "Enabled Wireframe" : "Disabled Wireframe", LOG_INFO);
+                    Log log(wireframe_rendering ? "Enabled Wireframe" : "Disabled Wireframe", (HyperAPI::LOG_TYPE)0);
                 } else {
                     Log log("Invalid Command!", HyperAPI::LOG_ERROR);
                 }
@@ -1657,12 +1658,14 @@ int main(int argc, char **argv) {
 // glfw enable sticky mouse buttons
 #ifdef _WIN32
     Shader shader("shaders\\default.glsl");
+    // Shader ishader("shaders/instanced.glsl");
     Shader outlineShader("shaders\\outline.glsl");
     Shader shadowShader("shaders\\shadowMap.glsl");
     Shader workerShader("shaders\\worker.glsl");
     shadowCubeMapShader = new Shader("shaders\\shadowCubeMap.glsl");
 #else
     Shader shader("shaders/default.glsl");
+    // Shader shader("shaders/instanced.glsl");
     Shader outlineShader("shaders/outline.glsl");
     Shader shadowShader("shaders/shadowMap.glsl");
     Shader workerShader("shaders/worker.glsl");
@@ -2082,7 +2085,7 @@ int main(int argc, char **argv) {
                             HyperAPI::isStopped = false;
 
                             for (auto &camera : Scene::cameras) {
-                                if (camera->mainCamera) {
+                                if (camera->main_camera) {
                                     Scene::mainCamera = camera;
                                     break;
                                 }
@@ -4079,7 +4082,7 @@ int main(int argc, char **argv) {
                             for (auto &go : *Scene::m_GameObjects) {
                                 if (go->HasComponent<CameraComponent>()) {
                                     auto &camera = go->GetComponent<CameraComponent>();
-                                    if (camera.camera->mainCamera) {
+                                    if (camera.camera->main_camera) {
                                         Scene::mainCamera = camera.camera;
                                         break;
                                     }
@@ -5296,7 +5299,7 @@ void NewScript::Update() {})";
     // SplashScreen splashScreen("build/logo2.png");
     // auto *backupCam = Scene::mainCamera;
     // for (auto &camera : Scene::cameras) {
-    //     if (camera->mainCamera) {
+    //     if (camera->main_camera) {
     //         backupCam = camera;
     //         break;
     //     }
@@ -5564,7 +5567,7 @@ void NewScript::Update() {})";
 //         auto view = Scene::m_Registry.view<CameraComponent>();
 //         for (auto &e : view) {
 //             auto &camera = Scene::m_Registry.get<CameraComponent>(e);
-//             if (camera.camera->mainCamera) {
+//             if (camera.camera->main_camera) {
 //                 backupCam = camera.camera;
 //                 break;
 //             }
@@ -6216,7 +6219,14 @@ void NewScript::Update() {})";
                                     shader.SetUniform1i("isPlane", 1);
                                 }
                                 orthgonalProjection = glm::ortho(shadowOrtho1.x, shadowOrtho1.y, shadowOrtho2.x, shadowOrtho2.y, shadowNearFar.x, shadowNearFar.y);
-                                lightView = glm::lookAt(lightPos, glm::vec3(0, 0, 0), lightUpThing);
+                                if (Scene::mainCamera->EnttComp) {
+                                    glm::vec3 &cam_pos = Scene::m_Registry.get<Transform>(Scene::mainCamera->entity).position;
+                                    lightView = glm::lookAt(cam_pos + lightPos, cam_pos + Scene::mainCamera->Front, lightUpThing);
+                                } else {
+                                    glm::vec3 cam_pos = Scene::mainCamera->GetComponent<TransformComponent>().position;
+                                    lightView = glm::lookAt(cam_pos + lightPos, cam_pos + Scene::mainCamera->Front, lightUpThing);
+                                    // lightView = glm::lookAt(lightPos, glm::vec3(0, 0, 0), lightUpThing);
+                                }
                                 perspectiveProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
                                 lightViewPer = glm::lookAt(lightPos, glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
                                 lightProjection = enableSpotLightShadowMap ? perspectiveProjection * lightViewPer : orthgonalProjection * lightView;

@@ -53,7 +53,7 @@ namespace Vault
                 cpp_SetKey("far", value, Entity.ID);
             }
         }
-        
+
         public bool mode2D
         {
             get
@@ -65,6 +65,52 @@ namespace Vault
             {
                 cpp_Set2D(value, Entity.ID);
             }
+        }
+
+        public bool mouse_movement
+        {
+            get
+            {
+                cpp_GetKey("mouse_movement", Entity.ID, out string result);
+                return result == "true" ? true : false;
+            }
+            set
+            {
+                cpp_SetKey("mouse_movement", value == true ? 1.0f : 0.0f, Entity.ID);
+            }
+        }
+
+        public Vector3 up
+        {
+            get
+            {
+                cpp_GetKey("up", Entity.ID, out string result);
+                string[] strValues = result.Split(" ");
+                return new Vector3(float.Parse(strValues[0]), float.Parse(strValues[1]), float.Parse(strValues[2]));
+            }
+            set { }
+        }
+
+        public Vector3 right
+        {
+            get
+            {
+                cpp_GetKey("right", Entity.ID, out string result);
+                string[] strValues = result.Split(" ");
+                return new Vector3(float.Parse(strValues[0]), float.Parse(strValues[1]), float.Parse(strValues[2]));
+            }
+            set { }
+        }
+
+        public Vector3 forward
+        {
+            get
+            {
+                cpp_GetKey("forward", Entity.ID, out string result);
+                string[] strValues = result.Split(" ");
+                return new Vector3(float.Parse(strValues[0]), float.Parse(strValues[1]), float.Parse(strValues[2]));
+            }
+            set { }
         }
     }
 }

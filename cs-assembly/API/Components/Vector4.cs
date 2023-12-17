@@ -16,6 +16,8 @@ namespace Vault
             w = W;
         }
 
+        public static Vector4 zero = new Vector4(0, 0, 0, 0);
+
         public void set(Vector4 val)
         {
             x = val.x;

@@ -60,7 +60,6 @@
 // Header Files
 #include "InputEvents.hpp"
 #include "ScriptEngine.hpp"
-#include "networking.h"
 #include "scene.hpp"
 #include "scripts.hpp"
 

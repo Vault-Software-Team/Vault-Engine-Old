@@ -1,12 +1,12 @@
 VM start event not sent yet: dropping APPDOMAIN_CREATE
-[0x7fd3f1de4040] Thread started, obj=0x7fd3cbee4130, tls=0x558d654a0590.
+[0x7f623f27ecc0] Thread started, obj=0x7f623d108130, tls=0x5596cf485070.
 VM start event not sent yet: dropping THREAD_START
-[0x7fd3f1de4040] Suspended.
-[0x7fd3f1de4040] Resumed.
-[0x7fd3c8e176c0] Thread started, obj=0x7fd3cbee4278, tls=0x7fd3bc0026e0.
+[0x7f623f27ecc0] Suspended.
+[0x7f623f27ecc0] Resumed.
+[0x7f623c25b6c0] Thread started, obj=0x7f623d108278, tls=0x7f62080026e0.
 VM start event not sent yet: dropping THREAD_START
-[0x7fd3c8e176c0] Suspended.
-[0x7fd3c8e176c0] Resumed.
+[0x7f623c25b6c0] Suspended.
+[0x7f623c25b6c0] Resumed.
 VM start event not sent yet: dropping ASSEMBLY_LOAD
 VM start event not sent yet: dropping TYPE_LOAD
 VM start event not sent yet: dropping TYPE_LOAD
@@ -17,10 +17,10 @@ VM start event not sent yet: dropping TYPE_LOAD
 VM start event not sent yet: dropping TYPE_LOAD
 VM start event not sent yet: dropping TYPE_LOAD
 Debugger client is not connected: dropping VM_START
-[0x7fd3bbfff6c0] Thread started, obj=0x7fd3cbee43c0, tls=0x7fd3b40026e0.
+[0x7f620d1ff6c0] Thread started, obj=0x7f623d1083c0, tls=0x7f62000026e0.
 VM start event not sent yet: dropping THREAD_START
-[0x7fd3bbfff6c0] Suspended.
-[0x7fd3bbfff6c0] Resumed.
+[0x7f620d1ff6c0] Suspended.
+[0x7f620d1ff6c0] Resumed.
 VM start event not sent yet: dropping APPDOMAIN_CREATE
 VM start event not sent yet: dropping TYPE_LOAD
 VM start event not sent yet: dropping TYPE_LOAD
@@ -35,4 +35,7 @@ VM start event not sent yet: dropping ASSEMBLY_LOAD
 VM start event not sent yet: dropping TYPE_LOAD
 VM start event not sent yet: dropping TYPE_LOAD
 VM start event not sent yet: dropping TYPE_LOAD
-[dbg] Agent thread started, pid=0x7fd3bbdfe6c0
+[dbg] Agent thread started, pid=0x7f620cffe6c0
+[dbg] Invalid listening socket
+[dbg] Can't attach, aborting debugger thread.
+[dbg] Debugger thread exited.

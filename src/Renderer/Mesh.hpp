@@ -22,12 +22,12 @@ namespace HyperAPI {
         bool physics = true;
         bool empty = false;
         bool modelMesh = false;
-        bool batched;
+        bool instanced;
 
         bool hasMaterial = true;
 
         Mesh(std::vector<Vertex> &vertices, std::vector<uint32_t> &indices,
-             Material &material, bool empty = false, bool batched = false);
+             Material &material, bool empty = false, bool instanced = false);
 
         ~Mesh();
         uint32_t enttId;

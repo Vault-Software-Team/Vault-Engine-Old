@@ -43,7 +43,7 @@ namespace HyperAPI::Experimental {
                 ImGui::DragFloat("Near", &camera->cam_near, 0.01f);
                 ImGui::DragFloat("Far", &camera->cam_far, 0.01f);
 
-                ImGui::Checkbox("Main Camera", &camera->mainCamera);
+                ImGui::Checkbox("Main Camera", &camera->main_camera);
                 ImGui::Checkbox("2D Mode", &camera->mode2D);
                 ImGui::Checkbox("Depth Camera", &depthCamera);
 

@@ -26,8 +26,8 @@ namespace HyperAPI::Experimental {
                                           transform->position.z));
         glm::vec3 q = transform->rotation;
         btQuaternion rotation;
-        rotation.setEuler(q.x, q.y, q.z);
-        HYPER_LOG("Created a Bullet Physics Rigidbody")
+        rotation.setEulerZYX(q.z, q.y, q.x);
+        HYPER_LOG("Created a Bulet Physics Rigidbody")
         bt_transform->setRotation(rotation);
 
         motionState = new btDefaultMotionState(*bt_transform);

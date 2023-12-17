@@ -48,13 +48,6 @@ namespace Vault
             cpp_SetVelocity(velocity.x, velocity.y, velocity.z, Entity.ID);
         }
 
-        public Vector3 GetVelocity()
-        {
-            cpp_GetKey("velocity", Entity.ID, out string result);
-            string[] strs = result.Split(" ");
-            return new Vector3(float.Parse(strs[0]), float.Parse(strs[1]), float.Parse(strs[2]));
-        }
-
         public void SetAngularVelocity(Vector3 AngularVelocity)
         {
             cpp_SetAngularVelocity(AngularVelocity.x, AngularVelocity.y, AngularVelocity.z, Entity.ID);
@@ -70,6 +63,20 @@ namespace Vault
         public void SetPosition(Vector3 pos)
         {
             cpp_SetPosition(pos.x, pos.y, pos.z, Entity.ID);
+        }
+
+        public Vector3 velocity
+        {
+            get
+            {
+                cpp_GetKey("velocity", Entity.ID, out string result);
+                string[] strs = result.Split(" ");
+                return new Vector3(float.Parse(strs[0]), float.Parse(strs[1]), float.Parse(strs[2]));
+            }
+            set
+            {
+                SetVelocity(value);
+            }
         }
     }
 }

@@ -1,0 +1,15 @@
+/home/koki1019/Desktop/Main Projects/Vault_Engine/server/bin/Debug/net7.0/server
+/home/koki1019/Desktop/Main Projects/Vault_Engine/server/bin/Debug/net7.0/server.deps.json
+/home/koki1019/Desktop/Main Projects/Vault_Engine/server/bin/Debug/net7.0/server.runtimeconfig.json
+/home/koki1019/Desktop/Main Projects/Vault_Engine/server/bin/Debug/net7.0/server.dll
+/home/koki1019/Desktop/Main Projects/Vault_Engine/server/bin/Debug/net7.0/server.pdb
+/home/koki1019/Desktop/Main Projects/Vault_Engine/server/obj/Debug/net7.0/server.csproj.AssemblyReference.cache
+/home/koki1019/Desktop/Main Projects/Vault_Engine/server/obj/Debug/net7.0/server.GeneratedMSBuildEditorConfig.editorconfig
+/home/koki1019/Desktop/Main Projects/Vault_Engine/server/obj/Debug/net7.0/server.AssemblyInfoInputs.cache
+/home/koki1019/Desktop/Main Projects/Vault_Engine/server/obj/Debug/net7.0/server.AssemblyInfo.cs
+/home/koki1019/Desktop/Main Projects/Vault_Engine/server/obj/Debug/net7.0/server.csproj.CoreCompileInputs.cache
+/home/koki1019/Desktop/Main Projects/Vault_Engine/server/obj/Debug/net7.0/server.dll
+/home/koki1019/Desktop/Main Projects/Vault_Engine/server/obj/Debug/net7.0/refint/server.dll
+/home/koki1019/Desktop/Main Projects/Vault_Engine/server/obj/Debug/net7.0/server.pdb
+/home/koki1019/Desktop/Main Projects/Vault_Engine/server/obj/Debug/net7.0/server.genruntimeconfig.cache
+/home/koki1019/Desktop/Main Projects/Vault_Engine/server/obj/Debug/net7.0/ref/server.dll

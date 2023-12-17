@@ -365,7 +365,7 @@ namespace HyperAPI {
                 camera.camera->cam_fov = component["fov"];
                 camera.camera->cam_near = component["near"];
                 camera.camera->cam_far = component["far"];
-                camera.camera->mainCamera = component["mainCamera"];
+                camera.camera->main_camera = component["mainCamera"];
                 camera.camera->mode2D = component["mode2D"];
                 if (component.contains("depthCamera")) {
                     camera.depthCamera = component["depthCamera"];
@@ -375,7 +375,7 @@ namespace HyperAPI {
                     camera.camera->layers.push_back(layer);
                 }
 
-                if (camera.camera->mainCamera) {
+                if (camera.camera->main_camera) {
                     mainCamera = camera.camera;
                 }
             }
@@ -1208,7 +1208,7 @@ namespace HyperAPI {
                 auto &camera = gameObject->GetComponent<Experimental::CameraComponent>();
 
                 JSON[i]["components"][componentOffset]["type"] = "CameraComponent";
-                JSON[i]["components"][componentOffset]["mainCamera"] = camera.camera->mainCamera;
+                JSON[i]["components"][componentOffset]["mainCamera"] = camera.camera->main_camera;
                 JSON[i]["components"][componentOffset]["mode2D"] = camera.camera->mode2D;
                 JSON[i]["components"][componentOffset]["fov"] = camera.camera->cam_fov;
                 JSON[i]["components"][componentOffset]["near"] = camera.camera->cam_near;

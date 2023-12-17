@@ -24,29 +24,47 @@ namespace Vault
             z = val.z;
         }
 
+        public static Vector3 zero = new Vector3(0, 0, 0);
+
+
         public static Vector3 operator +(Vector3 a, Vector3 b)
         {
-            return new Vector3(a.x + a.x, a.y + a.y, a.z + b.z);
-        }
-
-        public static Vector3 operator +(Vector3 a, float b)
-        {
-            return new Vector3(a.x + a.x, a.y + a.y, a.z + b);
+            return new Vector3(a.x + b.x, a.y + b.y, a.z + b.z);
         }
 
         public static Vector3 operator -(Vector3 a, Vector3 b)
         {
-            return new Vector3(a.x - a.x, a.y - a.y, a.z - b.z);
+            return new Vector3(a.x - b.x, a.y - b.y, a.z - b.z);
         }
 
         public static Vector3 operator /(Vector3 a, Vector3 b)
         {
-            return new Vector3(a.x / a.x, a.y / a.y, a.z / b.z);
+            return new Vector3(a.x / b.x, a.y / b.y, a.z / b.z);
         }
 
         public static Vector3 operator *(Vector3 a, Vector3 b)
         {
-            return new Vector3(a.x * a.x, a.y * a.y, a.z * b.z);
+            return new Vector3(a.x * b.x, a.y * b.y, a.z * b.z);
+        }
+
+        public static Vector3 operator +(Vector3 a, float b)
+        {
+            return new Vector3(a.x + b, a.y + b, a.z + b);
+        }
+
+        public static Vector3 operator -(Vector3 a, float b)
+        {
+            return new Vector3(a.x - b, a.y - b, a.z - b);
+        }
+
+        public static Vector3 operator /(Vector3 a, float b)
+        {
+            return new Vector3(a.x / b, a.y / b, a.z / b);
+        }
+
+        public static Vector3 operator *(Vector3 a, float b)
+        {
+            return new Vector3(a.x * b, a.y * b, a.z * b);
         }
     }
 }

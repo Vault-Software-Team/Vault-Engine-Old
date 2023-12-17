@@ -229,6 +229,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         mono_add_internal_call("Vault.Rigidbody2D::cpp_Torque", reinterpret_cast<void *(*)>(Rigidbody2D_Torque));
 
         // Rigidbody3D Component
+        mono_add_internal_call("Vault.Rigidbody3D::cpp_GetKey", reinterpret_cast<void *(*)>(Rigidbody3D_GetKey));
         mono_add_internal_call("Vault.Rigidbody3D::cpp_SetPosition", reinterpret_cast<void *(*)>(Rigidbody3D_SetPosition));
         mono_add_internal_call("Vault.Rigidbody3D::cpp_AddForce", reinterpret_cast<void *(*)>(Rigidbody3D_AddForce));
         mono_add_internal_call("Vault.Rigidbody3D::cpp_AddTorque", reinterpret_cast<void *(*)>(Rigidbody3D_AddTorque));

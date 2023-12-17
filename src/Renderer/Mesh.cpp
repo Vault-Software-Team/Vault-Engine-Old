@@ -15,7 +15,7 @@ namespace HyperAPI {
     }
 
     Mesh::Mesh(std::vector<Vertex> &vertices, std::vector<uint32_t> &indices,
-               Material &material, bool empty, bool batched) {
+               Material &material, bool empty, bool instanced) {
 
         TransformComponent component;
         component.position = Vector3(0, 0, 0);
@@ -73,7 +73,7 @@ namespace HyperAPI {
         glGenBuffers(1, &IBO);
         glBindVertexArray(VAO);
 
-        if (!batched) {
+        if (!instanced) {
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex),
                          vertices.data(), GL_DYNAMIC_DRAW);

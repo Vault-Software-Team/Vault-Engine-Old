@@ -24,6 +24,14 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
             *result = mono_string_new(appDomain, std::to_string(component.camera->cam_near).c_str());
         } else if (m_key == "far") {
             *result = mono_string_new(appDomain, std::to_string(component.camera->cam_far).c_str());
+        } else if (m_key == "front" || m_key == "forward") {
+            *result = mono_string_new(appDomain, (std::to_string(component.camera->Front.x) + " " + std::to_string(component.camera->Front.y) + " " + std::to_string(component.camera->Front.z)).c_str());
+        } else if (m_key == "right") {
+            *result = mono_string_new(appDomain, (std::to_string(component.camera->Right.x) + " " + std::to_string(component.camera->Right.y) + " " + std::to_string(component.camera->Right.z)).c_str());
+        } else if (m_key == "sensitivity") {
+            *result = mono_string_new(appDomain, std::to_string(component.camera->sensitivity).c_str());
+        } else if (m_key == "mouse_movement") {
+            *result = mono_string_new(appDomain, component.camera->m_MouseMovement ? "true" : "false");
         }
     }
 
@@ -47,6 +55,10 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
             component.camera->cam_near = value;
         } else if (m_key == "far") {
             component.camera->cam_far = value;
+        } else if (m_key == "mouse_movement") {
+            component.camera->m_MouseMovement = value > 0.9 ? true : false;
+        } else if (m_key == "sensitivity") {
+            component.camera->sensitivity = value;
         }
     }
 

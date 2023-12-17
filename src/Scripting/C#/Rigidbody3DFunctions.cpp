@@ -80,7 +80,7 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         }
 
         auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
-
+        rigidbody.body->setActivationState(DISABLE_DEACTIVATION);
         rigidbody.SetVelocity(glm::vec3(x, y, z));
     }
 
@@ -98,5 +98,26 @@ namespace HyperAPI::CsharpScriptEngine::Functions {
         auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
 
         rigidbody.SetAngularVelocity(glm::vec3(x, y, z));
+    }
+
+    void Rigidbody3D_GetKey(MonoString *key, MonoString *id, MonoString **result) {
+        using namespace Experimental;
+        using namespace CsharpVariables;
+        using namespace std;
+
+        const std::string m_key = mono_string_to_utf8(key);
+        const std::string m_id = mono_string_to_utf8(id);
+
+        auto *gameObject = f_GameObject::FindGameObjectByID(m_id);
+        if (!gameObject) {
+            Log log(("C#: Couldn't find game object with ID: " + m_id), LOG_ERROR);
+            return;
+        }
+
+        auto &rigidbody = gameObject->GetComponent<Rigidbody3D>();
+
+        if (m_key == "velocity") {
+            *result = mono_string_new(appDomain, (to_string((rigidbody.GetVelocity().x)) + " " + to_string(rigidbody.GetVelocity().y) + " " + to_string((rigidbody.GetVelocity().z))).c_str());
+        }
     }
 } // namespace HyperAPI::CsharpScriptEngine::Functions
