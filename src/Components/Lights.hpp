@@ -137,6 +137,7 @@ namespace HyperAPI::Experimental {
 
             light->lightPos = lightPos;
             light->color = color;
+            light->intensity = intensity;
         }
     };
 } // namespace HyperAPI::Experimental

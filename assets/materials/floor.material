@@ -1,19 +1,19 @@
 {
     "baseColor": {
         "a": 1.0,
-        "b": 0.36092716455459595,
+        "b": 1.0,
         "g": 1.0,
-        "r": 0.43287575244903564
+        "r": 1.0
     },
-    "diffuse": "nullptr",
+    "diffuse": "assets/textures/ground_texture.png",
     "height": "nullptr",
     "metallic": 0.0,
     "normal": "nullptr",
-    "roughness": 0.699999988079071,
+    "roughness": 1.0,
     "shininess": 16.0,
-    "specular": "nullptr",
+    "specular": "assets/textures/ground_texture.png",
     "texUV": {
-        "x": 0.0,
-        "y": 0.0
+        "x": 45.0,
+        "y": 45.0
     }
 }

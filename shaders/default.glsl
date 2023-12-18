@@ -427,12 +427,11 @@ vec4 directionalLight(DirectionalLight light) {
 
         shadow /= pow((sampleRadius * 2 + 1), 2);
     }
-
-    if(isTex == 1) {
-        return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * vec4(light.color, 1) * (diffuse * (1.0f - shadow) + (vec4(ambient_color, 1) * ambient)) + specularTexture * (((specular  * (1.0f - shadow)) * vec4(light.color, 1)) * light.intensity)) + texture(texture_emission0, UVs).r;
+    if(isTex == 1) {    
+        return (mix(texture(texture_diffuse0, UVs), reflectedColor, metallic) * vec4(light.color, 1) * (diffuse * (1.0f - shadow) + (vec4(ambient_color, 1) * ambient)) + specularTexture * (((specular  * (1.0f - shadow)) * vec4(light.color, 1)))) * light.intensity  + texture(texture_emission0, UVs).r;
     } else {
-        // return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * (diffuse) + vec4(1,1,1,1)  * (((specular) * vec4(light.color, 1)) * light.intensity));
-        return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * (diffuse * (1.0f - shadow) + (vec4(ambient_color, 1) * ambient)) + vec4(1,1,1,1)  * (((specular  * (1.0f - shadow)) * vec4(light.color, 1)) * light.intensity));
+        // return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * (diffuse) + vec4(1,1,1,1)  * (((specular) * vec4(light.color, 1)))) * light.intensity ;
+        return (mix(baseColor, reflectedColor, metallic) * vec4(light.color, 1) * (diffuse * (1.0f - shadow) + (vec4(ambient_color, 1) * ambient)) + vec4(1,1,1,1)  * (((specular  * (1.0f - shadow)) * vec4(light.color, 1)))) * light.intensity ;
     }
 }
 

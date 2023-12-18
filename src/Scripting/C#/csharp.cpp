@@ -376,12 +376,12 @@ namespace HyperAPI::CsharpScriptEngine {
     void RuntimeInit() {
         using namespace CsharpVariables;
         if (rootDomain == nullptr) {
-            const char *argv[2] = {
-                "--debugger-agent=transport=dt_socket,server=y,address=127.0.0.1:55555,suspend=n,loglevel=3,logfile=logs/MonoDebugger.log",
-                "--soft-breakpoints"};
+            // const char *argv[2] = {
+            //     "--debugger-agent=transport=dt_socket,server=y,address=127.0.0.1:55555,suspend=n,loglevel=3,logfile=logs/MonoDebugger.log",
+            //     "--soft-breakpoints"};
 
-            mono_jit_parse_options(2, (char **)argv);
-            mono_debug_init(MONO_DEBUG_FORMAT_MONO);
+            // mono_jit_parse_options(2, (char **)argv);
+            // mono_debug_init(MONO_DEBUG_FORMAT_MONO);
             rootDomain = mono_jit_init("VaultJITRuntime");
 
             mono_debug_domain_create(rootDomain);
